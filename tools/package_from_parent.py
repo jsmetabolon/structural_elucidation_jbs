@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Copy and rename Python modules from parent repo into spec2mol_v21_inference/src/."""
+"""Copy and rename Python modules from parent repo into structural_elucidation_jbs/src/."""
 
 from __future__ import annotations
 

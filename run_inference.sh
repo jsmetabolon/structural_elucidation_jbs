@@ -10,12 +10,12 @@ elif [[ -x "$REPO_ROOT/../.venv/bin/python" ]]; then
   PY="$REPO_ROOT/../.venv/bin/python"
 fi
 
-OUT_ROOT="${OUT_ROOT:-$REPO_ROOT/output/pipeline_equalization_v21}"
+OUT_ROOT="${OUT_ROOT:-$REPO_ROOT/output/pipeline_equalization}"
 RUN_LIBS="${RUN_LIBS:-209,305,400,402}"
 START_AT="${START_AT:-verifier}"
-MERGED_IONS_CSV="${MERGED_IONS_CSV:-$REPO_ROOT/data/ions_unknown_merged_v21_clean.csv}"
+MERGED_IONS_CSV="${MERGED_IONS_CSV:-$REPO_ROOT/data/ions_unknown_merged_clean.csv}"
 FEATURE_TABLE="${FEATURE_TABLE:-$MERGED_IONS_CSV}"
-ADDUCT_LADDER="${ADDUCT_LADDER:-$REPO_ROOT/data/chrolib_adduct_ladder_v21.csv}"
+ADDUCT_LADDER="${ADDUCT_LADDER:-$REPO_ROOT/data/chrolib_adduct_ladder.csv}"
 OBSERVED_209="${OBSERVED_209:-$REPO_ROOT/data/observed_ms2_lookups/per_control_all_x.csv}"
 
 scope_ion() {

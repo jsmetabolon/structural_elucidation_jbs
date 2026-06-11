@@ -1,6 +1,6 @@
-# Spec2Mol v21 Inference
+# Structural Elucidation Inference
 
-Self-contained inference repo for the v21 clean Metabolon pipeline: spectrum features in, ranked SMILES predictions out (full rerank path).
+Self-contained inference repo for the Metabolon X-compound pipeline: spectrum features in, ranked SMILES predictions out (full rerank path).
 
 ## Quick start (EC2 CPU)
 
@@ -22,7 +22,7 @@ START_AT=verifier RUN_LIBS=305 ./run_inference.sh
 ## Layout
 
 ```
-spec2mol_v21_inference/
+structural_elucidation_jbs/
 ├── src/                    # Python modules (predict_smiles.py, rerank, verifier, ...)
 ├── vendor/nce/             # Vendored NewCompoundElucidation package
 ├── vendor/modelfiles/      # NCE pkl assets (fetched)
@@ -51,18 +51,18 @@ spec2mol_v21_inference/
 
 ## Pipeline
 
-`run_inference.sh` runs the v21 equalization path per library:
+`run_inference.sh` runs the equalization path per library:
 
 1. **Library-anchored candidates** (optional if `START_AT=verifier`)
 2. **Verifier scoring** via NCE `PredictedSpectrumMatcher`
-3. **Unified candidate pool** merge with v20 base pool
-4. **GBM/logistic rerank** → `output/pipeline_equalization_v21/rerank_lib*/unified_rerank_all_top10.csv`
+3. **Unified candidate pool** merge with base pool
+4. **GBM/logistic rerank** → `output/pipeline_equalization/rerank_lib*/unified_rerank_all_top10.csv`
 
 Environment variables:
 
 | Var | Default | Description |
 |-----|---------|-------------|
-| `OUT_ROOT` | `output/pipeline_equalization_v21` | Output directory |
+| `OUT_ROOT` | `output/pipeline_equalization` | Output directory |
 | `RUN_LIBS` | `209,305,400,402` | Comma-separated libs |
 | `START_AT` | `verifier` | `full`, `candidates`, or `verifier` |
 
@@ -73,7 +73,7 @@ For retrieval + SELFIES de novo on new spectra:
 ```bash
 export PYTHONPATH="$PWD/src:$PYTHONPATH"
 python src/predict_merged.py \
-  --feature_table data/ions_unknown_merged_v21_clean.csv \
+  --feature_table data/ions_unknown_merged_clean.csv \
   --encoder_weights models/encoder/best_encoder.pt \
   --lib_id 400 --ion_mode positive \
   --artifact_prefix output/predict_lib400
@@ -93,7 +93,7 @@ export PYTHONPATH="$PWD/src:$PYTHONPATH"
 
 python src/build_compound_report.py \
   --control-id X-25003 \
-  --predictions ../models/pipeline_equalization_v21/rerank_lib209/unified_rerank_all_top10.csv \
+  --predictions output/pipeline_equalization/rerank_lib209/unified_rerank_all_top10.csv \
   --out-dir output/reports/X-25003
 ```
 
@@ -119,5 +119,5 @@ python tests/smoke_test.py
 
 After `./run_inference.sh`:
 
-- `output/pipeline_equalization_v21/rerank_lib{209,305,400,402}/unified_rerank_all_top10.csv`
-- Per-lib verifier and unified pool summaries under `output/pipeline_equalization_v21/`
+- `output/pipeline_equalization/rerank_lib{209,305,400,402}/unified_rerank_all_top10.csv`
+- Per-lib verifier and unified pool summaries under `output/pipeline_equalization/`

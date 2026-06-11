@@ -1,1 +1,1 @@
-"""Spec2Mol v21 inference package."""
+"""Structural elucidation inference package."""

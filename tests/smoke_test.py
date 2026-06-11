@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Smoke test for spec2mol_v21_inference repo structure and imports."""
+"""Smoke test for structural_elucidation_jbs repo structure and imports."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ REQUIRED_FILES = [
     "src/build_unified_candidate_pool_v16.py",
     "src/train_unified_rerank_v1.py",
     "src/nce_local_runtime_utils.py",
-    "data/ions_unknown_merged_v21_clean.csv",
+    "data/ions_unknown_merged_clean.csv",
     "data/known_X.csv",
     "requirements.txt",
     "fetch_assets.sh",

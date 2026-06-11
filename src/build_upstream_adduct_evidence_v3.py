@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build v21 neutral-mass hypotheses from observed CHRO adduct ladders."""
+"""Build neutral-mass hypotheses from observed CHRO adduct ladders."""
 
 from __future__ import annotations
 
@@ -18,9 +18,9 @@ from run_retrieval_anchored_denovo_assembly_v4 import resolve
 from x_domain_analog_utils import dataframe_to_markdown, safe_float, safe_int, write_csv, write_json
 
 
-DEFAULT_OUTPUT_ROOT = Path("models/upstream_adduct_evidence_v21")
-DEFAULT_FEATURE_TABLE = Path("merged_encoder/data/ions_unknown_merged_v21.csv")
-DEFAULT_LADDER = Path("merged_encoder/data/chrolib_adduct_ladder_v21.csv")
+DEFAULT_OUTPUT_ROOT = Path("models/upstream_adduct_evidence")
+DEFAULT_FEATURE_TABLE = Path("merged_encoder/data/ions_unknown_merged.csv")
+DEFAULT_LADDER = Path("merged_encoder/data/chrolib_adduct_ladder.csv")
 HYPOTHESIS_COLUMNS = [
     "feature_key",
     "comp_id",
@@ -51,7 +51,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--libs", default="", help="Optional comma-separated library IDs.")
     parser.add_argument("--top-n", type=int, default=5)
     parser.add_argument("--conflict-span-da", type=float, default=50.0)
-    parser.add_argument("--force", action="store_true", help="Allow overwriting existing v21 output directory files.")
+    parser.add_argument("--force", action="store_true", help="Allow overwriting existing output directory files.")
     return parser.parse_args(argv)
 
 
@@ -335,7 +335,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     write_csv(output_root / "feature_adduct_hypotheses.csv", hypotheses)
     write_csv(output_root / "neutral_mass_hypotheses.csv", top)
     write_csv(output_root / "adduct_conflict_audit.csv", conflicts)
-    write_csv(output_root / "neutral_loss_hints_v21.csv", hints)
+    write_csv(output_root / "neutral_loss_hints.csv", hints)
     (output_root / "adduct_evidence_report.md").write_text(render_report(hypotheses, conflicts, hints))
     payload = {
         "output_root": str(output_root),

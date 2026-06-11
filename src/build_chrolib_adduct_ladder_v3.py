@@ -24,8 +24,8 @@ from x_domain_analog_utils import write_csv, write_json
 
 
 DEFAULT_CHROLIB = Path("ions_with_ri.csv")
-DEFAULT_OUT = Path("merged_encoder/data/chrolib_adduct_ladder_v21.csv")
-DEFAULT_SUMMARY = Path("merged_encoder/data/chrolib_adduct_ladder_v21_summary.json")
+DEFAULT_OUT = Path("merged_encoder/data/chrolib_adduct_ladder.csv")
+DEFAULT_SUMMARY = Path("merged_encoder/data/chrolib_adduct_ladder_summary.json")
 DEFAULT_KNOWN_X = Path("known_X.csv")
 CHUNK_SIZE = 500_000
 
@@ -84,7 +84,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--summary-json", type=Path, default=DEFAULT_SUMMARY)
     parser.add_argument("--chunksize", type=int, default=CHUNK_SIZE)
-    parser.add_argument("--force", action="store_true", help="Allow overwriting existing v21 output files.")
+    parser.add_argument("--force", action="store_true", help="Allow overwriting existing output files.")
     return parser.parse_args(argv)
 
 

@@ -13,8 +13,8 @@ data/wgcna_cache/
 data/smiles_db/library_*_fragment_database_element0.csv
 data/smiles_db/cid_to_parent_mz_*.pkl
 # Large data fetched at runtime
-data/ions_unknown_merged_v21_clean.csv
-data/chrolib_adduct_ladder_v21.csv
+data/ions_unknown_merged_clean.csv
+data/chrolib_adduct_ladder.csv
 data/base_pools/
 data/nce_full_smiles_candidates.csv
 data/smiles_db/hmdb_minimal.csv
