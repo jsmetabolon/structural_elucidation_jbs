@@ -1,0 +1,5 @@
+control_id,library_id,lib_id,ion_mode,level,sublevel,comp_id,feature_key,parent_mz,neutral_mass_estimate,has_feature_rows,has_mass_hypotheses,already_in_unified_pool,primary_stage,recovery_track,clean_external_info
+X-26278,305,305,negative,3,3A,65057,feature_X_305_mz634.4455_ri782_X-26278,634.4455,635.452776466812,True,True,False,not_processed,pipeline_equalization_v1,PE(13:0/15:0)
+X-26279,305,305,negative,3,3A,65058,feature_X_305_mz730.5387_ri752_X-26279,730.53866,731.545936466812,True,True,False,not_processed,pipeline_equalization_v1,PE(16:0/19:1)
+X-26280,305,305,negative,3,3B,65059,feature_X_305_mz648.4609_ri778_X-26280,648.46088,649.4681564668119,True,True,False,not_processed,pipeline_equalization_v1,mixture of PE(14:0/15:0) and PE(13:0/16:0) (and possibly i15:0 and i13:0 combos)
+X-26341,305,305,negative,5,5,65136,feature_X_305_mz522.1388_ri2565_X-26341,522.13884,523.1461164668119,True,True,False,not_processed,pipeline_equalization_v1,

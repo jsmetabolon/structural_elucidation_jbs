@@ -1,0 +1,296 @@
+control_id,library_id,lib_id,ion_mode,level,sublevel,comp_id,feature_key,parent_mz,neutral_mass_estimate,has_feature_rows,has_mass_hypotheses,already_in_unified_pool,primary_stage,recovery_track,clean_external_info
+X-11357,402,402,positive,5,5,47681,feature_X_402_mz232.1289_ri0_X-11357,232.12889,231.12161353318805,True,True,False,not_processed,pipeline_equalization_v1,
+X-11576,402,402,positive,3,3A,47596,feature_X_402_mz403.2292_ri0_X-11576,403.22919,402.221913533188,True,True,False,not_processed,pipeline_equalization_v1,"Tripeptide - possibly with Val, Glu and Arg"
+X-11672,402,402,positive,5,5,47604,feature_X_402_mz181.1221_ri0_X-11672,181.12207,180.11479353318802,True,True,False,not_processed,pipeline_equalization_v1,
+X-11677,402,402,positive,1,KNOWN,47607,feature_X_402_mz267.0969_ri0_X-11677,267.0969,266.089623533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-11835,402,402,positive,3,3A,47683,feature_X_402_mz338.0869_ri0_X-11835,338.08688,337.079603533188,True,True,False,not_processed,pipeline_equalization_v1,Dihydroxyquinoline-glucuronide
+X-12056,402,402,positive,3,3A,33408,feature_X_402_mz156.0767_ri0_X-12056,156.07673,155.069453533188,True,True,False,not_processed,pipeline_equalization_v1,2-amino-3-pyrazol-1-yl-propanoic acid OR 2-amino-3-(1H-imidazol-2-yl)propanoic acid
+X-12093,402,402,positive,5,5,46684,feature_X_402_mz203.1387_ri0_X-12093,203.13875,202.131473533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-12108,402,402,positive,5,5,47688,feature_X_402_mz160.1080_ri0_X-12108,160.10801,159.10073353318802,True,True,False,not_processed,pipeline_equalization_v1,
+X-12122,402,402,positive,3,3A,47698,feature_X_402_mz276.1437_ri0_X-12122,276.1437,275.136423533188,True,True,False,not_processed,pipeline_equalization_v1,ethylmalonoylcarnitine OR methylsuccinoylcarnitine
+X-12225,402,402,positive,5,5,47707,feature_X_402_mz143.1180_ri0_X-12225,143.11799,142.110713533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-12234,402,402,positive,5,5,47536,feature_X_402_mz297.1078_ri0_X-12234,297.10783,296.100553533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-12690,402,402,positive,5,5,47720,feature_X_402_mz346.1237_ri0_X-12690,346.12374,345.116463533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-12792,402,402,positive,5,5,46622,feature_X_402_mz134.0269_ri0_X-12792,134.02694,133.019663533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-13152,402,402,positive,5,5,47728,feature_X_402_mz168.0629_ri0_X-13152,168.06294,167.055663533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-13478,402,402,positive,5,5,46629,feature_X_402_mz188.1281_ri0_X-13478,188.12805,187.120773533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-13699,402,402,positive,2,2C,46631,feature_X_402_mz284.1853_ri0_X-13699,284.18528,283.178003533188,True,True,False,not_processed,pipeline_equalization_v1,alpha-hydroxy metoprolol
+X-13735,402,402,positive,5,5,47793,feature_X_402_mz238.1546_ri0_X-13735,238.15458,237.147303533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-13737,402,402,positive,5,5,47441,feature_X_402_mz129.1024_ri0_X-13737,129.10237,128.09509353318802,True,True,False,not_processed,pipeline_equalization_v1,
+X-13862,402,402,positive,5,5,47842,feature_X_402_mz252.0862_ri0_X-13862,252.08621,251.078933533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-13871,402,402,positive,4,4,47442,feature_X_402_mz192.0324_ri0_X-13871,192.0324,191.025123533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14153,402,402,positive,5,5,47447,feature_X_402_mz226.1549_ri0_X-14153,226.15488,225.147603533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14155,402,402,positive,5,5,47446,feature_X_402_mz226.1549_ri0_X-14155,226.15488,225.147603533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14165,402,402,positive,5,5,47448,feature_X_402_mz320.1709_ri0_X-14165,320.1709,319.163623533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14180,402,402,positive,5,5,47449,feature_X_402_mz228.1704_ri0_X-14180,228.17036,227.163083533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14188,402,402,positive,5,5,47450,feature_X_402_mz251.1499_ri0_X-14188,251.1499,250.142623533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14207,402,402,positive,5,5,47454,feature_X_402_mz256.1764_ri0_X-14207,256.17644,255.16916353318803,True,True,False,not_processed,pipeline_equalization_v1,
+X-14220,402,402,positive,5,5,47456,feature_X_402_mz362.1919_ri0_X-14220,362.19192,361.184643533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14225,402,402,positive,5,5,47457,feature_X_402_mz320.1814_ri0_X-14225,320.18145,319.174173533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14245,402,402,positive,5,5,47460,feature_X_402_mz242.1860_ri0_X-14245,242.18599,241.178713533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14247,402,402,positive,5,5,47461,feature_X_402_mz276.1702_ri0_X-14247,276.17021,275.162933533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14266,402,402,positive,5,5,47462,feature_X_402_mz360.2126_ri0_X-14266,360.2126,359.205323533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14269,402,402,positive,5,5,47464,feature_X_402_mz270.1921_ri0_X-14269,270.19214,269.184863533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14270,402,402,positive,5,5,47465,feature_X_402_mz304.1759_ri0_X-14270,304.17588,303.168603533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14275,402,402,positive,5,5,47468,feature_X_402_mz332.2175_ri0_X-14275,332.21746,331.210183533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14277,402,402,positive,3,3A,47473,feature_X_402_mz219.1338_ri0_X-14277,219.13377,218.126493533188,True,True,False,not_processed,pipeline_equalization_v1,"Peptide with Ser, Leu"
+X-14293,402,402,positive,5,5,47474,feature_X_402_mz424.1713_ri0_X-14293,424.17134,423.164063533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14320,402,402,positive,5,5,47477,feature_X_402_mz295.1287_ri0_X-14320,295.12872,294.121443533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14331,402,402,positive,5,5,47484,feature_X_402_mz393.2231_ri0_X-14331,393.22306,392.215783533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14333,402,402,positive,5,5,47485,feature_X_402_mz374.2281_ri0_X-14333,374.22806,373.220783533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14355,402,402,positive,5,5,47486,feature_X_402_mz374.2284_ri0_X-14355,374.22837,373.221093533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14371,402,402,positive,5,5,47490,feature_X_402_mz415.2555_ri0_X-14371,415.25549,414.248213533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14380,402,402,positive,5,5,47494,feature_X_402_mz360.2124_ri0_X-14380,360.21241,359.205133533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14427,402,402,positive,5,5,47495,feature_X_402_mz243.1337_ri0_X-14427,243.13374,242.126463533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14448,402,402,positive,5,5,47617,feature_X_402_mz332.2171_ri0_X-14448,332.21711,331.209833533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14516,402,402,positive,5,5,47498,feature_X_402_mz311.1386_ri0_X-14516,311.13856,310.131283533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14536,402,402,positive,Exclude,Exclude,47499,feature_X_402_mz213.1597_ri0_X-14536,213.1597,212.152423533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14540,402,402,positive,Exclude,Exclude,47501,feature_X_402_mz247.1438_ri0_X-14540,247.14384,246.136563533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14545,402,402,positive,5,5,47502,feature_X_402_mz227.1751_ri0_X-14545,227.17512,226.167843533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-14603,402,402,positive,5,5,47507,feature_X_402_mz365.1046_ri0_X-14603,365.10463,364.097353533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-15166,402,402,positive,5,5,47520,feature_X_402_mz280.1288_ri0_X-15166,280.12885,279.121573533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-15168,402,402,positive,5,5,47521,feature_X_402_mz294.1436_ri0_X-15168,294.14362,293.136343533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-15192,402,402,positive,5,5,47798,feature_X_402_mz188.1756_ri0_X-15192,188.17559,187.168313533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-15196,402,402,positive,5,5,47522,feature_X_402_mz355.1970_ri0_X-15196,355.19695,354.189673533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-15375,402,402,positive,5,5,46943,feature_X_402_mz328.1256_ri0_X-15375,328.12558,327.118303533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-15382,402,402,positive,5,5,46941,feature_X_402_mz271.1043_ri0_X-15382,271.10432,270.097043533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-15472,402,402,positive,5,5,47623,feature_X_402_mz204.1227_ri0_X-15472,204.12266,203.115383533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-15477,402,402,positive,5,5,47799,feature_X_402_mz365.2315_ri0_X-15477,365.23154,364.224263533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-15484,402,402,positive,5,5,46940,feature_X_402_mz271.1043_ri0_X-15484,271.10429,270.097013533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-15507,402,402,positive,5,5,47624,feature_X_402_mz148.1332_ri0_X-15507,148.13319,147.12591353318803,True,True,False,not_processed,pipeline_equalization_v1,
+X-15535,402,402,positive,5,5,47531,feature_X_402_mz286.1759_ri0_X-15535,286.17586,285.168583533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-15562,402,402,positive,5,5,47628,feature_X_402_mz470.2020_ri0_X-15562,470.20197,469.194693533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-15563,402,402,positive,5,5,47631,feature_X_402_mz490.1707_ri0_X-15563,490.17069,489.163413533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-15678,402,402,positive,5,5,47645,feature_X_402_mz249.0536_ri0_X-15678,249.05357,248.046293533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-15680,402,402,positive,5,5,47534,feature_X_402_mz297.1078_ri0_X-15680,297.10776,296.100483533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-15799,402,402,positive,5,5,46954,feature_X_402_mz298.1561_ri0_X-15799,298.15611,297.148833533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-15856,402,402,positive,5,5,47626,feature_X_402_mz309.0866_ri0_X-15856,309.08663,308.079353533188,True,True,False,not_processed,pipeline_equalization_v1,Unknown
+X-16071,402,402,positive,3,3A,47801,feature_X_402_mz146.0600_ri0_X-16071,146.05997,145.052693533188,True,True,False,not_processed,pipeline_equalization_v1,3-formylindole
+X-16129,402,402,positive,5,5,46642,feature_X_402_mz287.6506_ri0_X-16129,287.65062,286.643343533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-16130,402,402,positive,5,5,47647,feature_X_402_mz289.1503_ri0_X-16130,289.1503,288.143023533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-16134,402,402,positive,5,5,46651,feature_X_402_mz603.7925_ri0_X-16134,603.79251,602.785233533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-16394,402,402,positive,5,5,38963,feature_X_402_mz229.1544_ri0_X-16394,229.15437,228.147093533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-16579,402,402,positive,5,5,46454,feature_X_402_mz129.0524_ri0_X-16579,129.05238,128.045103533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-16619,402,402,positive,5,5,47634,feature_X_402_mz455.0896_ri0_X-16619,455.0896,454.082323533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-16648,402,402,positive,5,5,47574,feature_X_402_mz260.1964_ri0_X-16648,260.19644,259.189163533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-17169,402,402,positive,5,5,46659,feature_X_402_mz453.2457_ri0_X-17169,453.2457,452.238423533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-17307,402,402,positive,5,5,47811,feature_X_402_mz162.1124_ri0_X-17307,162.11237,161.105093533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-17320,402,402,positive,5,5,47812,feature_X_402_mz184.0603_ri0_X-17320,184.06034,183.053063533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-17327,402,402,positive,5,5,47817,feature_X_402_mz257.1492_ri0_X-17327,257.14918,256.141903533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-17341,402,402,positive,5,5,47823,feature_X_402_mz560.3060_ri0_X-17341,560.30601,559.298733533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-17453,402,402,positive,5,5,40282,feature_X_402_mz591.3172_ri0_X-17453,591.31723,590.309953533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-17711,402,402,positive,3,3A,47418,feature_X_402_mz163.1229_ri0_X-17711,163.12288,162.11560353318802,True,True,False,not_processed,pipeline_equalization_v1,isomer of L(-)-nicotine
+X-17715,402,402,positive,5,5,47826,feature_X_402_mz330.1476_ri0_X-17715,330.14758,329.140303533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-17717,402,402,positive,5,5,47827,feature_X_402_mz304.1499_ri0_X-17717,304.14991,303.142633533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-17730,402,402,positive,5,5,47829,feature_X_402_mz326.1955_ri0_X-17730,326.1955,325.188223533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-17734,402,402,positive,5,5,47831,feature_X_402_mz290.1415_ri0_X-17734,290.14152,289.134243533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-17736,402,402,positive,5,5,47833,feature_X_402_mz465.2480_ri0_X-17736,465.24796,464.240683533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-17778,402,402,positive,5,5,47834,feature_X_402_mz171.1127_ri0_X-17778,171.11272,170.105443533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-17805,402,402,positive,5,5,47582,feature_X_402_mz561.2516_ri0_X-17805,561.25158,560.244303533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-17995,402,402,positive,5,5,47584,feature_X_402_mz414.2095_ri0_X-17995,414.20948,413.202203533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-18013,402,402,positive,5,5,47586,feature_X_402_mz357.2128_ri0_X-18013,357.21279,356.205513533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-18017,402,402,positive,5,5,47587,feature_X_402_mz346.1969_ri0_X-18017,346.19687,345.189593533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-18022,402,402,positive,5,5,47588,feature_X_402_mz355.1607_ri0_X-18022,355.16066,354.153383533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-18023,402,402,positive,5,5,47589,feature_X_402_mz385.2189_ri0_X-18023,385.21888,384.211603533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-18034,402,402,positive,5,5,47590,feature_X_402_mz246.1447_ri0_X-18034,246.14465,245.13737353318805,True,True,False,not_processed,pipeline_equalization_v1,
+X-18035,402,402,positive,5,5,47591,feature_X_402_mz359.2285_ri0_X-18035,359.22848,358.221203533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-18039,402,402,positive,5,5,47598,feature_X_402_mz399.2348_ri0_X-18039,399.23483,398.227553533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-18043,402,402,positive,5,5,47601,feature_X_402_mz513.2780_ri0_X-18043,513.27798,512.270703533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-18055,402,402,positive,5,5,47599,feature_X_402_mz399.2350_ri0_X-18055,399.23495,398.227673533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-18064,402,402,positive,5,5,47602,feature_X_402_mz514.2446_ri0_X-18064,514.24462,513.2373435331881,True,True,False,not_processed,pipeline_equalization_v1,
+X-18098,402,402,positive,5,5,47603,feature_X_402_mz277.1180_ri0_X-18098,277.11798,276.110703533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-18100,402,402,positive,5,5,47605,feature_X_402_mz698.3250_ri0_X-18100,698.32499,697.317713533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-18102,402,402,positive,5,5,47606,feature_X_402_mz774.3497_ri0_X-18102,774.34969,773.342413533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-18103,402,402,positive,5,5,47609,feature_X_402_mz344.1809_ri0_X-18103,344.18093,343.173653533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-18104,402,402,positive,5,5,47610,feature_X_402_mz586.2719_ri0_X-18104,586.27189,585.264613533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-18112,402,402,positive,5,5,47611,feature_X_402_mz622.3080_ri0_X-18112,622.30803,621.3007535331881,True,True,False,not_processed,pipeline_equalization_v1,
+X-18114,402,402,positive,5,5,47612,feature_X_402_mz604.2974_ri0_X-18114,604.29736,603.2900835331881,True,True,False,not_processed,pipeline_equalization_v1,
+X-18369,402,402,positive,5,5,47837,feature_X_402_mz347.1554_ri0_X-18369,347.15543,346.148153533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-18371,402,402,positive,5,5,47838,feature_X_402_mz265.0847_ri0_X-18371,265.08465,264.077373533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-18505,402,402,positive,5,5,47613,feature_X_402_mz622.2545_ri0_X-18505,622.25447,621.247193533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-19941,402,402,positive,5,5,47627,feature_X_402_mz228.1452_ri0_X-19941,228.14522,227.137943533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-20196,402,402,positive,5,5,47629,feature_X_402_mz380.1812_ri0_X-20196,380.18125,379.173973533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-20335,402,402,positive,5,5,47633,feature_X_402_mz332.1814_ri0_X-20335,332.18141,331.174133533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-20591,402,402,positive,5,5,47841,feature_X_402_mz195.0650_ri0_X-20591,195.06504,194.057763533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-20607,402,402,positive,5,5,47844,feature_X_402_mz449.1077_ri0_X-20607,449.10771,448.100433533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-20674,402,402,positive,5,5,47845,feature_X_402_mz210.0758_ri0_X-20674,210.07584,209.068563533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21282,402,402,positive,3,3B,46284,feature_X_402_mz115.0755_ri0_X-21282,115.07546,114.068183533188,True,True,False,not_processed,pipeline_equalization_v1,similar to 5-hydroxyhexanoic acid
+X-21329,402,402,positive,5,5,46373,feature_X_402_mz215.0160_ri0_X-21329,215.01601,214.008733533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21331,402,402,positive,5,5,46375,feature_X_402_mz164.9482_ri0_X-21331,164.94821,163.940933533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21332,402,402,positive,5,5,46376,feature_X_402_mz135.0439_ri0_X-21332,135.0439,134.03662353318802,True,True,False,not_processed,pipeline_equalization_v1,
+X-21333,402,402,positive,5,5,46377,feature_X_402_mz339.1907_ri0_X-21333,339.19069,338.183413533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21375,402,402,positive,5,5,46420,feature_X_402_mz409.1617_ri0_X-21375,409.16174,408.154463533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21419,402,402,positive,5,5,46464,feature_X_402_mz276.1914_ri0_X-21419,276.19136,275.184083533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21423,402,402,positive,5,5,46468,feature_X_402_mz276.1915_ri0_X-21423,276.19146,275.184183533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21431,402,402,positive,5,5,46476,feature_X_402_mz146.0600_ri0_X-21431,146.06003,145.05275353318802,True,True,False,not_processed,pipeline_equalization_v1,
+X-21451,402,402,positive,5,5,46496,feature_X_402_mz159.0804_ri0_X-21451,159.08043,158.07315353318802,True,True,False,not_processed,pipeline_equalization_v1,
+X-21453,402,402,positive,5,5,46498,feature_X_402_mz207.0175_ri0_X-21453,207.01747,206.010193533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21457,402,402,positive,5,5,46502,feature_X_402_mz127.0500_ri0_X-21457,127.05,126.042723533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21460,402,402,positive,5,5,46505,feature_X_402_mz173.0784_ri0_X-21460,173.07841,172.071133533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21461,402,402,positive,4,4,46506,feature_X_402_mz162.0583_ri0_X-21461,162.05833,161.05105353318802,True,True,False,not_processed,pipeline_equalization_v1,
+X-21477,402,402,positive,5,5,46522,feature_X_402_mz199.1076_ri0_X-21477,199.10763,198.100353533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21754,402,402,positive,5,5,46927,feature_X_402_mz343.0620_ri0_X-21754,343.06196,342.054683533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21755,402,402,positive,5,5,46928,feature_X_402_mz319.2083_ri0_X-21755,319.20835,318.201073533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21757,402,402,positive,5,5,46930,feature_X_402_mz289.1150_ri0_X-21757,289.11504,288.107763533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21758,402,402,positive,5,5,46931,feature_X_402_mz114.0851_ri0_X-21758,114.08511,113.077833533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21760,402,402,positive,5,5,46933,feature_X_402_mz531.1824_ri0_X-21760,531.18243,530.175153533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21763,402,402,positive,5,5,46936,feature_X_402_mz234.0180_ri0_X-21763,234.01801,233.010733533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21766,402,402,positive,1,KNOWN,46939,feature_X_402_mz426.2122_ri0_X-21766,426.21223,425.204953533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21769,402,402,positive,5,5,46942,feature_X_402_mz250.0128_ri0_X-21769,250.01283,249.005553533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21774,402,402,positive,5,5,46947,feature_X_402_mz287.1601_ri0_X-21774,287.16007,286.152793533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21775,402,402,positive,5,5,46948,feature_X_402_mz248.0335_ri0_X-21775,248.03354,247.026263533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21776,402,402,positive,5,5,46949,feature_X_402_mz158.1174_ri0_X-21776,158.11744,157.110163533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21782,402,402,positive,5,5,46955,feature_X_402_mz298.1561_ri0_X-21782,298.15611,297.148833533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21861,402,402,positive,5,5,47041,feature_X_402_mz455.1883_ri0_X-21861,455.18828,454.181003533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21864,402,402,positive,5,5,47044,feature_X_402_mz631.8032_ri0_X-21864,631.8032,630.795923533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21868,402,402,positive,5,5,47048,feature_X_402_mz311.1627_ri0_X-21868,311.16266,310.155383533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21871,402,402,positive,5,5,47051,feature_X_402_mz495.2532_ri0_X-21871,495.25321,494.245933533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-21893,402,402,positive,2,2C,47073,feature_X_402_mz115.0755_ri0_X-21893,115.07545,114.068173533188,True,True,False,not_processed,pipeline_equalization_v1,3-methyl-4-pentenoic acid
+X-22153,402,402,positive,5,5,47408,feature_X_402_mz140.0706_ri0_X-22153,140.0706,139.06332353318805,True,True,False,not_processed,pipeline_equalization_v1,
+X-22154,402,402,positive,5,5,47409,feature_X_402_mz281.1127_ri0_X-22154,281.1127,280.105423533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22155,402,402,positive,5,5,47410,feature_X_402_mz281.1126_ri0_X-22155,281.11259,280.105313533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22160,402,402,positive,3,3C,47415,feature_X_402_mz260.1849_ri0_X-22160,260.18487,259.177593533188,True,True,False,not_processed,pipeline_equalization_v1,carnitine conjugate
+X-22161,402,402,positive,3,3C,47416,feature_X_402_mz260.1849_ri0_X-22161,260.18492,259.177643533188,True,True,False,not_processed,pipeline_equalization_v1,carnitine conjugate
+X-22164,402,402,positive,5,5,47419,feature_X_402_mz144.1019_ri0_X-22164,144.10185,143.09457353318805,True,True,False,not_processed,pipeline_equalization_v1,
+X-22165,402,402,positive,5,5,47420,feature_X_402_mz189.1344_ri0_X-22165,189.13435,188.127073533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22166,402,402,positive,3,3B,47421,feature_X_402_mz180.0515_ri0_X-22166,180.05147,179.044193533188,True,True,False,not_processed,pipeline_equalization_v1,Indole compound
+X-22167,402,402,positive,5,5,47422,feature_X_402_mz285.0824_ri0_X-22167,285.08239,284.075113533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22207,402,402,positive,5,5,47463,feature_X_402_mz360.2125_ri0_X-22207,360.21248,359.205203533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22213,402,402,positive,5,5,47469,feature_X_402_mz332.2179_ri0_X-22213,332.21786,331.210583533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22214,402,402,positive,5,5,47470,feature_X_402_mz332.2176_ri0_X-22214,332.21764,331.210363533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22215,402,402,positive,5,5,47471,feature_X_402_mz332.2175_ri0_X-22215,332.21754,331.210263533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22216,402,402,positive,5,5,47472,feature_X_402_mz332.2175_ri0_X-22216,332.21747,331.210193533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22231,402,402,positive,5,5,47487,feature_X_402_mz374.2283_ri0_X-22231,374.22826,373.220983533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22235,402,402,positive,2,2C,47492,feature_X_402_mz197.1285_ri0_X-22235,197.12846,196.121183533188,True,True,False,not_processed,pipeline_equalization_v1,cyclo(val-pro)
+X-22243,402,402,positive,5,5,47500,feature_X_402_mz213.1595_ri0_X-22243,213.15953,212.152253533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22247,402,402,positive,5,5,47504,feature_X_402_mz227.1752_ri0_X-22247,227.17518,226.167903533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22317,402,402,positive,5,5,47575,feature_X_402_mz260.1965_ri0_X-22317,260.19648,259.189203533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22334,402,402,positive,5,5,47592,feature_X_402_mz359.2281_ri0_X-22334,359.22808,358.220803533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22335,402,402,positive,5,5,47593,feature_X_402_mz359.2285_ri0_X-22335,359.22848,358.221203533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22372,402,402,positive,5,5,47630,feature_X_402_mz380.1813_ri0_X-22372,380.18129,379.174013533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22374,402,402,positive,5,5,47632,feature_X_402_mz332.1813_ri0_X-22374,332.18128,331.174003533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22414,402,402,positive,5,5,47678,feature_X_402_mz162.0583_ri0_X-22414,162.05831,161.05103353318802,True,True,False,not_processed,pipeline_equalization_v1,
+X-22415,402,402,positive,5,5,47679,feature_X_402_mz162.0583_ri0_X-22415,162.05833,161.05105353318802,True,True,False,not_processed,pipeline_equalization_v1,
+X-22482,402,402,positive,5,5,47746,feature_X_402_mz431.0967_ri0_X-22482,431.09672,430.089443533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22521,402,402,positive,5,5,47785,feature_X_402_mz464.1912_ri0_X-22521,464.19118,463.183903533188,True,True,False,not_processed,pipeline_equalization_v1,Unknown
+X-22589,402,402,positive,5,5,47857,feature_X_402_mz560.3059_ri0_X-22589,560.30594,559.298663533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22590,402,402,positive,5,5,47858,feature_X_402_mz304.1497_ri0_X-22590,304.14971,303.142433533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22591,402,402,positive,5,5,47859,feature_X_402_mz290.1415_ri0_X-22591,290.14151,289.134233533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22762,402,402,positive,2,2C,48065,feature_X_402_mz760.5827_ri0_X-22762,760.58273,759.575453533188,True,True,False,not_processed,pipeline_equalization_v1,1-palmitoyl-2-oleoyl-GPC
+X-22763,402,402,positive,3,3B,48066,feature_X_402_mz780.5512_ri0_X-22763,780.55116,779.543883533188,True,True,False,not_processed,pipeline_equalization_v1,diacyl GPC
+X-22807,402,402,positive,5,5,48122,feature_X_402_mz204.0487_ri0_X-22807,204.04873,203.041453533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22821,402,402,positive,3,3C,48166,feature_X_402_mz160.0968_ri0_X-22821,160.09682,159.08954353318802,True,True,False,not_processed,pipeline_equalization_v1,carnitine conjugate
+X-22837,402,402,positive,5,5,48192,feature_X_402_mz146.0812_ri0_X-22837,146.0812,145.073923533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22850,402,402,positive,2,2C,48209,feature_X_402_mz255.1075_ri0_X-22850,255.10748,254.100203533188,True,True,False,not_processed,pipeline_equalization_v1,galactosylglycerol
+X-22851,402,402,positive,2,2C,48210,feature_X_402_mz417.1604_ri0_X-22851,417.16041,416.153133533188,True,True,False,not_processed,pipeline_equalization_v1,digalactosylglycerol
+X-22995,402,402,positive,5,5,48468,feature_X_402_mz165.0579_ri0_X-22995,165.05786,164.05058353318802,True,True,False,not_processed,pipeline_equalization_v1,
+X-22996,402,402,positive,5,5,48470,feature_X_402_mz105.0914_ri0_X-22996,105.09137,104.084093533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22997,402,402,positive,5,5,48472,feature_X_402_mz250.0376_ri0_X-22997,250.03762,249.030343533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22998,402,402,positive,5,5,48473,feature_X_402_mz140.0505_ri0_X-22998,140.05047,139.043193533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-22999,402,402,positive,5,5,48475,feature_X_402_mz204.1228_ri0_X-22999,204.12283,203.115553533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-23000,402,402,positive,5,5,48476,feature_X_402_mz386.1357_ri0_X-23000,386.13572,385.128443533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-23051,402,402,positive,5,5,48593,feature_X_402_mz147.0763_ri0_X-23051,147.07627,146.068993533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-23090,402,402,positive,2,2C,48635,feature_X_402_mz271.0599_ri0_X-23090,271.05989,270.052613533188,True,True,False,not_processed,pipeline_equalization_v1,2'-hydroxydaidzein
+X-23101,402,402,positive,5,5,48646,feature_X_402_mz459.3839_ri0_X-23101,459.38388,458.376603533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-23102,402,402,positive,5,5,48647,feature_X_402_mz313.2369_ri0_X-23102,313.23685,312.229573533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-23171,402,402,positive,4,4,48851,feature_X_402_mz198.0889_ri0_X-23171,198.0889,197.081623533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-23360,402,402,positive,5,5,49220,feature_X_402_mz579.1703_ri0_X-23360,579.17027,578.162993533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-23376,402,402,positive,5,5,49236,feature_X_402_mz252.0866_ri0_X-23376,252.08663,251.07935353318803,True,True,False,not_processed,pipeline_equalization_v1,
+X-23389,402,402,positive,5,5,49249,feature_X_402_mz157.0762_ri0_X-23389,157.07617,156.068893533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-23394,402,402,positive,5,5,49254,feature_X_402_mz207.1130_ri0_X-23394,207.11296,206.105683533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-23397,402,402,positive,5,5,49257,feature_X_402_mz263.1027_ri0_X-23397,263.1027,262.095423533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-23400,402,402,positive,5,5,49260,feature_X_402_mz146.0602_ri0_X-23400,146.06016,145.052883533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-23403,402,402,positive,5,5,49263,feature_X_402_mz406.2437_ri0_X-23403,406.24375,405.236473533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-23406,402,402,positive,5,5,49266,feature_X_402_mz193.0497_ri0_X-23406,193.04968,192.042403533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-23409,402,402,positive,5,5,49269,feature_X_402_mz222.1337_ri0_X-23409,222.1337,221.126423533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-23412,402,402,positive,5,5,49272,feature_X_402_mz209.1537_ri0_X-23412,209.15366,208.146383533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-23414,402,402,positive,5,5,49274,feature_X_402_mz211.1693_ri0_X-23414,211.16926,210.161983533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-23416,402,402,positive,5,5,49276,feature_X_402_mz289.2525_ri0_X-23416,289.25245,288.245173533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-23418,402,402,positive,5,5,49278,feature_X_402_mz289.2525_ri0_X-23418,289.25249,288.245213533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-26213,402,402,positive,3,3A,64943,feature_X_402_mz556.5296_ri2606_X-26213,556.52958,555.522303533188,True,True,False,not_processed,pipeline_equalization_v1,CER(d18:0/16:0(OH))
+X-26214,402,402,positive,3,3A,64944,feature_X_402_mz556.5294_ri2546_X-26214,556.52944,555.5221635331881,True,True,False,not_processed,pipeline_equalization_v1,CER(d17:0/i17:0(OH))
+X-26215,402,402,positive,3,3A,64945,feature_X_402_mz556.5294_ri2546_X-26215,556.52944,555.5221635331881,True,True,False,not_processed,pipeline_equalization_v1,CER(d18:0/16:0(OH))
+X-26216,402,402,positive,3,3A,64946,feature_X_402_mz556.5293_ri2797_X-26216,556.52926,555.5219835331881,True,True,False,not_processed,pipeline_equalization_v1,CER(d18:0/16:0(OH))
+X-26217,402,402,positive,3,3A,64947,feature_X_402_mz556.5296_ri2872_X-26217,556.52963,555.522353533188,True,True,False,not_processed,pipeline_equalization_v1,CER(d18:0/16:0(OH))
+X-26224,402,402,positive,1,KNOWN,64962,feature_X_402_mz584.5604_ri2850_X-26224,584.56042,583.5531435331881,True,True,False,not_processed,pipeline_equalization_v1,
+X-26225,402,402,positive,3,3A,64963,feature_X_402_mz584.5610_ri2929_X-26225,584.56097,583.553693533188,True,True,False,not_processed,pipeline_equalization_v1,CER(d19:0/17:0(OH))
+X-26266,402,402,positive,5,5,65030,feature_X_402_mz295.2265_ri1407_X-26266,295.22652,294.219243533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-26273,402,402,positive,3,3A,65045,feature_X_402_mz552.4326_ri2469_X-26273,552.43258,551.4253035331881,True,True,False,not_processed,pipeline_equalization_v1,isomer of beta-cryptoxanthine
+X-26282,402,402,positive,3,3A,65062,feature_X_402_mz570.5448_ri2720_X-26282,570.54478,569.537503533188,True,True,False,not_processed,pipeline_equalization_v1,CER(d18:0/17:0(OH))
+X-26283,402,402,positive,5,5,65063,feature_X_402_mz679.5376_ri2017_X-26283,679.53764,678.530363533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-26284,402,402,positive,3,3A,65064,feature_X_402_mz798.5479_ri2450_X-26284,798.54791,797.540633533188,True,True,False,not_processed,pipeline_equalization_v1,PI-CER(d17:0/17:0(OH))
+X-26285,402,402,positive,3,3A,65065,feature_X_402_mz784.5316_ri2251_X-26285,784.53163,783.524353533188,True,True,False,not_processed,pipeline_equalization_v1,PI-CER(d17:0/16:0(OH))
+X-26286,402,402,positive,3,3A,65066,feature_X_402_mz528.4978_ri2249_X-26286,528.49782,527.4905435331881,True,True,False,not_processed,pipeline_equalization_v1,CER(d17:0/15:0(OH))
+X-26287,402,402,positive,3,3A,65067,feature_X_402_mz542.5136_ri2340_X-26287,542.51362,541.506343533188,True,True,False,not_processed,pipeline_equalization_v1,CER(d17:0/16:0(OH))
+X-26288,402,402,positive,3,3A,65068,feature_X_402_mz542.5137_ri2442_X-26288,542.51371,541.506433533188,True,True,False,not_processed,pipeline_equalization_v1,CER(d17:0/16:0(OH))
+X-26289,402,402,positive,1,KNOWN,65075,feature_X_402_mz316.3209_ri1444_X-26289,316.32092,315.313643533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-26290,402,402,positive,2,2C,65076,feature_X_402_mz288.2898_ri1358_X-26290,288.28975,287.282473533188,True,True,False,not_processed,pipeline_equalization_v1,heptadecanoylsphinganine (d17:0)
+X-26291,402,402,positive,2,2C,65077,feature_X_402_mz260.2584_ri1245_X-26291,260.25835,259.251073533188,True,True,False,not_processed,pipeline_equalization_v1,pentadecanoylsphinganine (d15:0)
+X-26292,402,402,positive,2,2C,65078,feature_X_402_mz244.2270_ri1192_X-26292,244.22705,243.219773533188,True,True,False,not_processed,pipeline_equalization_v1,3-ketotetradecanoylsphinganine
+X-26293,402,402,positive,2,2C,65079,feature_X_402_mz272.2582_ri1325_X-26293,272.25816,271.250883533188,True,True,False,not_processed,pipeline_equalization_v1,3-ketohexadecanoylsphinganine
+X-26294,402,402,positive,5,5,65080,feature_X_402_mz300.2895_ri1340_X-26294,300.2895,299.282223533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-26295,402,402,positive,4?,4?,65081,feature_X_402_mz328.3207_ri1431_X-26295,328.32066,327.313383533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-26296,402,402,positive,2,2C,65082,feature_X_402_mz328.3209_ri1487_X-26296,328.32092,327.313643533188,True,True,False,not_processed,pipeline_equalization_v1,3-ketoeicosanoylsphinganine
+X-26299,402,402,positive,3,3A,65087,feature_X_402_mz574.3867_ri1589_X-26299,574.38667,573.379393533188,True,True,False,not_processed,pipeline_equalization_v1,LPC(22:3)
+X-26300,402,402,positive,5,5,65088,feature_X_402_mz595.4934_ri1810_X-26300,595.49343,594.486153533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-26301,402,402,positive,3,3A,65089,feature_X_402_mz538.4225_ri1699_X-26301,538.42249,537.4152135331881,True,True,False,not_processed,pipeline_equalization_v1,LPC(O-20:0)
+X-26302,402,402,positive,3,3A,65090,feature_X_402_mz590.4534_ri1705_X-26302,590.45342,589.4461435331881,True,True,False,not_processed,pipeline_equalization_v1,LPC(O-24:2)
+X-26303,402,402,positive,3,3A,65091,feature_X_402_mz566.4535_ri1764_X-26303,566.45353,565.446253533188,True,True,False,not_processed,pipeline_equalization_v1,LPC(O-22:0)
+X-26305,402,402,positive,3,3A,65093,feature_X_402_mz564.4378_ri1700_X-26305,564.43782,563.430543533188,True,True,False,not_processed,pipeline_equalization_v1,LPC(O-22:1)
+X-26306,402,402,positive,3,3A,65094,feature_X_402_mz496.3754_ri1600_X-26306,496.3754,495.368123533188,True,True,False,not_processed,pipeline_equalization_v1,LPC(O-17:0) or LPC(O-i17:0)
+X-26307,402,402,positive,3,3A,65095,feature_X_402_mz506.3599_ri1519_X-26307,506.35989,505.352613533188,True,True,False,not_processed,pipeline_equalization_v1,LPC(O-18:2)
+X-26308,402,402,positive,3,3B,65096,feature_X_402_mz792.5899_ri1903_X-26308,792.58991,791.5826335331881,True,True,False,not_processed,pipeline_equalization_v1,PC(O-18:2/20:4) AND/OR PC(O-18:1/20:5)
+X-26309,402,402,positive,3,3B,65097,feature_X_402_mz792.5890_ri2017_X-26309,792.58904,791.581763533188,True,True,False,not_processed,pipeline_equalization_v1,PC(P-18:1/20:4) AND/OR PC(P-16:0/22:5n3)
+X-26310,402,402,positive,3,3A,65102,feature_X_402_mz820.6230_ri2006_X-26310,820.62304,819.615763533188,True,True,False,not_processed,pipeline_equalization_v1,PC(O-18:1/22:5)
+X-26311,402,402,positive,3,3A,65103,feature_X_402_mz798.5997_ri2111_X-26311,798.59966,797.592383533188,True,True,False,not_processed,pipeline_equalization_v1,PC(i17:0/20:3)
+X-26312,402,402,positive,3,3A,65104,feature_X_402_mz822.6386_ri2119_X-26312,822.63861,821.631333533188,True,True,False,not_processed,pipeline_equalization_v1,PC(O-18:1/22:4)
+X-26313,402,402,positive,3,3A,65105,feature_X_402_mz796.6214_ri2250_X-26313,796.62138,795.6141035331881,True,True,False,not_processed,pipeline_equalization_v1,PC(O-16:0/22:4)
+X-26314,402,402,positive,3,3B,65106,feature_X_402_mz748.5826_ri2308_X-26314,748.5826,747.575323533188,True,True,False,not_processed,pipeline_equalization_v1,PC(18:0/15:0) AND/OR PC(16:0/17:0)
+X-26315,402,402,positive,3,3A,65107,feature_X_402_mz827.6997_ri2970_X-26315,827.69965,826.6923735331881,True,True,False,not_processed,pipeline_equalization_v1,SM(d43:2)
+X-26316,402,402,positive,3,3B,65108,feature_X_402_mz844.6777_ri3215_X-26316,844.67773,843.670453533188,True,True,False,not_processed,pipeline_equalization_v1,PC(16:0/24:1) OR PC(18:0/22:1)
+X-26317,402,402,positive,3,3B,65109,feature_X_402_mz816.6452_ri2700_X-26317,816.6452,815.6379235331881,True,True,False,not_processed,pipeline_equalization_v1,PC(18:0/20:1) OR PC(18:1/20:0)
+X-26318,402,402,positive,3,3A,65110,feature_X_402_mz632.4671_ri1752_X-26318,632.46711,631.4598335331881,True,True,False,not_processed,pipeline_equalization_v1,LPC(26:2)
+X-26319,402,402,positive,3,3A,65113,feature_X_402_mz796.6226_ri2200_X-26319,796.62255,795.6152735331881,True,True,False,not_processed,pipeline_equalization_v1,PC(O-18:1/20:3)
+X-26320,402,402,positive,3,3A,65114,feature_X_402_mz340.2487_ri1046_X-26320,340.24874,339.241463533188,True,True,False,not_processed,pipeline_equalization_v1,12:2 carnitine
+X-26321,402,402,positive,3,3C,65115,feature_X_402_mz330.2638_ri1138_X-26321,330.26381,329.256533533188,True,True,False,not_processed,pipeline_equalization_v1,C11 carnitine
+X-26322,402,402,positive,5,5,65116,feature_X_402_mz445.2944_ri1392_X-26322,445.29441,444.287133533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-26323,402,402,positive,5,5,65117,feature_X_402_mz487.3977_ri1679_X-26323,487.39767,486.390393533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-26324,402,402,positive,5,5,65118,feature_X_402_mz539.4303_ri1686_X-26324,539.43035,538.423073533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-26325,402,402,positive,3,3A,65119,feature_X_402_mz780.5903_ri2665_X-26325,780.59028,779.583003533188,True,True,False,not_processed,pipeline_equalization_v1,PE(P-18:0/22:4)
+X-26328,402,402,positive,3,3A,65122,feature_X_402_mz648.6287_ri4506_X-26328,648.62867,647.6213935331881,True,True,False,not_processed,pipeline_equalization_v1,CER(d18:2/24:0)
+X-26330,402,402,positive,3,3A,65124,feature_X_402_mz634.6132_ri4045_X-26330,634.61317,633.605893533188,True,True,False,not_processed,pipeline_equalization_v1,CER(d17:1/24:0)
+X-26331,402,402,positive,3,3A,65125,feature_X_402_mz824.6537_ri2430_X-26331,824.65373,823.646453533188,True,True,False,not_processed,pipeline_equalization_v1,PC(O-18:0/20:4)
+X-26332,402,402,positive,5,5,65126,feature_X_402_mz467.3730_ri1600_X-26332,467.37305,466.365773533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-26338,402,402,positive,5,5,65132,feature_X_402_mz578.4785_ri2300_X-26338,578.47849,577.471213533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-26340,402,402,positive,5,5,65135,feature_X_402_mz917.2356_ri962_X-26340,917.23563,916.228353533188,True,True,False,not_processed,pipeline_equalization_v1,
+X-26417,402,402,positive,3,3A,65228,feature_X_402_mz754.5709_ri2361_X-26417,754.57093,753.563653533188,True,True,False,not_processed,pipeline_equalization_v1,PE(O-18:0/20:4)
+X-26418,402,402,positive,3,3A,65229,feature_X_402_mz726.5432_ri2146_X-26418,726.5432,725.535923533188,True,True,False,not_processed,pipeline_equalization_v1,PE(O-16:0/20:4)
+X-26633,402,402,positive,3,3A,65516,feature_X_402_mz752.5589_ri2378_X-26633,752.55892,751.551643533188,True,True,False,not_processed,pipeline_equalization_v1,PE(P-16:0/22:4)
+X-26640,402,402,positive,3,3A,65534,feature_X_402_mz494.3606_ri1584_X-26640,494.36056,493.353283533188,True,True,False,not_processed,pipeline_equalization_v1,LPC(P-17:0)
+X-26641,402,402,positive,3,3A,65535,feature_X_402_mz466.3308_ri1509_X-26641,466.33083,465.323553533188,True,True,False,not_processed,pipeline_equalization_v1,LPC(P-15:0)
+X-26646,402,402,positive,3,3A,65540,feature_X_402_mz580.3609_ri1746_X-26646,580.36085,579.3535735331881,True,True,False,not_processed,pipeline_equalization_v1,LPS(22:1)
+X-26647,402,402,positive,3,3A,65541,feature_X_402_mz582.3761_ri1843_X-26647,582.37613,581.368853533188,True,True,False,not_processed,pipeline_equalization_v1,LPS(22:0)
+X-26648,402,402,positive,3,3A,65542,feature_X_402_mz574.3134_ri1552_X-26648,574.31341,573.306133533188,True,True,False,not_processed,pipeline_equalization_v1,LPS(22:4)
+X-26649,402,402,positive,3,3A,65543,feature_X_402_mz610.4063_ri1993_X-26649,610.40629,609.399013533188,True,True,False,not_processed,pipeline_equalization_v1,LPS(24:0)
+X-26650,402,402,positive,3,3A,65544,feature_X_402_mz554.3452_ri1745_X-26650,554.34518,553.3379035331881,True,True,False,not_processed,pipeline_equalization_v1,LPS(20:0)
+X-26651,402,402,positive,3,3A,65545,feature_X_402_mz608.3912_ri1840_X-26651,608.39121,607.383933533188,True,True,False,not_processed,pipeline_equalization_v1,LPS(24:1)
+X-26670,402,402,positive,3,3A,65564,feature_X_402_mz506.3246_ri1579_X-26670,506.32456,505.317283533188,True,True,False,not_processed,pipeline_equalization_v1,LPE(20:2)
+X-26686,402,402,positive,3,3A,65581,feature_X_402_mz642.3614_ri1530_X-26686,642.36143,641.3541535331881,True,True,False,not_processed,pipeline_equalization_v1,"glycosyl LPE (18:1), 2-form"
+X-26687,402,402,positive,3,3A,65582,feature_X_402_mz642.3614_ri1555_X-26687,642.36143,641.3541535331881,True,True,False,not_processed,pipeline_equalization_v1,"glycosyl LPE(18:1), 1-form"
+X-26689,402,402,positive,3,3A,65584,feature_X_402_mz640.3466_ri1450_X-26689,640.34661,639.3393335331881,True,True,False,not_processed,pipeline_equalization_v1,"glycosyl LPE(18:2), 2-form"
+X-26690,402,402,positive,3,3A,65585,feature_X_402_mz640.3458_ri1476_X-26690,640.34582,639.338543533188,True,True,False,not_processed,pipeline_equalization_v1,"glycosyl LPE(18:2), 1-form"
+X-26691,402,402,positive,3,3A,65586,feature_X_402_mz614.3300_ri1416_X-26691,614.32996,613.3226835331881,True,True,False,not_processed,pipeline_equalization_v1,"glycosyl LPE(16:1), 2-form"
+X-26692,402,402,positive,3,3A,65587,feature_X_402_mz614.3299_ri1443_X-26692,614.32993,613.322653533188,True,True,False,not_processed,pipeline_equalization_v1,"glycosyl LPE(16:1), 1-form"
+X-26693,402,402,positive,3,3A,65588,feature_X_402_mz638.3303_ri1377_X-26693,638.33027,637.3229935331881,True,True,False,not_processed,pipeline_equalization_v1,"glycosyl LPE(18:3), 2-form"
+X-26694,402,402,positive,3,3A,65589,feature_X_402_mz638.3303_ri1403_X-26694,638.33027,637.3229935331881,True,True,False,not_processed,pipeline_equalization_v1,"glycosyl LPE(18:3), 1-form"
+X-26695,402,402,positive,2,2C,65590,feature_X_402_mz412.3060_ri1604_X-26695,412.30602,411.298743533188,True,True,False,not_processed,pipeline_equalization_v1,N-oleoylglutamic acid (18:1)
+X-26696,402,402,positive,2,2C,65591,feature_X_402_mz414.3219_ri1700_X-26696,414.32192,413.314643533188,True,True,False,not_processed,pipeline_equalization_v1,N-stearoylglutamic acid (18:0)
+X-26697,402,402,positive,2,2C,65592,feature_X_402_mz384.2745_ri1490_X-26697,384.27446,383.267183533188,True,True,False,not_processed,pipeline_equalization_v1,N-palmitoleoylglutamic acid (16:1)
+X-26698,402,402,positive,2,2C,65593,feature_X_402_mz330.2274_ri1315_X-26698,330.22745,329.220173533188,True,True,False,not_processed,pipeline_equalization_v1,N-lauroylglutamic acid (12:0)
+X-26699,402,402,positive,2,2C,65594,feature_X_402_mz328.2119_ri1220_X-26699,328.21192,327.204643533188,True,True,False,not_processed,pipeline_equalization_v1,N-dodecenoylglutamic acid (12:1)
+X-26700,402,402,positive,2,2C,65595,feature_X_402_mz302.1964_ri1129_X-26700,302.19636,301.189083533188,True,True,False,not_processed,pipeline_equalization_v1,N-decanoylglutamic acid (10:0)
+X-26702,402,402,positive,3,3A,65597,feature_X_402_mz480.3081_ri1389_X-26702,480.30807,479.300793533188,True,True,False,not_processed,pipeline_equalization_v1,"LPC (15:1), 2-form"
+X-26703,402,402,positive,3,3A,65598,feature_X_402_mz480.3079_ri1414_X-26703,480.30791,479.300633533188,True,True,False,not_processed,pipeline_equalization_v1,"LPC (15:1), 1-form"
+X-26706,402,402,positive,3,3A,65601,feature_X_402_mz564.4023_ri1654_X-26706,564.40227,563.3949935331881,True,True,False,not_processed,pipeline_equalization_v1,"LPC(21:1), 1-form"
+X-26712,402,402,positive,3,3C,65618,feature_X_402_mz804.5312_ri1670_X-26712,804.53122,803.523943533188,True,True,False,not_processed,pipeline_equalization_v1,probable polymer
+X-26724,402,402,positive,Exclude,Exclude,66315,feature_X_402_mz340.1001_ri865_X-26724,340.10007,339.092793533188,True,True,False,not_processed,pipeline_equalization_v1,DO NOT INCLUDE

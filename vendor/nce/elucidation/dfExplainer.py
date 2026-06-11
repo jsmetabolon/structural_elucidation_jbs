@@ -1,0 +1,121 @@
+from collections import defaultdict
+
+import pandas as pd
+import regex as re
+
+explanations = defaultdict(lambda: "???")
+explanations.update(
+    dict(
+        sample_name="MLIMS sample name",
+        task_id="MLIMS task ID",
+        peak_id="MLIMS peak ID",
+        ri="Retention Index",
+        area="area of integrated peak",
+        height="height of integrated peak",
+        mass="measured mass of integrated peak",
+        start_scan="first scan under integrated peak",
+        apex_scan="scan at apex of integrated peak",
+        end_scan="last scan under integrated peak",
+        start_rt="retention time of first scan under peak",
+        end_rt="retention time of last scan under peak",
+        apex_rt="retention time of apex scan of integrated peak",
+        ratio_count="number of intensity ratios observed between the hypothesized adduct/isotope/dimer and the feature (AID ratio)",
+        chemical_id="MLIMS chemical ID",
+        comp_id="MLIMS compound ID",
+        ion_mass="MLIMS mass of ionic form of chemical",
+        target_mass="MLIMS mass of neutral form of chemical",
+        mol_formula="MLIMS molecular formula",
+        name="MLIMS preferred chemical name",
+        chemcalc="formula for mass returned by ChemCalc website",
+        cand_fmla="candidate formula returned by FormulaFinder",
+        ppm="ppm difference between candidate formula's mass and query mass.",
+        neutral="neutral form of candidate formula",
+        ions="number of MS2 ion species with formulas consistent with given formula",
+        weighted_ions="number of MS2 ions with formulas consistent with given formula",
+        dbe="double bond equivalent",
+        library_matches="number of MLIMS library entries with given molecular formula",
+        bucket="mass bucket of MS2 ion",
+        mass_range="range of masses of observed MS2 ions in bucket",
+        scan_count="number of scans in which ion was observed",
+        cand_fmlas="possible molecular formulas for ions found by FormulaFinder",
+        subsmiles="smiles fragments 1) present in current library and 2) consistent with mass of ion",
+        fmla="molecular formula",
+        lib_occurrences="number of SMILES strings in MLIMS containing this 'subsmiles' as a fragment",
+        tally="number of spectra (scans) in which ion species was observed",
+        med_int="median intensity of observations of ion",
+        mean_int="mean intensity of observations of ion",
+        rank_sum="sum of numerical ranks of observations in each spectrum.  Largest is chosen as normalizer",
+        sd_ratio="standard deviation of ratio of ion intensity to normalizer intensity",
+        cv_ratio="coefficient of variation of ratio of ion intensity to normalizer intensity",
+        neutral_mass="MLIMS mass of neutral form of chemical",
+        ion_name="MLIMS name of ion from CHRO_LIB_MASSES",
+        num_spectra="number of spectra in which ion was observed",
+        norm_int="relative intensity of ion relative to normalizer",
+        Br_predict="predicted number of bromine atoms",
+        C_predict="predicted number of carbon atoms",
+        S_predict="predicted number of sulfur atoms",
+        Cl_predict="predicted number of chlorine atoms",
+        O_predict="predicted number of oxygen atoms",
+        has_is="has a heavier isotope? or is a heavier isotope?",
+        isotope="type of isotope detected by mass",
+        inferred_m="inferred neutral mass of compound of interest",
+        delta="weighted median difference between feature and buddy",
+        theor_delta="theoretical (buddy-feature) delta for this explanation",
+        feature="posited relationship of feature to neutral mass",
+        buddy="posited relationship of buddy (adduct, etc.) to neutral mass",
+        mz_feature="m/z of feature inferred from delta and posited relationship to neutral mass",
+        mz_buddy="m/z of buddy inferred from delta and posited relationship to neutral mass",
+        rt="retention time",
+        med_mass="intensity-weighted median observed mass",
+        rel_intens="intensity of MS2 ion relative to normalizing ion.  0.01 <= rel_intens <= 1.00",
+        ms2="number of MS2 scans under peak",
+        isotopy="Does this ion appear to be an isotope of another ion?",
+        ri_pred="(predicted RI, match confidence) conf 0=best, 10=worst (decile)",
+        harmony="How much does this formula look like formulas in the library? 0:not at all; 10-100:yes.",
+        match_score="number of ions shared with query spectrum",
+        smiles="SMILES string",
+        parent_mass="parent mass (m-H/m+H) of matched compound",
+        ratio="ratio of buddy intensity to feature intensity",
+        recall="recall of prediction model: (predicted and really positive) / (really positive)",
+        precision="precision of prediction model: (predicted and really positive) / (predicted positive)",
+        mass_frac="mass(substructure)/mass(precursor)",
+        prob="probability assigned to this prediction by the model",
+        # lib_occur="the number of times this substructure occurs in the library",
+        lib_occur="number of named compounds in this library in MLIMS in this category",
+        supporting_pairs="number of (ion,loss) pairs supporting this SMILES string",
+        smiles_db="are there any compounds in our public SMILES database with this formula?",
+        adj_prob="adjusted probability = probability of prediction * precision of model",
+        chemont_id="Chemical Ontology Category ID",
+        chemont_name="Chemical Ontology Category Name",
+        chemont_def="Chemical Ontology Category Definition",
+        source="source database for compound",
+        id="identifier in source database",
+        lib_id="HD4 library",
+        comments="comments from MLIMS records",
+        retired_for="comp ID of named compound, if this feature has been retired",
+        mz="m/z = mass-charge ratio",
+        score="strength of a match or prediction. 0 is weakest and 1 is strongest.",
+        formula="molecular formula",
+    )
+)
+
+
+def build_explainer(lis):
+    """
+    This function generates an html table with explanations of the columns of a dataframe.
+    The explanations are pulled from the dictionary above.
+    Trouble ahead because the column names can't be reused with a different meaning.
+    :param lis: A dataframe, or simply a list of column names.
+    :return: A string for an html table.
+    """
+    if lis is None:
+        return ""
+    if type(lis) == pd.DataFrame:
+        lis = lis.columns
+    lis = list(lis)
+    lis = [k for k in lis if not re.search(r"^[HC]\d", k)]  # Drop most formulas.
+    bullets = [
+        f'<tr style="padding:10px"><td><b>{k}</b></td><td>&emsp;&emsp;{explanations[k]}</td></tr>'
+        for k in lis
+    ]
+    return '<table style="border:50px solid white">' + "\n".join(bullets) + "</table>"

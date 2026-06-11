@@ -1,0 +1,15 @@
+torch==1.12.0
+torchvision==0.13.0
+rdkit-pypi
+numpy
+pandas<2
+scipy<1.11
+selfies==2.2.0
+scikit-learn
+pyteomics
+beautifulsoup4
+lxml
+tqdm
+openpyxl
+matplotlib
+psutil

@@ -1,0 +1,27 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+output/
+output/reports/
+models/encoder/*.pt
+models/decoder_weights/
+models/embedding_banks/
+vendor/modelfiles/
+vendor/metabolite_synonyms.sqlite
+data/wgcna_cache/
+data/smiles_db/library_*_fragment_database_element0.csv
+data/smiles_db/cid_to_parent_mz_*.pkl
+# Large data fetched at runtime
+data/ions_unknown_merged_v21_clean.csv
+data/chrolib_adduct_ladder_v21.csv
+data/base_pools/
+data/nce_full_smiles_candidates.csv
+data/smiles_db/hmdb_minimal.csv
+data/smiles_db/name_dict_runtime_combined.csv
+data/smiles_db/comp_id_to_smiles_expanded_950.csv
+data/observed_ms2_lookups/
+vendor/nce/elucidation/table_builders/HMDB_36_classyfire_21_annotations.csv
+vendor/nce/elucidation/table_builders/hmdb_minimal.csv
+vendor/nce/elucidation/table_builders/hmdb_spreadsheet.csv
+*.log
