@@ -11,6 +11,7 @@ PARENT = Path(__file__).resolve().parents[2]
 DEST = Path(__file__).resolve().parents[1] / "src"
 
 # source path (relative to PARENT) -> dest filename in src/
+# Only modules on the inference / report critical path are packaged here.
 COPY_MAP: dict[str, str] = {
     "predict_x209_smiles.py": "predict_smiles.py",
     "merged_encoder/predict_merged.py": "predict_merged.py",
@@ -35,53 +36,22 @@ COPY_MAP: dict[str, str] = {
     "build_unified_candidate_pool_v16.py": "build_unified_candidate_pool_v16.py",
     "train_unified_rerank_v1.py": "train_unified_rerank_v1.py",
     "build_library_anchored_candidates_v1.py": "build_library_anchored_candidates_v1.py",
-    "build_pipeline_equalization_manifest_v1.py": "build_pipeline_equalization_manifest_v1.py",
-    "build_peptide_hypotheses_v1.py": "build_peptide_hypotheses_v1.py",
-    "build_upstream_adduct_evidence_v3.py": "build_upstream_adduct_evidence_v3.py",
-    "build_chrolib_adduct_ladder_v3.py": "build_chrolib_adduct_ladder_v3.py",
-    "build_biotransformation_evidence_v1.py": "build_biotransformation_evidence_v1.py",
-    "search_biotransformation_cores_v1.py": "search_biotransformation_cores_v1.py",
-    "run_biotransformation_guided_generation_v1.py": "run_biotransformation_guided_generation_v1.py",
-    "build_v19b_updated_summary_v1.py": "build_v19b_updated_summary_v1.py",
-    "build_v20_deliverable_from_v19b_v1.py": "build_v20_deliverable_from_v19b_v1.py",
     "chemistry_class_diagnostics_v1.py": "chemistry_class_diagnostics_v1.py",
     "evaluate_denovo_failure_modes.py": "evaluate_denovo_failure_modes.py",
     "rerank_denovo_assembly_v3.py": "rerank_denovo_assembly_v3.py",
     "run_retrieval_anchored_denovo_assembly_v4.py": "run_retrieval_anchored_denovo_assembly_v4.py",
-    "generate_selfies_denovo.py": "generate_selfies_denovo.py",
-    "selfies_decoder_model.py": "selfies_decoder_model.py",
     "benchmark_selfies_merge_policies.py": "benchmark_selfies_merge_policies.py",
-    "build_observed_ms2_lookup_v1.py": "build_observed_ms2_lookup_v1.py",
     "nce_evidence_utils.py": "nce_evidence_utils.py",
-    "build_s0_deliverable_gap_inventory_v1.py": "build_s0_deliverable_gap_inventory_v1.py",
-    "recursive_substructure_utils.py": "recursive_substructure_utils.py",
-    "peptide_first_v1_utils.py": "peptide_first_v1_utils.py",
-    "peptide_ranker_v1_utils.py": "peptide_ranker_v1_utils.py",
-    "peptide_spectrum_supervision_v1_utils.py": "peptide_spectrum_supervision_v1_utils.py",
     "formula_prior_v1.py": "formula_prior_v1.py",
-    "biotransformation_guided_v1_utils.py": "biotransformation_guided_v1_utils.py",
-    "protected_209_fusion_v1_utils.py": "protected_209_fusion_v1_utils.py",
-    "x209_pkl_refresh_utils.py": "x209_pkl_refresh_utils.py",
-    "build_v14_all_library_prediction_review_v1.py": "build_v14_all_library_prediction_review_v1.py",
-    "build_v19b_high_level_accuracy_summary_v1.py": "build_v19b_high_level_accuracy_summary_v1.py",
-    "build_x12798_structure_resolution_report_v1.py": "build_x12798_structure_resolution_report_v1.py",
-    "assign_predicted_pathways.py": "assign_predicted_pathways.py",
     "build_post_run_decision_package.py": "build_post_run_decision_package.py",
     "evaluate_denovo_controls.py": "evaluate_denovo_controls.py",
     "evaluate_selfies_candidate_pools.py": "evaluate_selfies_candidate_pools.py",
     "aggregate_x_domain_analog_v1.py": "aggregate_x_domain_analog_v1.py",
     "assess_denovo_pipeline_v3_outputs.py": "assess_denovo_pipeline_v3_outputs.py",
-    "build_upstream_adduct_evidence_v1.py": "build_upstream_adduct_evidence_v1.py",
-    "build_recovered_ms2_from_chrolib_v1.py": "build_recovered_ms2_from_chrolib_v1.py",
     "build_multi_conjugate_candidates_v1.py": "build_multi_conjugate_candidates_v1.py",
     "run_retrieval_anchored_denovo_assembly_v1.py": "run_retrieval_anchored_denovo_assembly_v1.py",
     "run_retrieval_anchored_analog_v1.py": "run_retrieval_anchored_analog_v1.py",
     "utils.py": "utils.py",
-    "build_v15_pathway_accuracy_audit_v1.py": "build_v15_pathway_accuracy_audit_v1.py",
-    "nce_generation_v3_utils.py": "nce_generation_v3_utils.py",
-    "peptide_composition_v1_utils.py": "peptide_composition_v1_utils.py",
-    "peptide_permutation_v1_utils.py": "peptide_permutation_v1_utils.py",
-    "nce_workflow_leverage_v2.py": "nce_workflow_leverage_v2.py",
 }
 
 IMPORT_REPLACEMENTS = [
@@ -96,13 +66,6 @@ IMPORT_REPLACEMENTS = [
     (r"except ImportError:\s*\n\s*from merged_model import", "except ImportError:\n    from merged_model import"),
     (r"REPO_ROOT = Path\(__file__\)\.resolve\(\)\.parents\[1\]", "REPO_ROOT = Path(__file__).resolve().parents[1]"),
 ]
-
-NCE_UTILS_PATCH = '''DEFAULT_NCE_ROOT = REPO_ROOT / "vendor" / "nce"
-DEFAULT_REFERENCE_DIR = REPO_ROOT / "vendor" / "modelfiles"
-DEFAULT_MLIMS_TABLE_CANDIDATES = (
-    REPO_ROOT / "vendor" / "modelfiles" / "mlims_tables.pkl",
-    REPO_ROOT / "vendor" / "modelfiles" / "mlims_tables.pkl",
-)'''
 
 
 def rewrite_content(text: str, dest_name: str) -> str:
@@ -124,7 +87,6 @@ def rewrite_content(text: str, dest_name: str) -> str:
         text = re.sub(r"from x209_retrieval_scoring import", "from retrieval_scoring.py import", text)
         text = re.sub(r"from x209_merge_policy import", "from merge_policy import", text)
         text = re.sub(r"from x400_ri_audit_utils import", "from ri_audit_utils import", text)
-        # fix typo if introduced
         text = text.replace("from retrieval_scoring.py import", "from retrieval_scoring import")
     if dest_name == "nce_local_runtime_utils.py":
         text = re.sub(
