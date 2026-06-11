@@ -1,1 +1,0 @@
-"""Structural elucidation inference package."""

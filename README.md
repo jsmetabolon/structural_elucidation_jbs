@@ -23,31 +23,37 @@ START_AT=verifier RUN_LIBS=305 ./run_inference.sh
 
 ```
 structural_elucidation_jbs/
-├── src/                    # Python modules (predict_smiles.py, rerank, verifier, ...)
-├── vendor/nce/             # Vendored NewCompoundElucidation package
-├── vendor/modelfiles/      # NCE pkl assets (fetched)
+├── structural_elucidation/   # installable package (pipeline, inference, reports, nce, ...)
+├── vendor/nce/               # Vendored NewCompoundElucidation package
+├── vendor/modelfiles/        # NCE pkl assets (fetched)
 ├── models/
-│   ├── decoder/            # vocab/config JSONs (shipped)
-│   ├── encoder/            # best_encoder.pt (fetched)
-│   ├── decoder_weights/    # .pt decoder weights (fetched)
-│   └── embedding_banks/    # retrieval latents (fetched)
-├── data/                   # ions, known_X, base pools, feature rows, SMILES subset
+│   ├── decoder/              # vocab/config JSONs (shipped)
+│   ├── encoder/              # best_encoder.pt (fetched)
+│   ├── decoder_weights/      # .pt decoder weights (fetched)
+│   └── embedding_banks/      # retrieval latents (fetched)
+├── data/                     # ions, known_X, base pools, feature rows, SMILES subset
 ├── fetch_assets.sh
 ├── run_inference.sh
-├── src/build_compound_report.py  # per-compound HTML report builder
-└── tests/smoke_test.py
+├── pyproject.toml
+└── tests/test_smoke.py
 ```
 
-## Key renames from parent repo
+Install the package in editable mode (optional but recommended):
 
-| Original | This repo |
-|----------|-----------|
-| `predict_x209_smiles.py` | `src/predict_smiles.py` |
-| `x209_retrieval_scoring.py` | `src/retrieval_scoring.py` |
-| `x209_merge_policy.py` | `src/merge_policy.py` |
-| `x209_phase0_utils.py` | `src/phase0_utils.py` |
-| `x400_ri_audit_utils.py` | `src/ri_audit_utils.py` |
-| `merged_encoder/predict_merged.py` | `src/predict_merged.py` |
+```bash
+pip install -e .
+```
+
+## Key module locations
+
+| Role | Module |
+|------|--------|
+| SMILES inference | `structural_elucidation.inference.predict` |
+| Merged inference | `structural_elucidation.inference.merged` |
+| Verifier scoring | `structural_elucidation.pipeline.verify` |
+| Unified pool | `structural_elucidation.pipeline.pool` |
+| Rerank | `structural_elucidation.pipeline.rerank` |
+| HTML reports | `structural_elucidation.reports.compound` |
 
 ## Pipeline
 
@@ -71,8 +77,7 @@ Environment variables:
 For retrieval + SELFIES de novo on new spectra:
 
 ```bash
-export PYTHONPATH="$PWD/src:$PYTHONPATH"
-python src/predict_merged.py \
+python -m structural_elucidation.inference.merged \
   --feature_table data/ions_unknown_merged_clean.csv \
   --encoder_weights models/encoder/best_encoder.pt \
   --lib_id 400 --ion_mode positive \
@@ -86,12 +91,10 @@ Requires fetched encoder weights and embedding banks.
 Generate a self-contained report bundle (`index.html`, `internal.html`, `guides.html`, `data/`, `assets/`) for any X compound from rerank predictions:
 
 ```bash
-export PYTHONPATH="$PWD/src:$PYTHONPATH"
-
 # Fetch metabolite synonyms DB (+ optional WGCNA cache) first:
 ./fetch_assets.sh --source local --parent ../
 
-python src/build_compound_report.py \
+python -m structural_elucidation.reports.compound \
   --control-id X-25003 \
   --predictions output/pipeline_equalization/rerank_lib209/unified_rerank_all_top10.csv \
   --out-dir output/reports/X-25003
@@ -101,18 +104,12 @@ Optional flags: `--target-smiles`, `--target-name`, `--candidate-pool`, `--hypot
 
 Reports degrade gracefully when `vendor/metabolite_synonyms.sqlite` or WGCNA cohort files are missing (synonym/network/correlation sections use placeholders or are omitted).
 
-## Regenerating src/ from parent
-
-```bash
-python tools/package_from_parent.py
-```
-
-Copies and renames modules from `../spec2mol_merged_fullrun_metabolon_only`.
-
 ## Verification
 
 ```bash
-python tests/smoke_test.py
+pytest tests/test_smoke.py -m smoke
+# or
+python -m pytest tests/test_smoke.py -m smoke
 ```
 
 ## Expected outputs

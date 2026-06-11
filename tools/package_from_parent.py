@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Copy and rename Python modules from parent repo into structural_elucidation_jbs/src/."""
+"""Copy and rename Python modules from parent repo into structural_elucidation/.
+
+Legacy helper from the flat src/ layout. After the package refactor, prefer
+tools/migrate_to_package.py to refresh modules from src/ snapshots, or copy
+directly into structural_elucidation/ subpackages.
+"""
 
 from __future__ import annotations
 
@@ -8,7 +13,7 @@ import shutil
 from pathlib import Path
 
 PARENT = Path(__file__).resolve().parents[2]
-DEST = Path(__file__).resolve().parents[1] / "src"
+DEST = Path(__file__).resolve().parents[1] / "structural_elucidation"
 
 # source path (relative to PARENT) -> dest filename in src/
 # Only modules on the inference / report critical path are packaged here.

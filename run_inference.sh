@@ -2,7 +2,6 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-export PYTHONPATH="$REPO_ROOT/src:${PYTHONPATH:-}"
 PY="${PY:-python3}"
 if [[ -x "$REPO_ROOT/.venv/bin/python" ]]; then
   PY="$REPO_ROOT/.venv/bin/python"
@@ -82,7 +81,7 @@ run_scope() {
   local la_path="$OUT_ROOT/library_anchored_lib${lib}/runs/library_anchored_v1/track_control_blind/lib_${lib}_${ion}/selfies_profiles/strict_1da/candidate_metrics_all.csv"
 
   if [[ "$START_AT" != "verifier" ]]; then
-    run_cmd "$PY" "$REPO_ROOT/src/build_library_anchored_candidates_v1.py" \
+    run_cmd "$PY" -m structural_elucidation.pipeline.candidates \
       --output-root "$OUT_ROOT/library_anchored_lib${lib}" \
       --diagnosis-csv "$manifest" \
       --feature-rows "$feature_rows" \
@@ -97,7 +96,7 @@ run_scope() {
     return 0
   fi
 
-  run_cmd "$PY" "$REPO_ROOT/src/score_candidates_with_verifier_v1.py" \
+  run_cmd "$PY" -m structural_elucidation.pipeline.verify \
     --output-root "$OUT_ROOT/verifier_lib${lib}" \
     --observed-lookup "$observed_lookup" \
     --all-x-observed-lookup "$observed_lookup" \
@@ -105,7 +104,7 @@ run_scope() {
     --input-candidate-metrics "$inputs" \
     --lib-id "$lib" --ion-mode "$ion" --include-all-x
 
-  run_cmd "$PY" "$REPO_ROOT/src/build_unified_candidate_pool_v16.py" \
+  run_cmd "$PY" -m structural_elucidation.pipeline.pool \
     --output-root "$OUT_ROOT/unified_pool_lib${lib}" \
     --scored-candidates "$OUT_ROOT/verifier_lib${lib}/scored_candidates.csv" \
     --base-unified-pool-csv "$base_pool" \
@@ -113,7 +112,7 @@ run_scope() {
     --lib-id "$lib" --ion-mode "$ion" \
     --include-all-x
 
-  run_cmd "$PY" "$REPO_ROOT/src/train_unified_rerank_v1.py" \
+  run_cmd "$PY" -m structural_elucidation.pipeline.rerank \
     --unified-pool "$OUT_ROOT/unified_pool_lib${lib}/unified_candidates_per_control.csv" \
     --non-s0-pool "$OUT_ROOT/unified_pool_lib${lib}/unified_candidates_per_control_non_s0.csv" \
     --output-root "$OUT_ROOT/rerank_lib${lib}" \

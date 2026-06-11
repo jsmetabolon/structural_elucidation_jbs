@@ -1,0 +1,45 @@
+[tool.black]
+line-length = 120
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["W293"]
+
+[tool.poetry]
+name = "structural_elucidation"
+version = "0.1.0"
+description = "Mass-spectrometry structural elucidation inference and reranking"
+authors = ["Metabolon Internal"]
+readme = "README.md"
+packages = [{ include = "structural_elucidation" }]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
+torch = "1.12.0"
+torchvision = "0.13.0"
+rdkit-pypi = "*"
+numpy = "*"
+pandas = "<2"
+scipy = "<1.11"
+selfies = "2.2.0"
+scikit-learn = "*"
+pyteomics = "*"
+beautifulsoup4 = "*"
+lxml = "*"
+tqdm = "*"
+openpyxl = "*"
+matplotlib = "*"
+psutil = "*"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.0.0"
+ruff = "^0.8.0"
+pytest = "^8.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
