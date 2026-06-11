@@ -15,7 +15,6 @@ import pandas as pd
 from structural_elucidation.utils.chemistry import canonicalize_smiles, inchikey_from_smiles
 from structural_elucidation.utils.io import dataframe_to_markdown, read_table, write_csv, write_json
 
-
 NEGATIVE_LIBS = {209, 305}
 POSITIVE_LIBS = {400, 402}
 ION_LABELS = {"negative": 0.0, "positive": 1.0}
@@ -165,10 +164,7 @@ def load_known_x_comp_ids(known_x: Path) -> set[int]:
     df = read_table(known_x)
     if "CompID" not in df.columns:
         return set()
-    return {
-        int(value)
-        for value in pd.to_numeric(df["CompID"], errors="coerce").dropna().astype(int)
-    }
+    return {int(value) for value in pd.to_numeric(df["CompID"], errors="coerce").dropna().astype(int)}
 
 
 def load_x_structure_keys(known_x_all: Path) -> tuple[set[str], set[str]]:
@@ -197,10 +193,7 @@ def load_existing_holdout_keys(holdout_dir: Path) -> tuple[set[int], set[str], s
         except Exception:
             continue
         if "comp_id" in df.columns:
-            comp_ids.update(
-                int(value)
-                for value in pd.to_numeric(df["comp_id"], errors="coerce").dropna().astype(int)
-            )
+            comp_ids.update(int(value) for value in pd.to_numeric(df["comp_id"], errors="coerce").dropna().astype(int))
         smiles_col = pick_col(df, ["canonical_smiles", "smiles", "SMILES"])
         if smiles_col is not None:
             keyed = add_structure_keys(df, smiles_col)
@@ -221,10 +214,7 @@ def load_train_exclude_comp_ids(holdout_dir: Path) -> set[int]:
         except Exception:
             continue
         if "comp_id" in df.columns:
-            out.update(
-                int(value)
-                for value in pd.to_numeric(df["comp_id"], errors="coerce").dropna().astype(int)
-            )
+            out.update(int(value) for value in pd.to_numeric(df["comp_id"], errors="coerce").dropna().astype(int))
     return out
 
 
@@ -258,8 +248,7 @@ def load_training_structures(repo_root: Path, libs: Iterable[int]) -> pd.DataFra
     for lib_id in libs:
         mode = lib_mode(int(lib_id))
         scoped = combined[
-            combined["asset_mode"].eq(mode)
-            & combined.apply(lambda row: has_lib(row, int(lib_id)), axis=1)
+            combined["asset_mode"].eq(mode) & combined.apply(lambda row: has_lib(row, int(lib_id)), axis=1)
         ].copy()
         scoped["lib_id"] = int(lib_id)
         scoped["ion_mode"] = mode
@@ -280,7 +269,10 @@ def domain_distance(
 ) -> dict[str, float]:
     mz_delta = abs(safe_float(candidate_parent_mz, 0.0) - safe_float(target_parent_mz, 0.0)) / 50.0
     ri_delta = abs(safe_float(candidate_ri, 0.0) - safe_float(target_ri, 0.0)) / 1000.0
-    peak_delta = abs(math.log1p(max(safe_float(candidate_peak_count, 0.0), 0.0)) - math.log1p(max(safe_float(target_peak_count, 0.0), 0.0)))
+    peak_delta = abs(
+        math.log1p(max(safe_float(candidate_peak_count, 0.0), 0.0))
+        - math.log1p(max(safe_float(target_peak_count, 0.0), 0.0))
+    )
     latent_delta = 0.0
     if np.isfinite(safe_float(target_latent_distance)) and np.isfinite(safe_float(candidate_latent_distance)):
         latent_delta = abs(float(candidate_latent_distance) - float(target_latent_distance))
@@ -292,9 +284,6 @@ def domain_distance(
         "peak_count_distance_component": float(peak_delta),
         "latent_distance_component": float(latent_delta),
     }
-
-
-
 
 
 def canonical_key(smiles: Any) -> str:

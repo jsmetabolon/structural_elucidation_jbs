@@ -8,7 +8,6 @@ import torch.nn.functional as F
 
 from structural_elucidation.inference.model_conv import Net1D, load_compatible_state_dict
 
-
 ION_MODE_TO_INDEX = {
     "negative": 0,
     "neg": 0,
@@ -45,8 +44,7 @@ def ion_mode_label_to_scalar(value: str | float | int | None) -> float | None:
         return float(text)
     except ValueError as exc:
         raise ValueError(
-            "Could not parse ion mode value. Expected negative/positive or numeric scalar, "
-            f"received: {value!r}"
+            "Could not parse ion mode value. Expected negative/positive or numeric scalar, " f"received: {value!r}"
         ) from exc
 
 
@@ -74,8 +72,7 @@ class MergedNet1D(Net1D):
         super().__init__(*args, **kwargs)
         if self.legacy_mode:
             raise ValueError(
-                "MergedNet1D only supports the mass-conditioned Net1D constructor. "
-                "Legacy mode is not supported."
+                "MergedNet1D only supports the mass-conditioned Net1D constructor. " "Legacy mode is not supported."
             )
 
         self.mode_embedding = nn.Embedding(2, 512)
@@ -122,9 +119,7 @@ class MergedNet1D(Net1D):
         if mode_t.shape[0] == 1 and batch_size > 1:
             mode_t = mode_t.expand(batch_size)
         if mode_t.shape[0] != batch_size:
-            raise ValueError(
-                f"Batch mismatch: spectra batch={batch_size}, ion_mode batch={mode_t.shape[0]}."
-            )
+            raise ValueError(f"Batch mismatch: spectra batch={batch_size}, ion_mode batch={mode_t.shape[0]}.")
 
         if mode_t.dtype.is_floating_point:
             mode_t = torch.round(mode_t).to(dtype=torch.long)
@@ -169,9 +164,7 @@ class MergedNet1D(Net1D):
         if lib_t.shape[0] == 1 and batch_size > 1:
             lib_t = lib_t.expand(batch_size)
         if lib_t.shape[0] != batch_size:
-            raise ValueError(
-                f"Batch mismatch: spectra batch={batch_size}, lib_id batch={lib_t.shape[0]}."
-            )
+            raise ValueError(f"Batch mismatch: spectra batch={batch_size}, lib_id batch={lib_t.shape[0]}.")
 
         if lib_t.dtype.is_floating_point:
             lib_t = torch.round(lib_t).to(dtype=torch.long)
@@ -214,9 +207,7 @@ class MergedNet1D(Net1D):
             if parent_mz.shape[0] == 1 and x.shape[0] > 1:
                 parent_mz = parent_mz.expand(x.shape[0])
             if parent_mz.shape[0] != x.shape[0]:
-                raise ValueError(
-                    f"Batch mismatch: spectra batch={x.shape[0]}, parent_mz batch={parent_mz.shape[0]}."
-                )
+                raise ValueError(f"Batch mismatch: spectra batch={x.shape[0]}, parent_mz batch={parent_mz.shape[0]}.")
             mz_feat = self.mz_mlp(self._normalize_parent_mz(parent_mz))
             x = x + self.mz_alpha * mz_feat
 

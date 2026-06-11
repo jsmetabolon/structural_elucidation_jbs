@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import torch
 
-
 DEVICE_HELP_TEXT = "Device to run on: auto, cpu, cuda, or mps."
 
 
@@ -24,10 +23,7 @@ def resolve_device(raw_device: str) -> torch.device:
     try:
         device = torch.device(requested)
     except (TypeError, RuntimeError) as exc:
-        raise ValueError(
-            f"Unsupported device '{raw_device}'. "
-            "Use one of: auto, cpu, cuda, mps."
-        ) from exc
+        raise ValueError(f"Unsupported device '{raw_device}'. " "Use one of: auto, cpu, cuda, mps.") from exc
 
     if device.type == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("Requested CUDA device, but CUDA is not available.")

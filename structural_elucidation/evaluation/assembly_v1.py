@@ -301,9 +301,7 @@ def load_structure_exclusion_keys(
         if str(value)
     }
     inchikeys = {
-        str(value)
-        for value in candidate_source.get("inchikey_key", pd.Series(dtype=str)).astype(str)
-        if str(value)
+        str(value) for value in candidate_source.get("inchikey_key", pd.Series(dtype=str)).astype(str) if str(value)
     }
     if known_x_all.exists():
         truth = read_table(known_x_all)
@@ -488,7 +486,9 @@ def generate_for_anchor(
         generated[smiles].add("bond_order_mutation")
     for smiles in selfies_mutation_candidates(anchor_smiles, token_pool, limit=max(30, per_anchor_limit)):
         generated[smiles].add("selfies_mutation")
-    for smiles in brics_recombination_candidates(anchor_smiles, fragment_source_smiles, limit=max(40, per_anchor_limit)):
+    for smiles in brics_recombination_candidates(
+        anchor_smiles, fragment_source_smiles, limit=max(40, per_anchor_limit)
+    ):
         generated[smiles].add("brics_recombination")
     return generated
 
@@ -523,7 +523,9 @@ def score_generated_candidates(
     ]
     db_fps = list(candidate_source[candidate_source["lib_id"].astype(int).eq(lib_id)]["fp"])
     anchor_fps = [anchor.get("anchor_fp") for anchor in anchors if anchor.get("anchor_fp") is not None]
-    anchor_formulas = {str(anchor.get("anchor_formula", "")) for anchor in anchors if str(anchor.get("anchor_formula", ""))}
+    anchor_formulas = {
+        str(anchor.get("anchor_formula", "")) for anchor in anchors if str(anchor.get("anchor_formula", ""))
+    }
     fragment_source_smiles = select_fragment_source_smiles(
         candidate_source=candidate_source,
         lib_id=lib_id,
@@ -715,7 +717,9 @@ def write_profile_outputs(
         "n_features_with_candidates": int(candidate_df["feature_key"].nunique()) if not candidate_df.empty else 0,
         "n_features_with_denovo_rows": int(denovo_df["feature_key"].nunique()) if not denovo_df.empty else 0,
         "n_novelty_rows_considered": int(novelty_df.shape[0]),
-        "n_exact_known_rejected": int(novelty_df["exact_known_structure_rejected"].sum()) if not novelty_df.empty else 0,
+        "n_exact_known_rejected": (
+            int(novelty_df["exact_known_structure_rejected"].sum()) if not novelty_df.empty else 0
+        ),
         "outputs": outputs,
     }
     write_json(Path(outputs["summary_json"]), summary)
@@ -776,7 +780,9 @@ def run_denovo_assembly(
         if "x_control" in scopes and not x_targets.empty:
             scoped_targets.append(("x_control", x_targets[x_targets["lib_id"].astype("Int64").eq(int(lib_id))].copy()))
         if "hard_holdout" in scopes and not hard_targets.empty:
-            scoped_targets.append(("hard_holdout", hard_targets[hard_targets["lib_id"].astype("Int64").eq(int(lib_id))].copy()))
+            scoped_targets.append(
+                ("hard_holdout", hard_targets[hard_targets["lib_id"].astype("Int64").eq(int(lib_id))].copy())
+            )
         for scope, targets in scoped_targets:
             if targets.empty:
                 continue
@@ -866,7 +872,11 @@ def evaluate_retrieval_track(
             pool["predicted_smiles"] = pool["smiles"]
         temp = DEFAULT_OUTPUT_ROOT / "__unused__"
         controls = load_x_controls(known_x=known_x, known_x_all=known_x_all, lib_id=int(lib_id), ion_mode=mode)
-        from structural_elucidation.evaluation.failure_modes import annotate_pool, normalize_prediction_pool, pool_for_control
+        from structural_elucidation.evaluation.failure_modes import (
+            annotate_pool,
+            normalize_prediction_pool,
+            pool_for_control,
+        )
 
         normalized = normalize_prediction_pool(pool, baseline_root)
         for metric_scope, cutoff in [("rank1", 1), ("top10", int(top_k)), ("full_pool_oracle", 999999)]:
@@ -1024,8 +1034,7 @@ def aggregate_denovo_assembly(
     accepted = []
     if not assembly_deltas.empty:
         accepted = assembly_deltas[
-            assembly_deltas["metric_scope"].eq("full_pool_oracle")
-            & assembly_deltas["acceptance_pass"].astype(bool)
+            assembly_deltas["metric_scope"].eq("full_pool_oracle") & assembly_deltas["acceptance_pass"].astype(bool)
         ].to_dict(orient="records")
     high_hit_safe = [row for row in accepted if safe_int(row.get("delta_ge07"), 0) >= 0]
     if high_hit_safe:
@@ -1115,7 +1124,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hard-holdout-dir", type=Path, default=DEFAULT_HARD_HOLDOUT_DIR)
     parser.add_argument("--known-x", type=Path, default=Path("known_X.csv"))
     parser.add_argument("--known-x-all", type=Path, default=Path("known_X_all_available_structures_simple.csv"))
-    parser.add_argument("--unknown-feature-table", type=Path, default=Path("merged_encoder/data/ions_unknown_merged.csv"))
+    parser.add_argument(
+        "--unknown-feature-table", type=Path, default=Path("merged_encoder/data/ions_unknown_merged.csv")
+    )
     parser.add_argument("--libs", type=str, default="305,209")
     parser.add_argument("--profiles", type=str, default="strict_1da,balanced")
     parser.add_argument("--scopes", type=str, default="x_control,hard_holdout")
@@ -1183,7 +1194,12 @@ def main() -> None:
         libs=libs,
         top_k=int(args.top_k),
     )
-    print(json.dumps({"run_root": generation["run_root"], "outputs": len(generation["outputs"]), "aggregate": aggregate}, indent=2))
+    print(
+        json.dumps(
+            {"run_root": generation["run_root"], "outputs": len(generation["outputs"]), "aggregate": aggregate},
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":

@@ -22,7 +22,14 @@ from structural_elucidation.evaluation.failure_modes import (
     pool_for_control,
 )
 from structural_elucidation.evaluation.candidate_pools import find_artifact, load_mass_tolerance, parse_lib_dir
-from structural_elucidation.utils.domain import dataframe_to_markdown, read_table, safe_float, safe_int, write_csv, write_json
+from structural_elucidation.utils.domain import (
+    dataframe_to_markdown,
+    read_table,
+    safe_float,
+    safe_int,
+    write_csv,
+    write_json,
+)
 
 
 def best_value(pool: pd.DataFrame, col: str, default: Any = "") -> Any:
@@ -216,16 +223,23 @@ def build_hard_x_gap(metrics: pd.DataFrame) -> pd.DataFrame:
                 "metric_scope": scope,
                 "x_mean_best_tanimoto": safe_float(x_row.get("mean_best_tanimoto"), 0.0),
                 "hard_mean_best_tanimoto": safe_float(hard_row.get("mean_best_tanimoto"), 0.0),
-                "hard_minus_x_mean": round(safe_float(hard_row.get("mean_best_tanimoto"), 0.0) - safe_float(x_row.get("mean_best_tanimoto"), 0.0), 4),
+                "hard_minus_x_mean": round(
+                    safe_float(hard_row.get("mean_best_tanimoto"), 0.0)
+                    - safe_float(x_row.get("mean_best_tanimoto"), 0.0),
+                    4,
+                ),
                 "x_ge07": safe_int(x_row.get("n_tanimoto_ge_0p7"), 0),
                 "hard_ge07": safe_int(hard_row.get("n_tanimoto_ge_0p7"), 0),
-                "hard_minus_x_ge07": safe_int(hard_row.get("n_tanimoto_ge_0p7"), 0) - safe_int(x_row.get("n_tanimoto_ge_0p7"), 0),
+                "hard_minus_x_ge07": safe_int(hard_row.get("n_tanimoto_ge_0p7"), 0)
+                - safe_int(x_row.get("n_tanimoto_ge_0p7"), 0),
             }
         )
     return pd.DataFrame(rows)
 
 
-def render_report(metrics: pd.DataFrame, deltas: pd.DataFrame, gap: pd.DataFrame, recommendations: dict[str, Any]) -> str:
+def render_report(
+    metrics: pd.DataFrame, deltas: pd.DataFrame, gap: pd.DataFrame, recommendations: dict[str, Any]
+) -> str:
     display_metrics = metrics[
         [
             col
@@ -279,7 +293,9 @@ def aggregate(
             controls = load_non_x_holdouts(hard_holdout_dir, int(lib_id), str(ion_mode))
             holdout_scope = "non_x_known"
         else:
-            controls = load_x_controls(known_x=known_x, known_x_all=known_x_all, lib_id=int(lib_id), ion_mode=str(ion_mode))
+            controls = load_x_controls(
+                known_x=known_x, known_x_all=known_x_all, lib_id=int(lib_id), ion_mode=str(ion_mode)
+            )
             holdout_scope = "x_control"
         metrics, per_control = evaluate_profile(
             profile_dir=profile_dir,
@@ -292,25 +308,29 @@ def aggregate(
         )
         metric_rows.extend(metrics)
         per_rows.extend(per_control)
-    metrics_df = pd.DataFrame(metric_rows).sort_values(["lib_id", "profile", "holdout_scope", "metric_scope"]) if metric_rows else pd.DataFrame()
+    metrics_df = (
+        pd.DataFrame(metric_rows).sort_values(["lib_id", "profile", "holdout_scope", "metric_scope"])
+        if metric_rows
+        else pd.DataFrame()
+    )
     per_df = pd.DataFrame(per_rows)
     deltas_df = build_deltas(metrics_df, load_baseline_metrics(ablation_root))
     gap_df = build_hard_x_gap(metrics_df)
-    accepted = deltas_df[deltas_df["acceptance_pass"].astype(bool)].to_dict(orient="records") if not deltas_df.empty else []
-    oracle_accepted = [
-        row for row in accepted if str(row.get("metric_scope")) == "full_pool_oracle"
-    ]
-    topk_accepted = [
-        row for row in accepted if str(row.get("metric_scope")) == "top10"
-    ]
+    accepted = (
+        deltas_df[deltas_df["acceptance_pass"].astype(bool)].to_dict(orient="records") if not deltas_df.empty else []
+    )
+    oracle_accepted = [row for row in accepted if str(row.get("metric_scope")) == "full_pool_oracle"]
+    topk_accepted = [row for row in accepted if str(row.get("metric_scope")) == "top10"]
     recommendations = {
         "accepted_rows": accepted,
         "next_branch": (
             "Analog full-pool oracle improved; evaluate reranking if top-10 did not also improve."
             if oracle_accepted and not topk_accepted
-            else "Analog top-10 cleared a gate; inspect retrieval-preserving delivery policies."
-            if topk_accepted
-            else "Analog did not clear X gates; keep retrieval authoritative and revisit X feature/domain representation."
+            else (
+                "Analog top-10 cleared a gate; inspect retrieval-preserving delivery policies."
+                if topk_accepted
+                else "Analog did not clear X gates; keep retrieval authoritative and revisit X feature/domain representation."
+            )
         ),
     }
     write_csv(out_dir / "x_domain_analog_v1_metrics.csv", metrics_df)
@@ -341,7 +361,9 @@ def aggregate(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, default=Path("models/denovo_x_domain_analog_v1"))
-    parser.add_argument("--run-root", type=Path, default=Path("models/denovo_x_domain_analog_v1/runs/retrieval_anchored_analog_v1"))
+    parser.add_argument(
+        "--run-root", type=Path, default=Path("models/denovo_x_domain_analog_v1/runs/retrieval_anchored_analog_v1")
+    )
     parser.add_argument("--ablation-root", type=Path, default=Path("models/decoder_ablation_experiments"))
     parser.add_argument("--hard-holdout-dir", type=Path, default=Path("models/denovo_x_domain_analog_v1/hard_holdouts"))
     parser.add_argument("--known-x", type=Path, default=Path("known_X.csv"))

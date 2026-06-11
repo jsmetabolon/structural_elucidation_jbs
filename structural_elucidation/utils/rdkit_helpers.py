@@ -2,8 +2,9 @@ from rdkit import Chem
 import numpy as np
 import pickle
 
+
 def check_smiles(smi):
-    """ 
+    """
     check if a given smiles is valid
     """
     mol = Chem.MolFromSmiles(smi)
@@ -12,13 +13,15 @@ def check_smiles(smi):
     else:
         return True
 
+
 def canonicalise_smiles(smi):
     """
-    return the canonical form of a given smiles 
+    return the canonical form of a given smiles
     """
     mol = Chem.MolFromSmiles(smi)
     canonical = Chem.MolToSmiles(mol, isomericSmiles=True)
     return canonical
+
 
 def get_species(mol):
     """
@@ -31,14 +34,15 @@ def get_species(mol):
         species.add(atom.GetSymbol())
     return species
 
-def spec2vec(spectrum,minmass,maxmass,resolution):
+
+def spec2vec(spectrum, minmass, maxmass, resolution):
     """
-    Convert a mass spectrum into a vector. Each bit in the vector corresponds to a discrete mass. 
+    Convert a mass spectrum into a vector. Each bit in the vector corresponds to a discrete mass.
     The value of each bit indicates the intensity for that mass.
-    Args: 
+    Args:
         spectrum: set of tuples (mass,intensity)
         minmass: minimum allowed mass
-        maxmass: maximum allowed mass 
+        maxmass: maximum allowed mass
         resolution: bins-per-Da discretization factor (e.g. 2 => 0.5 Da bins)
     Output:
         vector representation of spectrum - normalized by dividing with the max mass.
@@ -51,7 +55,7 @@ def spec2vec(spectrum,minmass,maxmass,resolution):
     if len(spectrum) == 0:
         return vec
     else:
-        for (mass,abund) in spectrum:
+        for mass, abund in spectrum:
             try:
                 mz = float(mass)
                 intensity = float(abund)
@@ -63,7 +67,7 @@ def spec2vec(spectrum,minmass,maxmass,resolution):
         max_val = float(np.max(vec)) if len(vec) else 0.0
         if max_val <= 0:
             return vec
-        return vec / max_val 
+        return vec / max_val
 
 
 def spec2tuples(spectrum):
@@ -76,11 +80,11 @@ def spec2tuples(spectrum):
     """
     tuples = set()
 
-    for peak in spectrum.split('\n'):
-        mass, abund, *c = peak.split(' ')
+    for peak in spectrum.split("\n"):
+        mass, abund, *c = peak.split(" ")
         mass = float(mass)
         abund = float(abund)
-        tuples.add((mass,abund))
+        tuples.add((mass, abund))
     return tuples
 
 
@@ -93,41 +97,43 @@ def spec2tuples_fromCSV(spectrum_file):
         set of tuples (mass, intensity)
     """
     tuples = set()
-    entries = open(spectrum_file).read().split('\n')
-    for i in range(0,len(entries)-1):
-        entry = entries[i].split(',')
+    entries = open(spectrum_file).read().split("\n")
+    for i in range(0, len(entries) - 1):
+        entry = entries[i].split(",")
         mass = float(entry[0])
         abund = float(entry[1])
-        tuples.add((mass,abund))
+        tuples.add((mass, abund))
     return tuples
+
 
 def remove_large(spectrum):
     remove = False
-    for (mass,abund) in spectrum:
+    for mass, abund in spectrum:
         mass = float(mass)
         if mass > 500:
-            remove=True
+            remove = True
     return remove
 
 
 def writeout_spec(spectrum, outfile):
-    writeout = open(outfile,'w')
+    writeout = open(outfile, "w")
     max_abund = 0
-    for peak in spectrum.split('\n'):
-        mass, abund, *c = peak.split(' ')
-        if float(abund)>max_abund:
+    for peak in spectrum.split("\n"):
+        mass, abund, *c = peak.split(" ")
+        if float(abund) > max_abund:
             max_abund = float(abund)
-    max_abund = round(max_abund,2)
+    max_abund = round(max_abund, 2)
     vec = np.zeros(197500)
-    for peak in spectrum.split('\n'):
-        mass, abund, *c = peak.split(' ')
+    for peak in spectrum.split("\n"):
+        mass, abund, *c = peak.split(" ")
         abund = float(abund)
-        rel_abund = abund/max_abund
-        #mass = round(float(mass),2)*100
-        #vec[int(mass)-2500] = rel_abund
-        writeout.write(mass + ', ' + str(rel_abund) + '\n')
+        rel_abund = abund / max_abund
+        # mass = round(float(mass),2)*100
+        # vec[int(mass)-2500] = rel_abund
+        writeout.write(mass + ", " + str(rel_abund) + "\n")
     writeout.close()
-    return 
+    return
+
 
 def min_max_mass(spectrum):
     """
@@ -137,39 +143,40 @@ def min_max_mass(spectrum):
     Output:
         a tuple (starting mass, ending mass)
     """
-    for peak in spectrum.split('\n'):
-        mass, abund, *c = peak.split(' ')
-        mass = round(float(mass),2)
+    for peak in spectrum.split("\n"):
+        mass, abund, *c = peak.split(" ")
+        mass = round(float(mass), 2)
         start = mass
         break
-    for peak in spectrum.split('\n'):
-        mass, abund, *c = peak.split(' ')
-        mass = round(float(mass),2)
+    for peak in spectrum.split("\n"):
+        mass, abund, *c = peak.split(" ")
+        mass = round(float(mass), 2)
     end = mass
-    return (start,end)
+    return (start, end)
+
 
 def create_valid(datafile, valid_size):
     validset = set()
-    lines = open(datafile).read().split('\n')
+    lines = open(datafile).read().split("\n")
     for smi in lines:
-        if len(validset)<valid_size:
+        if len(validset) < valid_size:
             validset.add(smi)
     return validset
-
 
 
 def save_obj(obj, filename):
     """
     save an object in a pkl file
     """
-    with open(filename + '.pkl', 'wb') as f:
+    with open(filename + ".pkl", "wb") as f:
         pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+
 
 def load_obj(filename):
     """
     load object from pkl file
     """
-    with open(filename + '.pkl', 'rb') as f:
+    with open(filename + ".pkl", "rb") as f:
         return pickle.load(f)
 
 
@@ -180,11 +187,12 @@ def writeout_smiles(filename, smiles_set):
         filename: output txt file directory
         smiles_set: set of smiles
     """
-    outfile = open(filename,'w')
+    outfile = open(filename, "w")
     for smiles in smiles_set:
-        outfile.write(smiles + '\n')
+        outfile.write(smiles + "\n")
     outfile.close()
     return
+
 
 def read_smiles(filename):
     """
@@ -192,26 +200,26 @@ def read_smiles(filename):
     Args: filename: txt file directory
     Output: set of smiles
     """
-    lines = open(filename).read().split('\n')
+    lines = open(filename).read().split("\n")
     smiles = set()
     for smi in lines:
         if check_smiles(smi):
             smiles.add(smi)
         else:
-            print('Problem with SMILES: ', smi)
-    return smiles 
+            print("Problem with SMILES: ", smi)
+    return smiles
+
 
 def save_csv(directory, data):
     """
-    save a numpy array into a csv file 
+    save a numpy array into a csv file
     Args:
         directory: outfile directory
         data: numpy array
     """
-    with open(directory,'wb') as f:
-        np.savetxt(f,data, fmt='%s', delimiter=',')
+    with open(directory, "wb") as f:
+        np.savetxt(f, data, fmt="%s", delimiter=",")
     return
-
 
 
 def normalize_smiles(smi, canonical, isomeric):
@@ -223,14 +231,16 @@ def normalize_smiles(smi, canonical, isomeric):
 
 
 def normalise_value(x, min_value, max_value):
-    return (x-min_value)/(max_value-min_value)
+    return (x - min_value) / (max_value - min_value)
+
 
 def retrieve_value(x, min_value, max_value):
-    return x*(max_value-min_value)+ min_value
+    return x * (max_value - min_value) + min_value
 
 
 class dotdict(dict):
     """dot.notation access to dictionary attributes"""
+
     __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__

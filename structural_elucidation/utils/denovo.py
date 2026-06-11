@@ -29,11 +29,6 @@ from structural_elucidation.utils.chemistry import (
 from structural_elucidation.utils.io import pick_col, read_table
 
 
-
-
-
-
-
 def adduct_vector(ion_mode: str) -> list[float]:
     mode = str(ion_mode or "").strip().lower()
     if mode.startswith("neg"):
@@ -63,9 +58,7 @@ def load_formula_feature_map(path: Path, key_candidates: list[str]) -> dict[str,
     df = read_table(Path(path))
     key_col = pick_col(df, key_candidates)
     if key_col is None:
-        raise KeyError(
-            f"Could not find any key column {key_candidates} in formula CSV {path}"
-        )
+        raise KeyError(f"Could not find any key column {key_candidates} in formula CSV {path}")
     out: dict[str, dict[str, Any]] = {}
     for _, row in df.iterrows():
         key = str(row.get(key_col, "")).strip()

@@ -96,15 +96,11 @@ def _remove_arg(argv: list[str], flag: str) -> tuple[list[str], str | None]:
 def _parse_ion_mode(argv: list[str]) -> str:
     mode = _extract_arg_value(argv, "--ion_mode")
     if mode is None:
-        raise ValueError(
-            "predict_merged.py requires --ion_mode (negative or positive)."
-        )
+        raise ValueError("predict_merged.py requires --ion_mode (negative or positive).")
     text = str(mode).strip().lower()
     if text in {"negative", "positive"}:
         return text
-    raise ValueError(
-        f"Unsupported --ion_mode value {mode!r}. Expected 'negative' or 'positive'."
-    )
+    raise ValueError(f"Unsupported --ion_mode value {mode!r}. Expected 'negative' or 'positive'.")
 
 
 def _load_table(path: Path) -> pd.DataFrame:
@@ -131,9 +127,7 @@ def _write_temp_filtered_feature_table(
 
     if lib_id is not None:
         if "lib_id" not in filtered.columns:
-            raise KeyError(
-                "--lib_id was provided but feature_table does not contain lib_id column."
-            )
+            raise KeyError("--lib_id was provided but feature_table does not contain lib_id column.")
         filtered["lib_id"] = pd.to_numeric(filtered["lib_id"], errors="coerce")
         filtered = filtered[filtered["lib_id"].eq(int(lib_id))].copy()
 
@@ -218,10 +212,7 @@ def _patched_load_encoder_checkpoint(
     if not isinstance(state, dict):
         raise RuntimeError(f"Expected state_dict in {ckpt_path}, got {type(state)}")
 
-    model_n_bins = int(
-        infer_mass_conditioned_compatible_length(state, preferred_length_in=n_bins)
-        or n_bins
-    )
+    model_n_bins = int(infer_mass_conditioned_compatible_length(state, preferred_length_in=n_bins) or n_bins)
 
     model = MergedNet1D(
         length_in=model_n_bins,
@@ -256,17 +247,14 @@ def _prepare_argv(argv: list[str]) -> list[str]:
     argv, decoder_model_name_pos = _remove_arg(argv, "--decoder_model_name_pos")
 
     if lib_id_raw is None:
-        raise ValueError(
-            "predict_merged.py requires --lib_id (one of 209, 305, 400, 402)."
-        )
+        raise ValueError("predict_merged.py requires --lib_id (one of 209, 305, 400, 402).")
     lib_id = int(lib_id_raw)
     expected_mode = _LIB_TO_MODE.get(int(lib_id))
     if expected_mode is None:
         raise ValueError("Unsupported lib_id. Expected one of 209, 305, 400, 402.")
     if str(ion_mode) != str(expected_mode):
         raise ValueError(
-            f"lib_id={lib_id} is mapped to ion_mode={expected_mode!r}, "
-            f"but --ion_mode was {ion_mode!r}."
+            f"lib_id={lib_id} is mapped to ion_mode={expected_mode!r}, " f"but --ion_mode was {ion_mode!r}."
         )
 
     global _ENCODER_DEFAULT_ION_MODE, _ENCODER_DEFAULT_LIB_IDX
@@ -277,9 +265,7 @@ def _prepare_argv(argv: list[str]) -> list[str]:
     _ENCODER_DEFAULT_LIB_IDX = int(lib_id_to_index(lib_id))
 
     selected_decoder_model_name = (
-        str(decoder_model_name_pos).strip()
-        if ion_mode == "positive"
-        else str(decoder_model_name_neg).strip()
+        str(decoder_model_name_pos).strip() if ion_mode == "positive" else str(decoder_model_name_neg).strip()
     )
     explicit_decoder_model_name = _extract_arg_value(argv, "--decoder_model_name")
     if selected_decoder_model_name:
@@ -347,9 +333,9 @@ def _prepare_argv(argv: list[str]) -> list[str]:
     )
     default_prevalence = _first_existing(
         [
-            REPO_ROOT / "SMILES_DB" / (
-                "fasstrecords_prevalence_pos.csv" if ion_mode == "positive" else "fasstrecords_prevalence_neg.csv"
-            ),
+            REPO_ROOT
+            / "SMILES_DB"
+            / ("fasstrecords_prevalence_pos.csv" if ion_mode == "positive" else "fasstrecords_prevalence_neg.csv"),
             REPO_ROOT / "SMILES_DB" / "fasstrecords_prevalence.csv",
         ]
     )
@@ -379,9 +365,7 @@ def _prepare_argv(argv: list[str]) -> list[str]:
 
     feature_table_raw = _extract_arg_value(argv, "--feature_table")
     feature_table_path = (
-        Path(feature_table_raw).expanduser().resolve()
-        if feature_table_raw is not None
-        else default_feature_table
+        Path(feature_table_raw).expanduser().resolve() if feature_table_raw is not None else default_feature_table
     )
 
     should_filter_features = feature_table_path is not None and feature_table_path.exists()

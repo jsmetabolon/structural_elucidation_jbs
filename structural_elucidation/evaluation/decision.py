@@ -29,7 +29,6 @@ from structural_elucidation.evaluation.controls import (
     tanimoto,
 )
 
-
 PROFILE_ORDER = ["strict_1da", "balanced", "coverage_explore"]
 THRESHOLDS = [0.5, 0.7, 0.9]
 METRIC_COLUMNS = [
@@ -226,7 +225,9 @@ def numeric_series(df: pd.DataFrame, col: str) -> pd.Series:
 
 def mass_coverage_row(ctx: LibContext, profile: str, profile_dir: Path, candidate_df: pd.DataFrame) -> Dict[str, Any]:
     abs_err = numeric_series(candidate_df, "abs_mass_error_da")
-    feature_keys = candidate_df["feature_key"].astype(str) if "feature_key" in candidate_df.columns else pd.Series(dtype=str)
+    feature_keys = (
+        candidate_df["feature_key"].astype(str) if "feature_key" in candidate_df.columns else pd.Series(dtype=str)
+    )
     row: Dict[str, Any] = {
         "lib_id": int(ctx.lib_id),
         "ion_mode": ctx.ion_mode,
@@ -265,7 +266,14 @@ def make_rank_maps(
 
     window_rank_map: Dict[Tuple[str, str], int] = {}
     all_score_rank_map: Dict[Tuple[str, str], int] = {}
-    required = {"feature_key", "predicted_smiles", "abs_mass_error_da", "mass_match_score", "generation_support_fraction", "mean_log_prob"}
+    required = {
+        "feature_key",
+        "predicted_smiles",
+        "abs_mass_error_da",
+        "mass_match_score",
+        "generation_support_fraction",
+        "mean_log_prob",
+    }
     if required.issubset(candidate_df.columns):
         ranked_window = rank_selfies_pool(candidate_df, tolerance_da=float(mass_tolerance_da))
         if not ranked_window.empty and "selfies_rank" in ranked_window.columns:
@@ -305,7 +313,11 @@ def evaluate_full_pool_oracle(
     denovo_path: Optional[Path],
     mass_tolerance_da: float,
 ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
-    if candidate_df.empty or "feature_key" not in candidate_df.columns or "predicted_smiles" not in candidate_df.columns:
+    if (
+        candidate_df.empty
+        or "feature_key" not in candidate_df.columns
+        or "predicted_smiles" not in candidate_df.columns
+    ):
         rows = [
             {
                 "lib_id": int(ctx.lib_id),
@@ -480,7 +492,11 @@ def collect_profile_metrics(
 
     profiles_root = ctx.lib_dir / "selfies_profiles"
     profile_names = [name for name in PROFILE_ORDER if (profiles_root / name).exists()]
-    profile_names.extend(sorted({p.name for p in profiles_root.iterdir() if p.is_dir()} - set(profile_names)) if profiles_root.exists() else [])
+    profile_names.extend(
+        sorted({p.name for p in profiles_root.iterdir() if p.is_dir()} - set(profile_names))
+        if profiles_root.exists()
+        else []
+    )
 
     for profile in profile_names:
         profile_dir = profiles_root / profile
@@ -620,8 +636,14 @@ def collect_policy_metrics(
 
 
 def selected_vs_augmented_row(ctx: LibContext, run_root: Path) -> Dict[str, Any]:
-    selected = ctx.manifest.get("selected_delivery", {}) if isinstance(ctx.manifest.get("selected_delivery"), dict) else {}
-    augmented = ctx.manifest.get("denovo_augmented_delivery", {}) if isinstance(ctx.manifest.get("denovo_augmented_delivery"), dict) else {}
+    selected = (
+        ctx.manifest.get("selected_delivery", {}) if isinstance(ctx.manifest.get("selected_delivery"), dict) else {}
+    )
+    augmented = (
+        ctx.manifest.get("denovo_augmented_delivery", {})
+        if isinstance(ctx.manifest.get("denovo_augmented_delivery"), dict)
+        else {}
+    )
     selected_path = existing_path(selected.get("merged_predictions_csv"), run_root)
     augmented_path = existing_path(augmented.get("csv"), run_root)
 
@@ -640,8 +662,12 @@ def selected_vs_augmented_row(ctx: LibContext, run_root: Path) -> Dict[str, Any]
     if selected_path is not None and selected_path.exists():
         selected_df = pd.read_csv(selected_path)
         row["selected_rows"] = int(selected_df.shape[0])
-        row["selected_features"] = int(selected_df["feature_key"].astype(str).nunique()) if "feature_key" in selected_df.columns else 0
-        row["selected_track_counts"] = json.dumps(selected_df.get("track", pd.Series(dtype=str)).astype(str).value_counts().to_dict(), sort_keys=True)
+        row["selected_features"] = (
+            int(selected_df["feature_key"].astype(str).nunique()) if "feature_key" in selected_df.columns else 0
+        )
+        row["selected_track_counts"] = json.dumps(
+            selected_df.get("track", pd.Series(dtype=str)).astype(str).value_counts().to_dict(), sort_keys=True
+        )
     else:
         row["selected_rows"] = 0
         row["selected_features"] = 0
@@ -649,9 +675,15 @@ def selected_vs_augmented_row(ctx: LibContext, run_root: Path) -> Dict[str, Any]
     if augmented_path is not None and augmented_path.exists():
         aug_df = pd.read_csv(augmented_path)
         row["augmented_rows"] = int(aug_df.shape[0])
-        row["augmented_features"] = int(aug_df["feature_key"].astype(str).nunique()) if "feature_key" in aug_df.columns else 0
-        row["augmented_track_counts"] = json.dumps(aug_df.get("track", pd.Series(dtype=str)).astype(str).value_counts().to_dict(), sort_keys=True)
-        row["augmented_profile_counts"] = json.dumps(aug_df.get("source_profile", pd.Series(dtype=str)).astype(str).value_counts().to_dict(), sort_keys=True)
+        row["augmented_features"] = (
+            int(aug_df["feature_key"].astype(str).nunique()) if "feature_key" in aug_df.columns else 0
+        )
+        row["augmented_track_counts"] = json.dumps(
+            aug_df.get("track", pd.Series(dtype=str)).astype(str).value_counts().to_dict(), sort_keys=True
+        )
+        row["augmented_profile_counts"] = json.dumps(
+            aug_df.get("source_profile", pd.Series(dtype=str)).astype(str).value_counts().to_dict(), sort_keys=True
+        )
     else:
         row["augmented_rows"] = 0
         row["augmented_features"] = 0
@@ -794,7 +826,15 @@ def write_markdown_report(
     if selected_df.empty:
         lines.append("No selected delivery rows found.")
     else:
-        cols = ["lib_id", "ion_mode", "selected_lane", "selected_policy", "selected_reason", "selected_rows", "augmented_rows"]
+        cols = [
+            "lib_id",
+            "ion_mode",
+            "selected_lane",
+            "selected_policy",
+            "selected_reason",
+            "selected_rows",
+            "augmented_rows",
+        ]
         lines.append(dataframe_to_markdown(selected_df[cols]))
     lines.append("")
 
@@ -842,10 +882,27 @@ def write_markdown_report(
 
     lines.append("## Scope And Latent Checks")
     if not feature_scope_df.empty:
-        lines.append(dataframe_to_markdown(feature_scope_df[["lib_id", "ion_mode", "expected_features", "output_features", "feature_scope_ok"]]))
+        lines.append(
+            dataframe_to_markdown(
+                feature_scope_df[["lib_id", "ion_mode", "expected_features", "output_features", "feature_scope_ok"]]
+            )
+        )
     if not latent_df.empty:
         lines.append("")
-        lines.append(dataframe_to_markdown(latent_df[["lib_id", "ion_mode", "status", "matched_retrieval_neighbor_count", "rank1_feature_cosine_mean", "calibrated_transform_required_for_delivery"]]))
+        lines.append(
+            dataframe_to_markdown(
+                latent_df[
+                    [
+                        "lib_id",
+                        "ion_mode",
+                        "status",
+                        "matched_retrieval_neighbor_count",
+                        "rank1_feature_cosine_mean",
+                        "calibrated_transform_required_for_delivery",
+                    ]
+                ]
+            )
+        )
     lines.append("")
 
     lines.append("## Next Work")
@@ -939,7 +996,9 @@ def build_decision_package(
     latent_df = pd.DataFrame(latent_rows)
 
     if not metrics_df.empty:
-        metrics_df = metrics_df.reindex(columns=[*METRIC_COLUMNS, *[c for c in metrics_df.columns if c not in METRIC_COLUMNS]])
+        metrics_df = metrics_df.reindex(
+            columns=[*METRIC_COLUMNS, *[c for c in metrics_df.columns if c not in METRIC_COLUMNS]]
+        )
     metrics_df.to_csv(output_dir / "quality_metrics_by_scope.csv", index=False)
     policy_df.to_csv(output_dir / "policy_metrics_by_scope.csv", index=False)
     per_control_df.to_csv(output_dir / "selected_output_per_control_metrics.csv", index=False)
@@ -998,14 +1057,18 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-root", required=True, type=Path, help="Completed merged run artifact root.")
     parser.add_argument("--known-x", required=True, type=Path, help="known_X.csv path.")
-    parser.add_argument("--known-x-all", required=True, type=Path, help="known_X_all_available_structures_simple.csv path.")
+    parser.add_argument(
+        "--known-x-all", required=True, type=Path, help="known_X_all_available_structures_simple.csv path."
+    )
     parser.add_argument(
         "--output-dir",
         type=Path,
         default=None,
         help="Output directory. Defaults to <run-root>/post_run_decision_package.",
     )
-    parser.add_argument("--top-k", type=int, default=10, help="Selected-output top-k scope to compare with rank-1 and oracle.")
+    parser.add_argument(
+        "--top-k", type=int, default=10, help="Selected-output top-k scope to compare with rank-1 and oracle."
+    )
     return parser.parse_args()
 
 

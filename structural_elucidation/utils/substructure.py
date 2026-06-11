@@ -286,7 +286,11 @@ def compute_structural_neighbor_scores(
     )
     consensus_mol = Chem.MolFromSmarts(consensus_smarts) if consensus_smarts else None
     consensus_top_match_count = (
-        sum(1 for mol in top_mols if mol is not None and consensus_mol is not None and mol.HasSubstructMatch(consensus_mol))
+        sum(
+            1
+            for mol in top_mols
+            if mol is not None and consensus_mol is not None and mol.HasSubstructMatch(consensus_mol)
+        )
         if consensus_mol is not None
         else 0
     )
@@ -405,8 +409,7 @@ def run_substructure_query(
     catalog_df["smiles"] = catalog_df[smiles_col].astype(str).str.strip()
     catalog_df = catalog_df.dropna(subset=["comp_id"]).copy()
     catalog_lookup = {
-        int(row.comp_id): str(row.smiles)
-        for row in catalog_df[["comp_id", "smiles"]].itertuples(index=False)
+        int(row.comp_id): str(row.smiles) for row in catalog_df[["comp_id", "smiles"]].itertuples(index=False)
     }
 
     fp_index = load_fingerprint_index(fingerprint_index_path)
@@ -417,9 +420,7 @@ def run_substructure_query(
             continue
         pattern_bin = decode_fp_binary(record.get("pattern_fp_binary"))
         pattern_fp = (
-            DataStructs.CreateFromBinaryText(pattern_bin)
-            if pattern_bin is not None
-            else pattern_fp_from_smiles(smiles)
+            DataStructs.CreateFromBinaryText(pattern_bin) if pattern_bin is not None else pattern_fp_from_smiles(smiles)
         )
         if pattern_fp is None:
             continue
@@ -430,9 +431,7 @@ def run_substructure_query(
             continue
         morgan_bin = decode_fp_binary(record.get("morgan_fp_binary"))
         morgan_fp = (
-            DataStructs.CreateFromBinaryText(morgan_bin)
-            if morgan_bin is not None
-            else morgan_fp_from_smiles(smiles)
+            DataStructs.CreateFromBinaryText(morgan_bin) if morgan_bin is not None else morgan_fp_from_smiles(smiles)
         )
         tanimoto = 0.0
         if query_morgan_fp is not None and morgan_fp is not None:
@@ -482,8 +481,7 @@ def run_tanimoto_query(
     catalog_df["smiles"] = catalog_df[smiles_col].astype(str).str.strip()
     catalog_df = catalog_df.dropna(subset=["comp_id"]).copy()
     catalog_lookup = {
-        int(row.comp_id): str(row.smiles)
-        for row in catalog_df[["comp_id", "smiles"]].itertuples(index=False)
+        int(row.comp_id): str(row.smiles) for row in catalog_df[["comp_id", "smiles"]].itertuples(index=False)
     }
 
     fp_index = load_fingerprint_index(fingerprint_index_path)
@@ -493,11 +491,7 @@ def run_tanimoto_query(
         if not smiles:
             continue
         morgan_bin = decode_fp_binary(record.get("morgan_fp_binary"))
-        fp = (
-            DataStructs.CreateFromBinaryText(morgan_bin)
-            if morgan_bin is not None
-            else morgan_fp_from_smiles(smiles)
-        )
+        fp = DataStructs.CreateFromBinaryText(morgan_bin) if morgan_bin is not None else morgan_fp_from_smiles(smiles)
         if fp is None:
             continue
         tanimoto = float(DataStructs.TanimotoSimilarity(query_fp, fp))

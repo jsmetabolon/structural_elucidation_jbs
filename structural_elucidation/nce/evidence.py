@@ -364,7 +364,9 @@ def motif_labels_for_legacy_fragment(fragment: Any) -> tuple[str, ...]:
 
 
 @lru_cache(maxsize=100_000)
-def candidate_fragment_bins(smiles: str, lib_id: int, ppm: float = MASS_BIN_PPM) -> tuple[tuple[int, ...], tuple[int, ...]]:
+def candidate_fragment_bins(
+    smiles: str, lib_id: int, ppm: float = MASS_BIN_PPM
+) -> tuple[tuple[int, ...], tuple[int, ...]]:
     if not HAS_RDKIT or Chem is None:
         return (tuple(), tuple())
     mol = Chem.MolFromSmiles(str(smiles or ""))
@@ -401,7 +403,9 @@ def overlap_score(left: Iterable[Any], right: Iterable[Any]) -> float:
     return float(np.clip(overlap / max(denom, 1.0), 0.0, 1.0))
 
 
-def forward_spectrum_score(candidate_smiles: Any, observed_ion_bins: Iterable[Any], observed_loss_bins: Iterable[Any], lib_id: int) -> float:
+def forward_spectrum_score(
+    candidate_smiles: Any, observed_ion_bins: Iterable[Any], observed_loss_bins: Iterable[Any], lib_id: int
+) -> float:
     frag_bins, loss_bins = candidate_fragment_bins(str(candidate_smiles or ""), int(lib_id))
     ion_score = overlap_score(frag_bins, observed_ion_bins)
     loss_score = overlap_score(loss_bins, observed_loss_bins)
@@ -411,7 +415,13 @@ def forward_spectrum_score(candidate_smiles: Any, observed_ion_bins: Iterable[An
 def legacy_ms2smiles_summary(path: Path) -> pd.DataFrame:
     if not path.exists():
         return pd.DataFrame(
-            columns=["comp_id", "legacy_motif_count", "legacy_top_motif", "legacy_motifs_json", "legacy_mean_probability"]
+            columns=[
+                "comp_id",
+                "legacy_motif_count",
+                "legacy_top_motif",
+                "legacy_motifs_json",
+                "legacy_mean_probability",
+            ]
         )
     df = read_table(path)
     comp_col = pick_col(df, ["comp_id", "CompID", "compound_id"])

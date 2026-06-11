@@ -18,7 +18,6 @@ import numpy as np
 import pandas as pd
 import structural_elucidation.utils.merge as merge_policy
 
-
 CORE_POLICY_ORDER = [
     "retrieval_only",
     "selfies_only_5da",
@@ -132,8 +131,8 @@ def rank_selfies_pool(candidate_metrics_df: pd.DataFrame, tolerance_da: float) -
     )
     pool["normalized_merge_score"] = normalize_score(pool["selfies_score"])
     pool["abs_mass_error_da"] = pd.to_numeric(pool["abs_mass_error_da"], errors="coerce").fillna(np.inf)
-    pool["generation_support_fraction"] = (
-        pd.to_numeric(pool["generation_support_fraction"], errors="coerce").fillna(0.0)
+    pool["generation_support_fraction"] = pd.to_numeric(pool["generation_support_fraction"], errors="coerce").fillna(
+        0.0
     )
     pool["predicted_smiles"] = pool["predicted_smiles"].astype(str)
 
@@ -396,9 +395,9 @@ def build_policy_selfies_only(
     selfies_merge_df: pd.DataFrame,
 ) -> pd.DataFrame:
     chunks: List[pd.DataFrame] = []
-    grouped = selfies_merge_df.sort_values(
-        ["feature_key", "source_rank", "smiles"], kind="mergesort"
-    ).groupby("feature_key", sort=False)
+    grouped = selfies_merge_df.sort_values(["feature_key", "source_rank", "smiles"], kind="mergesort").groupby(
+        "feature_key", sort=False
+    )
     for feature_key in feature_keys:
         part = grouped.get_group(feature_key).copy() if feature_key in grouped.groups else pd.DataFrame()
         if not part.empty:
@@ -623,9 +622,7 @@ def ensure_track_metric_summary(
     print("Generating missing baseline control eval:", " ".join(cmd))
     completed = subprocess.run(cmd, check=False)
     if completed.returncode != 0:
-        raise RuntimeError(
-            f"Baseline control eval failed for {prediction_dir} with code {completed.returncode}"
-        )
+        raise RuntimeError(f"Baseline control eval failed for {prediction_dir} with code {completed.returncode}")
     if not summary_json_path.exists():
         raise FileNotFoundError(f"Expected baseline control eval summary at {summary_json_path}")
     return summary_json_path
@@ -662,8 +659,7 @@ def build_comparison_payload(
         return (
             int(metric.get("n_controls_covered", 0)) >= int(PROMOTION_GATES["min_n_controls_covered"])
             and float(metric.get("mean_best_tanimoto", 0.0)) >= float(PROMOTION_GATES["min_mean_best_tanimoto"])
-            and int(metric.get("n_topk_tanimoto_ge_0.7", 0))
-            >= int(PROMOTION_GATES["min_n_topk_tanimoto_ge_0p7"])
+            and int(metric.get("n_topk_tanimoto_ge_0.7", 0)) >= int(PROMOTION_GATES["min_n_topk_tanimoto_ge_0p7"])
         )
 
     keep_selfies_track = passes_keep_gates(winner_blend)
@@ -730,9 +726,7 @@ def build_known_x_hitmax_reference_payload(
     winning_blend = policy_metric_by_name(comparison_payload, lane_policy_name) if lane_policy_name else {}
     if not winning_blend:
         winning_blend = dict((comparison_payload.get("decision") or {}).get("winning_blend_policy") or {})
-    coverage_reference = dict(
-        ((coverage_reference_payload.get("current_winner") or {}).get("merged")) or {}
-    )
+    coverage_reference = dict(((coverage_reference_payload.get("current_winner") or {}).get("merged")) or {})
     pin_high_cap_candidate = policy_metric_by_name(comparison_payload, HITMAX_REFERENCE_COVERAGE_POLICY)
 
     hitmax_gate_pass = bool(
@@ -754,8 +748,7 @@ def build_known_x_hitmax_reference_payload(
             > float(coverage_reference.get("mean_best_tanimoto", 0.0))
             or int(pin_high_cap_candidate.get("n_topk_tanimoto_ge_0.7", 0))
             > int(coverage_reference.get("n_topk_tanimoto_ge_0.7", 0))
-            or int(pin_high_cap_candidate.get("n_exact_match", 0))
-            > int(coverage_reference.get("n_exact_match", 0))
+            or int(pin_high_cap_candidate.get("n_exact_match", 0)) > int(coverage_reference.get("n_exact_match", 0))
         )
     )
 
@@ -1101,9 +1094,7 @@ def main() -> None:
         ranked_with_marks.to_csv(ranked_csv, index=False)
 
         merged_df = to_merged_predictions_csv_schema(ranked_with_marks, topk=int(args.top_k))
-        merged_csv = policy_dir / artifact_filename(
-            artifact_prefix, "merged_predictions", ".csv"
-        )
+        merged_csv = policy_dir / artifact_filename(artifact_prefix, "merged_predictions", ".csv")
         merged_df.to_csv(merged_csv, index=False)
         merged_df.to_csv(policy_dir / "merged_predictions.csv", index=False)
         print(f"  Ranked rows: {len(ranked_with_marks)}")

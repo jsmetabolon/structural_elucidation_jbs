@@ -104,11 +104,7 @@ def vectorize_processed_peaks(
             "dropped_out_of_range_peak_fraction": 0.0,
         }
 
-    in_range = [
-        (mz, intensity)
-        for mz, intensity in peaks
-        if float(minmass) <= float(mz) <= float(maxmass)
-    ]
+    in_range = [(mz, intensity) for mz, intensity in peaks if float(minmass) <= float(mz) <= float(maxmass)]
     n_out_of_range = int(len(peaks) - len(in_range))
     dropped_fraction = float(n_out_of_range / max(len(peaks), 1))
     if not in_range:
@@ -164,12 +160,8 @@ def preprocess_and_vectorize(
     result["peaks"] = list(vectorized["peaks"])
     result["vector"] = vectorized["vector"]
     result["n_vectorized_peaks"] = int(vectorized["n_vectorized_peaks"])
-    result["n_out_of_range_retained_peaks"] = int(
-        vectorized["n_out_of_range_retained_peaks"]
-    )
-    result["dropped_out_of_range_peak_fraction"] = float(
-        vectorized["dropped_out_of_range_peak_fraction"]
-    )
+    result["n_out_of_range_retained_peaks"] = int(vectorized["n_out_of_range_retained_peaks"])
+    result["dropped_out_of_range_peak_fraction"] = float(vectorized["dropped_out_of_range_peak_fraction"])
     return result
 
 

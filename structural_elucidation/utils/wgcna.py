@@ -11,7 +11,6 @@ import pandas as pd
 
 from structural_elucidation.paths import REPO_ROOT
 
-
 CACHE_ROOT = REPO_ROOT / "data" / "wgcna_cache"
 
 COHORT_INPUTS: dict[str, dict[str, Any]] = {
@@ -99,7 +98,9 @@ def _normalize_type(row: pd.Series) -> str:
     raw = str(row.get("TYPE", "") or "").strip().upper()
     if raw:
         return raw
-    control_id = normalize_control_id(_first_present(row, ["PLOT_NAME", "CHEMICAL_NAME", "COMMENTS", "PUTATIVE_DETAILS"]))
+    control_id = normalize_control_id(
+        _first_present(row, ["PLOT_NAME", "CHEMICAL_NAME", "COMMENTS", "PUTATIVE_DETAILS"])
+    )
     return "UNNAMED" if control_id else "NAMED"
 
 
@@ -212,7 +213,9 @@ def load_putative_details(cohort: str) -> pd.DataFrame:
                 "putative_details": str(text),
             }
         )
-    return pd.DataFrame(rows, columns=["cohort", "chro_lib_entry_id", "chem_id", "plot_name", "control_id", "putative_details"])
+    return pd.DataFrame(
+        rows, columns=["cohort", "chro_lib_entry_id", "chem_id", "plot_name", "control_id", "putative_details"]
+    )
 
 
 def all_cohorts() -> list[str]:

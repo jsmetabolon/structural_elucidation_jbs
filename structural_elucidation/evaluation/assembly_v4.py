@@ -21,7 +21,12 @@ import pandas as pd
 from structural_elucidation.paths import REPO_ROOT, resolve
 
 import structural_elucidation.evaluation.assembly_v1 as v1
-from structural_elucidation.utils.denovo import exact_mass_from_smiles, formula_from_smiles, inchikey_from_smiles, read_table
+from structural_elucidation.utils.denovo import (
+    exact_mass_from_smiles,
+    formula_from_smiles,
+    inchikey_from_smiles,
+    read_table,
+)
 from structural_elucidation.evaluation.controls import HAS_RDKIT
 from structural_elucidation.evaluation.failure_modes import load_x_controls
 from structural_elucidation.evaluation.analog import (
@@ -80,7 +85,6 @@ def parse_targets(text: str) -> tuple[list[int], list[str]]:
         if profile and profile not in profiles:
             profiles.append(profile)
     return libs, profiles
-
 
 
 def load_failure_map(path: Path) -> dict[tuple[str, int, str, str], str]:
@@ -328,7 +332,9 @@ def generate_for_anchor_v4(
     anchor_mass = safe_float(exact_mass_from_smiles(anchor_smiles), math.nan)
     anchor_abs_err = safe_float(mass_match(anchor_mass, parent_mz, ion_mode).get("abs_mass_error_da"), math.inf)
     if anchor_abs_err <= max(float(tolerance_da) * 2.0, 2.0) or should_focus_mass(failure_bucket):
-        for smiles in v1.selfies_mutation_candidates(anchor_smiles, token_pool, limit=max(30, int(per_anchor_limit) // 3)):
+        for smiles in v1.selfies_mutation_candidates(
+            anchor_smiles, token_pool, limit=max(30, int(per_anchor_limit) // 3)
+        ):
             generated[smiles].add("selfies_seed_mutation_after_mass_seed")
     merge_generated(
         generated,
@@ -470,11 +476,15 @@ def score_generated_candidates_v4(
     )
     anchor_smiles_seen = {str(anchor.get("anchor_smiles", "")) for anchor in anchors}
     anchors = list(anchors) + [
-        seed for seed in seed_anchors if str(seed.get("anchor_smiles", "")) and str(seed.get("anchor_smiles", "")) not in anchor_smiles_seen
+        seed
+        for seed in seed_anchors
+        if str(seed.get("anchor_smiles", "")) and str(seed.get("anchor_smiles", "")) not in anchor_smiles_seen
     ]
     db_fps = list(candidate_source[candidate_source["lib_id"].astype(int).eq(lib_id)]["fp"])
     anchor_fps = [anchor.get("anchor_fp") for anchor in anchors if anchor.get("anchor_fp") is not None]
-    anchor_formulas = {str(anchor.get("anchor_formula", "")) for anchor in anchors if str(anchor.get("anchor_formula", ""))}
+    anchor_formulas = {
+        str(anchor.get("anchor_formula", "")) for anchor in anchors if str(anchor.get("anchor_formula", ""))
+    }
     fragment_limit = 40 if should_expand_fragments(failure_bucket) else 24
     fragment_source_smiles = v1.select_fragment_source_smiles(
         candidate_source=candidate_source,
@@ -609,7 +619,12 @@ def score_generated_candidates_v4(
             "exact_known_structure": False,
             **components,
         }
-        structure_rows.append({**payload, "structure_only_reason": "profile_mass_pass" if abs_err <= float(tolerance) else "mass_incompatible"})
+        structure_rows.append(
+            {
+                **payload,
+                "structure_only_reason": "profile_mass_pass" if abs_err <= float(tolerance) else "mass_incompatible",
+            }
+        )
         novelty_rows[-1]["abs_mass_error_da"] = abs_err
         novelty_rows[-1]["profile_mass_pass"] = bool(abs_err <= float(tolerance))
         novelty_rows[-1]["strict_1da_pass"] = bool(abs_err <= 1.0)
@@ -693,7 +708,9 @@ def build_denovo_report(candidate_df: pd.DataFrame, *, variant: str, top_k: int)
             payload["rank"] = int(rank)
             payload["candidate_file_rank"] = int(rank)
             payload["score_variant"] = str(variant)
-            payload["assembly_score"] = safe_float(payload.get(f"{variant}_score"), safe_float(payload.get("assembly_score"), 0.0))
+            payload["assembly_score"] = safe_float(
+                payload.get(f"{variant}_score"), safe_float(payload.get("assembly_score"), 0.0)
+            )
             payload["mean_log_prob"] = payload["assembly_score"]
             payload["feature_label"] = str(feature_key)
             payload["is_valid"] = True
@@ -726,7 +743,9 @@ def write_profile_outputs_v4(
                 payload["rank"] = int(rank)
                 payload["candidate_file_rank"] = int(rank)
                 payload["score_variant"] = default_variant
-                payload["assembly_score"] = safe_float(payload.get(f"{default_variant}_score"), safe_float(payload.get("assembly_score"), 0.0))
+                payload["assembly_score"] = safe_float(
+                    payload.get(f"{default_variant}_score"), safe_float(payload.get("assembly_score"), 0.0)
+                )
                 payload["mean_log_prob"] = payload["assembly_score"]
                 ranked_rows.append(payload)
         candidate_df = pd.DataFrame(ranked_rows)
@@ -771,8 +790,21 @@ def write_profile_outputs_v4(
         "n_features_with_candidates": int(candidate_df["feature_key"].nunique()) if not candidate_df.empty else 0,
         "n_features_with_denovo_rows": int(denovo_df["feature_key"].nunique()) if not denovo_df.empty else 0,
         "n_novelty_rows_considered": int(novelty_df.shape[0]),
-        "n_exact_known_rejected": int(novelty_df["exact_known_structure_rejected"].sum()) if not novelty_df.empty and "exact_known_structure_rejected" in novelty_df.columns else 0,
-        "n_mass_incompatible_rejected": int(novelty_df.get("rejected_reason", pd.Series(dtype=str)).astype(str).eq("mass_incompatible_for_profile").sum()) if not novelty_df.empty else 0,
+        "n_exact_known_rejected": (
+            int(novelty_df["exact_known_structure_rejected"].sum())
+            if not novelty_df.empty and "exact_known_structure_rejected" in novelty_df.columns
+            else 0
+        ),
+        "n_mass_incompatible_rejected": (
+            int(
+                novelty_df.get("rejected_reason", pd.Series(dtype=str))
+                .astype(str)
+                .eq("mass_incompatible_for_profile")
+                .sum()
+            )
+            if not novelty_df.empty
+            else 0
+        ),
         "outputs": {**outputs, "ranking_variant_denovo_reports": variant_outputs},
     }
     write_json(Path(outputs["summary_json"]), summary)
@@ -837,7 +869,9 @@ def run_denovo_assembly_v4(
         if "x_control" in scopes and not x_targets.empty:
             scoped_targets.append(("x_control", x_targets[x_targets["lib_id"].astype("Int64").eq(int(lib_id))].copy()))
         if "hard_holdout" in scopes and not hard_targets.empty:
-            scoped_targets.append(("hard_holdout", hard_targets[hard_targets["lib_id"].astype("Int64").eq(int(lib_id))].copy()))
+            scoped_targets.append(
+                ("hard_holdout", hard_targets[hard_targets["lib_id"].astype("Int64").eq(int(lib_id))].copy())
+            )
         for scope, targets in scoped_targets:
             if targets.empty:
                 continue
@@ -926,7 +960,10 @@ def v4_acceptance(metrics: pd.DataFrame) -> dict[str, Any]:
     if assembly.empty:
         assembly = metrics[metrics.get("track", pd.Series(dtype=str)).astype(str).eq("novel_denovo_assembly")].copy()
     for _, row in assembly.iterrows():
-        if str(row.get("holdout_scope")) != "x_control" or str(row.get("metric_scope")) not in {"physical_full_pool_oracle", "top10"}:
+        if str(row.get("holdout_scope")) != "x_control" or str(row.get("metric_scope")) not in {
+            "physical_full_pool_oracle",
+            "top10",
+        }:
             continue
         lib_id = safe_int(row.get("lib_id"), -1)
         profile = str(row.get("base_profile", "") or row.get("profile", ""))
@@ -1027,7 +1064,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--failure-audit-csv", type=Path, default=DEFAULT_FAILURE_AUDIT)
     parser.add_argument("--known-x", type=Path, default=Path("known_X.csv"))
     parser.add_argument("--known-x-all", type=Path, default=Path("known_X_all_available_structures_simple.csv"))
-    parser.add_argument("--unknown-feature-table", type=Path, default=Path("merged_encoder/data/ions_unknown_merged.csv"))
+    parser.add_argument(
+        "--unknown-feature-table", type=Path, default=Path("merged_encoder/data/ions_unknown_merged.csv")
+    )
     parser.add_argument("--targets", type=str, default="")
     parser.add_argument("--libs", type=str, default="305,209")
     parser.add_argument("--profiles", type=str, default="strict_1da,balanced")

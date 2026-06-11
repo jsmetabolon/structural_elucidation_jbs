@@ -8,10 +8,7 @@ from typing import Iterable
 
 from bs4 import BeautifulSoup
 
-
-INLINE_FORMULA_RE = re.compile(
-    r"(?<![A-Za-z0-9])((?:[A-Z][a-z]?\d*){2,}(?:[+-]\d*)?)(?![A-Za-z0-9])"
-)
+INLINE_FORMULA_RE = re.compile(r"(?<![A-Za-z0-9])((?:[A-Z][a-z]?\d*){2,}(?:[+-]\d*)?)(?![A-Za-z0-9])")
 FORMULA_TOKEN_RE = re.compile(r"([A-Z][a-z]?)(\d*)")
 VALID_ELEMENTS = {
     "Ac",
@@ -580,9 +577,7 @@ def audit_candidate_formula_against_html_signals(
         if ratio_scores:
             ratio_score_value = float(sum(ratio_scores) / len(ratio_scores))
             audit_status = (
-                "ratio_supported"
-                if ratio_score_value >= float(ratio_supported_min_score)
-                else "ratio_mismatch"
+                "ratio_supported" if ratio_score_value >= float(ratio_supported_min_score) else "ratio_mismatch"
             )
         else:
             audit_status = "no_signal"
@@ -797,7 +792,8 @@ def parse_html_signals(
             rows = [
                 row
                 for row in rows
-                if any(normalize_text(row.get(key)) for key in ("buddy", "feature")) or row.get("inferred_m") is not None
+                if any(normalize_text(row.get(key)) for key in ("buddy", "feature"))
+                or row.get("inferred_m") is not None
             ]
         elif kind == "candidate_formula":
             rows = [row for row in rows if normalize_formula(row.get("neutral")) is not None]
@@ -811,13 +807,15 @@ def parse_html_signals(
             rows = [
                 row
                 for row in rows
-                if any(normalize_text(row.get(key)) for key in ("name", "mol_formula")) or row.get("comp_id") is not None
+                if any(normalize_text(row.get(key)) for key in ("name", "mol_formula"))
+                or row.get("comp_id") is not None
             ]
         elif kind == "parent_mass_matches":
             rows = [
                 row
                 for row in rows
-                if any(normalize_text(row.get(key)) for key in ("name", "formula")) or row.get("parent_mass") is not None
+                if any(normalize_text(row.get(key)) for key in ("name", "formula"))
+                or row.get("parent_mass") is not None
             ]
         elif kind == "candidate_isotopes":
             rows = [
@@ -829,9 +827,7 @@ def parse_html_signals(
 
     comment_texts = extract_comments_block(html)
     comment_formulas = unique_formulas(
-        formula
-        for comment in comment_texts
-        for formula in extract_inline_formulas(comment)
+        formula for comment in comment_texts for formula in extract_inline_formulas(comment)
     )
 
     inferred_rows = tables.get("inferred_mass_matches", [])
@@ -880,18 +876,14 @@ def parse_html_signals(
     observed_isotope_rows = [
         normalized
         for normalized in (
-            normalize_observed_isotope_row(row, source_table="candidate_isotopes")
-            for row in candidate_isotope_rows
+            normalize_observed_isotope_row(row, source_table="candidate_isotopes") for row in candidate_isotope_rows
         )
         if normalized is not None
     ]
     if not observed_isotope_rows:
         observed_isotope_rows = [
             normalized
-            for normalized in (
-                normalize_observed_isotope_row(row, source_table="buddy")
-                for row in buddy_rows
-            )
+            for normalized in (normalize_observed_isotope_row(row, source_table="buddy") for row in buddy_rows)
             if normalized is not None
         ]
 
@@ -911,10 +903,7 @@ def parse_html_signals(
     ]
 
     feature_level_formula_set = unique_formulas(
-        list(comment_formulas)
-        + inferred_x_formulas
-        + mass_library_x_formulas
-        + parent_mass_x_formulas
+        list(comment_formulas) + inferred_x_formulas + mass_library_x_formulas + parent_mass_x_formulas
     )
     candidate_level_formula_set = unique_formulas(
         candidate_formulas + inferred_formulas + mass_library_formulas + parent_mass_formulas

@@ -40,7 +40,6 @@ from structural_elucidation.evaluation.candidate_pools import (
     load_mass_tolerance,
 )
 
-
 GOOD_TANIMOTO = 0.7
 _UNCHARGER = rdMolStandardize.Uncharger() if rdMolStandardize is not None else None
 
@@ -160,7 +159,9 @@ def pool_for_control(pool: pd.DataFrame, control: AuditControl) -> pd.DataFrame:
     if control.holdout_scope == "x_control":
         return pool[pool["_xid"].astype(str).eq(str(control.match_key))].copy()
     comp_mask = pool["_comp_id"].eq(float(control.comp_id)) if control.comp_id is not None else False
-    key_pattern = rf"(?:^|[^A-Za-z0-9])(?:comp(?:ound)?[_-]?id|comp)[_-]?{re.escape(str(control.match_key))}(?:$|[^A-Za-z0-9])"
+    key_pattern = (
+        rf"(?:^|[^A-Za-z0-9])(?:comp(?:ound)?[_-]?id|comp)[_-]?{re.escape(str(control.match_key))}(?:$|[^A-Za-z0-9])"
+    )
     key_mask = pool["_feature_key_str"].str.contains(key_pattern, regex=True, na=False)
     return pool[comp_mask | key_mask].copy()
 
@@ -301,7 +302,9 @@ def control_audit_row(
         "n_candidates": int(full_annotated.shape[0]),
         "n_topk": int(top_annotated.shape[0]),
         "n_mass_match": int(mass_series.le(float(mass_tolerance_da)).sum()) if not full_annotated.empty else 0,
-        "n_formula_match": int(full_annotated.get("_formula_match", pd.Series(dtype=bool)).sum()) if not full_annotated.empty else 0,
+        "n_formula_match": (
+            int(full_annotated.get("_formula_match", pd.Series(dtype=bool)).sum()) if not full_annotated.empty else 0
+        ),
         "failure_mode": failure_mode,
         "top10_best_tanimoto": round(float(first_value(best_top, "_best_tanimoto", 0.0)), 4),
         "top10_best_rank": first_value(best_top, "_rank", ""),
@@ -315,7 +318,9 @@ def control_audit_row(
     }
     for window in [0.5, 1.0, 2.0, 5.0]:
         key = str(window).replace(".", "p")
-        row[f"has_candidate_within_{key}_da"] = bool(mass_series.le(float(window)).any()) if not full_annotated.empty else False
+        row[f"has_candidate_within_{key}_da"] = (
+            bool(mass_series.le(float(window)).any()) if not full_annotated.empty else False
+        )
     return row
 
 
@@ -438,9 +443,7 @@ def evaluate_failure_modes(
             "summary_json": str(output_dir / "failure_mode_audit_summary.json"),
         },
     }
-    (output_dir / "failure_mode_audit_summary.json").write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n"
-    )
+    (output_dir / "failure_mode_audit_summary.json").write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
     return payload
 
 

@@ -93,10 +93,7 @@ def load_controls(
         scope_summary["known_x_rows"] = int(known_x_df.shape[0])
         if {"LIB_ID", "Unknown"}.issubset(set(known_x_df.columns)):
             lib_ids = sorted(
-                {
-                    int(v)
-                    for v in pd.to_numeric(known_x_df["LIB_ID"], errors="coerce").dropna().astype(int).tolist()
-                }
+                {int(v) for v in pd.to_numeric(known_x_df["LIB_ID"], errors="coerce").dropna().astype(int).tolist()}
             )
             scope_summary["known_x_unique_lib_ids"] = lib_ids
             scope_summary["mixed_lib_ids_detected"] = len(lib_ids) > 1
@@ -105,9 +102,7 @@ def load_controls(
                     pd.to_numeric(known_x_df["LIB_ID"], errors="coerce").eq(int(control_lib_id))
                 ].copy()
                 control_scope = {
-                    str(value).strip()
-                    for value in scoped_df["Unknown"].astype(str).tolist()
-                    if str(value).strip()
+                    str(value).strip() for value in scoped_df["Unknown"].astype(str).tolist() if str(value).strip()
                 }
                 scope_summary["control_scope_xids"] = int(len(control_scope))
             else:
@@ -120,9 +115,7 @@ def load_controls(
                     if fail_on_mixed_lib_id:
                         raise RuntimeError(message)
                 control_scope = {
-                    str(value).strip()
-                    for value in known_x_df["Unknown"].astype(str).tolist()
-                    if str(value).strip()
+                    str(value).strip() for value in known_x_df["Unknown"].astype(str).tolist() if str(value).strip()
                 }
                 scope_summary["control_scope_xids"] = int(len(control_scope))
 
@@ -202,17 +195,19 @@ def evaluate_controls(
     for xid, control_smiles_list in sorted(controls.items()):
         xid_preds = preds_df[preds_df["_xid"] == xid].copy()
         if xid_preds.empty:
-            per_control.append({
-                "x_compound_id": xid,
-                "track": track_name,
-                "n_predictions": 0,
-                "exact_match": False,
-                "exact_match_rank": None,
-                "best_tanimoto": 0.0,
-                "best_tanimoto_rank": None,
-                "top10_mean_tanimoto": 0.0,
-                "failure_bucket": "no_predictions",
-            })
+            per_control.append(
+                {
+                    "x_compound_id": xid,
+                    "track": track_name,
+                    "n_predictions": 0,
+                    "exact_match": False,
+                    "exact_match_rank": None,
+                    "best_tanimoto": 0.0,
+                    "best_tanimoto_rank": None,
+                    "top10_mean_tanimoto": 0.0,
+                    "failure_bucket": "no_predictions",
+                }
+            )
             continue
 
         n_controls_covered += 1
@@ -269,17 +264,19 @@ def evaluate_controls(
         else:
             bucket = "structural_miss"
 
-        per_control.append({
-            "x_compound_id": xid,
-            "track": track_name,
-            "n_predictions": len(xid_preds),
-            "exact_match": exact_found,
-            "exact_match_rank": exact_rank,
-            "best_tanimoto": round(best_tan, 4),
-            "best_tanimoto_rank": best_tan_rank,
-            "top10_mean_tanimoto": round(mean_tan, 4),
-            "failure_bucket": bucket,
-        })
+        per_control.append(
+            {
+                "x_compound_id": xid,
+                "track": track_name,
+                "n_predictions": len(xid_preds),
+                "exact_match": exact_found,
+                "exact_match_rank": exact_rank,
+                "best_tanimoto": round(best_tan, 4),
+                "best_tanimoto_rank": best_tan_rank,
+                "top10_mean_tanimoto": round(mean_tan, 4),
+                "failure_bucket": bucket,
+            }
+        )
 
     n_total = len(controls)
     summary = {
@@ -291,37 +288,34 @@ def evaluate_controls(
         "n_topk_tanimoto_ge_0.5": n_topk_tanimoto_above[0.5],
         "n_topk_tanimoto_ge_0.7": n_topk_tanimoto_above[0.7],
         "n_topk_tanimoto_ge_0.9": n_topk_tanimoto_above[0.9],
-        "topk_tanimoto_ge_0.7_rate": round(
-            n_topk_tanimoto_above[0.7] / max(n_total, 1), 4
-        ),
-        "mean_best_tanimoto": round(
-            float(np.mean(all_best_tanimotos)) if all_best_tanimotos else 0.0, 4
-        ),
-        "median_best_tanimoto": round(
-            float(np.median(all_best_tanimotos)) if all_best_tanimotos else 0.0, 4
-        ),
+        "topk_tanimoto_ge_0.7_rate": round(n_topk_tanimoto_above[0.7] / max(n_total, 1), 4),
+        "mean_best_tanimoto": round(float(np.mean(all_best_tanimotos)) if all_best_tanimotos else 0.0, 4),
+        "median_best_tanimoto": round(float(np.median(all_best_tanimotos)) if all_best_tanimotos else 0.0, 4),
     }
     return per_control, summary
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Evaluate de novo and retrieval predictions against known controls."
+    parser = argparse.ArgumentParser(description="Evaluate de novo and retrieval predictions against known controls.")
+    parser.add_argument(
+        "--prediction_dir",
+        type=str,
+        default="models/x209_smiles_predictions",
+        help="Directory containing prediction CSV outputs.",
     )
-    parser.add_argument("--prediction_dir", type=str,
-                        default="models/x209_smiles_predictions",
-                        help="Directory containing prediction CSV outputs.")
     parser.add_argument("--known_x", type=str, default="known_X.csv")
-    parser.add_argument("--known_x_all", type=str,
-                        default="known_X_all_available_structures_simple.csv")
-    parser.add_argument("--denovo_csv", type=str, default="",
-                        help="Override denovo report path (default: auto-detect in prediction_dir).")
-    parser.add_argument("--retrieval_csv", type=str, default="",
-                        help="Override retrieval report path.")
-    parser.add_argument("--merged_csv", type=str, default="",
-                        help="Override merged report path.")
-    parser.add_argument("--output_dir", type=str, default="",
-                        help="Output directory (default: same as prediction_dir).")
+    parser.add_argument("--known_x_all", type=str, default="known_X_all_available_structures_simple.csv")
+    parser.add_argument(
+        "--denovo_csv",
+        type=str,
+        default="",
+        help="Override denovo report path (default: auto-detect in prediction_dir).",
+    )
+    parser.add_argument("--retrieval_csv", type=str, default="", help="Override retrieval report path.")
+    parser.add_argument("--merged_csv", type=str, default="", help="Override merged report path.")
+    parser.add_argument(
+        "--output_dir", type=str, default="", help="Output directory (default: same as prediction_dir)."
+    )
     parser.add_argument("--top_k", type=int, default=10)
     parser.add_argument(
         "--control_lib_id",
@@ -350,9 +344,7 @@ def main() -> None:
     print(f"  {len(controls)} control X-IDs with canonical SMILES")
 
     denovo_path = (
-        Path(args.denovo_csv).expanduser().resolve()
-        if args.denovo_csv
-        else pred_dir / "x209_denovo_report.csv"
+        Path(args.denovo_csv).expanduser().resolve() if args.denovo_csv else pred_dir / "x209_denovo_report.csv"
     )
     retrieval_path = (
         Path(args.retrieval_csv).expanduser().resolve()
@@ -360,9 +352,7 @@ def main() -> None:
         else pred_dir / "x209_retrieval_report.csv"
     )
     merged_path = (
-        Path(args.merged_csv).expanduser().resolve()
-        if args.merged_csv
-        else pred_dir / "x209_merged_predictions.csv"
+        Path(args.merged_csv).expanduser().resolve() if args.merged_csv else pred_dir / "x209_merged_predictions.csv"
     )
 
     all_per_control: List[dict] = []
@@ -382,13 +372,18 @@ def main() -> None:
             print(f"  No predictions loaded for {track}")
             continue
         per_ctrl, summary = evaluate_controls(
-            controls, preds, track_name=track, top_k=args.top_k,
+            controls,
+            preds,
+            track_name=track,
+            top_k=args.top_k,
         )
         all_per_control.extend(per_ctrl)
         all_summaries.append(summary)
-        print(f"  {track}: exact={summary['n_exact_match']}, "
-              f"tan>=0.7={summary['n_topk_tanimoto_ge_0.7']}, "
-              f"mean_best_tan={summary['mean_best_tanimoto']:.4f}")
+        print(
+            f"  {track}: exact={summary['n_exact_match']}, "
+            f"tan>=0.7={summary['n_topk_tanimoto_ge_0.7']}, "
+            f"mean_best_tan={summary['mean_best_tanimoto']:.4f}"
+        )
 
     per_ctrl_df = pd.DataFrame(all_per_control)
     per_ctrl_path = out_dir / "control_eval_per_xid.csv"

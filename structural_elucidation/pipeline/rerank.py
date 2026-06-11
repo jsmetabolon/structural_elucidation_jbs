@@ -22,7 +22,6 @@ from structural_elucidation.evaluation.rerank_assembly import eval_reranked, wri
 from structural_elucidation.paths import REPO_ROOT, resolve
 from structural_elucidation.utils.domain import dataframe_to_markdown, write_csv, write_json
 
-
 FEATURE_COLUMNS = [
     "predicted_spectrum_score_v2",
     "mass_match_score",
@@ -71,11 +70,18 @@ def numeric(df: pd.DataFrame, col: str, default: float = 0.0) -> pd.Series:
     return pd.to_numeric(df[col], errors="coerce").fillna(default).astype(float)
 
 
-def load_wgcna_consensus(path: Path | None = None, *, lib_id: int | None = None, ion_mode: str | None = None) -> pd.DataFrame:
+def load_wgcna_consensus(
+    path: Path | None = None, *, lib_id: int | None = None, ion_mode: str | None = None
+) -> pd.DataFrame:
     if path is None:
         if lib_id is None or ion_mode is None:
             return pd.DataFrame()
-        path = Path("models") / "wgcna_evidence_v1" / f"lib_{int(lib_id)}_{str(ion_mode)}" / "wgcna_evidence_per_control.csv"
+        path = (
+            Path("models")
+            / "wgcna_evidence_v1"
+            / f"lib_{int(lib_id)}_{str(ion_mode)}"
+            / "wgcna_evidence_per_control.csv"
+        )
     path = Path(path)
     if not path.exists():
         return pd.DataFrame()
@@ -119,13 +125,31 @@ def add_wgcna_features(df: pd.DataFrame, wgcna_consensus: pd.DataFrame | None = 
         out["wgcna_consensus_strength"] = 0.0
         return out
     merged = out.merge(wgcna_consensus, on="control_id", how="left")
-    predicted = merged.get("predicted_super_pathway", pd.Series("", index=merged.index)).fillna("").astype(str).str.strip().str.lower()
-    consensus = merged.get("consensus_super_pathway", pd.Series("", index=merged.index)).fillna("").astype(str).str.strip().str.lower()
+    predicted = (
+        merged.get("predicted_super_pathway", pd.Series("", index=merged.index))
+        .fillna("")
+        .astype(str)
+        .str.strip()
+        .str.lower()
+    )
+    consensus = (
+        merged.get("consensus_super_pathway", pd.Series("", index=merged.index))
+        .fillna("")
+        .astype(str)
+        .str.strip()
+        .str.lower()
+    )
     has_consensus = consensus.str.len().gt(0)
     has_prediction = predicted.str.len().gt(0)
-    merged["wgcna_pathway_match"] = np.where(~has_consensus, 0.5, np.where(has_prediction & predicted.eq(consensus), 1.0, 0.0))
-    merged["wgcna_consensus_strength"] = pd.to_numeric(merged.get("consensus_super_strength"), errors="coerce").fillna(0.0).clip(0.0, 1.0)
-    return merged.drop(columns=[col for col in ["consensus_super_pathway", "consensus_super_strength"] if col in merged.columns])
+    merged["wgcna_pathway_match"] = np.where(
+        ~has_consensus, 0.5, np.where(has_prediction & predicted.eq(consensus), 1.0, 0.0)
+    )
+    merged["wgcna_consensus_strength"] = (
+        pd.to_numeric(merged.get("consensus_super_strength"), errors="coerce").fillna(0.0).clip(0.0, 1.0)
+    )
+    return merged.drop(
+        columns=[col for col in ["consensus_super_pathway", "consensus_super_strength"] if col in merged.columns]
+    )
 
 
 def add_features(df: pd.DataFrame, wgcna_consensus: pd.DataFrame | None = None) -> pd.DataFrame:
@@ -169,7 +193,9 @@ def add_labels(pool: pd.DataFrame, controls: list[Any]) -> pd.DataFrame:
     tans: list[float] = []
     labels: list[int] = []
     for _, row in out.iterrows():
-        canonical = canonicalize_smiles(row.get("predicted_smiles", "")) or str(row.get("canonical_2d_smiles", "") or "")
+        canonical = canonicalize_smiles(row.get("predicted_smiles", "")) or str(
+            row.get("canonical_2d_smiles", "") or ""
+        )
         _exact, tan = best_tanimoto_for_smiles(canonical, truth.get(str(row.get("control_id", "")), []))
         tans.append(float(tan))
         labels.append(int(float(tan) >= 0.7))
@@ -220,7 +246,9 @@ def loocv_scores(pool: pd.DataFrame, model_factory=make_model) -> pd.Series:
 def rank1_hits_from_scores(pool: pd.DataFrame, score_col: str) -> int:
     if pool.empty:
         return 0
-    ranked = pool.sort_values(["control_id", score_col], ascending=[True, False], kind="mergesort").drop_duplicates("control_id", keep="first")
+    ranked = pool.sort_values(["control_id", score_col], ascending=[True, False], kind="mergesort").drop_duplicates(
+        "control_id", keep="first"
+    )
     return int(pd.to_numeric(ranked.get("label_ge_0p7"), errors="coerce").fillna(0).ge(1).sum())
 
 
@@ -317,7 +345,9 @@ def fit_isotonic_per_source(pool: pd.DataFrame, score_col: str = "unified_oof_sc
     return calibrators
 
 
-def apply_isotonic_per_source(df: pd.DataFrame, calibrators: dict[str, Any], score_col: str = "unified_final_score") -> pd.Series:
+def apply_isotonic_per_source(
+    df: pd.DataFrame, calibrators: dict[str, Any], score_col: str = "unified_final_score"
+) -> pd.Series:
     raw = pd.to_numeric(df.get(score_col), errors="coerce").fillna(0.0)
     out = raw.copy()
     for source, payload in calibrators.items():
@@ -328,7 +358,9 @@ def apply_isotonic_per_source(df: pd.DataFrame, calibrators: dict[str, Any], sco
     return out.clip(0.0, 1.0)
 
 
-def oof_drop_attribution(pool: pd.DataFrame, full_col: str = "unified_final_score", oof_col: str = "unified_oof_score") -> pd.DataFrame:
+def oof_drop_attribution(
+    pool: pd.DataFrame, full_col: str = "unified_final_score", oof_col: str = "unified_oof_score"
+) -> pd.DataFrame:
     rows: list[dict[str, Any]] = []
     work = pool.copy()
     for control_id, group in work.groupby("control_id", dropna=False):
@@ -371,13 +403,23 @@ def rank_frame(scored: pd.DataFrame, score_col: str, top_k: int, policy: str = "
     out["rerank_policy"] = policy
     out["rerank_score"] = pd.to_numeric(out[score_col], errors="coerce").fillna(0.0)
     out = out.sort_values(
-        ["control_id", "rerank_score", "predicted_spectrum_score_v2", "mass_match_score", "formula_prior_score", "min_source_rank", "predicted_smiles"],
+        [
+            "control_id",
+            "rerank_score",
+            "predicted_spectrum_score_v2",
+            "mass_match_score",
+            "formula_prior_score",
+            "min_source_rank",
+            "predicted_smiles",
+        ],
         ascending=[True, False, False, False, False, True, True],
         kind="mergesort",
     )
     out["feature_key"] = out.get("feature_key", pd.Series("", index=out.index)).fillna("").astype(str)
     missing_key = out["feature_key"].eq("")
-    out.loc[missing_key, "feature_key"] = out.loc[missing_key, "control_id"].map(lambda value: f"unified_rerank_{value}")
+    out.loc[missing_key, "feature_key"] = out.loc[missing_key, "control_id"].map(
+        lambda value: f"unified_rerank_{value}"
+    )
     out["rank"] = out.groupby("control_id", dropna=False).cumcount() + 1
     return out[out["rank"].le(int(top_k))].reset_index(drop=True)
 
@@ -395,7 +437,12 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     if bool(getattr(args, "drop_novelty_score", False)):
         FEATURE_COLUMNS = [col for col in FEATURE_COLUMNS if col != "novelty_score"]
     pool = pd.read_csv(resolve(args.unified_pool, repo_root), low_memory=False)
-    controls = load_x_controls(known_x=repo_root / "known_X.csv", known_x_all=repo_root / "known_X_all_available_structures_simple.csv", lib_id=int(args.lib_id), ion_mode=str(args.ion_mode))
+    controls = load_x_controls(
+        known_x=repo_root / "known_X.csv",
+        known_x_all=repo_root / "known_X_all_available_structures_simple.csv",
+        lib_id=int(args.lib_id),
+        ion_mode=str(args.ion_mode),
+    )
     wgcna_consensus = load_wgcna_consensus(lib_id=int(args.lib_id), ion_mode=str(args.ion_mode))
     pool = scope_training_pool(
         pool,
@@ -417,10 +464,14 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     pool = add_wgcna_features(pool, wgcna_consensus)
     model = selection.get("model")
     if model is not None and hasattr(model, "feature_importances_"):
-        importances = pd.DataFrame({"feature": FEATURE_COLUMNS, "importance": model.feature_importances_}).sort_values("importance", ascending=False)
+        importances = pd.DataFrame({"feature": FEATURE_COLUMNS, "importance": model.feature_importances_}).sort_values(
+            "importance", ascending=False
+        )
     elif model is not None and hasattr(model, "coef_"):
         coefs = np.abs(np.asarray(model.coef_).reshape(-1))
-        importances = pd.DataFrame({"feature": FEATURE_COLUMNS, "importance": coefs}).sort_values("importance", ascending=False)
+        importances = pd.DataFrame({"feature": FEATURE_COLUMNS, "importance": coefs}).sort_values(
+            "importance", ascending=False
+        )
     else:
         importances = pd.DataFrame({"feature": FEATURE_COLUMNS, "importance": 0.0})
     g3 = g3_gate(int(selection["full_rank1"]), int(selection["oof_rank1"]))
@@ -455,7 +506,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             else:
                 non_s0_predictions["unified_final_score"] = heuristic_score(non_s0_predictions)
             non_s0_predictions = add_wgcna_features(non_s0_predictions, wgcna_consensus)
-            non_s0_predictions["rerank_score_calibrated"] = apply_isotonic_per_source(non_s0_predictions, calibrators, "unified_final_score")
+            non_s0_predictions["rerank_score_calibrated"] = apply_isotonic_per_source(
+                non_s0_predictions, calibrators, "unified_final_score"
+            )
             non_s0_predictions["rerank_score"] = non_s0_predictions["unified_final_score"]
             write_csv(output_root / "non_s0_candidates_scored.csv", non_s0_predictions)
             write_csv(output_root / "rerank_predictions_non_s0.csv", non_s0_predictions)
@@ -469,7 +522,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         if not non_s0_predictions.empty
         else pd.DataFrame(columns=final_top10.columns)
     )
-    all_top10 = pd.concat([final_top10, non_s0_top10], ignore_index=True, sort=False) if not non_s0_top10.empty else final_top10.copy()
+    all_top10 = (
+        pd.concat([final_top10, non_s0_top10], ignore_index=True, sort=False)
+        if not non_s0_top10.empty
+        else final_top10.copy()
+    )
     write_csv(output_root / "unified_rerank_oof_top10.csv", oof_top10)
     write_csv(output_root / "unified_rerank_top10.csv", final_top10)
     write_csv(output_root / "unified_rerank_non_s0_top10.csv", non_s0_top10)
@@ -507,10 +564,26 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     write_csv(output_root / "unified_rerank_metrics.csv", metrics_df)
     write_csv(output_root / "unified_rerank_per_control.csv", per_df)
     write_csv(output_root / "unified_rerank_oof_per_control.csv", oof_per_df)
-    top10_hits = int(pd.to_numeric(per_df.get("top10_best_tanimoto"), errors="coerce").fillna(0.0).ge(0.7).sum()) if not per_df.empty else 0
-    rank1_hits = int(pd.to_numeric(per_df.get("rank1_best_tanimoto"), errors="coerce").fillna(0.0).ge(0.7).sum()) if not per_df.empty else 0
-    oof_top10_hits = int(pd.to_numeric(oof_per_df.get("top10_best_tanimoto"), errors="coerce").fillna(0.0).ge(0.7).sum()) if not oof_per_df.empty else 0
-    oof_rank1_hits = int(pd.to_numeric(oof_per_df.get("rank1_best_tanimoto"), errors="coerce").fillna(0.0).ge(0.7).sum()) if not oof_per_df.empty else 0
+    top10_hits = (
+        int(pd.to_numeric(per_df.get("top10_best_tanimoto"), errors="coerce").fillna(0.0).ge(0.7).sum())
+        if not per_df.empty
+        else 0
+    )
+    rank1_hits = (
+        int(pd.to_numeric(per_df.get("rank1_best_tanimoto"), errors="coerce").fillna(0.0).ge(0.7).sum())
+        if not per_df.empty
+        else 0
+    )
+    oof_top10_hits = (
+        int(pd.to_numeric(oof_per_df.get("top10_best_tanimoto"), errors="coerce").fillna(0.0).ge(0.7).sum())
+        if not oof_per_df.empty
+        else 0
+    )
+    oof_rank1_hits = (
+        int(pd.to_numeric(oof_per_df.get("rank1_best_tanimoto"), errors="coerce").fillna(0.0).ge(0.7).sum())
+        if not oof_per_df.empty
+        else 0
+    )
     summary = {
         "n_candidates": int(pool.shape[0]),
         "n_positive_labels": int(pool["label_ge_0p7"].sum()),
@@ -595,11 +668,17 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, default=Path("models/unified_rerank_v1"))
-    parser.add_argument("--unified-pool", type=Path, default=Path("models/unified_candidate_pool_v1/unified_candidates_per_control.csv"))
+    parser.add_argument(
+        "--unified-pool", type=Path, default=Path("models/unified_candidate_pool_v1/unified_candidates_per_control.csv")
+    )
     parser.add_argument("--lib-id", type=int, default=209)
     parser.add_argument("--ion-mode", default="negative")
     parser.add_argument("--top-k", type=int, default=10)
-    parser.add_argument("--non-s0-pool", type=Path, default=Path("models/unified_candidate_pool_v1/unified_candidates_per_control_non_s0.csv"))
+    parser.add_argument(
+        "--non-s0-pool",
+        type=Path,
+        default=Path("models/unified_candidate_pool_v1/unified_candidates_per_control_non_s0.csv"),
+    )
     parser.add_argument("--v8-regularized", action="store_true", default=True)
     parser.add_argument("--model-selection-mode", choices=["auto", "gbm", "logistic"], default="auto")
     parser.add_argument("--training-control-scope", choices=["x_controls", "all"], default="x_controls")

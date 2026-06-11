@@ -10,9 +10,13 @@ from typing import Any
 import pandas as pd
 
 from structural_elucidation.evaluation.aggregate import best_by_tanimoto
-from structural_elucidation.evaluation.failure_modes import annotate_pool, load_x_controls, normalize_prediction_pool, pool_for_control
+from structural_elucidation.evaluation.failure_modes import (
+    annotate_pool,
+    load_x_controls,
+    normalize_prediction_pool,
+    pool_for_control,
+)
 from structural_elucidation.utils.domain import dataframe_to_markdown, safe_float, safe_int, write_csv, write_json
-
 
 DEFAULT_V3_ROOT = Path("models/denovo_pipeline_v3/assembly_v3")
 GOOD_TANIMOTO = 0.7
@@ -83,9 +87,7 @@ def assess_profile(
         return [], []
     candidate_pool = normalize_prediction_pool(pd.read_csv(candidate_path), candidate_path)
     denovo_pool = (
-        normalize_prediction_pool(pd.read_csv(denovo_path), denovo_path)
-        if denovo_path.exists()
-        else pd.DataFrame()
+        normalize_prediction_pool(pd.read_csv(denovo_path), denovo_path) if denovo_path.exists() else pd.DataFrame()
     )
     top_pool = denovo_pool[denovo_pool["_rank"].le(int(top_k))].copy() if not denovo_pool.empty else denovo_pool
     wanted_ids = load_evaluated_control_ids(v3_root, lib_id, profile)
@@ -181,7 +183,9 @@ def assess_v3_outputs(
                     "lib_id": int(lib_id),
                     "profile": str(profile),
                     "n_controls": int(group.shape[0]),
-                    "n_misranked_high_oracle": int(group["top10_miss_reason"].eq("high_oracle_misranked_outside_top10").sum()),
+                    "n_misranked_high_oracle": int(
+                        group["top10_miss_reason"].eq("high_oracle_misranked_outside_top10").sum()
+                    ),
                     "n_oracle_ge_0p7": int(group["oracle_tanimoto"].ge(GOOD_TANIMOTO).sum()),
                     "n_top10_ge_0p7": int(group["top10_best_tanimoto"].ge(GOOD_TANIMOTO).sum()),
                     "mean_oracle_tanimoto": round(float(group["oracle_tanimoto"].mean()), 4),

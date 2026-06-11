@@ -18,8 +18,14 @@ from structural_elucidation.evaluation.failure_modes import load_x_controls
 from structural_elucidation.chemistry.formula import formula_prior_score
 from structural_elucidation.evaluation.rerank_assembly import eval_reranked, write_denovo_report
 from structural_elucidation.paths import REPO_ROOT, resolve
-from structural_elucidation.utils.domain import dataframe_to_markdown, safe_float, safe_int, write_csv, write_json, xid_from_feature_key
-
+from structural_elucidation.utils.domain import (
+    dataframe_to_markdown,
+    safe_float,
+    safe_int,
+    write_csv,
+    write_json,
+    xid_from_feature_key,
+)
 
 DEFAULT_HMDB = REPO_ROOT / "vendor/nce/elucidation/table_builders/hmdb_minimal.csv"
 DEFAULT_HMDB_EXTENDED = REPO_ROOT / "vendor/nce/elucidation/table_builders/HMDB_36_classyfire_21_annotations.csv"
@@ -80,12 +86,19 @@ def prepare_structure_library(path: Path, source_label: str) -> pd.DataFrame:
     raw = pd.read_csv(path, low_memory=False)
     if raw.empty:
         return pd.DataFrame()
-    smiles_col = first_existing_col(raw, ["canonical_smiles", "smiles", "SMILES", "Smiles", "structure_smiles", "library_smiles"])
+    smiles_col = first_existing_col(
+        raw, ["canonical_smiles", "smiles", "SMILES", "Smiles", "structure_smiles", "library_smiles"]
+    )
     if smiles_col is None:
         return pd.DataFrame()
     name_col = first_existing_col(raw, ["name", "Name", "compound_name", "library_name", "Common_Name", "COMMON_NAME"])
-    formula_col = first_existing_col(raw, ["chemical_formula", "formula", "Formula", "molecular_formula", "candidate_formula"])
-    mass_col = first_existing_col(raw, ["exact_mass", "mass", "monoisotopic_mass", "MonoisotopicMass", "library_exact_mass", "candidate_exact_mass"])
+    formula_col = first_existing_col(
+        raw, ["chemical_formula", "formula", "Formula", "molecular_formula", "candidate_formula"]
+    )
+    mass_col = first_existing_col(
+        raw,
+        ["exact_mass", "mass", "monoisotopic_mass", "MonoisotopicMass", "library_exact_mass", "candidate_exact_mass"],
+    )
     out = raw.copy()
     out["library_source"] = str(source_label)
     out["library_name"] = out[name_col].astype(str) if name_col else ""
@@ -93,7 +106,16 @@ def prepare_structure_library(path: Path, source_label: str) -> pd.DataFrame:
     out["library_formula"] = out[formula_col].astype(str) if formula_col else ""
     out["library_exact_mass"] = numeric(out, mass_col) if mass_col else exact_mass_series(out["library_smiles"])
     keep = ["library_source", "library_name", "library_smiles", "library_formula", "library_exact_mass"]
-    for col in ["accession", "chemical_id", "hmdb_id", "CompoundID", "chebi_id", "lipidmaps_id", "drugbank_id", "public_spectral_prevalence"]:
+    for col in [
+        "accession",
+        "chemical_id",
+        "hmdb_id",
+        "CompoundID",
+        "chebi_id",
+        "lipidmaps_id",
+        "drugbank_id",
+        "public_spectral_prevalence",
+    ]:
         if col in out.columns:
             keep.append(col)
     return out[keep].dropna(subset=["library_exact_mass"])
@@ -115,7 +137,11 @@ def prepare_hmdb_extended(path: Path) -> pd.DataFrame:
                 annot["_hmdb_join_key"] = annot["CompoundID"].astype(str)
                 merged = lookup.merge(annot, on="_hmdb_join_key", how="left")
                 if "ParentName" in merged.columns:
-                    merged["library_name"] = merged.get("name", pd.Series("", index=merged.index)).astype(str) + " | " + merged["ParentName"].fillna("").astype(str)
+                    merged["library_name"] = (
+                        merged.get("name", pd.Series("", index=merged.index)).astype(str)
+                        + " | "
+                        + merged["ParentName"].fillna("").astype(str)
+                    )
                 return prepare_structure_library_from_frame(merged, "hmdb_extended")
     return prepare_structure_library(path, "hmdb_extended")
 
@@ -210,10 +236,14 @@ def parse_controls(text: Any) -> list[str]:
 def mass_hypotheses(features: pd.DataFrame, adducts: pd.DataFrame) -> pd.DataFrame:
     feature_map = features.copy()
     if "control_id" not in feature_map.columns:
-        feature_map["control_id"] = feature_map.get("feature_key", pd.Series("", index=feature_map.index)).map(xid_from_feature_key)
+        feature_map["control_id"] = feature_map.get("feature_key", pd.Series("", index=feature_map.index)).map(
+            xid_from_feature_key
+        )
     adduct_work = adducts.copy()
     if not adduct_work.empty:
-        adduct_work["control_id"] = adduct_work.get("feature_key", pd.Series("", index=adduct_work.index)).map(xid_from_feature_key)
+        adduct_work["control_id"] = adduct_work.get("feature_key", pd.Series("", index=adduct_work.index)).map(
+            xid_from_feature_key
+        )
     rows: list[dict[str, Any]] = []
     for _, row in feature_map.iterrows():
         rows.append(
@@ -249,7 +279,11 @@ def mass_hypotheses(features: pd.DataFrame, adducts: pd.DataFrame) -> pd.DataFra
     if out.empty:
         return out
     out["target_neutral_mass"] = pd.to_numeric(out["target_neutral_mass"], errors="coerce")
-    return out[out["target_neutral_mass"].notna()].drop_duplicates(["control_id", "feature_key", "target_neutral_mass"]).reset_index(drop=True)
+    return (
+        out[out["target_neutral_mass"].notna()]
+        .drop_duplicates(["control_id", "feature_key", "target_neutral_mass"])
+        .reset_index(drop=True)
+    )
 
 
 def append_candidate(
@@ -269,7 +303,11 @@ def append_candidate(
     if not np.isfinite(exact_mass):
         exact_mass = safe_float(hit.get("library_exact_mass"), math.nan)
     target_mass = safe_float(target.get("target_neutral_mass"), math.nan)
-    abs_error = abs(float(exact_mass) - float(target_mass)) if np.isfinite(exact_mass) and np.isfinite(target_mass) else math.nan
+    abs_error = (
+        abs(float(exact_mass) - float(target_mass))
+        if np.isfinite(exact_mass) and np.isfinite(target_mass)
+        else math.nan
+    )
     formula = formula_from_smiles(canonical) or str(hit.get("library_formula", ""))
     formula_prior = formula_prior_score(formula, target_mass, tolerance_da=float(args.formula_tolerance_da))
     mass_score = mass_match_score(abs_error, float(args.mass_score_tolerance_da))
@@ -277,9 +315,19 @@ def append_candidate(
     nce_ms2 = safe_float(hit.get("ms2_match_score"), 0.0)
     nce_pipeline = safe_float(hit.get("nce_pipeline_score"), 0.0)
     ms1_supported = bool_value(target.get("ms1_buddy_supported"))
-    evidence = float(np.clip(max(formula_prior, nce_forward, nce_ms2, nce_pipeline) + (0.05 if ms1_supported else 0.0), 0.0, 1.0))
-    generation = float(np.clip(0.40 * mass_score + 0.25 * formula_prior + 0.20 * nce_pipeline + 0.10 * nce_forward + 0.05 * nce_ms2, 0.0, 1.0))
-    feature_key = str(target.get("feature_key", "") or hit.get("feature_key", "") or f"library_anchor_{target.get('control_id', '')}")
+    evidence = float(
+        np.clip(max(formula_prior, nce_forward, nce_ms2, nce_pipeline) + (0.05 if ms1_supported else 0.0), 0.0, 1.0)
+    )
+    generation = float(
+        np.clip(
+            0.40 * mass_score + 0.25 * formula_prior + 0.20 * nce_pipeline + 0.10 * nce_forward + 0.05 * nce_ms2,
+            0.0,
+            1.0,
+        )
+    )
+    feature_key = str(
+        target.get("feature_key", "") or hit.get("feature_key", "") or f"library_anchor_{target.get('control_id', '')}"
+    )
     rows.append(
         {
             "feature_key": feature_key,
@@ -327,7 +375,9 @@ def build_candidates(
     hint_map = diagnosis.set_index("control_id").get("conjugate_hints", pd.Series(dtype=str)).astype(str).to_dict()
     for control_id in controls:
         scoped_targets = targets[targets["control_id"].astype(str).eq(str(control_id))].copy()
-        direct_nce = nce[nce.get("control_id", pd.Series(dtype=str)).astype(str).eq(str(control_id))].head(int(args.max_nce_direct_per_control))
+        direct_nce = nce[nce.get("control_id", pd.Series(dtype=str)).astype(str).eq(str(control_id))].head(
+            int(args.max_nce_direct_per_control)
+        )
         if scoped_targets.empty and not direct_nce.empty:
             scoped_targets = pd.DataFrame(
                 [
@@ -337,7 +387,9 @@ def build_candidates(
                         "comp_id": direct_nce.iloc[0].get("comp_id", -1),
                         "lib_id": int(args.lib_id),
                         "ion_mode": str(args.ion_mode),
-                        "target_neutral_mass": direct_nce.iloc[0].get("neutral_mass", direct_nce.iloc[0].get("library_exact_mass", math.nan)),
+                        "target_neutral_mass": direct_nce.iloc[0].get(
+                            "neutral_mass", direct_nce.iloc[0].get("library_exact_mass", math.nan)
+                        ),
                         "adduct_label": "nce_snapshot_control",
                         "formula_prior_score": 0.0,
                         "ms1_buddy_supported": False,
@@ -350,10 +402,18 @@ def build_candidates(
             if not np.isfinite(target_mass):
                 continue
             if not hmdb.empty:
-                for _, hit in hmdb[ppm_hit_mask(hmdb["library_exact_mass"], target_mass, float(args.ppm_tolerance))].head(int(args.max_hits_per_control)).iterrows():
+                for _, hit in (
+                    hmdb[ppm_hit_mask(hmdb["library_exact_mass"], target_mass, float(args.ppm_tolerance))]
+                    .head(int(args.max_hits_per_control))
+                    .iterrows()
+                ):
                     library_hits.append((hit, "hmdb_mass_match"))
             if not nce.empty:
-                for _, hit in nce[ppm_hit_mask(nce["library_exact_mass"], target_mass, float(args.ppm_tolerance))].head(int(args.max_hits_per_control)).iterrows():
+                for _, hit in (
+                    nce[ppm_hit_mask(nce["library_exact_mass"], target_mass, float(args.ppm_tolerance))]
+                    .head(int(args.max_hits_per_control))
+                    .iterrows()
+                ):
                     library_hits.append((hit, "nce_snapshot_mass_match"))
         for _, hit in direct_nce.iterrows():
             library_hits.append((hit, "nce_snapshot_control_match"))
@@ -365,7 +425,15 @@ def build_candidates(
                 if key in seen_hits:
                     continue
                 seen_hits.add(key)
-                append_candidate(rows, target=target, hit=hit, predicted_smiles=base_smiles, operator_family=f"library_anchor:{match_type}", library_match_type=match_type, args=args)
+                append_candidate(
+                    rows,
+                    target=target,
+                    hit=hit,
+                    predicted_smiles=base_smiles,
+                    operator_family=f"library_anchor:{match_type}",
+                    library_match_type=match_type,
+                    args=args,
+                )
                 hints = [part.strip().lower() for part in str(hint_map.get(control_id, "")).split(",") if part.strip()]
                 for hint in hints:
                     for reaction_name in CONJUGATE_REACTIONS.get(hint, tuple()):
@@ -384,7 +452,15 @@ def build_candidates(
         return candidates
     candidates = candidates.drop_duplicates(["feature_key", "predicted_smiles", "operator_family"], keep="first").copy()
     candidates = candidates.sort_values(
-        ["feature_key", "mass_match_score", "generation_score", "formula_prior_score", "nce_pipeline_score", "abs_mass_error_da", "predicted_smiles"],
+        [
+            "feature_key",
+            "mass_match_score",
+            "generation_score",
+            "formula_prior_score",
+            "nce_pipeline_score",
+            "abs_mass_error_da",
+            "predicted_smiles",
+        ],
         ascending=[True, False, False, False, False, True, True],
         kind="mergesort",
     )
@@ -404,11 +480,23 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     nce = prepare_nce_snapshot(Path(str(args.nce_full_smiles)).expanduser(), int(args.lib_id))
     targets = mass_hypotheses(features, adducts)
     candidates = build_candidates(controls, targets, hmdb, nce, diagnosis, args)
-    out_dir = output_root / "runs" / RUN_NAME / f"track_{args.track}" / f"lib_{int(args.lib_id)}_{args.ion_mode}" / "selfies_profiles" / str(args.profile)
+    out_dir = (
+        output_root
+        / "runs"
+        / RUN_NAME
+        / f"track_{args.track}"
+        / f"lib_{int(args.lib_id)}_{args.ion_mode}"
+        / "selfies_profiles"
+        / str(args.profile)
+    )
     candidate_path = out_dir / "candidate_metrics_all.csv"
     denovo_path = out_dir / "denovo_report.csv"
     write_csv(candidate_path, candidates)
-    ranked = candidates[candidates.get("rank", pd.Series(dtype=int)).le(int(args.top_k))].copy() if not candidates.empty else candidates
+    ranked = (
+        candidates[candidates.get("rank", pd.Series(dtype=int)).le(int(args.top_k))].copy()
+        if not candidates.empty
+        else candidates
+    )
     if not ranked.empty and "_rank" not in ranked.columns:
         ranked["_rank"] = pd.to_numeric(ranked.get("rank"), errors="coerce").fillna(999999).astype(int)
     write_denovo_report(ranked, denovo_path)
@@ -481,9 +569,17 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, default=Path("models/library_anchored_candidates_v1"))
-    parser.add_argument("--diagnosis-csv", type=Path, default=Path("models/denovo_dashboard_v1/diagnosis/control_stage_diagnosis.csv"))
-    parser.add_argument("--feature-rows", type=Path, default=Path("models/peptide_first_denovo_v1_1/feature_peptide_rows.csv"))
-    parser.add_argument("--neutral-mass-hypotheses", type=Path, default=Path("models/upstream_adduct_evidence_v1/neutral_mass_hypotheses.csv"))
+    parser.add_argument(
+        "--diagnosis-csv", type=Path, default=Path("models/denovo_dashboard_v1/diagnosis/control_stage_diagnosis.csv")
+    )
+    parser.add_argument(
+        "--feature-rows", type=Path, default=Path("models/peptide_first_denovo_v1_1/feature_peptide_rows.csv")
+    )
+    parser.add_argument(
+        "--neutral-mass-hypotheses",
+        type=Path,
+        default=Path("models/upstream_adduct_evidence_v1/neutral_mass_hypotheses.csv"),
+    )
     parser.add_argument("--hmdb-csv", type=Path, default=DEFAULT_HMDB)
     parser.add_argument("--hmdb-extended-csv", type=Path, default=DEFAULT_HMDB_EXTENDED)
     parser.add_argument("--chebi-csv", type=Path, default=Path(""))

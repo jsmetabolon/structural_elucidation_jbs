@@ -11,7 +11,13 @@ import json
 
 import numpy as np
 
-from structural_elucidation.nce.evidence import PROTON_MASS, candidate_fragment_bins, mass_bin, overlap_score, parse_json_list
+from structural_elucidation.nce.evidence import (
+    PROTON_MASS,
+    candidate_fragment_bins,
+    mass_bin,
+    overlap_score,
+    parse_json_list,
+)
 from structural_elucidation.nce.runtime import score_smiles_against_observed_bins
 from structural_elucidation.nce.verifier_v1 import predicted_spectrum_score as fallback_predicted_spectrum_score
 from structural_elucidation.utils.domain import safe_int
@@ -132,7 +138,9 @@ def predicted_spectrum_score_v2(
     except Exception:
         score = 0.0
     if score <= 0 and fallback_on_error:
-        return float(fallback_predicted_spectrum_score(smiles, observed_ion_bins, observed_loss_bins, lib_id=int(lib_id)))
+        return float(
+            fallback_predicted_spectrum_score(smiles, observed_ion_bins, observed_loss_bins, lib_id=int(lib_id))
+        )
     return float(score)
 
 
@@ -150,8 +158,14 @@ def annotate_predicted_spectrum_scores_v2(
     if not observed_lookup.empty and "control_id" in observed_lookup.columns:
         observed_lookup = observed_lookup.copy()
         observed_lookup["control_id"] = observed_lookup["control_id"].fillna("").astype(str)
-        observed_lookup = observed_lookup[observed_lookup["control_id"].ne("")].drop_duplicates("control_id", keep="first")
-    lookup = observed_lookup.set_index("control_id").to_dict(orient="index") if not observed_lookup.empty and "control_id" in observed_lookup.columns else {}
+        observed_lookup = observed_lookup[observed_lookup["control_id"].ne("")].drop_duplicates(
+            "control_id", keep="first"
+        )
+    lookup = (
+        observed_lookup.set_index("control_id").to_dict(orient="index")
+        if not observed_lookup.empty and "control_id" in observed_lookup.columns
+        else {}
+    )
     cache: dict[tuple[str, str, str, int], float] = {}
     scores: list[float] = []
     sources: list[str] = []

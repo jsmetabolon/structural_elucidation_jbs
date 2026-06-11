@@ -15,7 +15,6 @@ from structural_elucidation.utils.denovo import canonicalize_smiles
 from structural_elucidation.paths import REPO_ROOT, resolve
 from structural_elucidation.utils.domain import write_csv, write_json
 
-
 NCE_COLS = ["nce_draw_count", "nce_max_log_prob", "nce_mean_log_prob"]
 
 
@@ -38,9 +37,16 @@ def nce_feature_table(path: Path, repo_root: Path) -> pd.DataFrame:
         return pd.DataFrame(columns=["control_id", "canonical_2d_smiles", *NCE_COLS])
     out = raw.copy()
     if "control_id" not in out.columns:
-        out["control_id"] = out.get("feature_key", pd.Series("", index=out.index)).astype(str).str.extract(r"(X-\d+)", expand=False).fillna("")
+        out["control_id"] = (
+            out.get("feature_key", pd.Series("", index=out.index))
+            .astype(str)
+            .str.extract(r"(X-\d+)", expand=False)
+            .fillna("")
+        )
     if "canonical_2d_smiles" not in out.columns:
-        out["canonical_2d_smiles"] = out.get("predicted_smiles", pd.Series("", index=out.index)).map(lambda value: canonicalize_smiles(value) or "")
+        out["canonical_2d_smiles"] = out.get("predicted_smiles", pd.Series("", index=out.index)).map(
+            lambda value: canonicalize_smiles(value) or ""
+        )
     for col in NCE_COLS:
         if col not in out.columns:
             out[col] = 0.0
@@ -59,7 +65,9 @@ def overlay_nce_features(pool: pd.DataFrame, nce_features: pd.DataFrame) -> pd.D
     for col in NCE_COLS:
         out[col] = pd.to_numeric(out.get(col), errors="coerce").fillna(0.0)
     if "source_labels" in out.columns:
-        out["is_nce_direct"] = out["source_labels"].fillna("").astype(str).str.contains("nce_direct", regex=False).astype(int)
+        out["is_nce_direct"] = (
+            out["source_labels"].fillna("").astype(str).str.contains("nce_direct", regex=False).astype(int)
+        )
     return out
 
 
@@ -106,14 +114,24 @@ def load_extra_only(extra_text: str, repo_root: Path) -> pd.DataFrame:
 
 def refresh_splits(output_root: Path, pool: pd.DataFrame, args: argparse.Namespace, repo_root: Path) -> None:
     s0_controls = base.s0_controls_for_scope(resolve(args.all_x_catalog, repo_root), int(args.lib_id))
-    pool_s0 = pool[pool.get("control_id", pd.Series(dtype=str)).astype(str).isin(s0_controls)].copy() if not pool.empty and s0_controls else pd.DataFrame(columns=pool.columns)
-    pool_non_s0 = pool[~pool.get("control_id", pd.Series(dtype=str)).astype(str).isin(s0_controls)].copy() if not pool.empty and s0_controls else pd.DataFrame(columns=pool.columns)
+    pool_s0 = (
+        pool[pool.get("control_id", pd.Series(dtype=str)).astype(str).isin(s0_controls)].copy()
+        if not pool.empty and s0_controls
+        else pd.DataFrame(columns=pool.columns)
+    )
+    pool_non_s0 = (
+        pool[~pool.get("control_id", pd.Series(dtype=str)).astype(str).isin(s0_controls)].copy()
+        if not pool.empty and s0_controls
+        else pd.DataFrame(columns=pool.columns)
+    )
     write_csv(output_root / "unified_candidates_per_control.csv", pool)
     write_csv(output_root / "unified_candidates_per_control_s0.csv", pool_s0)
     write_csv(output_root / "unified_candidates_per_control_non_s0.csv", pool_non_s0)
 
 
-def run_from_base_pool(args: argparse.Namespace, repo_root: Path, output_root: Path, base_pool_path: Path) -> dict[str, Any]:
+def run_from_base_pool(
+    args: argparse.Namespace, repo_root: Path, output_root: Path, base_pool_path: Path
+) -> dict[str, Any]:
     current = safe_read_csv(resolve(args.current_integrated_best, repo_root))
     if "lib_id" in current.columns:
         current = current[pd.to_numeric(current["lib_id"], errors="coerce").eq(int(args.lib_id))].copy()
@@ -125,7 +143,10 @@ def run_from_base_pool(args: argparse.Namespace, repo_root: Path, output_root: P
     base_pool = normalize_existing_pool(safe_read_csv(resolve(base_pool_path, repo_root)))
     scored = base.normalize(safe_read_csv(resolve(args.scored_candidates, repo_root)))
     extra_text = str(args.extra_inputs or "")
-    if extra_text == ",".join(base.DEFAULT_EXTRA_INPUTS) and (int(args.lib_id), str(args.ion_mode)) != (209, "negative"):
+    if extra_text == ",".join(base.DEFAULT_EXTRA_INPUTS) and (int(args.lib_id), str(args.ion_mode)) != (
+        209,
+        "negative",
+    ):
         extra_text = base.default_extra_inputs_for_scope(int(args.lib_id), str(args.ion_mode))
     extras = base.normalize(load_extra_only(extra_text, repo_root))
     frames = [frame for frame in (base_pool, scored, extras) if not frame.empty]
@@ -135,17 +156,41 @@ def run_from_base_pool(args: argparse.Namespace, repo_root: Path, output_root: P
     nce_features = nce_feature_table(args.scored_candidates, repo_root)
     pool = overlay_nce_features(pool, nce_features)
     if not pool.empty:
-        sort_cols = [col for col in ["control_id", "predicted_spectrum_score_v2", "mass_match_score", "min_source_rank"] if col in pool.columns]
-        ascending_lookup = {"control_id": True, "predicted_spectrum_score_v2": False, "mass_match_score": False, "min_source_rank": True}
+        sort_cols = [
+            col
+            for col in ["control_id", "predicted_spectrum_score_v2", "mass_match_score", "min_source_rank"]
+            if col in pool.columns
+        ]
+        ascending_lookup = {
+            "control_id": True,
+            "predicted_spectrum_score_v2": False,
+            "mass_match_score": False,
+            "min_source_rank": True,
+        }
         pool = pool.sort_values(sort_cols, ascending=[ascending_lookup[col] for col in sort_cols], kind="mergesort")
         pool["unified_pool_rank"] = pool.groupby("control_id", dropna=False).cumcount() + 1
     refresh_splits(output_root, pool, args, repo_root)
-    winners = current[pd.to_numeric(current.get("top10_best_tanimoto"), errors="coerce").fillna(0.0).ge(0.7)].copy() if not current.empty else pd.DataFrame()
-    pool_keys = set(zip(pool.get("control_id", pd.Series(dtype=str)).astype(str), pool.get("canonical_2d_smiles", pd.Series(dtype=str)).astype(str))) if not pool.empty else set()
+    winners = (
+        current[pd.to_numeric(current.get("top10_best_tanimoto"), errors="coerce").fillna(0.0).ge(0.7)].copy()
+        if not current.empty
+        else pd.DataFrame()
+    )
+    pool_keys = (
+        set(
+            zip(
+                pool.get("control_id", pd.Series(dtype=str)).astype(str),
+                pool.get("canonical_2d_smiles", pd.Series(dtype=str)).astype(str),
+            )
+        )
+        if not pool.empty
+        else set()
+    )
     preserve_rows = []
     for _, row in winners.iterrows():
         key = (str(row.get("control_id", "")), base.canonicalize_smiles(row.get("top10_smiles", "")) or "")
-        preserve_rows.append({"control_id": key[0], "winner_present": key in pool_keys, "winner_smiles": row.get("top10_smiles", "")})
+        preserve_rows.append(
+            {"control_id": key[0], "winner_present": key in pool_keys, "winner_smiles": row.get("top10_smiles", "")}
+        )
     preserve = pd.DataFrame(preserve_rows)
     write_csv(output_root / "preserve_25_pool_check.csv", preserve)
     n_expected = int(preserve.shape[0])
@@ -160,7 +205,9 @@ def run_from_base_pool(args: argparse.Namespace, repo_root: Path, output_root: P
         "n_controls": int(pool["control_id"].nunique()) if not pool.empty else 0,
         "n_s0_rows": int(safe_read_csv(output_root / "unified_candidates_per_control_s0.csv").shape[0]),
         "n_nce_feature_rows": int(nce_features.shape[0]),
-        "n_pool_rows_with_nce_draw_count": int(numeric_col(pool, "nce_draw_count").gt(0.0).sum()) if not pool.empty else 0,
+        "n_pool_rows_with_nce_draw_count": (
+            int(numeric_col(pool, "nce_draw_count").gt(0.0).sum()) if not pool.empty else 0
+        ),
         "n_current_winners_present": n_present,
         "n_current_winners_expected": n_expected,
         "acceptance_pass": bool(n_expected == 0 or n_present >= min(25, n_expected)),
@@ -176,7 +223,12 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     output_root = resolve(args.output_root, repo_root)
     current_path = resolve(args.current_integrated_best, repo_root)
     if not current_path.exists():
-        nested_current = Path("models") / "integrated_denovo_audit_v15" / f"lib_{int(args.lib_id)}_{str(args.ion_mode)}" / "integrated_per_control_best.csv"
+        nested_current = (
+            Path("models")
+            / "integrated_denovo_audit_v15"
+            / f"lib_{int(args.lib_id)}_{str(args.ion_mode)}"
+            / "integrated_per_control_best.csv"
+        )
         if resolve(nested_current, repo_root).exists():
             args.current_integrated_best = nested_current
     base_pool_path = args.base_unified_pool_csv or default_base_pool_for_scope(int(args.lib_id), str(args.ion_mode))
@@ -195,7 +247,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         **summary,
         "v16_overlay": True,
         "n_nce_feature_rows": int(nce_features.shape[0]),
-        "n_pool_rows_with_nce_draw_count": int(pd.to_numeric(pool.get("nce_draw_count"), errors="coerce").fillna(0.0).gt(0.0).sum()) if not pool.empty else 0,
+        "n_pool_rows_with_nce_draw_count": (
+            int(pd.to_numeric(pool.get("nce_draw_count"), errors="coerce").fillna(0.0).gt(0.0).sum())
+            if not pool.empty
+            else 0
+        ),
     }
     write_json(output_root / "unified_candidate_pool_summary.json", summary)
     write_json(output_root / "unified_candidate_pool_v16_summary.json", summary)
@@ -208,9 +264,15 @@ def main() -> None:
     parser.add_argument("--output-root", type=Path, default=Path("models/unified_candidate_pool_nce_sweep_v16"))
     parser.add_argument("--scored-candidates", type=Path, required=True)
     parser.add_argument("--extra-inputs", default=",".join(base.DEFAULT_EXTRA_INPUTS))
-    parser.add_argument("--current-integrated-best", type=Path, default=Path("models/integrated_denovo_audit_v15/integrated_per_control_best.csv"))
+    parser.add_argument(
+        "--current-integrated-best",
+        type=Path,
+        default=Path("models/integrated_denovo_audit_v15/integrated_per_control_best.csv"),
+    )
     parser.add_argument("--include-all-x", action="store_true")
-    parser.add_argument("--all-x-catalog", type=Path, default=Path("models/x_known_curation_v1/known_x_evidence_catalog.csv"))
+    parser.add_argument(
+        "--all-x-catalog", type=Path, default=Path("models/x_known_curation_v1/known_x_evidence_catalog.csv")
+    )
     parser.add_argument("--isotope-signals-csv", type=Path, default=None)
     parser.add_argument("--base-unified-pool-csv", type=Path, default=None)
     parser.add_argument("--isotope-filter-impossible", action=argparse.BooleanOptionalAction, default=True)

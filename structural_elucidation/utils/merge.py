@@ -8,7 +8,9 @@ from typing import Dict, Iterable, List
 import numpy as np
 import pandas as pd
 
-SELFIES_SCORE_FORMULA_VERSION = "0.55*mass_match_score + 0.25*generation_support_fraction + 0.20*sigmoid(mean_log_prob+1.0)"
+SELFIES_SCORE_FORMULA_VERSION = (
+    "0.55*mass_match_score + 0.25*generation_support_fraction + 0.20*sigmoid(mean_log_prob+1.0)"
+)
 
 
 def sigmoid(x: float | pd.Series) -> float | pd.Series:
@@ -68,8 +70,8 @@ def rank_selfies_pool(candidate_metrics_df: pd.DataFrame, tolerance_da: float) -
     )
     pool["normalized_merge_score"] = normalize_score(pool["selfies_score"])
     pool["abs_mass_error_da"] = pd.to_numeric(pool["abs_mass_error_da"], errors="coerce").fillna(np.inf)
-    pool["generation_support_fraction"] = (
-        pd.to_numeric(pool["generation_support_fraction"], errors="coerce").fillna(0.0)
+    pool["generation_support_fraction"] = pd.to_numeric(pool["generation_support_fraction"], errors="coerce").fillna(
+        0.0
     )
     pool["predicted_smiles"] = pool["predicted_smiles"].astype(str)
 
@@ -302,9 +304,9 @@ def build_policy_selfies_only(
     selfies_merge_df: pd.DataFrame,
 ) -> pd.DataFrame:
     chunks: List[pd.DataFrame] = []
-    grouped = selfies_merge_df.sort_values(
-        ["feature_key", "source_rank", "smiles"], kind="mergesort"
-    ).groupby("feature_key", sort=False)
+    grouped = selfies_merge_df.sort_values(["feature_key", "source_rank", "smiles"], kind="mergesort").groupby(
+        "feature_key", sort=False
+    )
     for feature_key in feature_keys:
         part = grouped.get_group(feature_key).copy() if feature_key in grouped.groups else pd.DataFrame()
         if not part.empty:

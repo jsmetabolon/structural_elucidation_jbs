@@ -18,7 +18,6 @@ import pandas as pd
 
 from structural_elucidation.paths import REPO_ROOT
 
-
 DEFAULT_NCE_ROOT = REPO_ROOT / "vendor" / "nce"
 DEFAULT_REFERENCE_DIR = REPO_ROOT / "vendor" / "modelfiles"
 DEFAULT_MLIMS_TABLE_CANDIDATES = (
@@ -112,7 +111,9 @@ class PickleCachedMlimsService:
 
 
 @lru_cache(maxsize=4)
-def get_cached_mlims_service_from_pickle(*, reference_dir: str = str(DEFAULT_REFERENCE_DIR)) -> PickleCachedMlimsService:
+def get_cached_mlims_service_from_pickle(
+    *, reference_dir: str = str(DEFAULT_REFERENCE_DIR)
+) -> PickleCachedMlimsService:
     candidates = [Path(str(reference_dir)).expanduser() / "mlims_tables.pkl", *DEFAULT_MLIMS_TABLE_CANDIDATES]
     for path in candidates:
         if not path.exists():

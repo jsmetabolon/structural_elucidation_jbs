@@ -97,8 +97,7 @@ def formula_counts(formula: Any) -> dict[str, int]:
 
 def formula_vector_from_counts(counts: dict[str, int]) -> list[float]:
     return [
-        float(np.clip(float(counts.get(element, 0)) / FORMULA_FEATURE_SCALE, 0.0, 1.0))
-        for element in FORMULA_ELEMENTS
+        float(np.clip(float(counts.get(element, 0)) / FORMULA_FEATURE_SCALE, 0.0, 1.0)) for element in FORMULA_ELEMENTS
     ]
 
 

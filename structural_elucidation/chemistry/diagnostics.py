@@ -17,7 +17,6 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
-
 DIAGNOSTIC_FRAGMENTS_NEG: dict[str, dict[str, Any]] = {
     "sulfate": {
         "diagnostic_mz": [(79.9574, 0.005), (96.9601, 0.005)],

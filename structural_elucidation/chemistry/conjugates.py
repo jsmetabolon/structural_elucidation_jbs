@@ -20,7 +20,6 @@ from structural_elucidation.evaluation.rerank_assembly import eval_reranked, wri
 from structural_elucidation.paths import REPO_ROOT, resolve
 from structural_elucidation.utils.domain import dataframe_to_markdown, safe_float, safe_int, write_csv, write_json
 
-
 DEFAULT_OUTPUT_ROOT = Path("models/multi_conjugate_candidates_v1")
 RUN_NAME = "multi_conjugate_v1"
 
@@ -58,7 +57,11 @@ CONJUGATE_REACTIONS: dict[str, tuple[str, ...]] = {
     "lactoyl": ("lactoyl_amine_conjugation", "lactoyl_hydroxyl_conjugation"),
     "acetyl": ("amine_acetylation", "hydroxyl_acetylation"),
     "glycine": ("amine_glycine_conjugation",),
-    "glucuronide": ("glucuronide_hydroxyl_conjugation", "glucuronide_carboxyl_conjugation", "glucuronide_amine_conjugation"),
+    "glucuronide": (
+        "glucuronide_hydroxyl_conjugation",
+        "glucuronide_carboxyl_conjugation",
+        "glucuronide_amine_conjugation",
+    ),
     "sulfate": ("hydroxyl_sulfation",),
     "phosphate": ("hydroxyl_phosphorylation",),
     "taurine": ("carboxyl_taurine_amide",),
@@ -160,11 +163,19 @@ def build_rows(seed_queue: pd.DataFrame, args: argparse.Namespace) -> tuple[pd.D
         conjugate_name = str(seed.get("conjugate_name", "") or "")
         target_neutral_mass = safe_float(seed.get("neutral_mass"), math.nan)
         if not control_id or not feature_key or not np.isfinite(target_neutral_mass):
-            skipped.append({"control_id": control_id, "conjugate_name": conjugate_name, "reason": "missing_control_feature_or_mass"})
+            skipped.append(
+                {
+                    "control_id": control_id,
+                    "conjugate_name": conjugate_name,
+                    "reason": "missing_control_feature_or_mass",
+                }
+            )
             continue
         reactions = seed_reactions(conjugate_name)
         if not reactions:
-            skipped.append({"control_id": control_id, "conjugate_name": conjugate_name, "reason": "no_targeted_reaction_smarts"})
+            skipped.append(
+                {"control_id": control_id, "conjugate_name": conjugate_name, "reason": "no_targeted_reaction_smarts"}
+            )
             continue
         for reaction_name in reactions:
             for base in BASE_LIBRARY:
@@ -181,7 +192,9 @@ def build_rows(seed_queue: pd.DataFrame, args: argparse.Namespace) -> tuple[pd.D
                     ms1_supported = str(seed.get("ms1_buddy_supported", False)).lower() in {"true", "1", "yes", "y"}
                     evidence = float(np.clip(0.35 + 0.35 * formula_prior + (0.15 if ms1_supported else 0.0), 0.0, 1.0))
                     forward = float(np.clip(0.35 + 0.25 * score + (0.15 if ms1_supported else 0.0), 0.0, 1.0))
-                    generation = float(np.clip(0.45 * score + 0.25 * evidence + 0.20 * forward + 0.10 * formula_prior, 0.0, 1.0))
+                    generation = float(
+                        np.clip(0.45 * score + 0.25 * evidence + 0.20 * forward + 0.10 * formula_prior, 0.0, 1.0)
+                    )
                     rows.append(
                         {
                             "feature_key": feature_key,
@@ -216,12 +229,21 @@ def build_rows(seed_queue: pd.DataFrame, args: argparse.Namespace) -> tuple[pd.D
     candidates = pd.DataFrame(rows)
     if not candidates.empty:
         candidates = candidates.sort_values(
-            ["feature_key", "mass_match_score", "generation_score", "evidence_confidence", "abs_mass_error_da", "predicted_smiles"],
+            [
+                "feature_key",
+                "mass_match_score",
+                "generation_score",
+                "evidence_confidence",
+                "abs_mass_error_da",
+                "predicted_smiles",
+            ],
             ascending=[True, False, False, False, True, True],
             kind="mergesort",
         ).drop_duplicates(["feature_key", "predicted_smiles"], keep="first")
         candidates["rank"] = candidates.groupby("feature_key", dropna=False).cumcount() + 1
-        candidates = candidates[pd.to_numeric(candidates["rank"], errors="coerce").le(int(args.max_candidates_per_feature))].reset_index(drop=True)
+        candidates = candidates[
+            pd.to_numeric(candidates["rank"], errors="coerce").le(int(args.max_candidates_per_feature))
+        ].reset_index(drop=True)
         for column in REQUIRED_COLUMNS:
             if column not in candidates.columns:
                 candidates[column] = ""
@@ -247,7 +269,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     candidate_path = out_dir / "candidate_metrics_all.csv"
     denovo_path = out_dir / "denovo_report.csv"
     write_csv(candidate_path, candidates)
-    ranked = candidates[candidates.get("rank", pd.Series(dtype=int)).le(10)].copy() if not candidates.empty else candidates
+    ranked = (
+        candidates[candidates.get("rank", pd.Series(dtype=int)).le(10)].copy() if not candidates.empty else candidates
+    )
     write_denovo_report(ranked, denovo_path)
     controls = load_x_controls(
         known_x=repo_root / "known_X.csv",
@@ -311,7 +335,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
-    parser.add_argument("--seed-queue", type=Path, default=Path("models/multi_conjugate_generation_v1/multi_conjugate_seed_queue.csv"))
+    parser.add_argument(
+        "--seed-queue", type=Path, default=Path("models/multi_conjugate_generation_v1/multi_conjugate_seed_queue.csv")
+    )
     parser.add_argument("--lib-id", type=int, default=209)
     parser.add_argument("--ion-mode", default="negative")
     parser.add_argument("--profile", default="strict_1da")

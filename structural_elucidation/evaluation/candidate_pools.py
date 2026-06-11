@@ -25,7 +25,6 @@ from structural_elucidation.evaluation.decision import (
 )
 from structural_elucidation.evaluation.controls import HAS_RDKIT, load_controls
 
-
 PROFILE_TOLERANCE_DEFAULTS = {
     "strict_1da": 1.0,
     "balanced": 5.0,
@@ -164,10 +163,7 @@ def evaluate_candidate_pools(
                 mass_tolerance_da=float(mass_tolerance_da),
             )
             metric_row = {
-                **{
-                    col: None
-                    for col in METRIC_COLUMNS
-                },
+                **{col: None for col in METRIC_COLUMNS},
                 "lib_id": int(lib_id),
                 "ion_mode": str(ion_mode),
                 "source_type": "selfies_profile",
@@ -196,9 +192,7 @@ def evaluate_candidate_pools(
     metrics_df = pd.DataFrame(metric_rows)
     if not metrics_df.empty:
         ordered = ["experiment", *METRIC_COLUMNS]
-        metrics_df = metrics_df.reindex(
-            columns=[*ordered, *[col for col in metrics_df.columns if col not in ordered]]
-        )
+        metrics_df = metrics_df.reindex(columns=[*ordered, *[col for col in metrics_df.columns if col not in ordered]])
     per_control_df = pd.DataFrame(per_control_rows)
     oracle_df = pd.DataFrame(oracle_rows)
     mass_df = pd.DataFrame(mass_rows)
@@ -265,9 +259,7 @@ def render_report(
     if metrics_df.empty:
         lines.append("No metrics were produced.")
     else:
-        display = metrics_df[
-            metrics_df["metric_scope"].isin(["rank1", "top10", "full_pool_oracle"])
-        ].copy()
+        display = metrics_df[metrics_df["metric_scope"].isin(["rank1", "top10", "full_pool_oracle"])].copy()
         keep = [
             "experiment",
             "lib_id",

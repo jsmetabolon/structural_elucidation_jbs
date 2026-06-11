@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict
 
-
 VALID_COMPONENTS = (
     "latent_cosine",
     "precursor_mass_score",
@@ -71,9 +70,7 @@ def resolve_scoring_config(weights_json_path: str | Path | None) -> RetrievalSco
 
     latent_cos_transform = str(payload.get("latent_cos_transform", "raw")).strip().lower()
     if latent_cos_transform not in {"raw", "scaled01"}:
-        raise ValueError(
-            f"Invalid latent_cos_transform={latent_cos_transform!r}. Expected 'raw' or 'scaled01'."
-        )
+        raise ValueError(f"Invalid latent_cos_transform={latent_cos_transform!r}. Expected 'raw' or 'scaled01'.")
 
     normalized = normalize_weights({k: float(raw_weights.get(k, 0.0)) for k in VALID_COMPONENTS})
     return RetrievalScoringConfig(weights=normalized, latent_cos_transform=latent_cos_transform)

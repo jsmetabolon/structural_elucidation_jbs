@@ -170,8 +170,7 @@ def prepare_candidate_source(
         hard = read_table(hard_all)
         if "comp_id" in hard.columns:
             exclude_comp_ids.update(
-                int(value)
-                for value in pd.to_numeric(hard["comp_id"], errors="coerce").dropna().astype(int)
+                int(value) for value in pd.to_numeric(hard["comp_id"], errors="coerce").dropna().astype(int)
             )
     candidates = candidates[~candidates["comp_id"].astype(int).isin(exclude_comp_ids)].copy()
     candidates = candidates[
@@ -188,7 +187,9 @@ def prepare_candidate_source(
 def anchors_for_x(target: pd.Series, retrieval_df: pd.DataFrame, anchor_top_n: int) -> list[dict[str, Any]]:
     if retrieval_df.empty:
         return []
-    group = retrieval_df[retrieval_df["feature_key"].astype(str).eq(str(target.get("feature_key", "")))].head(int(anchor_top_n))
+    group = retrieval_df[retrieval_df["feature_key"].astype(str).eq(str(target.get("feature_key", "")))].head(
+        int(anchor_top_n)
+    )
     rows = []
     for _, row in group.iterrows():
         smiles = str(row.get("smiles", "") or "")
@@ -256,7 +257,9 @@ def score_feature_candidates(
     ion_mode = str(target.get("ion_mode") or lib_mode(lib_id))
     parent_mz = safe_float(target.get("parent_mz"), 0.0)
     anchor_fps = [anchor["anchor_fp"] for anchor in anchors if anchor.get("anchor_fp") is not None]
-    anchor_formulas = {str(anchor.get("anchor_formula", "")) for anchor in anchors if str(anchor.get("anchor_formula", ""))}
+    anchor_formulas = {
+        str(anchor.get("anchor_formula", "")) for anchor in anchors if str(anchor.get("anchor_formula", ""))
+    }
     best_anchor = anchors[0] if anchors else {}
     rows: list[dict[str, Any]] = []
     scoped = candidate_source[candidate_source["lib_id"].astype(int).eq(lib_id)].copy()
@@ -276,10 +279,7 @@ def score_feature_candidates(
         ]
     if anchor_fps:
         scoped_fps = list(scoped["fp"])
-        tanimoto_matrix = [
-            DataStructs.BulkTanimotoSimilarity(anchor_fp, scoped_fps)
-            for anchor_fp in anchor_fps
-        ]
+        tanimoto_matrix = [DataStructs.BulkTanimotoSimilarity(anchor_fp, scoped_fps) for anchor_fp in anchor_fps]
         anchor_tanimotos = np.max(np.asarray(tanimoto_matrix, dtype=float), axis=0)
     else:
         anchor_tanimotos = np.zeros(scoped.shape[0], dtype=float)
@@ -391,7 +391,9 @@ def write_profile(
         candidate_df = candidate_df.sort_values(["feature_key", "candidate_file_rank"], kind="mergesort")
     denovo_rows = []
     if not candidate_df.empty:
-        kept = candidate_df[pd.to_numeric(candidate_df["abs_mass_error_da"], errors="coerce").le(float(tolerance))].copy()
+        kept = candidate_df[
+            pd.to_numeric(candidate_df["abs_mass_error_da"], errors="coerce").le(float(tolerance))
+        ].copy()
         kept = kept.sort_values(["feature_key", "candidate_file_rank"], kind="mergesort")
         for feature_key, group in kept.groupby("feature_key", sort=False):
             for rank, (_, row) in enumerate(group.head(int(top_k)).iterrows(), start=1):
@@ -470,7 +472,9 @@ def run_analog_generation(
         if "x_control" in scopes and not x_targets.empty:
             scoped_targets.append(("x_control", x_targets[x_targets["lib_id"].astype("Int64").eq(int(lib_id))].copy()))
         if "hard_holdout" in scopes and not hard_targets.empty:
-            scoped_targets.append(("hard_holdout", hard_targets[hard_targets["lib_id"].astype("Int64").eq(int(lib_id))].copy()))
+            scoped_targets.append(
+                ("hard_holdout", hard_targets[hard_targets["lib_id"].astype("Int64").eq(int(lib_id))].copy())
+            )
         for scope, targets in scoped_targets:
             if targets.empty:
                 continue
@@ -533,10 +537,16 @@ def run_analog_generation(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, default=Path("models/denovo_x_domain_analog_v1"))
-    parser.add_argument("--baseline-root", type=Path, default=Path("models/merged_structuremasst_bundle_excl_x_unresolved_2026-04-17_metabolon"))
+    parser.add_argument(
+        "--baseline-root",
+        type=Path,
+        default=Path("models/merged_structuremasst_bundle_excl_x_unresolved_2026-04-17_metabolon"),
+    )
     parser.add_argument("--hard-holdout-dir", type=Path, default=Path("models/denovo_x_domain_analog_v1/hard_holdouts"))
     parser.add_argument("--known-x", type=Path, default=Path("known_X.csv"))
-    parser.add_argument("--unknown-feature-table", type=Path, default=Path("merged_encoder/data/ions_unknown_merged.csv"))
+    parser.add_argument(
+        "--unknown-feature-table", type=Path, default=Path("merged_encoder/data/ions_unknown_merged.csv")
+    )
     parser.add_argument("--libs", type=str, default="209,305")
     parser.add_argument("--profiles", type=str, default="strict_1da,balanced")
     parser.add_argument("--scopes", type=str, default="x_control,hard_holdout")

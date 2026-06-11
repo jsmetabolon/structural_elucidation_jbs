@@ -25,6 +25,7 @@ try:
     from rdkit.Chem import Descriptors
     from rdkit.DataStructs import TanimotoSimilarity
     from rdkit.Chem import AllChem
+
     HAS_RDKIT = True
 except ImportError:
     HAS_RDKIT = False
@@ -312,9 +313,7 @@ def load_encoder_checkpoint(
     state = robust_torch_load(ckpt_path, map_location="cpu", weights_only=False)
     if not isinstance(state, dict):
         raise RuntimeError(f"Expected state_dict in {ckpt_path}, got {type(state)}")
-    model_n_bins = int(
-        infer_mass_conditioned_compatible_length(state, preferred_length_in=n_bins) or n_bins
-    )
+    model_n_bins = int(infer_mass_conditioned_compatible_length(state, preferred_length_in=n_bins) or n_bins)
     model = Net1D(
         length_in=model_n_bins,
         minmass=minmass,
@@ -487,9 +486,7 @@ def load_decoder(
     fallback = decoder_dir / "model.pt"
     state_path = preferred if preferred.exists() else fallback
     if not state_path.exists():
-        raise FileNotFoundError(
-            f"Decoder weights not found. Tried: {preferred} and {fallback}"
-        )
+        raise FileNotFoundError(f"Decoder weights not found. Tried: {preferred} and {fallback}")
     print(f"Loading decoder vocab: {vocab_path}")
     print(f"Loading decoder config: {config_path}")
     print(f"Loading decoder weights: {state_path}")
@@ -519,12 +516,9 @@ def load_decoder(
     unexpected = list(getattr(incompatible, "unexpected_keys", []))
     if skipped_shape:
         preview = ", ".join(
-            f"{name} ckpt={src_shape} model={dst_shape}"
-            for name, src_shape, dst_shape in skipped_shape[:8]
+            f"{name} ckpt={src_shape} model={dst_shape}" for name, src_shape, dst_shape in skipped_shape[:8]
         )
-        print(
-            f"Decoder load skipped {len(skipped_shape)} shape-mismatched tensor(s): {preview}"
-        )
+        print(f"Decoder load skipped {len(skipped_shape)} shape-mismatched tensor(s): {preview}")
     if missing:
         print(f"Decoder load missing keys: {missing}")
     if unexpected:
@@ -618,32 +612,33 @@ def sample_generation_support(
     n = len(feature_keys)
 
     if n == 0:
-        return counts, draws, pd.DataFrame(
-            columns=[
-                "sample_idx",
-                "feature_key",
-                "smiles",
-                "mean_log_prob",
-                "temp",
-                "mass_condition",
-                "ri_condition",
-            ],
-        ), {}
+        return (
+            counts,
+            draws,
+            pd.DataFrame(
+                columns=[
+                    "sample_idx",
+                    "feature_key",
+                    "smiles",
+                    "mean_log_prob",
+                    "temp",
+                    "mass_condition",
+                    "ri_condition",
+                ],
+            ),
+            {},
+        )
 
     z_all = latent_tensor.to(decoder.device)
     mass_all = None
     ri_all = None
     if mass_conditions is not None:
         if len(mass_conditions) != n:
-            raise ValueError(
-                f"mass_conditions length {len(mass_conditions)} does not match n_features={n}"
-            )
+            raise ValueError(f"mass_conditions length {len(mass_conditions)} does not match n_features={n}")
         mass_all = torch.tensor(mass_conditions, dtype=torch.float32, device=decoder.device).unsqueeze(1)
     if ri_conditions is not None:
         if len(ri_conditions) != n:
-            raise ValueError(
-                f"ri_conditions length {len(ri_conditions)} does not match n_features={n}"
-            )
+            raise ValueError(f"ri_conditions length {len(ri_conditions)} does not match n_features={n}")
         ri_all = torch.tensor(ri_conditions, dtype=torch.float32, device=decoder.device).unsqueeze(1)
 
     if temps and len(temps) > 1:
@@ -664,9 +659,14 @@ def sample_generation_support(
             mass_batch = mass_all[start:end] if mass_all is not None else None
             ri_batch = ri_all[start:end] if ri_all is not None else None
             result = decoder.sample(
-                end - start, z=z_batch, temp=sample_temp, max_len=max_len,
-                top_p=top_p, return_log_probs=True,
-                mass=mass_batch, ri=ri_batch,
+                end - start,
+                z=z_batch,
+                temp=sample_temp,
+                max_len=max_len,
+                top_p=top_p,
+                return_log_probs=True,
+                mass=mass_batch,
+                ri=ri_batch,
             )
             decoded, mean_lps = result
             for local_i, smiles in enumerate(decoded):
@@ -1069,25 +1069,37 @@ def build_isotope_audit_summary(
         if not html_isotope_df.empty
         else {}
     )
-    retrieval_status_counts = retrieval_df.get("isotope_audit_status", pd.Series(dtype=object)).fillna(
-        "unavailable"
-    ).astype(str).value_counts().to_dict()
-    denovo_status_counts = denovo_df.get("isotope_audit_status", pd.Series(dtype=object)).fillna(
-        "unavailable"
-    ).astype(str).value_counts().to_dict()
-    merged_status_counts = merged_df.get("isotope_audit_status", pd.Series(dtype=object)).fillna(
-        "unavailable"
-    ).astype(str).value_counts().to_dict()
+    retrieval_status_counts = (
+        retrieval_df.get("isotope_audit_status", pd.Series(dtype=object))
+        .fillna("unavailable")
+        .astype(str)
+        .value_counts()
+        .to_dict()
+    )
+    denovo_status_counts = (
+        denovo_df.get("isotope_audit_status", pd.Series(dtype=object))
+        .fillna("unavailable")
+        .astype(str)
+        .value_counts()
+        .to_dict()
+    )
+    merged_status_counts = (
+        merged_df.get("isotope_audit_status", pd.Series(dtype=object))
+        .fillna("unavailable")
+        .astype(str)
+        .value_counts()
+        .to_dict()
+    )
     return {
         "artifact_prefix": artifact_prefix,
         "feature_rows": int(len(html_isotope_df)),
         "feature_parse_status_counts": {str(key): int(value) for key, value in parse_status_counts.items()},
         "feature_isotopologue_counts": {str(key): int(value) for key, value in feature_status_counts.items()},
-        "feature_rows_with_signals": int(
-            pd.to_numeric(html_isotope_df.get("isotope_signal_count"), errors="coerce").fillna(0).gt(0).sum()
-        )
-        if not html_isotope_df.empty
-        else 0,
+        "feature_rows_with_signals": (
+            int(pd.to_numeric(html_isotope_df.get("isotope_signal_count"), errors="coerce").fillna(0).gt(0).sum())
+            if not html_isotope_df.empty
+            else 0
+        ),
         "retrieval_audit_status_counts": {str(key): int(value) for key, value in retrieval_status_counts.items()},
         "denovo_audit_status_counts": {str(key): int(value) for key, value in denovo_status_counts.items()},
         "merged_audit_status_counts": {str(key): int(value) for key, value in merged_status_counts.items()},
@@ -1142,7 +1154,9 @@ def load_fragment_database(path: Path) -> dict[int, dict[str, object]]:
             spectrum = parse_spectrum_literal(match.group("spectrum"))
             records[cid] = {
                 "candidate_formula": formula if formula and formula.lower() != "nan" else None,
-                "canonical_smiles": canonical_smiles if canonical_smiles and canonical_smiles.lower() != "nan" else None,
+                "canonical_smiles": (
+                    canonical_smiles if canonical_smiles and canonical_smiles.lower() != "nan" else None
+                ),
                 "spectrum": spectrum,
             }
     return records
@@ -1265,32 +1279,34 @@ def compute_mass_gated_retrieval(
                 break
 
         if best_gate is None:
-            rows.append({
-                "feature_key": feature_key,
-                "rank": 1,
-                "comp_id": "",
-                "smiles": "",
-                "name": "",
-                "latent_cosine": float("nan"),
-                "gate_used": float("nan"),
-                "abs_mass_diff": float("nan"),
-                "precursor_mass_score": 0.0,
-                "candidate_formula": None,
-                "usable_formula_count": 0,
-                "html_formula_bonus": 0.0,
-                "fragment_match_count": 0,
-                "fragment_matched_peak_fraction": 0.0,
-                "fragment_explained_intensity_fraction": 0.0,
-                "fragment_match_count_score": 0.0,
-                "isotope_formula_score": 0.0,
-                "substructure_consensus_score": 0.0,
-                "tanimoto_neighbor_score": 0.0,
-                "prevalence_score": 0.0,
-                "retrieval_score": 0.0,
-                "confidence_tier": "no_gated_analog",
-                "recommended": False,
-                "status": "no_gated_analog",
-            })
+            rows.append(
+                {
+                    "feature_key": feature_key,
+                    "rank": 1,
+                    "comp_id": "",
+                    "smiles": "",
+                    "name": "",
+                    "latent_cosine": float("nan"),
+                    "gate_used": float("nan"),
+                    "abs_mass_diff": float("nan"),
+                    "precursor_mass_score": 0.0,
+                    "candidate_formula": None,
+                    "usable_formula_count": 0,
+                    "html_formula_bonus": 0.0,
+                    "fragment_match_count": 0,
+                    "fragment_matched_peak_fraction": 0.0,
+                    "fragment_explained_intensity_fraction": 0.0,
+                    "fragment_match_count_score": 0.0,
+                    "isotope_formula_score": 0.0,
+                    "substructure_consensus_score": 0.0,
+                    "tanimoto_neighbor_score": 0.0,
+                    "prevalence_score": 0.0,
+                    "retrieval_score": 0.0,
+                    "confidence_tier": "no_gated_analog",
+                    "recommended": False,
+                    "status": "no_gated_analog",
+                }
+            )
             continue
 
         candidate_indices = np.where(gate_mask)[0]
@@ -1307,7 +1323,9 @@ def compute_mass_gated_retrieval(
             cos_val = float(candidate_cos[oi])
             diff = float(abs_diffs[bi])
             candidate_record = (fragment_db or {}).get(cid, {})
-            candidate_formula = candidate_record.get("candidate_formula") or molecular_formula(id_to_smiles.get(cid, ""))
+            candidate_formula = candidate_record.get("candidate_formula") or molecular_formula(
+                id_to_smiles.get(cid, "")
+            )
             prevalence_score = 0.0
             if prevalence_map:
                 ik14 = str((id_to_inchikey14 or {}).get(cid, "")).strip()
@@ -1357,27 +1375,29 @@ def compute_mass_gated_retrieval(
                 )
             else:
                 retrieval_score = float(cos_val)
-            scored_rows.append({
-                "feature_key": feature_key,
-                "comp_id": cid,
-                "smiles": id_to_smiles.get(cid, ""),
-                "name": id_to_name.get(cid, ""),
-                "latent_cosine": cos_val,
-                "gate_used": best_gate,
-                "abs_mass_diff": diff,
-                "precursor_mass_score": precursor_score,
-                "candidate_formula": candidate_formula,
-                "usable_formula_count": int(len(usable_formula_set)),
-                "html_formula_bonus": html_formula_bonus,
-                "isotope_formula_score": isotope_formula_score,
-                "fragment_match_count_score": fragment_match_count_score,
-                "substructure_consensus_score": substructure_consensus_score,
-                "tanimoto_neighbor_score": tanimoto_neighbor_score,
-                "prevalence_score": prevalence_score,
-                "retrieval_score": float(retrieval_score),
-                **fragment_metrics,
-                "status": "ok",
-            })
+            scored_rows.append(
+                {
+                    "feature_key": feature_key,
+                    "comp_id": cid,
+                    "smiles": id_to_smiles.get(cid, ""),
+                    "name": id_to_name.get(cid, ""),
+                    "latent_cosine": cos_val,
+                    "gate_used": best_gate,
+                    "abs_mass_diff": diff,
+                    "precursor_mass_score": precursor_score,
+                    "candidate_formula": candidate_formula,
+                    "usable_formula_count": int(len(usable_formula_set)),
+                    "html_formula_bonus": html_formula_bonus,
+                    "isotope_formula_score": isotope_formula_score,
+                    "fragment_match_count_score": fragment_match_count_score,
+                    "substructure_consensus_score": substructure_consensus_score,
+                    "tanimoto_neighbor_score": tanimoto_neighbor_score,
+                    "prevalence_score": prevalence_score,
+                    "retrieval_score": float(retrieval_score),
+                    **fragment_metrics,
+                    "status": "ok",
+                }
+            )
 
         if rescoring_active and scored_rows:
             ordered_rows = sorted(
@@ -1401,9 +1421,7 @@ def compute_mass_gated_retrieval(
                 row["retrieval_score"] = compute_retrieval_score(
                     latent_cosine=float(row.get("latent_cosine", 0.0)),
                     precursor_mass_score=float(row.get("precursor_mass_score", 0.0)),
-                    fragment_explained_intensity_fraction=float(
-                        row.get("fragment_explained_intensity_fraction", 0.0)
-                    ),
+                    fragment_explained_intensity_fraction=float(row.get("fragment_explained_intensity_fraction", 0.0)),
                     fragment_matched_peak_fraction=float(row.get("fragment_matched_peak_fraction", 0.0)),
                     html_formula_bonus=float(row.get("html_formula_bonus", 0.0)),
                     isotope_formula_score=float(row.get("isotope_formula_score", 0.0)),
@@ -1505,9 +1523,7 @@ def artifact_filename(prefix: str, stem: str, suffix: str) -> str:
     return f"{normalized}_{stem}{suffix}"
 
 
-def write_dataframe_with_aliases(
-    df: pd.DataFrame, primary_path: Path, alias_paths: Iterable[Path]
-) -> None:
+def write_dataframe_with_aliases(df: pd.DataFrame, primary_path: Path, alias_paths: Iterable[Path]) -> None:
     df.to_csv(primary_path, index=False)
     for alias_path in alias_paths:
         if alias_path == primary_path:
@@ -1515,9 +1531,7 @@ def write_dataframe_with_aliases(
         df.to_csv(alias_path, index=False)
 
 
-def write_json_with_aliases(
-    payload: dict[str, object], primary_path: Path, alias_paths: Iterable[Path]
-) -> None:
+def write_json_with_aliases(payload: dict[str, object], primary_path: Path, alias_paths: Iterable[Path]) -> None:
     text = json.dumps(payload, indent=2)
     primary_path.write_text(text)
     for alias_path in alias_paths:
@@ -1526,9 +1540,7 @@ def write_json_with_aliases(
         alias_path.write_text(text)
 
 
-def write_tensor_with_aliases(
-    payload: object, primary_path: Path, alias_paths: Iterable[Path]
-) -> None:
+def write_tensor_with_aliases(payload: object, primary_path: Path, alias_paths: Iterable[Path]) -> None:
     torch.save(payload, primary_path)
     for alias_path in alias_paths:
         if alias_path == primary_path:
@@ -1589,17 +1601,24 @@ def get_parser() -> argparse.ArgumentParser:
         help="Optional decoder vocab file in decoder_dir. Defaults to model-specific vocab if present, else vocab.nb.",
     )
     parser.add_argument("--embedding_bank_dir", type=str, default="embeddings_latent_from_smiles_expanded")
-    parser.add_argument("--retrieval_smiles_csv", type=str,
-                        default="SMILES_DB/comp_id_to_smiles_expanded.csv",
-                        help="comp_id-keyed SMILES table for retrieval identity.")
-    parser.add_argument("--retrieval_name_csv", type=str,
-                        default="SMILES_DB/name_dict.csv",
-                        help="comp_id-keyed display-name table.")
-    parser.add_argument("--retrieval_mz_pkl", type=str,
-                        default="SMILES_DB/cid_to_parent_mz_expanded.pkl",
-                        help="comp_id-keyed precursor m/z pickle for mass gating.")
-    parser.add_argument("--chemical_map_csv", type=str, default="",
-                        help="Optional enrichment from MASTER_METABOLITE_LIST.csv (legacy).")
+    parser.add_argument(
+        "--retrieval_smiles_csv",
+        type=str,
+        default="SMILES_DB/comp_id_to_smiles_expanded.csv",
+        help="comp_id-keyed SMILES table for retrieval identity.",
+    )
+    parser.add_argument(
+        "--retrieval_name_csv", type=str, default="SMILES_DB/name_dict.csv", help="comp_id-keyed display-name table."
+    )
+    parser.add_argument(
+        "--retrieval_mz_pkl",
+        type=str,
+        default="SMILES_DB/cid_to_parent_mz_expanded.pkl",
+        help="comp_id-keyed precursor m/z pickle for mass gating.",
+    )
+    parser.add_argument(
+        "--chemical_map_csv", type=str, default="", help="Optional enrichment from MASTER_METABOLITE_LIST.csv (legacy)."
+    )
     parser.add_argument("--train_csv", type=str, default="train.csv")
     parser.add_argument("--output_dir", type=str, default="models/x209_smiles_predictions")
     parser.add_argument(
@@ -1700,25 +1719,41 @@ def get_parser() -> argparse.ArgumentParser:
         help="Bypass basepeak normalization after thresholding. Intended for the gated no-norm branch only.",
     )
     parser.add_argument("--decode_batch_size", type=int, default=128)
-    parser.add_argument("--num_samples", type=int, default=60,
-                        help="Total samples per feature across all schedule modes (increased for mass-first).")
+    parser.add_argument(
+        "--num_samples",
+        type=int,
+        default=60,
+        help="Total samples per feature across all schedule modes (increased for mass-first).",
+    )
     parser.add_argument(
         "--skip_constrained_denovo",
         action="store_true",
         help="Skip Track B constrained de novo generation and emit retrieval-only merged outputs.",
     )
-    parser.add_argument("--decode_temp", type=float, default=1.0,
-                        help="Decoding temperature (default lowered from 2.0 to 1.0).")
-    parser.add_argument("--decode_temps", type=str, default="0.3,0.5,0.8,1.0,1.2",
-                        help="Comma-separated temperature sweep. Samples split evenly across temps.")
-    parser.add_argument("--top_p", type=float, default=0.0,
-                        help="Nucleus sampling threshold (0 disables, 0.9 recommended).")
-    parser.add_argument("--top_p_schedule", type=str, default="0.0,0.85,0.95",
-                        help="Comma-separated top-p values to interleave with temp sweep.")
-    parser.add_argument("--soft_mass_window_da", type=float, default=0.5,
-                        help="Soft mass window in Da for pre-strict shortlisting.")
-    parser.add_argument("--pre_strict_topn", type=int, default=50,
-                        help="Keep top-N candidates by soft score before final strict gate.")
+    parser.add_argument(
+        "--decode_temp", type=float, default=1.0, help="Decoding temperature (default lowered from 2.0 to 1.0)."
+    )
+    parser.add_argument(
+        "--decode_temps",
+        type=str,
+        default="0.3,0.5,0.8,1.0,1.2",
+        help="Comma-separated temperature sweep. Samples split evenly across temps.",
+    )
+    parser.add_argument(
+        "--top_p", type=float, default=0.0, help="Nucleus sampling threshold (0 disables, 0.9 recommended)."
+    )
+    parser.add_argument(
+        "--top_p_schedule",
+        type=str,
+        default="0.0,0.85,0.95",
+        help="Comma-separated top-p values to interleave with temp sweep.",
+    )
+    parser.add_argument(
+        "--soft_mass_window_da", type=float, default=0.5, help="Soft mass window in Da for pre-strict shortlisting."
+    )
+    parser.add_argument(
+        "--pre_strict_topn", type=int, default=50, help="Keep top-N candidates by soft score before final strict gate."
+    )
     parser.add_argument("--decode_max_len", type=int, default=100)
     parser.add_argument(
         "--disable_ri_conditioning",
@@ -1842,21 +1877,30 @@ def get_parser() -> argparse.ArgumentParser:
         help="Optional affine latent calibrator checkpoint applied after encoder inference.",
     )
     parser.add_argument("--max_candidates_per_feature", type=int, default=20)
-    parser.add_argument("--latent_proposal_alphas", type=str, default="0.1,0.2,0.3",
-                        help="Interpolation alphas for retrieval-guided latent proposals.")
-    parser.add_argument("--proposal_samples_per", type=int, default=3,
-                        help="Decode samples per latent proposal.")
-    parser.add_argument("--enable_latent_proposals", action="store_true",
-                        help="Enable retrieval-guided latent proposals for de novo.")
+    parser.add_argument(
+        "--latent_proposal_alphas",
+        type=str,
+        default="0.1,0.2,0.3",
+        help="Interpolation alphas for retrieval-guided latent proposals.",
+    )
+    parser.add_argument("--proposal_samples_per", type=int, default=3, help="Decode samples per latent proposal.")
+    parser.add_argument(
+        "--enable_latent_proposals", action="store_true", help="Enable retrieval-guided latent proposals for de novo."
+    )
     parser.add_argument(
         "--compute_candidate_latent_cosine",
         action="store_true",
         help="Optional: re-encode generated SMILES and compute candidate latent cosine (slower).",
     )
-    parser.add_argument("--mass_filter_tolerance", type=float, default=5.0,
-                        help="Mass tolerance in Da for filtering candidates (0 disables).")
-    parser.add_argument("--mass_filter_hard", action="store_true",
-                        help="If set, discard candidates outside mass tolerance entirely.")
+    parser.add_argument(
+        "--mass_filter_tolerance",
+        type=float,
+        default=5.0,
+        help="Mass tolerance in Da for filtering candidates (0 disables).",
+    )
+    parser.add_argument(
+        "--mass_filter_hard", action="store_true", help="If set, discard candidates outside mass tolerance entirely."
+    )
     parser.add_argument(
         "--apply_tanh",
         action="store_true",
@@ -1909,12 +1953,7 @@ def pre_strict_shortlist_score(
     """Composite score for pre-strict shortlisting. Higher is better."""
     norm_lp = 1.0 / (1.0 + np.exp(-mean_log_prob - 1.0))
     cos_term = max(0.0, latent_cosine) if not np.isnan(latent_cosine) else 0.0
-    return (
-        0.40 * mass_score
-        + 0.25 * norm_lp
-        + 0.20 * support_frac
-        + 0.15 * cos_term
-    )
+    return 0.40 * mass_score + 0.25 * norm_lp + 0.20 * support_frac + 0.15 * cos_term
 
 
 def build_latent_proposals(
@@ -1958,9 +1997,14 @@ def decode_from_proposals(
 
         for _ in range(num_samples_per_proposal):
             result = decoder.sample(
-                1, z=z_batch, temp=temp, max_len=max_len,
-                top_p=top_p, return_log_probs=True,
-                mass=mass_t, ri=ri_t,
+                1,
+                z=z_batch,
+                temp=temp,
+                max_len=max_len,
+                top_p=top_p,
+                return_log_probs=True,
+                mass=mass_t,
+                ri=ri_t,
             )
             decoded, mean_lps = result
             smi = decoded[0]
@@ -1986,13 +2030,7 @@ def denovo_rerank_score(
     lp_term = 1.0 / (1.0 + np.exp(-log_prob - 1.0))
     ret_bonus = min(1.0, retrieval_tanimoto / 0.7) if retrieval_tanimoto > 0.3 else 0.0
 
-    return (
-        0.30 * mass_term
-        + 0.25 * cos_term
-        + 0.20 * lp_term
-        + 0.10 * support_frac
-        + 0.15 * ret_bonus
-    )
+    return 0.30 * mass_term + 0.25 * cos_term + 0.20 * lp_term + 0.10 * support_frac + 0.15 * ret_bonus
 
 
 def rank_denovo_candidates(
@@ -2029,7 +2067,9 @@ def main() -> None:
     artifact_prefix = str(args.artifact_prefix).strip() or "x209"
     retrieval_rescoring_enabled = str(args.retrieval_rescoring).strip().lower() == "on"
     effective_html_formula_mode = str(args.html_formula_mode) if retrieval_rescoring_enabled else "off"
-    retrieval_scoring_config = resolve_scoring_config(args.retrieval_weights_json) if retrieval_rescoring_enabled else None
+    retrieval_scoring_config = (
+        resolve_scoring_config(args.retrieval_weights_json) if retrieval_rescoring_enabled else None
+    )
     preprocessing_config = SpectrumPreprocessingConfig(
         min_rel_intensity_pct=float(args.min_rel_intensity_pct),
         top_peaks=int(args.top_peaks),
@@ -2047,9 +2087,7 @@ def main() -> None:
     mz_hints = load_retrieval_mass_hints(retrieval_smiles_csv, ion_mode=ion_mode)
     bank_mz = load_retrieval_mz(retrieval_mz_pkl, fallback_hints=mz_hints)
     prevalence_map = (
-        load_prevalence_map(prevalence_csv)
-        if retrieval_rescoring_enabled and prevalence_csv.exists()
-        else {}
+        load_prevalence_map(prevalence_csv) if retrieval_rescoring_enabled and prevalence_csv.exists() else {}
     )
     print(f"  SMILES table: {len(id_to_smiles)} comp_ids")
     print(f"  Name table: {len(id_to_name)} comp_ids")
@@ -2078,16 +2116,8 @@ def main() -> None:
 
     features_df = load_feature_table(feature_table_path)
     use_tanh = bool(args.apply_tanh) and not bool(args.no_tanh)
-    parent_mz_min = (
-        float(args.parent_mz_min)
-        if args.parent_mz_min is not None
-        else float(args.minmass)
-    )
-    parent_mz_max = (
-        float(args.parent_mz_max)
-        if args.parent_mz_max is not None
-        else float(args.maxmass)
-    )
+    parent_mz_min = float(args.parent_mz_min) if args.parent_mz_min is not None else float(args.minmass)
+    parent_mz_max = float(args.parent_mz_max) if args.parent_mz_max is not None else float(args.maxmass)
     print(f"Encoder apply_tanh: {use_tanh}")
     print(f"Spectrum preprocessing: {preprocessing_config.to_dict()}")
     print(f"Retrieval rescoring: {'enabled' if retrieval_rescoring_enabled else 'disabled'}")
@@ -2152,17 +2182,13 @@ def main() -> None:
     latent_norms_pre = feature_latents_raw.norm(dim=1).cpu().numpy() if len(feature_latents_raw) else np.array([])
     latent_norms_post = feature_latents.norm(dim=1).cpu().numpy() if len(feature_latents) else np.array([])
 
-    feature_latents_pt = output_dir / artifact_filename(
-        artifact_prefix, "feature_latents", ".pt"
-    )
+    feature_latents_pt = output_dir / artifact_filename(artifact_prefix, "feature_latents", ".pt")
     write_tensor_with_aliases(
         feature_latent_map,
         feature_latents_pt,
         [output_dir / "feature_latents.pt"],
     )
-    feature_meta_csv = output_dir / artifact_filename(
-        artifact_prefix, "feature_meta", ".csv"
-    )
+    feature_meta_csv = output_dir / artifact_filename(artifact_prefix, "feature_meta", ".csv")
     write_dataframe_with_aliases(
         feature_meta_df,
         feature_meta_csv,
@@ -2174,9 +2200,7 @@ def main() -> None:
         feature_meta_df=feature_meta_df,
         candidate_formula_max=int(args.candidate_formula_max),
     )
-    html_isotope_csv = output_dir / artifact_filename(
-        artifact_prefix, "html_isotope_signals", ".csv"
-    )
+    html_isotope_csv = output_dir / artifact_filename(artifact_prefix, "html_isotope_signals", ".csv")
     html_isotope_serialized = serialize_list_columns_for_csv(
         html_isotope_df,
         ["isotope_element_hints", "observed_isotope_rows_json"],
@@ -2195,9 +2219,7 @@ def main() -> None:
                 str(row.feature_key): set(row.usable_formula_set if isinstance(row.usable_formula_set, list) else [])
                 for row in html_feature_df.itertuples(index=False)
             }
-            html_feature_csv = output_dir / artifact_filename(
-                artifact_prefix, "html_formula_signals", ".csv"
-            )
+            html_feature_csv = output_dir / artifact_filename(artifact_prefix, "html_formula_signals", ".csv")
             html_feature_serialized = serialize_list_columns_for_csv(
                 html_feature_df,
                 ["usable_formula_set", "feature_level_formula_set", "candidate_level_formula_set"],
@@ -2251,9 +2273,7 @@ def main() -> None:
         formula_column="candidate_formula",
         smiles_column="smiles",
     )
-    retrieval_csv_path = output_dir / artifact_filename(
-        artifact_prefix, "retrieval_report", ".csv"
-    )
+    retrieval_csv_path = output_dir / artifact_filename(artifact_prefix, "retrieval_report", ".csv")
     retrieval_serialized = serialize_list_columns_for_csv(
         retrieval_df,
         ["isotope_element_hints"],
@@ -2286,15 +2306,9 @@ def main() -> None:
     candidate_metrics_df = pd.DataFrame()
     denovo_df = pd.DataFrame()
     features_with_denovo = 0
-    raw_samples_csv = output_dir / artifact_filename(
-        artifact_prefix, "generation_samples_raw", ".csv"
-    )
-    denovo_csv_path = output_dir / artifact_filename(
-        artifact_prefix, "denovo_report", ".csv"
-    )
-    candidate_metrics_csv_path = output_dir / artifact_filename(
-        artifact_prefix, "candidate_metrics_all", ".csv"
-    )
+    raw_samples_csv = output_dir / artifact_filename(artifact_prefix, "generation_samples_raw", ".csv")
+    denovo_csv_path = output_dir / artifact_filename(artifact_prefix, "denovo_report", ".csv")
+    candidate_metrics_csv_path = output_dir / artifact_filename(artifact_prefix, "candidate_metrics_all", ".csv")
     RI_COVERAGE_THRESHOLD = 0.05  # require >5% RI coverage to use conditioning
     ri_vals = pd.to_numeric(feature_meta_df["rt_or_ri"], errors="coerce").tolist()
     ri_finite = [float(v) for v in ri_vals if np.isfinite(v) and float(v) > 0]
@@ -2342,12 +2356,8 @@ def main() -> None:
         decoder_mass_min, decoder_mass_max, decoder_mass_source = resolve_decoder_mass_normalization(
             decoder_summary_payload
         )
-        mass_condition_min = (
-            float(decoder_mass_min) if decoder_mass_min is not None else float(parent_mz_min)
-        )
-        mass_condition_max = (
-            float(decoder_mass_max) if decoder_mass_max is not None else float(parent_mz_max)
-        )
+        mass_condition_min = float(decoder_mass_min) if decoder_mass_min is not None else float(parent_mz_min)
+        mass_condition_max = float(decoder_mass_max) if decoder_mass_max is not None else float(parent_mz_max)
         print(
             "  Mass conditioning normalization:",
             f"min={mass_condition_min:.4f}",
@@ -2356,14 +2366,15 @@ def main() -> None:
         )
 
         feature_mass_norm = [
-            normalize_scalar(pmz, mass_condition_min, mass_condition_max)
-            for pmz in feature_parent_mzs
+            normalize_scalar(pmz, mass_condition_min, mass_condition_max) for pmz in feature_parent_mzs
         ]
         if not bool(args.disable_ri_conditioning):
             if ri_coverage < RI_COVERAGE_THRESHOLD:
                 ri_auto_disabled = True
-                print(f"  RI conditioning AUTO-DISABLED: coverage={ri_coverage:.2%} "
-                      f"({len(ri_finite)}/{len(ri_vals)}) < threshold={RI_COVERAGE_THRESHOLD:.0%}")
+                print(
+                    f"  RI conditioning AUTO-DISABLED: coverage={ri_coverage:.2%} "
+                    f"({len(ri_finite)}/{len(ri_vals)}) < threshold={RI_COVERAGE_THRESHOLD:.0%}"
+                )
                 print("  Mass conditioning remains active.")
             else:
                 ri_min_used = float(args.ri_min) if args.ri_min is not None else float(np.min(ri_finite))
@@ -2372,8 +2383,10 @@ def main() -> None:
                     normalize_scalar(v, ri_min_used, ri_max_used) if np.isfinite(v) and float(v) > 0 else 0.0
                     for v in ri_vals
                 ]
-                print(f"  RI conditioning enabled: coverage={ri_coverage:.2%}, "
-                      f"normalized with min={ri_min_used:.4f}, max={ri_max_used:.4f}")
+                print(
+                    f"  RI conditioning enabled: coverage={ri_coverage:.2%}, "
+                    f"normalized with min={ri_min_used:.4f}, max={ri_max_used:.4f}"
+                )
         else:
             print("  RI conditioning disabled (user flag).")
 
@@ -2486,7 +2499,9 @@ def main() -> None:
         smiles_mu_cache: Dict[str, torch.Tensor] = {}
         if bool(args.compute_candidate_latent_cosine):
             smiles_mu_cache = build_smiles_mu_cache(
-                decoder=decoder, vocab=vocab, smiles_set=candidate_smiles_set,
+                decoder=decoder,
+                vocab=vocab,
+                smiles_set=candidate_smiles_set,
             )
 
         if HAS_RDKIT:
@@ -2494,10 +2509,7 @@ def main() -> None:
         else:
             print("  WARNING: RDKit not installed. Validity/mass checks disabled.")
 
-        feature_latent_lookup = {
-            feature_keys[i]: feature_latents[i].detach().cpu()
-            for i in range(len(feature_keys))
-        }
+        feature_latent_lookup = {feature_keys[i]: feature_latents[i].detach().cpu() for i in range(len(feature_keys))}
         feature_meta_lookup = {row["feature_key"]: row for row in feature_rows}
         max_candidates = int(args.max_candidates_per_feature)
         soft_window = float(args.soft_mass_window_da)
@@ -2533,24 +2545,29 @@ def main() -> None:
                         candidate_cos = cosine_value(feature_latent, mu)
 
                 shortlist_score = pre_strict_shortlist_score(
-                    s_mass, mean_lp, support, candidate_cos,
+                    s_mass,
+                    mean_lp,
+                    support,
+                    candidate_cos,
                 )
 
-                scored.append({
-                    "predicted_smiles": can_smi,
-                    "is_valid": True,
-                    "predicted_exact_mass": pred_mass,
-                    "predicted_formula": molecular_formula(can_smi),
-                    "abs_mass_error_da": float(abs_mass_error_da),
-                    "soft_mass_score": s_mass,
-                    "mass_match_score": mass_match_score(pred_mass, parent_mz, ion_mode=ion_mode),
-                    "strict_mass_pass": passes_strict_mass_filter(pred_mass, parent_mz, ion_mode=ion_mode),
-                    "mean_log_prob": mean_lp,
-                    "generation_support_count": int(count),
-                    "generation_support_fraction": support,
-                    "candidate_latent_cosine": candidate_cos,
-                    "shortlist_score": shortlist_score,
-                })
+                scored.append(
+                    {
+                        "predicted_smiles": can_smi,
+                        "is_valid": True,
+                        "predicted_exact_mass": pred_mass,
+                        "predicted_formula": molecular_formula(can_smi),
+                        "abs_mass_error_da": float(abs_mass_error_da),
+                        "soft_mass_score": s_mass,
+                        "mass_match_score": mass_match_score(pred_mass, parent_mz, ion_mode=ion_mode),
+                        "strict_mass_pass": passes_strict_mass_filter(pred_mass, parent_mz, ion_mode=ion_mode),
+                        "mean_log_prob": mean_lp,
+                        "generation_support_count": int(count),
+                        "generation_support_fraction": support,
+                        "candidate_latent_cosine": candidate_cos,
+                        "shortlist_score": shortlist_score,
+                    }
+                )
 
             for row in scored:
                 candidate_metrics_rows.append(
@@ -2575,15 +2592,21 @@ def main() -> None:
 
             ranked = rank_denovo_candidates(strict_survivors, max_candidates=max_candidates)
             for rank, row in enumerate(ranked, start=1):
-                denovo_rows.append({
-                    "feature_key": feature_key,
-                    "comp_id": meta["comp_id"],
-                    "feature_label": meta["feature_label"],
-                    "parent_mz": parent_mz,
-                    "rank": rank,
-                    **{k: v for k, v in row.items() if k not in ("strict_mass_pass", "shortlist_score", "soft_mass_score")},
-                    "samples_drawn": draws,
-                })
+                denovo_rows.append(
+                    {
+                        "feature_key": feature_key,
+                        "comp_id": meta["comp_id"],
+                        "feature_label": meta["feature_label"],
+                        "parent_mz": parent_mz,
+                        "rank": rank,
+                        **{
+                            k: v
+                            for k, v in row.items()
+                            if k not in ("strict_mass_pass", "shortlist_score", "soft_mass_score")
+                        },
+                        "samples_drawn": draws,
+                    }
+                )
 
         print(f"  Mass-first pipeline: {n_soft_pass} soft-pass -> {n_strict_pass} strict-pass")
 
@@ -2644,64 +2667,66 @@ def main() -> None:
     if merge_policy_name == "retrieval_default":
         merged_rows = []
         for _, rrow in retrieval_df.iterrows():
-            merged_rows.append({
-                "feature_key": rrow["feature_key"],
-                "track": "retrieval",
-                "rank": rrow["rank"],
-                "authoritative_track_default": authoritative_track_default,
-                "comp_id": rrow.get("comp_id", ""),
-                "smiles": rrow.get("smiles", ""),
-                "name": rrow.get("name", ""),
-                "latent_cosine": rrow.get("latent_cosine", float("nan")),
-                "gate_used": rrow.get("gate_used", float("nan")),
-                "abs_mass_diff": rrow.get("abs_mass_diff", float("nan")),
-                "confidence_tier": rrow.get("confidence_tier", ""),
-                "recommended": rrow.get("recommended", False),
-                "candidate_formula": rrow.get("candidate_formula", None),
-                "retrieval_score": rrow.get("retrieval_score", None),
-                "fragment_match_count": rrow.get("fragment_match_count", None),
-                "fragment_matched_peak_fraction": rrow.get("fragment_matched_peak_fraction", None),
-                "fragment_explained_intensity_fraction": rrow.get("fragment_explained_intensity_fraction", None),
-                "predicted_exact_mass": None,
-                "mass_match_score": None,
-                "mean_log_prob": None,
-                "generation_support_fraction": None,
-                "candidate_latent_cosine": None,
-            })
+            merged_rows.append(
+                {
+                    "feature_key": rrow["feature_key"],
+                    "track": "retrieval",
+                    "rank": rrow["rank"],
+                    "authoritative_track_default": authoritative_track_default,
+                    "comp_id": rrow.get("comp_id", ""),
+                    "smiles": rrow.get("smiles", ""),
+                    "name": rrow.get("name", ""),
+                    "latent_cosine": rrow.get("latent_cosine", float("nan")),
+                    "gate_used": rrow.get("gate_used", float("nan")),
+                    "abs_mass_diff": rrow.get("abs_mass_diff", float("nan")),
+                    "confidence_tier": rrow.get("confidence_tier", ""),
+                    "recommended": rrow.get("recommended", False),
+                    "candidate_formula": rrow.get("candidate_formula", None),
+                    "retrieval_score": rrow.get("retrieval_score", None),
+                    "fragment_match_count": rrow.get("fragment_match_count", None),
+                    "fragment_matched_peak_fraction": rrow.get("fragment_matched_peak_fraction", None),
+                    "fragment_explained_intensity_fraction": rrow.get("fragment_explained_intensity_fraction", None),
+                    "predicted_exact_mass": None,
+                    "mass_match_score": None,
+                    "mean_log_prob": None,
+                    "generation_support_fraction": None,
+                    "candidate_latent_cosine": None,
+                }
+            )
 
         for _, drow in denovo_df.iterrows():
-            merged_rows.append({
-                "feature_key": drow["feature_key"],
-                "track": "de_novo",
-                "rank": drow["rank"],
-                "authoritative_track_default": authoritative_track_default,
-                "comp_id": drow.get("comp_id", ""),
-                "smiles": drow.get("predicted_smiles", ""),
-                "name": "",
-                "latent_cosine": None,
-                "gate_used": None,
-                "abs_mass_diff": None,
-                "confidence_tier": None,
-                "recommended": None,
-                "candidate_formula": drow.get("predicted_formula", None),
-                "retrieval_score": None,
-                "fragment_match_count": None,
-                "fragment_matched_peak_fraction": None,
-                "fragment_explained_intensity_fraction": None,
-                "predicted_exact_mass": drow.get("predicted_exact_mass", None),
-                "mass_match_score": drow.get("mass_match_score", None),
-                "mean_log_prob": drow.get("mean_log_prob", None),
-                "generation_support_fraction": drow.get("generation_support_fraction", None),
-                "candidate_latent_cosine": drow.get("candidate_latent_cosine", None),
-            })
+            merged_rows.append(
+                {
+                    "feature_key": drow["feature_key"],
+                    "track": "de_novo",
+                    "rank": drow["rank"],
+                    "authoritative_track_default": authoritative_track_default,
+                    "comp_id": drow.get("comp_id", ""),
+                    "smiles": drow.get("predicted_smiles", ""),
+                    "name": "",
+                    "latent_cosine": None,
+                    "gate_used": None,
+                    "abs_mass_diff": None,
+                    "confidence_tier": None,
+                    "recommended": None,
+                    "candidate_formula": drow.get("predicted_formula", None),
+                    "retrieval_score": None,
+                    "fragment_match_count": None,
+                    "fragment_matched_peak_fraction": None,
+                    "fragment_explained_intensity_fraction": None,
+                    "predicted_exact_mass": drow.get("predicted_exact_mass", None),
+                    "mass_match_score": drow.get("mass_match_score", None),
+                    "mean_log_prob": drow.get("mean_log_prob", None),
+                    "generation_support_fraction": drow.get("generation_support_fraction", None),
+                    "candidate_latent_cosine": drow.get("candidate_latent_cosine", None),
+                }
+            )
 
         merged_df = pd.DataFrame(merged_rows)
         if not merged_df.empty:
             merged_priority = {"retrieval": 0, "de_novo": 1}
             merged_df["merged_rank"] = (
-                merged_df.assign(
-                    _track_priority=merged_df["track"].map(merged_priority).fillna(99).astype(int)
-                )
+                merged_df.assign(_track_priority=merged_df["track"].map(merged_priority).fillna(99).astype(int))
                 .sort_values(["feature_key", "_track_priority", "rank", "smiles"], kind="mergesort")
                 .groupby("feature_key")
                 .cumcount()
@@ -2788,9 +2813,7 @@ def main() -> None:
         formula_column="candidate_formula",
         smiles_column="smiles",
     )
-    merged_csv_path = output_dir / artifact_filename(
-        artifact_prefix, "merged_predictions", ".csv"
-    )
+    merged_csv_path = output_dir / artifact_filename(artifact_prefix, "merged_predictions", ".csv")
     merged_serialized = serialize_list_columns_for_csv(
         merged_df,
         ["isotope_element_hints"],
@@ -2815,9 +2838,7 @@ def main() -> None:
         retrieval_smiles_ids=id_to_smiles.keys(),
         retrieval_mz_ids=bank_mz.keys(),
     )
-    alignment_report_path = output_dir / artifact_filename(
-        artifact_prefix, "id_alignment_report", ".json"
-    )
+    alignment_report_path = output_dir / artifact_filename(artifact_prefix, "id_alignment_report", ".json")
     write_json_with_aliases(
         alignment_report,
         alignment_report_path,
@@ -2845,9 +2866,7 @@ def main() -> None:
             explicit_path=str(args.decoder_summary_json),
         )
         if not decoder_summary_json.exists():
-            raise FileNotFoundError(
-                f"Decoder summary JSON not found for post-run diagnosis: {decoder_summary_json}"
-            )
+            raise FileNotFoundError(f"Decoder summary JSON not found for post-run diagnosis: {decoder_summary_json}")
         diagnosis_output_dir = derive_decoder_diagnosis_output_dir(
             output_dir=output_dir,
             explicit_path=str(args.decoder_diagnosis_output_dir),
@@ -2869,9 +2888,7 @@ def main() -> None:
             ion_mode=ion_mode,
         )
 
-    feature_source_audit_path, feature_source_audit_summary = load_feature_source_audit_summary(
-        feature_table_path
-    )
+    feature_source_audit_path, feature_source_audit_summary = load_feature_source_audit_summary(feature_table_path)
     ri_audit = {
         "artifact_prefix": artifact_prefix,
         "feature_table": str(feature_table_path),
@@ -2889,14 +2906,10 @@ def main() -> None:
         "feature_source_provenance_summary": feature_source_audit_summary,
         "decoder_mass_conditioning_source": decoder_mass_source if not skip_constrained_denovo else None,
         "decoder_summary_json": (
-            str(decoder_summary_path)
-            if not skip_constrained_denovo and decoder_summary_payload is not None
-            else None
+            str(decoder_summary_path) if not skip_constrained_denovo and decoder_summary_payload is not None else None
         ),
     }
-    ri_audit_path = output_dir / artifact_filename(
-        artifact_prefix, "ri_conditioning_audit", ".json"
-    )
+    ri_audit_path = output_dir / artifact_filename(artifact_prefix, "ri_conditioning_audit", ".json")
     write_json_with_aliases(
         ri_audit,
         ri_audit_path,
@@ -2910,9 +2923,7 @@ def main() -> None:
         merged_df=merged_df,
         html_isotope_csv_path=html_isotope_csv,
     )
-    isotope_audit_summary_path = output_dir / artifact_filename(
-        artifact_prefix, "isotope_audit_summary", ".json"
-    )
+    isotope_audit_summary_path = output_dir / artifact_filename(artifact_prefix, "isotope_audit_summary", ".json")
     write_json_with_aliases(
         isotope_audit_summary,
         isotope_audit_summary_path,
@@ -2936,10 +2947,14 @@ def main() -> None:
         "prevalence_csv": str(prevalence_csv) if prevalence_csv.exists() else None,
         "prevalence_rows_loaded": int(len(prevalence_map)),
         "retrieval_rescoring": str(args.retrieval_rescoring),
-        "retrieval_weights_json": str(Path(args.retrieval_weights_json).expanduser().resolve())
-        if str(args.retrieval_weights_json).strip()
-        else None,
-        "retrieval_scoring_config": retrieval_scoring_config.to_dict() if retrieval_scoring_config is not None else None,
+        "retrieval_weights_json": (
+            str(Path(args.retrieval_weights_json).expanduser().resolve())
+            if str(args.retrieval_weights_json).strip()
+            else None
+        ),
+        "retrieval_scoring_config": (
+            retrieval_scoring_config.to_dict() if retrieval_scoring_config is not None else None
+        ),
         "merge_policy": merge_policy_name,
         "merge_policy_joint_sort_used": bool(merge_policy_joint_sort_used),
         "merge_policy_selfies_cap_per_feature": int(merge_policy_selfies_cap),
@@ -3011,9 +3026,7 @@ def main() -> None:
         },
         "postrun_decoder_mass_diagnosis": diagnosis_result,
     }
-    summary_path = output_dir / artifact_filename(
-        artifact_prefix, "run_summary", ".json"
-    )
+    summary_path = output_dir / artifact_filename(artifact_prefix, "run_summary", ".json")
     write_json_with_aliases(
         summary,
         summary_path,

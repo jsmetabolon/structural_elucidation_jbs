@@ -15,7 +15,6 @@ from structural_elucidation.nce.verifier_v2 import annotate_predicted_spectrum_s
 from structural_elucidation.paths import REPO_ROOT, resolve
 from structural_elucidation.utils.domain import dataframe_to_markdown, write_csv, write_json
 
-
 DEFAULT_INPUTS = (
     "models/peptide_first_denovo_v1_1/rerank/runs/peptide_first_rerank/lib_209_negative/selfies_profiles/protected_union_control_blind/candidate_metrics_all.csv",
     "models/peptide_first_denovo_v1_1/rerank/runs/peptide_first_rerank/lib_209_negative/selfies_profiles/protected_union_annotation_assisted/candidate_metrics_all.csv",
@@ -103,7 +102,9 @@ def s0_controls_for_scope(path: Path, lib_id: int) -> set[str]:
     return set(df[df["evidence_tier"].astype(str).str.contains("S0", na=False)]["x_compound_id"].astype(str))
 
 
-def merge_all_x_observed_lookup(observed: pd.DataFrame, extra_path: Path, lib_id: int, ion_mode: str) -> tuple[pd.DataFrame, int]:
+def merge_all_x_observed_lookup(
+    observed: pd.DataFrame, extra_path: Path, lib_id: int, ion_mode: str
+) -> tuple[pd.DataFrame, int]:
     """Extend an S0-only observed lookup with all-X spectra for include-all-x runs."""
     if observed.empty or not extra_path.exists():
         return observed, 0
@@ -132,7 +133,9 @@ def _boolish_series(series: pd.Series) -> pd.Series:
     return series.astype(str).str.lower().isin({"true", "1", "yes", "y"})
 
 
-def prepare_observed_lookup_for_scope(observed: pd.DataFrame, lib_id: int, ion_mode: str) -> tuple[pd.DataFrame, dict[str, int]]:
+def prepare_observed_lookup_for_scope(
+    observed: pd.DataFrame, lib_id: int, ion_mode: str
+) -> tuple[pd.DataFrame, dict[str, int]]:
     stats = {
         "n_observed_input_rows": int(observed.shape[0]),
         "n_observed_scoped_rows": 0,
@@ -164,16 +167,29 @@ def prepare_observed_lookup_for_scope(observed: pd.DataFrame, lib_id: int, ion_m
         errors="coerce",
     ).fillna(-1)
     ion_bins = pd.to_numeric(work.get("n_observed_ion_bins", pd.Series(0, index=work.index)), errors="coerce").fillna(0)
-    loss_bins = pd.to_numeric(work.get("n_observed_loss_bins", pd.Series(0, index=work.index)), errors="coerce").fillna(0)
+    loss_bins = pd.to_numeric(work.get("n_observed_loss_bins", pd.Series(0, index=work.index)), errors="coerce").fillna(
+        0
+    )
     work["_observed_n_bins"] = ion_bins + loss_bins
     if "spectrum_source" in work.columns:
-        source_order = {str(value): idx for idx, value in enumerate(work["spectrum_source"].fillna("").astype(str).drop_duplicates())}
-        work["_observed_source_order"] = work["spectrum_source"].fillna("").astype(str).map(source_order).fillna(len(source_order))
+        source_order = {
+            str(value): idx
+            for idx, value in enumerate(work["spectrum_source"].fillna("").astype(str).drop_duplicates())
+        }
+        work["_observed_source_order"] = (
+            work["spectrum_source"].fillna("").astype(str).map(source_order).fillna(len(source_order))
+        )
     else:
         work["_observed_source_order"] = 0
     work = (
         work.sort_values(
-            ["control_id", "_observed_n_ms2_pairs", "_observed_n_bins", "_observed_source_order", "_observed_input_order"],
+            [
+                "control_id",
+                "_observed_n_ms2_pairs",
+                "_observed_n_bins",
+                "_observed_source_order",
+                "_observed_input_order",
+            ],
             ascending=[True, False, False, True, True],
             kind="mergesort",
         )
@@ -248,13 +264,20 @@ def source_label_for_path(path: Path) -> str:
 
 def normalize_frame(df: pd.DataFrame, source_label: str, lib_id: int = 209, ion_mode: str = "negative") -> pd.DataFrame:
     out = df.copy()
-    is_unified_pool = "source_labels" in out.columns and ("unified_pool_rank" in out.columns or source_label.startswith("unified_candidate_pool"))
+    is_unified_pool = "source_labels" in out.columns and (
+        "unified_pool_rank" in out.columns or source_label.startswith("unified_candidate_pool")
+    )
     if is_unified_pool and "predicted_spectrum_score_v2" in out.columns:
         out["_input_predicted_spectrum_score_v2"] = pd.to_numeric(out["predicted_spectrum_score_v2"], errors="coerce")
     if "predicted_smiles" not in out.columns and "smiles" in out.columns:
         out["predicted_smiles"] = out["smiles"]
     if "control_id" not in out.columns:
-        out["control_id"] = out.get("feature_key", pd.Series("", index=out.index)).astype(str).str.extract(r"(X-\d+)", expand=False).fillna("")
+        out["control_id"] = (
+            out.get("feature_key", pd.Series("", index=out.index))
+            .astype(str)
+            .str.extract(r"(X-\d+)", expand=False)
+            .fillna("")
+        )
     if "feature_key" not in out.columns:
         out["feature_key"] = out["control_id"].astype(str).map(lambda value: f"{source_label}_{value}")
     if "rank" not in out.columns:
@@ -266,11 +289,15 @@ def normalize_frame(df: pd.DataFrame, source_label: str, lib_id: int = 209, ion_
     else:
         out["ion_mode"] = out["ion_mode"].fillna(str(ion_mode)).astype(str)
     if is_unified_pool:
-        out["source_label"] = out["source_labels"].fillna(out.get("source_label", pd.Series("", index=out.index))).astype(str)
+        out["source_label"] = (
+            out["source_labels"].fillna(out.get("source_label", pd.Series("", index=out.index))).astype(str)
+        )
         out["candidate_source"] = out.get("candidate_source", out["source_label"]).fillna(out["source_label"])
     else:
         out["source_label"] = source_label
-        out["candidate_source"] = out.get("candidate_source", pd.Series(source_label, index=out.index)).fillna(source_label)
+        out["candidate_source"] = out.get("candidate_source", pd.Series(source_label, index=out.index)).fillna(
+            source_label
+        )
     return out
 
 
@@ -300,7 +327,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 json.dumps(
                     {
                         "event": "observed_lookup_loaded",
-                        "n_observed_controls": int(observed["control_id"].nunique()) if "control_id" in observed.columns else 0,
+                        "n_observed_controls": (
+                            int(observed["control_id"].nunique()) if "control_id" in observed.columns else 0
+                        ),
                         "n_all_x_observed_added": int(n_all_x_observed_added),
                     },
                     sort_keys=True,
@@ -312,25 +341,63 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     for rel in parse_inputs(args.input_candidate_metrics, args.lib_id, args.ion_mode):
         path = resolve(rel, repo_root)
         if not path.exists():
-            manifest_rows.append({"input_csv": str(path), "status": "missing", "n_rows_in": 0, "n_rows_scored": 0, "output_csv": ""})
+            manifest_rows.append(
+                {"input_csv": str(path), "status": "missing", "n_rows_in": 0, "n_rows_scored": 0, "output_csv": ""}
+            )
             continue
         source_label = source_label_for_path(path)
         try:
             raw = pd.read_csv(path, low_memory=False)
         except pd.errors.EmptyDataError:
-            manifest_rows.append({"input_csv": str(path), "source_label": source_label, "status": "empty", "n_rows_in": 0, "n_rows_scored": 0, "output_csv": ""})
+            manifest_rows.append(
+                {
+                    "input_csv": str(path),
+                    "source_label": source_label,
+                    "status": "empty",
+                    "n_rows_in": 0,
+                    "n_rows_scored": 0,
+                    "output_csv": "",
+                }
+            )
             continue
         if raw.empty:
-            manifest_rows.append({"input_csv": str(path), "source_label": source_label, "status": "empty", "n_rows_in": 0, "n_rows_scored": 0, "output_csv": ""})
+            manifest_rows.append(
+                {
+                    "input_csv": str(path),
+                    "source_label": source_label,
+                    "status": "empty",
+                    "n_rows_in": 0,
+                    "n_rows_scored": 0,
+                    "output_csv": "",
+                }
+            )
             continue
         norm = normalize_frame(raw, source_label, lib_id=int(args.lib_id), ion_mode=str(args.ion_mode))
         work = trim_for_scoring(norm, int(args.max_rank_per_source))
         if work.empty or "predicted_smiles" not in work.columns:
-            manifest_rows.append({"input_csv": str(path), "source_label": source_label, "status": "empty", "n_rows_in": int(raw.shape[0]), "n_rows_scored": 0, "output_csv": ""})
+            manifest_rows.append(
+                {
+                    "input_csv": str(path),
+                    "source_label": source_label,
+                    "status": "empty",
+                    "n_rows_in": int(raw.shape[0]),
+                    "n_rows_scored": 0,
+                    "output_csv": "",
+                }
+            )
             continue
         scored = annotate_predicted_spectrum_scores_v2(work, observed)
         if scored.empty or "predicted_smiles" not in scored.columns:
-            manifest_rows.append({"input_csv": str(path), "source_label": source_label, "status": "empty", "n_rows_in": int(raw.shape[0]), "n_rows_scored": 0, "output_csv": ""})
+            manifest_rows.append(
+                {
+                    "input_csv": str(path),
+                    "source_label": source_label,
+                    "status": "empty",
+                    "n_rows_in": int(raw.shape[0]),
+                    "n_rows_scored": 0,
+                    "output_csv": "",
+                }
+            )
             continue
         if "_input_predicted_spectrum_score_v2" in scored.columns:
             rescored = pd.to_numeric(scored["predicted_spectrum_score_v2"], errors="coerce").fillna(0.0)
@@ -359,8 +426,14 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     write_csv(output_root / "scored_candidates.csv", combined)
     s0_controls = s0_controls_for_scope(resolve(args.all_x_catalog, repo_root), int(args.lib_id))
     if not combined.empty and s0_controls:
-        write_csv(output_root / "combined_scored_candidates_s0.csv", combined[combined["control_id"].astype(str).isin(s0_controls)].copy())
-        write_csv(output_root / "combined_scored_candidates_non_s0.csv", combined[~combined["control_id"].astype(str).isin(s0_controls)].copy())
+        write_csv(
+            output_root / "combined_scored_candidates_s0.csv",
+            combined[combined["control_id"].astype(str).isin(s0_controls)].copy(),
+        )
+        write_csv(
+            output_root / "combined_scored_candidates_non_s0.csv",
+            combined[~combined["control_id"].astype(str).isin(s0_controls)].copy(),
+        )
     else:
         write_csv(output_root / "combined_scored_candidates_s0.csv", pd.DataFrame(columns=combined.columns))
         write_csv(output_root / "combined_scored_candidates_non_s0.csv", pd.DataFrame(columns=combined.columns))
@@ -370,7 +443,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     rank_rows: list[dict[str, Any]] = []
     if not combined.empty:
         combined["_verifier_rank"] = (
-            combined.sort_values(["control_id", "predicted_spectrum_score_v2"], ascending=[True, False], kind="mergesort")
+            combined.sort_values(
+                ["control_id", "predicted_spectrum_score_v2"], ascending=[True, False], kind="mergesort"
+            )
             .groupby("control_id", dropna=False)
             .cumcount()
             + 1
@@ -378,15 +453,26 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     for _, row in winners.iterrows():
         control_id = str(row.get("control_id", ""))
         winner_smiles = canonicalize_smiles(row.get("top10_smiles", "")) or ""
-        scoped = combined[(combined.get("control_id", pd.Series(dtype=str)).astype(str).eq(control_id)) & (combined.get("canonical_2d_smiles", pd.Series(dtype=str)).astype(str).eq(winner_smiles))]
+        scoped = combined[
+            (combined.get("control_id", pd.Series(dtype=str)).astype(str).eq(control_id))
+            & (combined.get("canonical_2d_smiles", pd.Series(dtype=str)).astype(str).eq(winner_smiles))
+        ]
         rank_rows.append(
             {
                 "control_id": control_id,
                 "source_label": row.get("source_label", ""),
                 "winner_smiles": row.get("top10_smiles", ""),
                 "winner_found_in_scored_pool": bool(not scoped.empty),
-                "best_verifier_score": float(pd.to_numeric(scoped.get("predicted_spectrum_score_v2"), errors="coerce").fillna(0.0).max()) if not scoped.empty else 0.0,
-                "best_verifier_rank": int(pd.to_numeric(scoped.get("_verifier_rank"), errors="coerce").fillna(999999).min()) if not scoped.empty else 999999,
+                "best_verifier_score": (
+                    float(pd.to_numeric(scoped.get("predicted_spectrum_score_v2"), errors="coerce").fillna(0.0).max())
+                    if not scoped.empty
+                    else 0.0
+                ),
+                "best_verifier_rank": (
+                    int(pd.to_numeric(scoped.get("_verifier_rank"), errors="coerce").fillna(999999).min())
+                    if not scoped.empty
+                    else 999999
+                ),
             }
         )
     rank_diag = pd.DataFrame(rank_rows)
@@ -408,7 +494,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "n_current_winners": int(rank_diag.shape[0]),
         "n_current_winners_found": int(rank_diag["winner_found_in_scored_pool"].sum()) if not rank_diag.empty else 0,
         "median_current_winner_verifier_rank": median_rank,
-        "acceptance_pass": bool(median_rank <= float(args.max_acceptance_median_rank)) if median_rank != 999999.0 else False,
+        "acceptance_pass": (
+            bool(median_rank <= float(args.max_acceptance_median_rank)) if median_rank != 999999.0 else False
+        ),
     }
     write_json(output_root / "verifier_scoring_summary.json", summary)
     report = [
@@ -421,7 +509,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         dataframe_to_markdown(manifest),
         "",
         "## Current Winner Verifier Ranks",
-        dataframe_to_markdown(rank_diag.sort_values("best_verifier_rank").head(40) if not rank_diag.empty else rank_diag),
+        dataframe_to_markdown(
+            rank_diag.sort_values("best_verifier_rank").head(40) if not rank_diag.empty else rank_diag
+        ),
         "",
     ]
     (output_root / "verifier_scoring_report.md").write_text("\n".join(report))
@@ -433,15 +523,23 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, default=Path("models/verifier_scoring_v1"))
     parser.add_argument("--observed-lookup", type=Path, default=Path("models/observed_ms2_lookup_v1/per_control.csv"))
-    parser.add_argument("--current-integrated-best", type=Path, default=Path("models/integrated_denovo_audit_v1/integrated_per_control_best.csv"))
+    parser.add_argument(
+        "--current-integrated-best",
+        type=Path,
+        default=Path("models/integrated_denovo_audit_v1/integrated_per_control_best.csv"),
+    )
     parser.add_argument("--input-candidate-metrics", default="")
     parser.add_argument("--lib-id", type=int, default=209)
     parser.add_argument("--ion-mode", default="negative")
     parser.add_argument("--max-rank-per-source", type=int, default=50)
     parser.add_argument("--max-acceptance-median-rank", type=float, default=5.0)
     parser.add_argument("--include-all-x", action="store_true")
-    parser.add_argument("--all-x-catalog", type=Path, default=Path("models/x_known_curation_v1/known_x_evidence_catalog.csv"))
-    parser.add_argument("--all-x-observed-lookup", type=Path, default=Path("models/observed_ms2_lookup_v8/per_control_all_x.csv"))
+    parser.add_argument(
+        "--all-x-catalog", type=Path, default=Path("models/x_known_curation_v1/known_x_evidence_catalog.csv")
+    )
+    parser.add_argument(
+        "--all-x-observed-lookup", type=Path, default=Path("models/observed_ms2_lookup_v8/per_control_all_x.csv")
+    )
     parser.add_argument("--verbose", action="store_true")
     payload = run(parser.parse_args())
     raise SystemExit(0 if payload["acceptance_pass"] else 2)

@@ -15,9 +15,20 @@ import pandas as pd
 
 from structural_elucidation.evaluation.aggregate import best_by_tanimoto, metric_from_rows
 from structural_elucidation.evaluation.assess import discover_profile_dirs, parse_lib_dir
-from structural_elucidation.evaluation.failure_modes import annotate_pool, load_x_controls, normalize_prediction_pool, pool_for_control
-from structural_elucidation.utils.domain import dataframe_to_markdown, parse_libs, safe_float, safe_int, write_csv, write_json
-
+from structural_elucidation.evaluation.failure_modes import (
+    annotate_pool,
+    load_x_controls,
+    normalize_prediction_pool,
+    pool_for_control,
+)
+from structural_elucidation.utils.domain import (
+    dataframe_to_markdown,
+    parse_libs,
+    safe_float,
+    safe_int,
+    write_csv,
+    write_json,
+)
 
 DEFAULT_V3_ROOT = Path("models/denovo_pipeline_v3/assembly_v3")
 DEFAULT_OUTPUT_ROOT = Path("models/denovo_pipeline_v3/assembly_v3_rerank")
@@ -115,7 +126,9 @@ def add_score_features(pool: pd.DataFrame, tolerance_da: float) -> pd.DataFrame:
         out["score_mass"] = (1.0 - abs_err / max(float(tolerance_da), 1e-9)).clip(lower=0.0, upper=1.0)
     out["score_primary_mass"] = (1.0 - primary_err / max(float(tolerance_da), 1e-9)).clip(lower=0.0, upper=1.0)
     out["score_adduct"] = 0.5 * out["score_mass"] + 0.5 * out["score_primary_mass"]
-    out["score_anchor"] = clip01(numeric(out, "anchor_tanimoto", default=0.0).combine_first(numeric(out, "retrieval_tanimoto", default=0.0)))
+    out["score_anchor"] = clip01(
+        numeric(out, "anchor_tanimoto", default=0.0).combine_first(numeric(out, "retrieval_tanimoto", default=0.0))
+    )
     out["score_formula"] = bool_score(out, "formula_anchor_match")
     out["score_support"] = clip01(numeric(out, "generation_support_fraction", default=0.0))
     out["score_operator"] = operator_score(out)
@@ -295,7 +308,9 @@ def eval_reranked(
     return metric_rows, per_rows
 
 
-def load_controls_for_profile(v3_root: Path, known_x: Path, known_x_all: Path, lib_id: int, ion_mode: str, profile: str) -> list[Any]:
+def load_controls_for_profile(
+    v3_root: Path, known_x: Path, known_x_all: Path, lib_id: int, ion_mode: str, profile: str
+) -> list[Any]:
     per_path = v3_root / "aggregate" / "denovo_assembly_v3_per_control.csv"
     wanted: set[str] = set()
     if per_path.exists():
@@ -337,8 +352,7 @@ def gate_policy(
         if safe_int(metric.get("n_tanimoto_ge_0p7"), 0) < safe_int(baseline.get("n_tanimoto_ge_0p7"), 0):
             return False
         x25003 = per_control[
-            per_control["policy"].astype(str).eq(str(policy))
-            & per_control["control_id"].astype(str).eq("X-25003")
+            per_control["policy"].astype(str).eq(str(policy)) & per_control["control_id"].astype(str).eq("X-25003")
         ]
         if not x25003.empty and not x25003["top10_best_tanimoto"].ge(GOOD_TANIMOTO).any():
             return False
@@ -373,7 +387,14 @@ def run_rerank(
         controls = load_controls_for_profile(v3_root, known_x, known_x_all, int(lib_id), ion_mode, profile)
         tolerance = profile_tolerance(profile, profile_dir)
         baseline_top10: dict[str, Any] | None = None
-        profile_out = output_root / "runs" / "control_targeted_assembly_v3" / f"lib_{int(lib_id)}_{ion_mode}" / "selfies_profiles" / profile
+        profile_out = (
+            output_root
+            / "runs"
+            / "control_targeted_assembly_v3"
+            / f"lib_{int(lib_id)}_{ion_mode}"
+            / "selfies_profiles"
+            / profile
+        )
         for policy in POLICIES.values():
             scored = apply_rerank_policy(candidate_df, policy, tolerance)
             ranked = rank_topk(scored, top_k=top_k)
@@ -414,15 +435,17 @@ def run_rerank(
             if row.get("policy") == "assembly_score_baseline":
                 continue
             baseline = baselines.get((safe_int(row.get("lib_id")), str(row.get("profile"))), {})
-            passed = gate_policy(policy=str(row.get("policy")), metric=row.to_dict(), baseline=baseline, per_control=per_df)
+            passed = gate_policy(
+                policy=str(row.get("policy")), metric=row.to_dict(), baseline=baseline, per_control=per_df
+            )
             summary_df.loc[row.name, "acceptance_pass"] = bool(passed)
             summary_df.loc[row.name, "top10_mean_delta_vs_baseline"] = round(
                 safe_float(row.get("mean_best_tanimoto"), 0.0) - safe_float(baseline.get("mean_best_tanimoto"), 0.0),
                 4,
             )
-            summary_df.loc[row.name, "top10_ge07_delta_vs_baseline"] = (
-                safe_int(row.get("n_tanimoto_ge_0p7"), 0) - safe_int(baseline.get("n_tanimoto_ge_0p7"), 0)
-            )
+            summary_df.loc[row.name, "top10_ge07_delta_vs_baseline"] = safe_int(
+                row.get("n_tanimoto_ge_0p7"), 0
+            ) - safe_int(baseline.get("n_tanimoto_ge_0p7"), 0)
             if passed:
                 accepted_rows.append(summary_df.loc[row.name].to_dict())
     write_csv(output_root / "rerank_metrics_by_scope.csv", metrics_df)

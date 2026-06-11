@@ -189,11 +189,7 @@ def generate_smiles_mol_block(smiles: str) -> str | None:
 def _structure_label_for_atom(atom_index: int, structure: dict[str, Any], stereochemical_hydrogens: set[int]) -> str:
     atom = structure["atoms"][atom_index]
     element = atom["element"]
-    bonds = [
-        bond
-        for bond in structure["bonds"]
-        if bond["a1"] == atom_index or bond["a2"] == atom_index
-    ]
+    bonds = [bond for bond in structure["bonds"] if bond["a1"] == atom_index or bond["a2"] == atom_index]
     if element == "C":
         return ""
     if element == "H":
@@ -290,19 +286,16 @@ def render_mol_block_svg(mol_block: str) -> str | None:
     width = max_x - min_x + STRUCTURE_PADDING * 2
     height = max_y - min_y + STRUCTURE_PADDING * 2
     translated_points = [
-        (point[0] - min_x + STRUCTURE_PADDING, point[1] - min_y + STRUCTURE_PADDING)
-        for point in transformed_points
+        (point[0] - min_x + STRUCTURE_PADDING, point[1] - min_y + STRUCTURE_PADDING) for point in transformed_points
     ]
 
     stereochemical_hydrogens = {
         bond["a1"] if atoms[bond["a1"]]["element"] == "H" else bond["a2"]
         for bond in bonds
-        if bond["stereo"] in {1, 6}
-        and (atoms[bond["a1"]]["element"] == "H" or atoms[bond["a2"]]["element"] == "H")
+        if bond["stereo"] in {1, 6} and (atoms[bond["a1"]]["element"] == "H" or atoms[bond["a2"]]["element"] == "H")
     }
     labels = {
-        index: _structure_label_for_atom(index, structure, stereochemical_hydrogens)
-        for index in range(len(atoms))
+        index: _structure_label_for_atom(index, structure, stereochemical_hydrogens) for index in range(len(atoms))
     }
 
     line_width = STRUCTURE_TARGET_BOND_LENGTH * STRUCTURE_LINE_WIDTH_RATIO
@@ -395,23 +388,21 @@ def render_mol_block_svg(mol_block: str) -> str | None:
             continue
         x_pos, y_pos = translated_points[index]
         fill = _structure_label_color(str(atoms[index]["element"]))
-        text_fragments.append(
-            f'<text x="{x_pos:.2f}" y="{y_pos:.2f}" fill="{fill}">{html.escape(label)}</text>'
-        )
+        text_fragments.append(f'<text x="{x_pos:.2f}" y="{y_pos:.2f}" fill="{fill}">{html.escape(label)}</text>')
 
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width:.0f}px" height="{height:.0f}px" '
         f'viewBox="0 0 {width:.2f} {height:.2f}" role="img" aria-label="2D chemical structure">'
-        f'<style>'
-        f'.bond-layer line{{stroke:#000;stroke-width:{line_width:.2f};fill:none;stroke-linecap:round;}}'
-        f'.bond-layer polygon{{stroke:#000;stroke-width:{line_width * 0.6:.2f};fill:#000;stroke-linejoin:round;}}'
-        f'text{{font-family:{STRUCTURE_FONT_FAMILY};font-size:{STRUCTURE_LABEL_FONT_SIZE:.2f}px;'
-        f'font-weight:400;text-anchor:middle;dominant-baseline:middle;'
-        f'paint-order:stroke fill;stroke:#fff;stroke-width:3px;stroke-linejoin:round;}}'
-        f'</style>'
+        f"<style>"
+        f".bond-layer line{{stroke:#000;stroke-width:{line_width:.2f};fill:none;stroke-linecap:round;}}"
+        f".bond-layer polygon{{stroke:#000;stroke-width:{line_width * 0.6:.2f};fill:#000;stroke-linejoin:round;}}"
+        f"text{{font-family:{STRUCTURE_FONT_FAMILY};font-size:{STRUCTURE_LABEL_FONT_SIZE:.2f}px;"
+        f"font-weight:400;text-anchor:middle;dominant-baseline:middle;"
+        f"paint-order:stroke fill;stroke:#fff;stroke-width:3px;stroke-linejoin:round;}}"
+        f"</style>"
         f'<g class="bond-layer">{"".join(bond_fragments)}</g>'
         f'<g class="atom-label-layer">{"".join(text_fragments)}</g>'
-        f'</svg>'
+        f"</svg>"
     )
 
 
@@ -473,7 +464,9 @@ def compact_candidate_scores(candidates: pd.DataFrame) -> pd.DataFrame:
         elif "rerank_score" in candidates.columns:
             candidates["candidate_report_score"] = pd.to_numeric(candidates["rerank_score"], errors="coerce")
         else:
-            candidates["candidate_report_score"] = pd.to_numeric(candidates.get("mass_match_score", 0.0), errors="coerce")
+            candidates["candidate_report_score"] = pd.to_numeric(
+                candidates.get("mass_match_score", 0.0), errors="coerce"
+            )
     columns = [
         "rank",
         "candidate_report_score",
@@ -509,7 +502,10 @@ def consensus_atom_support(reference_smiles: str, candidates: pd.DataFrame) -> t
         return rows, "<p class='note'>Consensus structure unavailable because RDKit or candidate rows are missing.</p>"
     ref = Chem.MolFromSmiles(reference_smiles)
     if ref is None:
-        return rows, "<p class='note'>Consensus structure unavailable because the reference SMILES could not be parsed.</p>"
+        return (
+            rows,
+            "<p class='note'>Consensus structure unavailable because the reference SMILES could not be parsed.</p>",
+        )
     rdDepictor.Compute2DCoords(ref)
     n_atoms = ref.GetNumAtoms()
     support = [0.0] * n_atoms
@@ -680,10 +676,7 @@ def candidate_structure_card_html(
         mass_text = html.escape(str(mass_err))
     consensus_block = ""
     if consensus_svg:
-        consensus_block = (
-            f"<div class='consensus-box'>{consensus_svg}</div>"
-            f"{candidate_consensus_scale_html()}"
-        )
+        consensus_block = f"<div class='consensus-box'>{consensus_svg}</div>" f"{candidate_consensus_scale_html()}"
     return (
         "<div class='structure-card'>"
         f"<h3>{html.escape(title)}</h3>"
@@ -785,10 +778,13 @@ def slugify_label(text: str) -> str:
 
 
 def render_guides_html_LEGACY(guide_targets: list[tuple[str, str]]) -> str:
-    guide_blocks = "".join(
-        f"<section class='guide-card' id='guide-{slug}'><h2>{html.escape(label)}</h2><p>{html.escape(label)} guide will go here.</p></section>"
-        for slug, label in guide_targets
-    ) or "<section class='guide-card'><h2>No guides yet</h2><p>Guide content will go here.</p></section>"
+    guide_blocks = (
+        "".join(
+            f"<section class='guide-card' id='guide-{slug}'><h2>{html.escape(label)}</h2><p>{html.escape(label)} guide will go here.</p></section>"
+            for slug, label in guide_targets
+        )
+        or "<section class='guide-card'><h2>No guides yet</h2><p>Guide content will go here.</p></section>"
+    )
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -847,8 +843,12 @@ def score_smiles_spectrum_alignment(
             out[col] = value
         return out
     mass_col = "mass" if "mass" in peaks.columns else "mz" if "mz" in peaks.columns else ""
-    intensity_col = "intensity" if "intensity" in peaks.columns else "rel_intensity" if "rel_intensity" in peaks.columns else ""
-    parent_col = "parent_mz" if "parent_mz" in peaks.columns else "PARENT_MASS" if "PARENT_MASS" in peaks.columns else ""
+    intensity_col = (
+        "intensity" if "intensity" in peaks.columns else "rel_intensity" if "rel_intensity" in peaks.columns else ""
+    )
+    parent_col = (
+        "parent_mz" if "parent_mz" in peaks.columns else "PARENT_MASS" if "PARENT_MASS" in peaks.columns else ""
+    )
     if not mass_col:
         for col, value in default_cols.items():
             out[col] = value
@@ -1070,7 +1070,14 @@ def network_svg(nodes: list[dict[str, Any]], edges: list[dict[str, Any]]) -> str
             f'<text x="{node["radius"] + 7:.1f}" y="-2">{label}</text>'
             f'<text class="sim-label" x="{node["radius"] + 7:.1f}" y="13">sim {html.escape(similarity_value)}</text></g>'
         )
-    return "\n".join(["<svg viewBox='0 0 1000 620' role='img' aria-label='Chemical similarity network'>", *edge_parts, *node_parts, "</svg>"])
+    return "\n".join(
+        [
+            "<svg viewBox='0 0 1000 620' role='img' aria-label='Chemical similarity network'>",
+            *edge_parts,
+            *node_parts,
+            "</svg>",
+        ]
+    )
 
 
 def build_pairwise_similarity_edges(
@@ -1531,9 +1538,7 @@ def extended_network_svg(nodes: list[dict[str, Any]], edges: list[dict[str, Any]
             stroke_width = 3.4
         hover_label = html.escape(str(node.get("label", "")).replace("\\n", " ").replace("\n", " "))
         label_html = (
-            f'<text x="{node["radius"] + 6:.1f}" y="-1">{html.escape(display_label)}</text>'
-            if display_label
-            else ""
+            f'<text x="{node["radius"] + 6:.1f}" y="-1">{html.escape(display_label)}</text>' if display_label else ""
         )
         node_parts.append(
             f'<g class="ext-node {html.escape(str(node["kind"]))}" data-node-id="{html.escape(str(node["id"]))}" '
@@ -1544,8 +1549,8 @@ def extended_network_svg(nodes: list[dict[str, Any]], edges: list[dict[str, Any]
             f'transform="translate({node["x"]:.1f},{node["y"]:.1f})">'
             f'<circle r="{node["radius"]:.1f}" fill="{html.escape(str(node["color"]))}" stroke="{stroke}" stroke-width="{stroke_width:.1f}">'
             f'<title>{html.escape(str(node["label"]))}\\nType: {html.escape(str(node["kind"]))}\\nSimilarity to X-25003: {sim:.3f}\\n{html.escape(str(node.get("pathway", "")))}</title>'
-            f'</circle>'
-            f'{label_html}</g>'
+            f"</circle>"
+            f"{label_html}</g>"
         )
     return "\n".join(
         [
@@ -1570,7 +1575,9 @@ def x25003_structural_possibility_summary(
     formulas = candidate_scores.get("predicted_formula", pd.Series(dtype=str)).astype(str)
     exact_mask = smiles.eq(target_smiles)
     formula_mask = formulas.eq(target_formula)
-    lactoyl_text = candidate_scores.apply(lambda row: " ".join(str(value) for value in row.tolist()), axis=1).str.lower()
+    lactoyl_text = candidate_scores.apply(
+        lambda row: " ".join(str(value) for value in row.tolist()), axis=1
+    ).str.lower()
     lactoyl_like_mask = lactoyl_text.str.contains("lactoyl|ala|alanine", regex=True, na=False) | exact_mask
     high_known_count = sum(float(row.get("similarity_to_target", 0.0) or 0.0) >= 0.60 for row in neighbors)
     lactoyl_neighbor_count = sum(
@@ -1908,19 +1915,22 @@ def render_html(
         if public_mode
         else "<thead><tr><th>Synonym</th><th>Normalized</th><th>Sources</th></tr></thead>"
     )
-    syn_rows = "\n".join(
-        (
-            f"<tr><td>{html.escape(str(row.get('synonym', '')))}</td></tr>"
-            if public_mode
-            else f"<tr><td>{html.escape(str(row.get('synonym', '')))}</td><td>{html.escape(str(row.get('normalized', '')))}</td><td>{html.escape(str(row.get('sources', '')))}</td></tr>"
+    syn_rows = (
+        "\n".join(
+            (
+                f"<tr><td>{html.escape(str(row.get('synonym', '')))}</td></tr>"
+                if public_mode
+                else f"<tr><td>{html.escape(str(row.get('synonym', '')))}</td><td>{html.escape(str(row.get('normalized', '')))}</td><td>{html.escape(str(row.get('sources', '')))}</td></tr>"
+            )
+            for row in synonyms
         )
-        for row in synonyms
-    ) or f"<tr><td colspan='{syn_col_count}'>No synonyms returned.</td></tr>"
-    synonym_lines = [html.escape(str(row.get("synonym", ""))) for row in synonyms if str(row.get("synonym", "")).strip()]
+        or f"<tr><td colspan='{syn_col_count}'>No synonyms returned.</td></tr>"
+    )
+    synonym_lines = [
+        html.escape(str(row.get("synonym", ""))) for row in synonyms if str(row.get("synonym", "")).strip()
+    ]
     synonym_card_html = (
-        "".join(f"<div>{line}</div>" for line in synonym_lines)
-        if synonym_lines
-        else "<div>No synonyms returned.</div>"
+        "".join(f"<div>{line}</div>" for line in synonym_lines) if synonym_lines else "<div>No synonyms returned.</div>"
     )
     library_neighbors = neighbors[:10]
     high_similarity_count = sum(float(row.get("similarity_to_target", 0.0) or 0.0) >= 0.60 for row in neighbors)
@@ -1939,8 +1949,10 @@ def render_html(
         for row in library_neighbors
     )
     top10_candidates = candidate_scores[:10]
-    default_rank = default_consensus_rank if default_consensus_rank in candidate_consensus_maps else (
-        min(candidate_consensus_maps) if candidate_consensus_maps else 0
+    default_rank = (
+        default_consensus_rank
+        if default_consensus_rank in candidate_consensus_maps
+        else (min(candidate_consensus_maps) if candidate_consensus_maps else 0)
     )
     default_consensus_svg = candidate_consensus_maps.get(default_rank, consensus_svg)
     default_summary = candidate_consensus_summaries.get(default_rank, {})
@@ -1970,15 +1982,18 @@ def render_html(
             "summaries": {str(k): v for k, v in candidate_consensus_summaries.items()},
         }
     ).replace("</", "<\\/")
-    feature_rows = "\n".join(
-        "<tr>"
-        f"<td>{html.escape(str(row.get('rank', '')))}</td>"
-        f"<td>{html.escape(str(row.get('predicted_smiles', '')))}</td>"
-        f"<td>{html.escape(str(row.get('spectrum_matched_peak_count', '')))}</td>"
-        f"<td>{feature_total_count}</td>"
-        "</tr>"
-        for row in candidate_scores[:3]
-    ) or "<tr><td colspan='4'>No feature-match rows available.</td></tr>"
+    feature_rows = (
+        "\n".join(
+            "<tr>"
+            f"<td>{html.escape(str(row.get('rank', '')))}</td>"
+            f"<td>{html.escape(str(row.get('predicted_smiles', '')))}</td>"
+            f"<td>{html.escape(str(row.get('spectrum_matched_peak_count', '')))}</td>"
+            f"<td>{feature_total_count}</td>"
+            "</tr>"
+            for row in candidate_scores[:3]
+        )
+        or "<tr><td colspan='4'>No feature-match rows available.</td></tr>"
+    )
     substructure_rows = (
         "<tr>"
         "<td>Lactoyl</td>"
@@ -1993,52 +2008,71 @@ def render_html(
         f"<td>{evidence['mass_error_da']:.6f}</td>"
         "</tr>"
     )
-    structural_possibility_table_rows = "\n".join(
-        "<tr>"
-        f"<td>{html.escape(str(row.get('structural_possibility_class', '')))}</td>"
-        f"<td>{html.escape(str(row.get('candidate_count', '')))}</td>"
-        f"<td>{html.escape(str(row.get('top_candidate_label', '')))}</td>"
-        f"<td>{html.escape(str(row.get('top_candidate_smiles', '')))}</td>"
-        f"<td>{html.escape(str(row.get('reader_interpretation', '')))}</td>"
-        f"<td>{html.escape(str(row.get('dominant_gate_status', '')))}</td>"
-        "</tr>"
-        for row in structural_possibility_rows
-    ) or "<tr><td colspan='6'>No structural possibility rows available.</td></tr>"
-    ext_unknown_table = "\n".join(
-        f"<tr data-kind='unknown' data-similarity='{float(row['similarity_to_target']):.3f}'>"
-        f"<td>{html.escape(str(row['x_compound_id']))}</td><td>{html.escape(str(row['known_name']))}</td><td>{float(row['similarity_to_target']):.3f}</td></tr>"
-        for row in extended_unknown_rows
-    ) or "<tr><td colspan='3'>No X unknown rows available.</td></tr>"
-    correlating_rows = "\n".join(
-        f"<tr><td>{html.escape(str(row.get('id', '')))}</td><td>{html.escape(str(row.get('compound', '')))}</td><td>{html.escape(str(row.get('correlation_r', '')))}</td><td>{html.escape(str(row.get('pathway', '')))}</td></tr>"
-        for row in correlation_rows
-    ) or "<tr><td colspan='4'>No real correlation rows available.</td></tr>"
-    ext_known_table = "\n".join(
-        f"<tr data-kind='known' data-similarity='{float(row['similarity_to_target']):.3f}'>"
-        f"<td>{html.escape(str(row['chemical_id']))}</td><td>{html.escape(str(row['canonical_name']))}</td><td>{float(row['similarity_to_target']):.3f}</td></tr>"
-        for row in extended_known_rows
-    ) or "<tr><td colspan='3'>No known rows available.</td></tr>"
+    structural_possibility_table_rows = (
+        "\n".join(
+            "<tr>"
+            f"<td>{html.escape(str(row.get('structural_possibility_class', '')))}</td>"
+            f"<td>{html.escape(str(row.get('candidate_count', '')))}</td>"
+            f"<td>{html.escape(str(row.get('top_candidate_label', '')))}</td>"
+            f"<td>{html.escape(str(row.get('top_candidate_smiles', '')))}</td>"
+            f"<td>{html.escape(str(row.get('reader_interpretation', '')))}</td>"
+            f"<td>{html.escape(str(row.get('dominant_gate_status', '')))}</td>"
+            "</tr>"
+            for row in structural_possibility_rows
+        )
+        or "<tr><td colspan='6'>No structural possibility rows available.</td></tr>"
+    )
+    ext_unknown_table = (
+        "\n".join(
+            f"<tr data-kind='unknown' data-similarity='{float(row['similarity_to_target']):.3f}'>"
+            f"<td>{html.escape(str(row['x_compound_id']))}</td><td>{html.escape(str(row['known_name']))}</td><td>{float(row['similarity_to_target']):.3f}</td></tr>"
+            for row in extended_unknown_rows
+        )
+        or "<tr><td colspan='3'>No X unknown rows available.</td></tr>"
+    )
+    correlating_rows = (
+        "\n".join(
+            f"<tr><td>{html.escape(str(row.get('id', '')))}</td><td>{html.escape(str(row.get('compound', '')))}</td><td>{html.escape(str(row.get('correlation_r', '')))}</td><td>{html.escape(str(row.get('pathway', '')))}</td></tr>"
+            for row in correlation_rows
+        )
+        or "<tr><td colspan='4'>No real correlation rows available.</td></tr>"
+    )
+    ext_known_table = (
+        "\n".join(
+            f"<tr data-kind='known' data-similarity='{float(row['similarity_to_target']):.3f}'>"
+            f"<td>{html.escape(str(row['chemical_id']))}</td><td>{html.escape(str(row['canonical_name']))}</td><td>{float(row['similarity_to_target']):.3f}</td></tr>"
+            for row in extended_known_rows
+        )
+        or "<tr><td colspan='3'>No known rows available.</td></tr>"
+    )
     library_header_html = (
         "<thead><tr><th>ID</th><th>Compound</th><th>Similarity</th><th>Pathway</th></tr></thead>"
         if public_mode
         else "<thead><tr><th>ID</th><th>Compound</th><th>Similarity</th><th>Pathway</th><th>Confidence</th></tr></thead>"
     )
-    library_row_html = "\n".join(
-        (
-            f"<tr data-kind='known' data-confidence='{html.escape(row['confidence'])}' data-similarity='{float(row['similarity_to_target']):.3f}' "
-            f"data-name='{html.escape(str(row['canonical_name']))}' data-pathway='{html.escape(str(row.get('metabolon_super', '')))} / {html.escape(str(row.get('metabolon_sub', '')))}' "
-            f"style='border-left: 6px solid {similarity_color(float(row['similarity_to_target']))};'>"
-            f"<td>{html.escape(row['chemical_id'])}</td><td>{html.escape(row['canonical_name'])}</td><td>{row['similarity_to_target']:.3f}</td>"
-            f"<td>{html.escape(row['metabolon_super'])} / {html.escape(row['metabolon_sub'])}</td>"
-            + ("" if public_mode else f"<td>{html.escape(row['confidence'])}</td>")
-            + "</tr>"
+    library_row_html = (
+        "\n".join(
+            (
+                f"<tr data-kind='known' data-confidence='{html.escape(row['confidence'])}' data-similarity='{float(row['similarity_to_target']):.3f}' "
+                f"data-name='{html.escape(str(row['canonical_name']))}' data-pathway='{html.escape(str(row.get('metabolon_super', '')))} / {html.escape(str(row.get('metabolon_sub', '')))}' "
+                f"style='border-left: 6px solid {similarity_color(float(row['similarity_to_target']))};'>"
+                f"<td>{html.escape(row['chemical_id'])}</td><td>{html.escape(row['canonical_name'])}</td><td>{row['similarity_to_target']:.3f}</td>"
+                f"<td>{html.escape(row['metabolon_super'])} / {html.escape(row['metabolon_sub'])}</td>"
+                + ("" if public_mode else f"<td>{html.escape(row['confidence'])}</td>")
+                + "</tr>"
+            )
+            for row in library_neighbors
         )
-        for row in library_neighbors
-    ) or f"<tr><td colspan='{'4' if public_mode else '5'}'>No library matches available.</td></tr>"
+        or f"<tr><td colspan='{'4' if public_mode else '5'}'>No library matches available.</td></tr>"
+    )
     top10_title = "Top 10 potential structures" if public_mode else "Top 10 Candidate Structures"
     fragment_title = "Fragment Scores" if public_mode else "Substructure Scores"
     ms_fit_title = "MS Fit Scores" if public_mode else "Feature Match Scores"
-    params_title = "Parameters Contributing to Identification Confidence" if public_mode else "Parameters Contributing To Identification Confidence"
+    params_title = (
+        "Parameters Contributing to Identification Confidence"
+        if public_mode
+        else "Parameters Contributing To Identification Confidence"
+    )
     synonyms_title = "Metabolite Synonyms" if public_mode else "Synonyms Of Top Candidate"
     guide_targets: list[tuple[str, str]] = []
 
@@ -2081,8 +2115,9 @@ def render_html(
       <script type="application/json" id="candidate-consensus-data">{candidate_consensus_data_json}</script>
     </section>"""
     correlation_note = (
-        html.escape(correlation_blocker) if correlation_blocker else
-        "In addition to spectral information, we also evaluate the correlation of metabolite abundance values across samples."
+        html.escape(correlation_blocker)
+        if correlation_blocker
+        else "In addition to spectral information, we also evaluate the correlation of metabolite abundance values across samples."
     )
     similarity_section = f"""
     <section class="section">
@@ -2603,7 +2638,6 @@ def render_html(
 """
 
 
-
 def control_slug(control_id: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", control_id.lower()).strip("-") or "compound"
 
@@ -2633,7 +2667,11 @@ def predictions_to_candidate_pool(predictions: pd.DataFrame, control_id: str) ->
     if "candidate_name" not in work.columns and "base_name" in work.columns:
         work["candidate_name"] = work["base_name"]
     score_col = next(
-        (c for c in ("unified_final_score", "rerank_score_calibrated", "rerank_score", "score_rank") if c in work.columns),
+        (
+            c
+            for c in ("unified_final_score", "rerank_score_calibrated", "rerank_score", "score_rank")
+            if c in work.columns
+        ),
         None,
     )
     if score_col:
@@ -2717,10 +2755,13 @@ def build_placeholder_correlation_rows(
 
 
 def render_guides_html(control_id: str, guide_targets: list[tuple[str, str]]) -> str:
-    guide_blocks = "".join(
-        f"<section class='guide-card' id='guide-{slug}'><h2>{html.escape(label)}</h2><p>{html.escape(label)} guide will go here.</p></section>"
-        for slug, label in guide_targets
-    ) or "<section class='guide-card'><h2>No guides yet</h2><p>Guide content will go here.</p></section>"
+    guide_blocks = (
+        "".join(
+            f"<section class='guide-card' id='guide-{slug}'><h2>{html.escape(label)}</h2><p>{html.escape(label)} guide will go here.</p></section>"
+            for slug, label in guide_targets
+        )
+        or "<section class='guide-card'><h2>No guides yet</h2><p>Guide content will go here.</p></section>"
+    )
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -2769,7 +2810,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     predictions = pd.read_csv(predictions_path, low_memory=False)
     if args.candidate_pool and Path(resolve(args.candidate_pool, repo_root)).exists():
         candidate_pool = pd.read_csv(resolve(args.candidate_pool, repo_root), low_memory=False)
-        top = candidate_pool[candidate_pool.get("control_id", pd.Series("", index=candidate_pool.index)).astype(str).eq(control_id)].copy()
+        top = candidate_pool[
+            candidate_pool.get("control_id", pd.Series("", index=candidate_pool.index)).astype(str).eq(control_id)
+        ].copy()
     else:
         top = predictions_to_candidate_pool(predictions, control_id)
     if top.empty:
@@ -2815,14 +2858,18 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         )
     else:
         structure_image(target_smiles, assets / f"{asset_base}.png", f"{control_id}: {target_name}")
-        structure_panel_html = f"<img class='structure' src='assets/{asset_base}.png' alt='{html.escape(target_name)} structure'>"
+        structure_panel_html = (
+            f"<img class='structure' src='assets/{asset_base}.png' alt='{html.escape(target_name)} structure'>"
+        )
 
     top = top.sort_values("rank", kind="mergesort")
     if not peaks.empty:
         feature_col = next((c for c in ("feature_key", "FEATURE_KEY") if c in peaks.columns), "")
         peak_mask = pd.Series(False, index=peaks.index)
         if feature_col:
-            peak_mask = peak_mask | peaks[feature_col].astype(str).str.contains(re.escape(control_id), regex=True, na=False)
+            peak_mask = peak_mask | peaks[feature_col].astype(str).str.contains(
+                re.escape(control_id), regex=True, na=False
+            )
         if peak_mask.any():
             peaks = peaks[peak_mask].copy()
 
@@ -2835,7 +2882,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     candidate_score_df = compact_candidate_scores(candidate_score_input)
     candidate_score_df.to_csv(data_dir / f"{slug}_candidate_score_summary.csv", index=False)
     top10_candidates = candidate_score_df.head(10).copy()
-    candidate_consensus_maps, candidate_consensus_summaries, default_consensus_rank = build_candidate_consensus_maps(top10_candidates)
+    candidate_consensus_maps, candidate_consensus_summaries, default_consensus_rank = build_candidate_consensus_maps(
+        top10_candidates
+    )
     (data_dir / f"{slug}_candidate_consensus_maps.json").write_text(
         json.dumps(
             {
@@ -2933,7 +2982,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         rows.append(item)
     sim_df = pd.DataFrame(rows)
     if not sim_df.empty:
-        sim_df = sim_df.sort_values("similarity_to_target", ascending=False, kind="mergesort").head(int(args.max_neighbors))
+        sim_df = sim_df.sort_values("similarity_to_target", ascending=False, kind="mergesort").head(
+            int(args.max_neighbors)
+        )
         sim_df["confidence"] = sim_df.apply(confidence_bucket, axis=1)
     neighbors = sim_df.to_dict(orient="records") if not sim_df.empty else []
     write_csv(data_dir / "similarity_neighbors.csv", neighbors)
@@ -2952,7 +3003,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
 
     for row in neighbors[:12]:
         safe = "".join(ch if ch.isalnum() else "-" for ch in str(row.get("canonical_name", "")).lower()).strip("-")[:64]
-        structure_image(str(row["smiles"]), assets / f"neighbor-{row['chemical_id']}-{safe}.png", str(row.get("canonical_name", "")))
+        structure_image(
+            str(row["smiles"]), assets / f"neighbor-{row['chemical_id']}-{safe}.png", str(row.get("canonical_name", ""))
+        )
 
     nodes = extended["render_nodes"]
     edges = extended["render_edges"]
@@ -2963,7 +3016,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     parent_mz = float(pd.to_numeric(rank1.get("parent_mz"), errors="coerce") or 0.0)
     evidence = {
         "top10_best_tanimoto": float(pd.to_numeric(rank1.get("score_rank"), errors="coerce") or 0.0),
-        "full_pool_oracle_best_tanimoto": float(pd.to_numeric(rank1.get("unified_final_score"), errors="coerce") or 0.0),
+        "full_pool_oracle_best_tanimoto": float(
+            pd.to_numeric(rank1.get("unified_final_score"), errors="coerce") or 0.0
+        ),
         "parent_mz": parent_mz,
         "mass_error_da": float(target["exact_mass"] - parent_mz) if parent_mz else 0.0,
         "lactoyl_hypothesis_score": "",
@@ -2977,11 +3032,18 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
 
     extended_x_all = extended["x_all"]
     if not extended_x_all.empty and "x_compound_id" in extended_x_all.columns:
-        extended_unknown_rows = extended_x_all[extended_x_all["x_compound_id"].astype(str) != control_id].head(20).fillna("").to_dict(orient="records")
+        extended_unknown_rows = (
+            extended_x_all[extended_x_all["x_compound_id"].astype(str) != control_id]
+            .head(20)
+            .fillna("")
+            .to_dict(orient="records")
+        )
     else:
         extended_unknown_rows = []
     if not correlation_rows:
-        correlation_rows = build_placeholder_correlation_rows(extended_unknown_rows, exclude_control_id=control_id, limit=5)
+        correlation_rows = build_placeholder_correlation_rows(
+            extended_unknown_rows, exclude_control_id=control_id, limit=5
+        )
         correlation_blocker = (
             "Proxy correlation rows use nearest verified X-structure neighbors from the expanded similarity network."
         )
@@ -2989,7 +3051,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     (data_dir / f"{slug}_top_correlating_metabolites_status.json").write_text(
         json.dumps({"n_rows": len(correlation_rows), "blocker": correlation_blocker}, indent=2)
     )
-    extended_known_rows = extended["known_all"].head(20).fillna("").to_dict(orient="records") if not extended["known_all"].empty else []
+    extended_known_rows = (
+        extended["known_all"].head(20).fillna("").to_dict(orient="records") if not extended["known_all"].empty else []
+    )
     known_render = extended.get("known_render", pd.DataFrame())
     x_render = extended.get("x_render", pd.DataFrame())
 

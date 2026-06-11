@@ -12,9 +12,7 @@ def conv_out_dim(
     padding: int,
     dilation: int,
 ) -> int:
-    return (
-        length_in + 2 * padding - dilation * (kernel - 1) - 1
-    ) // stride + 1
+    return (length_in + 2 * padding - dilation * (kernel - 1) - 1) // stride + 1
 
 
 def _pool_halve_dim(length_in: int) -> int:
@@ -208,10 +206,7 @@ class Net1D(nn.Module):
             length_in = int(args[0])
             args = args[1:]
         else:
-            raise TypeError(
-                "Net1D requires `length_in` "
-                "for mass-conditioned mode."
-            )
+            raise TypeError("Net1D requires `length_in` " "for mass-conditioned mode.")
         if args:
             raise TypeError(f"Unexpected positional arguments: {args}")
         self.length_in = int(length_in)
@@ -222,10 +217,7 @@ class Net1D(nn.Module):
         self.parent_mz_max = float(kwargs.pop("parent_mz_max", self.maxmass))
         self.apply_tanh = bool(kwargs.pop("apply_tanh", True))
         if kwargs:
-            raise TypeError(
-                "Unexpected keyword arguments: "
-                f"{sorted(kwargs.keys())}"
-            )
+            raise TypeError("Unexpected keyword arguments: " f"{sorted(kwargs.keys())}")
 
         # Shape-compatible with stored checkpoints such as
         # models/spectra_encoder_augmented_209_400/best_encoder.pt.
@@ -241,10 +233,7 @@ class Net1D(nn.Module):
         out_2 = _pool_halve_dim(out_1)
         out_3 = _pool_halve_dim(out_2)
         if out_3 <= 0:
-            raise ValueError(
-                "Net1D pooled length is non-positive. "
-                f"Got length_in={length_in}, pooled={out_3}."
-            )
+            raise ValueError("Net1D pooled length is non-positive. " f"Got length_in={length_in}, pooled={out_3}.")
         self.pooled_length = int(out_3)
         self.cnn_out = 128 * out_3
 

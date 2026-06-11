@@ -263,9 +263,7 @@ def load_jj_mm_merged_info(path: Path, sheet_name: str = "JJ + MM Merged Info") 
     expected_header_tokens = {"LIB_ID", "CompID", "Unknown"}
     for idx in range(min(len(raw), 10)):
         values = {
-            clean_col_name(value)
-            for value in raw.iloc[idx].tolist()
-            if not pd.isna(value) and str(value).strip()
+            clean_col_name(value) for value in raw.iloc[idx].tolist() if not pd.isna(value) and str(value).strip()
         }
         if expected_header_tokens.issubset(values):
             header_row_idx = idx
@@ -287,10 +285,7 @@ def load_comp_id_list(path: Path) -> set[int]:
         values = df["comp_id"]
     else:
         values = df.iloc[:, 0]
-    return {
-        int(v)
-        for v in pd.to_numeric(values, errors="coerce").dropna().astype(int).tolist()
-    }
+    return {int(v) for v in pd.to_numeric(values, errors="coerce").dropna().astype(int).tolist()}
 
 
 def load_embedding_id_set(path: Path) -> set[int]:
