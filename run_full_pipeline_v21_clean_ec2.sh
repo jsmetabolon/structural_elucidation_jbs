@@ -13,6 +13,7 @@ PEPTIDE_OUT=${PEPTIDE_OUT:-models/peptide_first_denovo_v21_clean}
 RUN_LIBS=${RUN_LIBS:-209,305,400,402}
 ENABLE_PATHWAY_ENRICHMENT=${ENABLE_PATHWAY_ENRICHMENT:-1}
 PATHWAY_REFERENCE_DB=${PATHWAY_REFERENCE_DB:-"Metabolite Synonym Database/metabolite_synonyms_merged_with_mtx_giga.sqlite"}
+ENABLE_LIPID_CLASS_ENRICHMENT=${ENABLE_LIPID_CLASS_ENRICHMENT:-1}
 
 KNOWN_CSV=${KNOWN_CSV:-merged_encoder/data/ions_w_ri_v3_clean.csv}
 KNOWN_OUT=${KNOWN_OUT:-merged_encoder/data/ions_merged_v21_clean.csv}
@@ -40,6 +41,9 @@ require_file run_pipeline_equalization_ec2_v3.sh
 if [[ "$ENABLE_PATHWAY_ENRICHMENT" == "1" ]]; then
   require_file build_pathway_enrichment_v1.py
   require_file "$PATHWAY_REFERENCE_DB"
+fi
+if [[ "$ENABLE_LIPID_CLASS_ENRICHMENT" == "1" ]]; then
+  require_file build_lipid_class_enrichment_v1.py
 fi
 require_file "$KNOWN_CSV"
 require_file "$UNKNOWN_OUT"
@@ -176,10 +180,36 @@ else
   echo "[v21-clean] phase3: pathway enrichment disabled"
 fi
 
+if [[ "$ENABLE_LIPID_CLASS_ENRICHMENT" == "1" ]]; then
+  echo "[v21-clean] phase4: lipid class enrichment"
+  lipid_input="unified_rerank_all_top10.csv"
+  lipid_output="unified_rerank_all_top10_with_lipid_class.csv"
+  if [[ "$ENABLE_PATHWAY_ENRICHMENT" == "1" ]]; then
+    lipid_input="unified_rerank_all_top10_with_pathways.csv"
+    lipid_output="unified_rerank_all_top10_with_pathways_lipid_class.csv"
+  fi
+  "$PY" build_lipid_class_enrichment_v1.py \
+    --equalization-root "$OUT_ROOT" \
+    --libs "$RUN_LIBS" \
+    --input-name "$lipid_input" \
+    --output-name "$lipid_output"
+
+  for lib in 209 305 400 402; do
+    path="$OUT_ROOT/rerank_lib${lib}/$lipid_output"
+    require_file "$path"
+    wc -l "$path"
+  done
+else
+  echo "[v21-clean] phase4: lipid class enrichment disabled"
+fi
+
 find "$OUT_ROOT" -maxdepth 3 -type f \
   \( -path "*/rerank_lib*/unified_rerank_all_top10.csv" \
   -o -path "*/rerank_lib*/unified_rerank_all_top10_with_pathways.csv" \
+  -o -path "*/rerank_lib*/unified_rerank_all_top10_with_lipid_class.csv" \
+  -o -path "*/rerank_lib*/unified_rerank_all_top10_with_pathways_lipid_class.csv" \
   -o -path "*/pathway_enrichment_summary.json" \
+  -o -path "*/lipid_class_enrichment_summary.json" \
   -o -path "*/verifier_lib*/scored_candidates.csv" \
   -o -path "*/unified_pool_lib*/unified_candidates_per_control.csv" \) \
   -print | sort > "$LOG_DIR/final_outputs.txt"
