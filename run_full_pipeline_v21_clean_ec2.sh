@@ -14,6 +14,7 @@ RUN_LIBS=${RUN_LIBS:-209,305,400,402}
 ENABLE_PATHWAY_ENRICHMENT=${ENABLE_PATHWAY_ENRICHMENT:-1}
 PATHWAY_REFERENCE_DB=${PATHWAY_REFERENCE_DB:-"Metabolite Synonym Database/metabolite_synonyms_merged_with_mtx_giga.sqlite"}
 ENABLE_LIPID_CLASS_ENRICHMENT=${ENABLE_LIPID_CLASS_ENRICHMENT:-1}
+ENABLE_PEPTIDE_COMPOSITION_ENRICHMENT=${ENABLE_PEPTIDE_COMPOSITION_ENRICHMENT:-1}
 
 KNOWN_CSV=${KNOWN_CSV:-merged_encoder/data/ions_w_ri_v3_clean.csv}
 KNOWN_OUT=${KNOWN_OUT:-merged_encoder/data/ions_merged_v21_clean.csv}
@@ -44,6 +45,9 @@ if [[ "$ENABLE_PATHWAY_ENRICHMENT" == "1" ]]; then
 fi
 if [[ "$ENABLE_LIPID_CLASS_ENRICHMENT" == "1" ]]; then
   require_file build_lipid_class_enrichment_v1.py
+fi
+if [[ "$ENABLE_PEPTIDE_COMPOSITION_ENRICHMENT" == "1" ]]; then
+  require_file build_peptide_composition_enrichment_v1.py
 fi
 require_file "$KNOWN_CSV"
 require_file "$UNKNOWN_OUT"
@@ -203,13 +207,45 @@ else
   echo "[v21-clean] phase4: lipid class enrichment disabled"
 fi
 
+if [[ "$ENABLE_PEPTIDE_COMPOSITION_ENRICHMENT" == "1" ]]; then
+  echo "[v21-clean] phase4b: peptide composition enrichment"
+  peptide_input="unified_rerank_all_top10.csv"
+  peptide_output="unified_rerank_all_top10_with_peptide_composition.csv"
+  if [[ "$ENABLE_PATHWAY_ENRICHMENT" == "1" ]]; then
+    peptide_input="unified_rerank_all_top10_with_pathways.csv"
+    peptide_output="unified_rerank_all_top10_with_pathways_peptide_composition.csv"
+  fi
+  if [[ "$ENABLE_LIPID_CLASS_ENRICHMENT" == "1" ]]; then
+    peptide_input="$lipid_output"
+    peptide_output="${lipid_output%.csv}_peptide_composition.csv"
+  fi
+  "$PY" build_peptide_composition_enrichment_v1.py \
+    --equalization-root "$OUT_ROOT" \
+    --libs "$RUN_LIBS" \
+    --input-name "$peptide_input" \
+    --output-name "$peptide_output"
+
+  for lib in 209 305 400 402; do
+    path="$OUT_ROOT/rerank_lib${lib}/$peptide_output"
+    require_file "$path"
+    wc -l "$path"
+  done
+else
+  echo "[v21-clean] phase4b: peptide composition enrichment disabled"
+fi
+
 find "$OUT_ROOT" -maxdepth 3 -type f \
   \( -path "*/rerank_lib*/unified_rerank_all_top10.csv" \
   -o -path "*/rerank_lib*/unified_rerank_all_top10_with_pathways.csv" \
   -o -path "*/rerank_lib*/unified_rerank_all_top10_with_lipid_class.csv" \
   -o -path "*/rerank_lib*/unified_rerank_all_top10_with_pathways_lipid_class.csv" \
+  -o -path "*/rerank_lib*/unified_rerank_all_top10_with_peptide_composition.csv" \
+  -o -path "*/rerank_lib*/unified_rerank_all_top10_with_pathways_peptide_composition.csv" \
+  -o -path "*/rerank_lib*/unified_rerank_all_top10_with_lipid_class_peptide_composition.csv" \
+  -o -path "*/rerank_lib*/unified_rerank_all_top10_with_pathways_lipid_class_peptide_composition.csv" \
   -o -path "*/pathway_enrichment_summary.json" \
   -o -path "*/lipid_class_enrichment_summary.json" \
+  -o -path "*/peptide_composition_enrichment_summary.json" \
   -o -path "*/verifier_lib*/scored_candidates.csv" \
   -o -path "*/unified_pool_lib*/unified_candidates_per_control.csv" \) \
   -print | sort > "$LOG_DIR/final_outputs.txt"
