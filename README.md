@@ -105,6 +105,19 @@ Optional flags: `--target-smiles`, `--target-name`, `--candidate-pool`, `--hypot
 
 Reports degrade gracefully when `vendor/metabolite_synonyms.sqlite` or WGCNA cohort files are missing (synonym/network/correlation sections use placeholders or are omitted).
 
+## Batch public reports
+
+Generate public report bundles for every predicted X compound:
+
+```bash
+python -m structural_elucidation.reports.batch_public \
+  --equalization-root output/pipeline_equalization \
+  --input-name unified_rerank_all_top10_with_pathways_lipid_class_peptide_composition.csv \
+  --out-root output/public_compound_reports
+```
+
+Use `--limit` for smoke runs, repeat `--control-id` to restrict controls, `--force` to rebuild, and `--skip-existing`/`--no-skip-existing` for resumable generation.
+
 ## Verification
 
 ```bash
