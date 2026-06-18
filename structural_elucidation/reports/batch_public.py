@@ -440,6 +440,7 @@ def run(args: argparse.Namespace, *, renderer: Callable[[argparse.Namespace], di
             )
             if args.fail_fast:
                 raise
+        write_manifest(args.out_root, manifest_rows=manifest_rows, failures=failures, input_files=prediction_csvs)
         if args.progress_every and idx % int(args.progress_every) == 0:
             print(f"[batch-public] processed {idx}/{len(jobs)} reports")
 
