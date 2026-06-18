@@ -6,10 +6,10 @@ cd "$ROOT"
 
 PY=${PY:-"$ROOT/.venv/bin/python"}
 RUN_ID=${RUN_ID:-$(date -u +%Y%m%d_%H%M%S)}
-LOG_DIR=${LOG_DIR:-"$ROOT/logs/full_pipeline_v21_clean_${RUN_ID}"}
-OUT_ROOT=${OUT_ROOT:-models/pipeline_equalization_v21_clean}
-ADDUCT_OUT=${ADDUCT_OUT:-models/upstream_adduct_evidence_v21_clean}
-PEPTIDE_OUT=${PEPTIDE_OUT:-models/peptide_first_denovo_v21_clean}
+LOG_DIR=${LOG_DIR:-"$ROOT/logs/full_pipeline_${RUN_ID}"}
+OUT_ROOT=${OUT_ROOT:-models/pipeline_equalization}
+ADDUCT_OUT=${ADDUCT_OUT:-models/upstream_adduct_evidence}
+PEPTIDE_OUT=${PEPTIDE_OUT:-models/peptide_first_denovo}
 RUN_LIBS=${RUN_LIBS:-209,305,400,402}
 ENABLE_PATHWAY_ENRICHMENT=${ENABLE_PATHWAY_ENRICHMENT:-1}
 PATHWAY_REFERENCE_DB=${PATHWAY_REFERENCE_DB:-"Metabolite Synonym Database/metabolite_synonyms_merged_with_mtx_giga.sqlite"}
@@ -17,20 +17,20 @@ ENABLE_LIPID_CLASS_ENRICHMENT=${ENABLE_LIPID_CLASS_ENRICHMENT:-1}
 ENABLE_PEPTIDE_COMPOSITION_ENRICHMENT=${ENABLE_PEPTIDE_COMPOSITION_ENRICHMENT:-1}
 
 KNOWN_CSV=${KNOWN_CSV:-merged_encoder/data/ions_w_ri_v3_clean.csv}
-KNOWN_OUT=${KNOWN_OUT:-merged_encoder/data/ions_merged_v21_clean.csv}
-UNKNOWN_OUT=${UNKNOWN_OUT:-merged_encoder/data/ions_unknown_merged_v21_clean.csv}
+KNOWN_OUT=${KNOWN_OUT:-merged_encoder/data/ions_merged_clean.csv}
+UNKNOWN_OUT=${UNKNOWN_OUT:-merged_encoder/data/ions_unknown_merged_clean.csv}
 
 mkdir -p "$LOG_DIR"
 exec > >(tee -a "$LOG_DIR/run.log") 2>&1
 
-echo "[v21-clean] run_id=$RUN_ID"
-echo "[v21-clean] root=$ROOT"
-echo "[v21-clean] log_dir=$LOG_DIR"
+echo "[pipeline] run_id=$RUN_ID"
+echo "[pipeline] root=$ROOT"
+echo "[pipeline] log_dir=$LOG_DIR"
 
 require_file() {
   local path="$1"
   if [[ ! -s "$path" ]]; then
-    echo "[v21-clean] missing required file: $path" >&2
+    echo "[pipeline] missing required file: $path" >&2
     exit 2
   fi
 }
@@ -40,17 +40,16 @@ require_file build_recovered_ms2_from_chrolib_v3.py
 require_file run_full_merged_pipeline_metabolon.sh
 require_file run_pipeline_equalization_ec2_v3.sh
 if [[ "$ENABLE_PATHWAY_ENRICHMENT" == "1" ]]; then
-  require_file build_pathway_enrichment_v1.py
+  require_file structural_elucidation/pipeline/enrichment/pathway.py
   require_file "$PATHWAY_REFERENCE_DB"
 fi
 if [[ "$ENABLE_LIPID_CLASS_ENRICHMENT" == "1" ]]; then
-  require_file build_lipid_class_enrichment_v1.py
+  require_file structural_elucidation/pipeline/enrichment/lipid_class.py
 fi
 if [[ "$ENABLE_PEPTIDE_COMPOSITION_ENRICHMENT" == "1" ]]; then
-  require_file build_peptide_composition_enrichment_v1.py
+  require_file structural_elucidation/pipeline/enrichment/peptide_composition.py
 fi
 require_file "$KNOWN_CSV"
-require_file "$UNKNOWN_OUT"
 require_file ions_with_ri.csv
 require_file SMILES_DB/comp_id_to_smiles_209.csv
 require_file SMILES_DB/fasstrecords_prevalence.csv
@@ -70,40 +69,40 @@ require_file models/integrated_denovo_audit_v19b/lib_400_positive/integrated_per
 require_file models/integrated_denovo_audit_v19b/lib_402_positive/integrated_per_control_best.csv
 
 if [[ -d "$OUT_ROOT" ]] && [[ -n "$(find "$OUT_ROOT" -mindepth 1 -maxdepth 2 -type f 2>/dev/null | head -n 1)" ]]; then
-  echo "[v21-clean] refusing to overwrite non-empty output root: $OUT_ROOT" >&2
-  echo "[v21-clean] set OUT_ROOT to a fresh directory to rerun." >&2
+  echo "[pipeline] refusing to overwrite non-empty output root: $OUT_ROOT" >&2
+  echo "[pipeline] set OUT_ROOT to a fresh directory to rerun." >&2
   exit 2
 fi
 
 if [[ "${PREFLIGHT_ONLY:-0}" == "1" ]]; then
-  echo "[v21-clean] preflight complete"
+  echo "[pipeline] preflight complete"
   exit 0
 fi
 
-echo "[v21-clean] phase0: regenerate known and unknown ions"
+echo "[pipeline] phase0: regenerate known and unknown ions"
 "$PY" build_recovered_ms2_from_chrolib_v3.py \
   --chrolib-csv "$KNOWN_CSV" \
   --known-out "$KNOWN_OUT" \
   --unknown-out "$UNKNOWN_OUT" \
-  --out-raw merged_encoder/data/ions_full_v21_clean_raw.csv \
-  --out-trimmed merged_encoder/data/ions_full_v21_clean_trimmed.csv \
-  --audit-out merged_encoder/data/ions_full_v21_clean_audit.csv \
-  --summary-json merged_encoder/data/ions_full_v21_clean_summary.json \
-  --chrolib-source-version v21_clean \
+  --out-raw merged_encoder/data/ions_full_clean_raw.csv \
+  --out-trimmed merged_encoder/data/ions_full_clean_trimmed.csv \
+  --audit-out merged_encoder/data/ions_full_clean_audit.csv \
+  --summary-json merged_encoder/data/ions_full_clean_summary.json \
+  --chrolib-source-version clean \
   --force
 
 "$PY" - <<'PY'
 import pandas as pd
 from pathlib import Path
 
-known = Path("merged_encoder/data/ions_merged_v21_clean.csv")
-unknown = Path("merged_encoder/data/ions_unknown_merged_v21_clean.csv")
+known = Path("merged_encoder/data/ions_merged_clean.csv")
+unknown = Path("merged_encoder/data/ions_unknown_merged_clean.csv")
 for path in [known, unknown]:
     rows = sum(1 for _ in path.open()) - 1
-    print(f"[v21-clean] {path}: {rows} data rows")
+    print(f"[pipeline] {path}: {rows} data rows")
 PY
 
-echo "[v21-clean] rebuild references/ pickles from v21_clean CSVs"
+echo "[pipeline] rebuild references/ pickles from clean CSVs"
 "$PY" - <<PY
 from pathlib import Path
 import pandas as pd
@@ -120,7 +119,7 @@ def backup(path: Path) -> None:
         if target.exists():
             raise FileExistsError(target)
         path.rename(target)
-        print(f"[v21-clean] backed up {path} -> {target}")
+        print(f"[pipeline] backed up {path} -> {target}")
 
 def write_by_lib(csv_path: str, template: str, label: str) -> None:
     ions = pd.read_csv(csv_path, low_memory=False)
@@ -136,22 +135,22 @@ def write_by_lib(csv_path: str, template: str, label: str) -> None:
         backup(path)
         subset.to_pickle(path)
         n_compounds = subset["comp_id"].nunique() if "comp_id" in subset.columns else 0
-        print(f"[v21-clean] {label} {path}: {len(subset)} rows, {n_compounds} compounds")
+        print(f"[pipeline] {label} {path}: {len(subset)} rows, {n_compounds} compounds")
 
-write_by_lib("merged_encoder/data/ions_merged_v21_clean.csv", "ions_all_{lib_id}.pkl", "known")
-write_by_lib("merged_encoder/data/ions_unknown_merged_v21_clean.csv", "ions_unknown_or_x_{lib_id}_new.pkl", "unknown")
+write_by_lib("merged_encoder/data/ions_merged_clean.csv", "ions_all_{lib_id}.pkl", "known")
+write_by_lib("merged_encoder/data/ions_unknown_merged_clean.csv", "ions_unknown_or_x_{lib_id}_new.pkl", "unknown")
 PY
 
-echo "[v21-clean] phase1: full merged metabolon pipeline"
+echo "[pipeline] phase1: full merged metabolon pipeline"
 bash run_full_merged_pipeline_metabolon.sh
 
 require_file models/merged_main_excl_x_unresolved_2026-04-17/best_encoder.pt
 if [[ ! -d embeddings_latent_from_smiles_runtime_metabolon ]]; then
-  echo "[v21-clean] missing embedding bank: embeddings_latent_from_smiles_runtime_metabolon" >&2
+  echo "[pipeline] missing embedding bank: embeddings_latent_from_smiles_runtime_metabolon" >&2
   exit 2
 fi
 
-echo "[v21-clean] phase2: pipeline equalization"
+echo "[pipeline] phase2: pipeline equalization"
 OUT_ROOT="$OUT_ROOT" \
 MERGED_IONS_CSV="$UNKNOWN_OUT" \
 FEATURE_TABLE="$UNKNOWN_OUT" \
@@ -161,7 +160,7 @@ ADDUCT_OUT="$ADDUCT_OUT" \
 PEPTIDE_OUT="$PEPTIDE_OUT" \
 bash run_pipeline_equalization_ec2_v3.sh
 
-echo "[v21-clean] post-run verification"
+echo "[pipeline] post-run verification"
 for lib in 209 305 400 402; do
   path="$OUT_ROOT/rerank_lib${lib}/unified_rerank_all_top10.csv"
   require_file "$path"
@@ -169,8 +168,8 @@ for lib in 209 305 400 402; do
 done
 
 if [[ "$ENABLE_PATHWAY_ENRICHMENT" == "1" ]]; then
-  echo "[v21-clean] phase3: pathway enrichment"
-  "$PY" build_pathway_enrichment_v1.py \
+  echo "[pipeline] phase3: pathway enrichment"
+  "$PY" -m structural_elucidation.pipeline.enrichment.pathway \
     --equalization-root "$OUT_ROOT" \
     --reference-db "$PATHWAY_REFERENCE_DB" \
     --libs "$RUN_LIBS"
@@ -181,18 +180,18 @@ if [[ "$ENABLE_PATHWAY_ENRICHMENT" == "1" ]]; then
     wc -l "$path"
   done
 else
-  echo "[v21-clean] phase3: pathway enrichment disabled"
+  echo "[pipeline] phase3: pathway enrichment disabled"
 fi
 
 if [[ "$ENABLE_LIPID_CLASS_ENRICHMENT" == "1" ]]; then
-  echo "[v21-clean] phase4: lipid class enrichment"
+  echo "[pipeline] phase4: lipid class enrichment"
   lipid_input="unified_rerank_all_top10.csv"
   lipid_output="unified_rerank_all_top10_with_lipid_class.csv"
   if [[ "$ENABLE_PATHWAY_ENRICHMENT" == "1" ]]; then
     lipid_input="unified_rerank_all_top10_with_pathways.csv"
     lipid_output="unified_rerank_all_top10_with_pathways_lipid_class.csv"
   fi
-  "$PY" build_lipid_class_enrichment_v1.py \
+  "$PY" -m structural_elucidation.pipeline.enrichment.lipid_class \
     --equalization-root "$OUT_ROOT" \
     --libs "$RUN_LIBS" \
     --input-name "$lipid_input" \
@@ -204,11 +203,11 @@ if [[ "$ENABLE_LIPID_CLASS_ENRICHMENT" == "1" ]]; then
     wc -l "$path"
   done
 else
-  echo "[v21-clean] phase4: lipid class enrichment disabled"
+  echo "[pipeline] phase4: lipid class enrichment disabled"
 fi
 
 if [[ "$ENABLE_PEPTIDE_COMPOSITION_ENRICHMENT" == "1" ]]; then
-  echo "[v21-clean] phase4b: peptide composition enrichment"
+  echo "[pipeline] phase4b: peptide composition enrichment"
   peptide_input="unified_rerank_all_top10.csv"
   peptide_output="unified_rerank_all_top10_with_peptide_composition.csv"
   if [[ "$ENABLE_PATHWAY_ENRICHMENT" == "1" ]]; then
@@ -219,7 +218,7 @@ if [[ "$ENABLE_PEPTIDE_COMPOSITION_ENRICHMENT" == "1" ]]; then
     peptide_input="$lipid_output"
     peptide_output="${lipid_output%.csv}_peptide_composition.csv"
   fi
-  "$PY" build_peptide_composition_enrichment_v1.py \
+  "$PY" -m structural_elucidation.pipeline.enrichment.peptide_composition \
     --equalization-root "$OUT_ROOT" \
     --libs "$RUN_LIBS" \
     --input-name "$peptide_input" \
@@ -231,7 +230,7 @@ if [[ "$ENABLE_PEPTIDE_COMPOSITION_ENRICHMENT" == "1" ]]; then
     wc -l "$path"
   done
 else
-  echo "[v21-clean] phase4b: peptide composition enrichment disabled"
+  echo "[pipeline] phase4b: peptide composition enrichment disabled"
 fi
 
 find "$OUT_ROOT" -maxdepth 3 -type f \
@@ -250,5 +249,5 @@ find "$OUT_ROOT" -maxdepth 3 -type f \
   -o -path "*/unified_pool_lib*/unified_candidates_per_control.csv" \) \
   -print | sort > "$LOG_DIR/final_outputs.txt"
 
-echo "[v21-clean] completed $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-echo "[v21-clean] final outputs listed in $LOG_DIR/final_outputs.txt"
+echo "[pipeline] completed $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+echo "[pipeline] final outputs listed in $LOG_DIR/final_outputs.txt"

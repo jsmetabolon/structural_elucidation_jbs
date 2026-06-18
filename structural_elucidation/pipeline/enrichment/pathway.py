@@ -5,23 +5,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import sqlite3
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
-from build_v14_all_library_prediction_review_v1 import (
-    clean_text,
-    enrich_pathway_annotations,
-    generate_pathway_assignment_map,
-    normalize_assignment_map,
-)
-from build_v19b_updated_summary_v1 import apply_amino_acid_pathway_overrides
-from run_retrieval_anchored_denovo_assembly_v4 import resolve
-from x209_phase0_utils import canonicalize_smiles
+from structural_elucidation.paths import REPO_ROOT, resolve
+from structural_elucidation.utils.chemistry import canonicalize_smiles
 
 
-DEFAULT_EQUALIZATION_ROOT = Path("models/pipeline_equalization_v21_clean")
+DEFAULT_EQUALIZATION_ROOT = Path("models/pipeline_equalization")
 DEFAULT_REFERENCE_DB = Path("Metabolite Synonym Database/metabolite_synonyms_merged_with_mtx_giga.sqlite")
 PATHWAY_COLUMNS = [
     "predicted_pathway",
@@ -31,6 +25,18 @@ PATHWAY_COLUMNS = [
     "pathway_vote_share",
     "pathway_best_reference_similarity",
 ]
+
+
+def clean_text(value: object) -> str:
+    if value is None:
+        return ""
+    try:
+        if pd.isna(value):
+            return ""
+    except Exception:
+        pass
+    text = str(value).strip()
+    return "" if text.lower() in {"nan", "none", "null", "<na>"} else text
 
 
 def parse_args() -> argparse.Namespace:
@@ -91,6 +97,171 @@ def load_assignment_cache(path: Path | None) -> pd.DataFrame:
     return normalize_assignment_map(pd.read_csv(path, low_memory=False))
 
 
+def normalize_assignment_map(assignments: pd.DataFrame | None) -> pd.DataFrame:
+    columns = [
+        "canonical_smiles",
+        "predicted_pathway",
+        "predicted_subpathway",
+        "pathway_confidence_tier",
+        "pathway_assignment_status",
+        "pathway_vote_share",
+        "pathway_best_reference_similarity",
+    ]
+    if assignments is None or assignments.empty:
+        return pd.DataFrame(columns=columns)
+    out = assignments.copy()
+    rename_map = {
+        "confidence_tier": "pathway_confidence_tier",
+        "assignment_status": "pathway_assignment_status",
+        "vote_share": "pathway_vote_share",
+        "best_reference_similarity": "pathway_best_reference_similarity",
+    }
+    out = out.rename(columns={old: new for old, new in rename_map.items() if old in out.columns})
+    for column in columns:
+        if column not in out.columns:
+            out[column] = pd.NA
+    out["canonical_smiles"] = out["canonical_smiles"].map(clean_text)
+    return out.loc[out["canonical_smiles"].ne(""), columns].drop_duplicates(
+        subset=["canonical_smiles"], keep="first"
+    )
+
+
+def load_reference_pathways(reference_db: Path) -> pd.DataFrame:
+    query = """
+        SELECT
+            smiles,
+            metabolon_super,
+            metabolon_sub
+        FROM metabolites
+        WHERE TRIM(COALESCE(smiles, '')) <> ''
+          AND TRIM(COALESCE(metabolon_super, '')) <> ''
+          AND TRIM(COALESCE(metabolon_sub, '')) <> ''
+    """
+    connection = sqlite3.connect(str(reference_db))
+    try:
+        reference = pd.read_sql_query(query, connection)
+    finally:
+        connection.close()
+    if reference.empty:
+        return pd.DataFrame(columns=["canonical_smiles", "metabolon_super", "metabolon_sub"])
+    reference["canonical_smiles"] = reference["smiles"].map(canonicalize_for_pathway)
+    reference["metabolon_super"] = reference["metabolon_super"].map(clean_text)
+    reference["metabolon_sub"] = reference["metabolon_sub"].map(clean_text)
+    return reference.loc[
+        reference["canonical_smiles"].ne("") & reference["metabolon_super"].ne("") & reference["metabolon_sub"].ne(""),
+        ["canonical_smiles", "metabolon_super", "metabolon_sub"],
+    ].drop_duplicates()
+
+
+def generate_exact_reference_assignment_map(canonical_smiles: list[str], reference_db: Path) -> pd.DataFrame:
+    unique_smiles = sorted(set(clean_text(smiles) for smiles in canonical_smiles if clean_text(smiles)))
+    if not unique_smiles:
+        return normalize_assignment_map(None)
+    reference = load_reference_pathways(reference_db)
+    rows: list[dict[str, Any]] = []
+    for smiles in unique_smiles:
+        matches = reference.loc[reference["canonical_smiles"].eq(smiles)]
+        if matches.empty:
+            rows.append(
+                {
+                    "canonical_smiles": smiles,
+                    "predicted_pathway": "",
+                    "predicted_subpathway": "",
+                    "pathway_confidence_tier": "low",
+                    "pathway_assignment_status": "no_reference_match",
+                    "pathway_vote_share": 0.0,
+                    "pathway_best_reference_similarity": 0.0,
+                }
+            )
+            continue
+        pathway = clean_text(matches["metabolon_super"].mode().iloc[0])
+        subpathway = clean_text(matches.loc[matches["metabolon_super"].eq(pathway), "metabolon_sub"].mode().iloc[0])
+        rows.append(
+            {
+                "canonical_smiles": smiles,
+                "predicted_pathway": pathway,
+                "predicted_subpathway": subpathway,
+                "pathway_confidence_tier": "high",
+                "pathway_assignment_status": "exact_reference_match",
+                "pathway_vote_share": 1.0,
+                "pathway_best_reference_similarity": 1.0,
+            }
+        )
+    return normalize_assignment_map(pd.DataFrame(rows))
+
+
+def generate_pathway_assignment_map(canonical_smiles: list[str], reference_db: Path) -> pd.DataFrame:
+    try:
+        from build_v14_all_library_prediction_review_v1 import (  # type: ignore[import-not-found]
+            generate_pathway_assignment_map as generate_with_neighbors,
+        )
+    except ImportError:
+        return generate_exact_reference_assignment_map(canonical_smiles, reference_db)
+    return normalize_assignment_map(generate_with_neighbors(canonical_smiles, reference_db))
+
+
+def enrich_pathway_annotations(df: pd.DataFrame, assignment_map: pd.DataFrame | None) -> pd.DataFrame:
+    out = df.copy()
+    for column in PATHWAY_COLUMNS:
+        if column not in out.columns:
+            out[column] = pd.NA
+
+    out["_canonical_pathway_join_smiles"] = out.get("predicted_smiles", pd.Series([""] * len(out))).map(
+        canonicalize_for_pathway
+    )
+    assignment_map = normalize_assignment_map(assignment_map)
+
+    if assignment_map.empty:
+        out.loc[out["pathway_assignment_status"].map(clean_text).eq(""), "pathway_assignment_status"] = (
+            "missing_pathway_annotation"
+        )
+        return out.drop(columns=["_canonical_pathway_join_smiles"], errors="ignore")
+
+    annotated = out.merge(
+        assignment_map,
+        left_on="_canonical_pathway_join_smiles",
+        right_on="canonical_smiles",
+        how="left",
+        suffixes=("", "_assignment"),
+        sort=False,
+    )
+    for column in PATHWAY_COLUMNS:
+        assignment_column = f"{column}_assignment"
+        if assignment_column in annotated.columns:
+            current = annotated[column].map(clean_text)
+            annotated[column] = annotated[column].where(current.ne(""), annotated[assignment_column])
+    annotated.loc[annotated["pathway_assignment_status"].map(clean_text).eq(""), "pathway_assignment_status"] = (
+        "missing_pathway_annotation"
+    )
+    return annotated.drop(
+        columns=["_canonical_pathway_join_smiles", "canonical_smiles"]
+        + [f"{column}_assignment" for column in PATHWAY_COLUMNS if f"{column}_assignment" in annotated.columns],
+        errors="ignore",
+    )
+
+
+def apply_amino_acid_pathway_overrides(df: pd.DataFrame) -> pd.DataFrame:
+    try:
+        from build_v19b_updated_summary_v1 import (  # type: ignore[import-not-found]
+            apply_amino_acid_pathway_overrides as apply_legacy_overrides,
+        )
+    except ImportError:
+        apply_legacy_overrides = None
+    if apply_legacy_overrides is not None:
+        return apply_legacy_overrides(df)
+
+    out = df.copy()
+    true_path = out.get("true_pathway", pd.Series([""] * len(out), index=out.index)).map(clean_text)
+    true_sub = out.get("true_subpathway", pd.Series([""] * len(out), index=out.index)).map(clean_text)
+    predicted_path = out.get("predicted_pathway", pd.Series([""] * len(out), index=out.index)).map(clean_text)
+    predicted_sub = out.get("predicted_subpathway", pd.Series([""] * len(out), index=out.index)).map(clean_text)
+    if "pathway_match" in out.columns or true_path.ne("").any():
+        out["pathway_match"] = true_path.ne("") & true_path.eq(predicted_path)
+    if "subpathway_match" in out.columns or true_sub.ne("").any():
+        out["subpathway_match"] = true_sub.ne("") & true_sub.eq(predicted_sub)
+    return out
+
+
 def build_assignment_map(
     *,
     frames: dict[int, pd.DataFrame],
@@ -146,7 +317,7 @@ def enrich_one(
     assignment_map: pd.DataFrame,
 ) -> pd.DataFrame:
     original_columns = list(frame.columns)
-    out = enrich_pathway_annotations(frame, assignment_map=assignment_map, reference_db=None)
+    out = enrich_pathway_annotations(frame, assignment_map=assignment_map)
     out = apply_amino_acid_pathway_overrides(out)
     if "pathway_match" not in original_columns:
         out = out.drop(columns=["pathway_match"], errors="ignore")
@@ -176,7 +347,7 @@ def summarize_lib(lib_id: int, input_path: Path, output_path: Path, frame: pd.Da
 
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
-    repo_root = Path(__file__).resolve().parent
+    repo_root = REPO_ROOT
     root = resolve(args.equalization_root, repo_root)
     reference_db = resolve(args.reference_db, repo_root)
     libs = parse_libs(args.libs)
@@ -187,7 +358,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         raise FileNotFoundError(f"No rerank inputs found under {root}")
     assignment_cache = args.assignment_cache
     if assignment_cache is None:
-        assignment_cache = root / "pathway_assignment_map_v1.csv"
+        assignment_cache = root / "pathway_assignment_map.csv"
     else:
         assignment_cache = resolve(assignment_cache, repo_root)
     assignment_map, assignment_stats = build_assignment_map(

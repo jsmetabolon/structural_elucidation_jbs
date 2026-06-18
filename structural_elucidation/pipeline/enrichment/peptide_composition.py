@@ -12,13 +12,15 @@ from typing import Any
 
 import pandas as pd
 
+from structural_elucidation.paths import REPO_ROOT, resolve
+
 try:
     from peptide_permutation_v1_utils import infer_sequence_from_smiles as _infer_sequence_from_smiles
 except Exception:  # pragma: no cover - only available in the full EC2 workspace
     _infer_sequence_from_smiles = None
 
 
-DEFAULT_EQUALIZATION_ROOT = Path("models/pipeline_equalization_v21_clean")
+DEFAULT_EQUALIZATION_ROOT = Path("models/pipeline_equalization")
 DEFAULT_LIBS = "209,305,400,402"
 DEFAULT_INPUT_NAME = "unified_rerank_all_top10_with_pathways_lipid_class.csv"
 DEFAULT_OUTPUT_NAME = "unified_rerank_all_top10_with_pathways_lipid_class_peptide_composition.csv"
@@ -117,11 +119,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ordering-threshold", type=float, default=0.65)
     parser.add_argument("--allow-missing", action="store_true")
     return parser.parse_args()
-
-
-def resolve(path: Path, repo_root: Path) -> Path:
-    path = path.expanduser()
-    return path if path.is_absolute() else repo_root / path
 
 
 def parse_libs(values: list[str]) -> list[int]:
@@ -424,7 +421,7 @@ def summarize_lib(lib_id: int, input_path: Path, output_path: Path, frame: pd.Da
 
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
-    repo_root = Path(__file__).resolve().parent
+    repo_root = REPO_ROOT
     root = resolve(args.equalization_root, repo_root)
     libs = parse_libs(args.libs)
     frames = load_inputs(root, libs, args.input_name, args.allow_missing)

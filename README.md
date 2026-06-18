@@ -53,6 +53,7 @@ pip install -e .
 | Verifier scoring | `structural_elucidation.pipeline.verify` |
 | Unified pool | `structural_elucidation.pipeline.pool` |
 | Rerank | `structural_elucidation.pipeline.rerank` |
+| Post-rerank enrichment | `structural_elucidation.pipeline.enrichment` |
 | HTML reports | `structural_elucidation.reports.compound` |
 
 ## Pipeline

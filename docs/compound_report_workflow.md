@@ -114,7 +114,7 @@ Missing DB or WGCNA cache → report still builds; those sections use placeholde
 ## Phase 2 — Run the report builder
 
 ```bash
-cd /path/to/spec2mol_v21_inference
+cd /path/to/spec2mol_inference
 
 pip install -e .   # if not already installed
 

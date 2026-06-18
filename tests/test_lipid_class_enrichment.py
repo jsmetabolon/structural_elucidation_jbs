@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import pytest
 
-from build_lipid_class_enrichment_v1 import HAS_RDKIT, annotate_from_smiles, parse_metabolon_lipid_name
+from structural_elucidation.pipeline.enrichment.lipid_class import (
+    HAS_RDKIT,
+    annotate_from_smiles,
+    parse_metabolon_lipid_name,
+)
 
 
 @pytest.mark.parametrize(

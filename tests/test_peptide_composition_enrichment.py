@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from build_peptide_composition_enrichment_v1 import (
+from structural_elucidation.pipeline.enrichment.peptide_composition import (
     annotate_row,
     enrich_frame,
     normalize_peptide_composition,
