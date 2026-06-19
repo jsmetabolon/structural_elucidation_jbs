@@ -1,5 +1,20 @@
 #!/usr/bin/env python3
-"""Build HMDB/NCE-snapshot anchored non-peptide candidates for missed S0 controls."""
+"""Build HMDB/NCE-snapshot anchored non-peptide candidates for missed S0 controls.
+
+Generates library-mass-matched structures (plus conjugate expansions) for X
+controls that failed primary recovery, using diagnosis CSV conjugate hints.
+
+Pipeline context:
+    Upstream of ``verify`` and ``pool``. Targets controls where
+    ``primary_stage != recovered`` in the diagnosis table. Writes under
+    ``models/library_anchored_candidates_v1/runs/library_anchored_v1/``.
+
+Key I/O:
+    Inputs: ``control_stage_diagnosis.csv``, feature rows, neutral-mass
+    hypotheses, HMDB/vendor libraries, NCE full-smiles snapshot.
+    Outputs: ``candidate_metrics_all.csv``, ``denovo_report.csv``, per-control
+    metrics, source summary, and markdown report.
+"""
 
 from __future__ import annotations
 
@@ -27,29 +42,42 @@ from structural_elucidation.utils.domain import (
     xid_from_feature_key,
 )
 
-DEFAULT_HMDB = REPO_ROOT / "vendor/nce/elucidation/table_builders/hmdb_minimal.csv"
-DEFAULT_HMDB_EXTENDED = REPO_ROOT / "vendor/nce/elucidation/table_builders/HMDB_36_classyfire_21_annotations.csv"
-DEFAULT_NCE_FULL = REPO_ROOT / "data/nce_full_smiles_candidates.csv"
-RUN_NAME = "library_anchored_v1"
+# ── Default library paths and run label ──────────────────────────────
+DEFAULT_HMDB: Path = REPO_ROOT / "vendor/nce/elucidation/table_builders/hmdb_minimal.csv"
+DEFAULT_HMDB_EXTENDED: Path = (
+    REPO_ROOT / "vendor/nce/elucidation/table_builders/HMDB_36_classyfire_21_annotations.csv"
+)
+DEFAULT_NCE_FULL: Path = REPO_ROOT / "data/nce_full_smiles_candidates.csv"
+RUN_NAME: str = "library_anchored_v1"  # output subdirectory under runs/
 
 
+# ── Column coercion helpers ──────────────────────────────────────────
 def numeric(df: pd.DataFrame, col: str, default: float = math.nan) -> pd.Series:
+    """Coerce a DataFrame column to float, filling missing with *default*."""
     if col not in df.columns:
         return pd.Series(default, index=df.index, dtype=float)
     return pd.to_numeric(df[col], errors="coerce").fillna(default)
 
 
 def bool_value(value: Any) -> bool:
+    """Parse common truthy string representations."""
     return str(value or "").strip().lower() in {"true", "1", "yes", "y"}
 
 
 def ppm_hit_mask(masses: pd.Series, target: float, ppm: float) -> pd.Series:
+    """Return a boolean mask for masses within *ppm* of *target*.
+
+    Uses absolute ppm tolerance (not asymmetric) so small targets are not
+    over-matched relative to large ones.
+    """
     values = pd.to_numeric(masses, errors="coerce")
     tol = abs(float(target)) * float(ppm) / 1_000_000.0
     return values.sub(float(target)).abs().le(tol)
 
 
+# ── Structure library loaders ────────────────────────────────────────
 def prepare_hmdb(path: Path) -> pd.DataFrame:
+    """Load the minimal HMDB table into the unified library schema."""
     if not path.is_file():
         return pd.DataFrame()
     raw = pd.read_csv(path, low_memory=False)
@@ -67,6 +95,7 @@ def prepare_hmdb(path: Path) -> pd.DataFrame:
 
 
 def first_existing_col(df: pd.DataFrame, names: list[str]) -> str | None:
+    """Return the first column name from *names* present in *df* (case-insensitive)."""
     lower = {col.lower(): col for col in df.columns}
     for name in names:
         if name in df.columns:
@@ -77,10 +106,12 @@ def first_existing_col(df: pd.DataFrame, names: list[str]) -> str | None:
 
 
 def exact_mass_series(smiles: pd.Series) -> pd.Series:
+    """Compute monoisotopic mass per SMILES row when the CSV lacks a mass column."""
     return pd.Series([exact_mass_from_smiles(value) for value in smiles], index=smiles.index, dtype=float)
 
 
 def prepare_structure_library(path: Path, source_label: str) -> pd.DataFrame:
+    """Normalize an arbitrary structure CSV into the unified library schema."""
     if not path.is_file():
         return pd.DataFrame()
     raw = pd.read_csv(path, low_memory=False)
@@ -122,6 +153,7 @@ def prepare_structure_library(path: Path, source_label: str) -> pd.DataFrame:
 
 
 def prepare_hmdb_extended(path: Path) -> pd.DataFrame:
+    """Load HMDB extended annotations, joining spreadsheet names when needed."""
     if not path.is_file():
         return pd.DataFrame()
     raw = pd.read_csv(path, low_memory=False)
@@ -147,6 +179,7 @@ def prepare_hmdb_extended(path: Path) -> pd.DataFrame:
 
 
 def prepare_structure_library_from_frame(raw: pd.DataFrame, source_label: str) -> pd.DataFrame:
+    """Normalize an in-memory frame (post-join) into the library schema."""
     if raw.empty:
         return pd.DataFrame()
     smiles_col = first_existing_col(raw, ["canonical_smiles", "smiles", "SMILES", "Smiles", "library_smiles"])
@@ -169,6 +202,7 @@ def prepare_structure_library_from_frame(raw: pd.DataFrame, source_label: str) -
 
 
 def prepare_external_libraries(args: argparse.Namespace) -> pd.DataFrame:
+    """Concatenate all configured vendor libraries, deduplicating by canonical SMILES."""
     frames = [
         prepare_hmdb(Path(str(args.hmdb_csv)).expanduser()),
         prepare_hmdb_extended(Path(str(args.hmdb_extended_csv)).expanduser()),
@@ -184,11 +218,13 @@ def prepare_external_libraries(args: argparse.Namespace) -> pd.DataFrame:
     out["library_smiles"] = out["library_smiles"].astype(str)
     out["_canonical_library_smiles"] = out["library_smiles"].map(lambda value: canonicalize_smiles(value) or "")
     out = out[out["_canonical_library_smiles"].astype(bool)].copy()
+    # Dedup per source so the same structure from HMDB and ChEBI stays distinct.
     out = out.drop_duplicates(["library_source", "_canonical_library_smiles"], keep="first")
     return out.drop(columns=["_canonical_library_smiles"]).reset_index(drop=True)
 
 
 def prepare_nce_snapshot(path: Path, lib_id: int) -> pd.DataFrame:
+    """Load NCE full-smiles snapshot rows scoped to *lib_id*."""
     if not path.is_file():
         return pd.DataFrame()
     raw = pd.read_csv(path, low_memory=False)
@@ -223,17 +259,21 @@ def prepare_nce_snapshot(path: Path, lib_id: int) -> pd.DataFrame:
     return out[[col for col in keep if col in out.columns]].dropna(subset=["library_exact_mass"])
 
 
+# ── Control selection and mass hypotheses ────────────────────────────
 def target_controls(diagnosis: pd.DataFrame) -> list[str]:
+    """Return control IDs that did not reach ``recovered`` in the primary stage."""
     primary = diagnosis.get("primary_stage", pd.Series("", index=diagnosis.index)).astype(str)
     return sorted(set(diagnosis.loc[~primary.eq("recovered"), "control_id"].astype(str)))
 
 
 def parse_controls(text: Any) -> list[str]:
+    """Parse a comma-separated control ID list, preserving order and uniqueness."""
     controls = [part.strip() for part in str(text or "").split(",") if part.strip()]
     return sorted(dict.fromkeys(controls))
 
 
 def mass_hypotheses(features: pd.DataFrame, adducts: pd.DataFrame) -> pd.DataFrame:
+    """Union neutral-mass targets from feature fallbacks and adduct hypotheses."""
     feature_map = features.copy()
     if "control_id" not in feature_map.columns:
         feature_map["control_id"] = feature_map.get("feature_key", pd.Series("", index=feature_map.index)).map(
@@ -286,6 +326,7 @@ def mass_hypotheses(features: pd.DataFrame, adducts: pd.DataFrame) -> pd.DataFra
     )
 
 
+# ── Candidate row construction ───────────────────────────────────────
 def append_candidate(
     rows: list[dict[str, Any]],
     *,
@@ -296,6 +337,7 @@ def append_candidate(
     library_match_type: str,
     args: argparse.Namespace,
 ) -> None:
+    """Append one scored candidate row if SMILES canonicalizes and mass is finite."""
     canonical = canonicalize_smiles(predicted_smiles)
     if not canonical:
         return
@@ -315,9 +357,11 @@ def append_candidate(
     nce_ms2 = safe_float(hit.get("ms2_match_score"), 0.0)
     nce_pipeline = safe_float(hit.get("nce_pipeline_score"), 0.0)
     ms1_supported = bool_value(target.get("ms1_buddy_supported"))
+    # evidence_confidence feeds downstream rerank features and F2 promotion gates.
     evidence = float(
         np.clip(max(formula_prior, nce_forward, nce_ms2, nce_pipeline) + (0.05 if ms1_supported else 0.0), 0.0, 1.0)
     )
+    # Mass-heavy blend: library anchor is primarily a mass/formula rescue track.
     generation = float(
         np.clip(
             0.40 * mass_score + 0.25 * formula_prior + 0.20 * nce_pipeline + 0.10 * nce_forward + 0.05 * nce_ms2,
@@ -371,6 +415,7 @@ def build_candidates(
     diagnosis: pd.DataFrame,
     args: argparse.Namespace,
 ) -> pd.DataFrame:
+    """Mass-match library hits per control and expand conjugates from diagnosis hints."""
     rows: list[dict[str, Any]] = []
     hint_map = diagnosis.set_index("control_id").get("conjugate_hints", pd.Series(dtype=str)).astype(str).to_dict()
     for control_id in controls:
@@ -468,7 +513,9 @@ def build_candidates(
     return candidates[candidates["rank"].le(int(args.max_candidates_per_feature))].reset_index(drop=True)
 
 
+# ── CLI entry point ──────────────────────────────────────────────────
 def run(args: argparse.Namespace) -> dict[str, Any]:
+    """Execute library-anchored candidate generation and evaluation."""
     repo_root = REPO_ROOT
     output_root = resolve(args.output_root, repo_root)
     output_root.mkdir(parents=True, exist_ok=True)
@@ -567,6 +614,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def main() -> None:
+    """Parse CLI arguments and invoke :func:`run`."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, default=Path("models/library_anchored_candidates_v1"))
     parser.add_argument(

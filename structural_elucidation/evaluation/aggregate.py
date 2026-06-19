@@ -33,6 +33,7 @@ from structural_elucidation.utils.domain import (
 
 
 def best_value(pool: pd.DataFrame, col: str, default: Any = "") -> Any:
+    """Return the first non-null value in a column or a default."""
     if pool.empty or col not in pool.columns:
         return default
     value = pool.iloc[0].get(col, default)
@@ -40,6 +41,7 @@ def best_value(pool: pd.DataFrame, col: str, default: Any = "") -> Any:
 
 
 def best_by_tanimoto(pool: pd.DataFrame) -> pd.DataFrame:
+    """Select the single best candidate row by Tanimoto and rank tie-breakers."""
     if pool.empty:
         return pool
     return pool.sort_values(
@@ -50,6 +52,7 @@ def best_by_tanimoto(pool: pd.DataFrame) -> pd.DataFrame:
 
 
 def metric_from_rows(rows: list[dict[str, Any]], metric_scope: str) -> dict[str, Any]:
+    """Summarize per-control best-Tanimoto rows into aggregate metrics."""
     values = [safe_float(row["best_tanimoto"], 0.0) for row in rows]
     covered = [row for row in rows if safe_int(row.get("n_candidates"), 0) > 0]
     return {
@@ -75,6 +78,7 @@ def evaluate_profile(
     controls: list[Any],
     top_k: int,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Score rank-1, top-k, and full-pool oracle buckets for one profile."""
     candidate_path = find_artifact(profile_dir, int(lib_id), "candidate_metrics_all.csv")
     denovo_path = find_artifact(profile_dir, int(lib_id), "denovo_report.csv")
     if candidate_path is None or not candidate_path.exists():
@@ -145,6 +149,7 @@ def evaluate_profile(
 
 
 def discover_profiles(run_root: Path) -> list[tuple[int, str, str, Path]]:
+    """Discover analog-run profile directories under a run root."""
     rows: list[tuple[int, str, str, Path]] = []
     for lib_dir in sorted(run_root.glob("lib_*_*")):
         if not lib_dir.is_dir():
@@ -160,6 +165,7 @@ def discover_profiles(run_root: Path) -> list[tuple[int, str, str, Path]]:
 
 
 def load_baseline_metrics(ablation_root: Path) -> dict[tuple[str, str, str], dict[str, Any]]:
+    """Load baseline SELFIES pool metrics for delta comparison."""
     path = ablation_root / "baseline_candidate_pool_quality" / "candidate_pool_quality_metrics.csv"
     if not path.exists():
         return {}
@@ -172,6 +178,7 @@ def load_baseline_metrics(ablation_root: Path) -> dict[tuple[str, str, str], dic
 
 
 def build_deltas(metrics: pd.DataFrame, baseline: dict[tuple[str, str, str], dict[str, Any]]) -> pd.DataFrame:
+    """Compute X-control metric deltas versus the baseline SELFIES pool."""
     rows = []
     if metrics.empty:
         return pd.DataFrame()
@@ -206,6 +213,7 @@ def build_deltas(metrics: pd.DataFrame, baseline: dict[tuple[str, str, str], dic
 
 
 def build_hard_x_gap(metrics: pd.DataFrame) -> pd.DataFrame:
+    """Compare hard holdout metrics against matched X-control rows."""
     if metrics.empty:
         return pd.DataFrame()
     rows = []
@@ -240,6 +248,7 @@ def build_hard_x_gap(metrics: pd.DataFrame) -> pd.DataFrame:
 def render_report(
     metrics: pd.DataFrame, deltas: pd.DataFrame, gap: pd.DataFrame, recommendations: dict[str, Any]
 ) -> str:
+    """Render the analog aggregate markdown report body."""
     display_metrics = metrics[
         [
             col
@@ -284,6 +293,7 @@ def aggregate(
     known_x_all: Path,
     top_k: int,
 ) -> dict[str, Any]:
+    """Aggregate analog metrics, deltas, and branch recommendations."""
     out_dir = output_root / "aggregate"
     out_dir.mkdir(parents=True, exist_ok=True)
     metric_rows: list[dict[str, Any]] = []
@@ -359,6 +369,7 @@ def aggregate(
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse CLI arguments for analog aggregation."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, default=Path("models/denovo_x_domain_analog_v1"))
     parser.add_argument(
@@ -373,11 +384,13 @@ def parse_args() -> argparse.Namespace:
 
 
 def resolve(path: Path, repo_root: Path) -> Path:
+    """Resolve a repo-relative or absolute path against the repo root."""
     path = path.expanduser()
     return path if path.is_absolute() else repo_root / path
 
 
 def main() -> None:
+    """CLI entry point for X-domain analog aggregation."""
     args = parse_args()
     repo_root = REPO_ROOT
     payload = aggregate(

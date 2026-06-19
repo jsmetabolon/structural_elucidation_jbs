@@ -33,12 +33,14 @@ PROFILE_TOLERANCE_DEFAULTS = {
 
 
 def read_json(path: Path) -> dict[str, Any]:
+    """Read a JSON file, returning an empty dict when missing."""
     if not path.exists():
         return {}
     return json.loads(path.read_text())
 
 
 def first_existing(paths: Iterable[Path]) -> Path | None:
+    """Return the first path in the iterable that exists."""
     for path in paths:
         if path.exists():
             return path
@@ -46,6 +48,7 @@ def first_existing(paths: Iterable[Path]) -> Path | None:
 
 
 def find_artifact(profile_dir: Path, lib_id: int, suffix: str) -> Path | None:
+    """Locate a profile artifact by conventional filename patterns."""
     direct = first_existing(
         [
             profile_dir / f"merged_{lib_id}_{suffix}",
@@ -60,6 +63,7 @@ def find_artifact(profile_dir: Path, lib_id: int, suffix: str) -> Path | None:
 
 
 def parse_lib_dir(lib_dir: Path) -> tuple[int, str]:
+    """Parse ``lib_<id>_<ion_mode>`` directory names into components."""
     parts = lib_dir.name.split("_", 2)
     if len(parts) != 3 or parts[0] != "lib":
         raise ValueError(f"Expected lib directory named lib_<id>_<mode>, got {lib_dir}")
@@ -86,6 +90,7 @@ def discover_profile_dirs(run_root: Path) -> list[tuple[str, Path, int, str, str
 
 
 def load_mass_tolerance(profile: str, profile_dir: Path, lib_id: int) -> float:
+    """Load mass tolerance from profile summary JSON or defaults."""
     summary_path = find_artifact(profile_dir, lib_id, "selfies_run_summary.json")
     payload = read_json(summary_path) if summary_path is not None else {}
     raw = payload.get("mass_tolerance_da")
@@ -105,6 +110,7 @@ def evaluate_candidate_pools(
     output_dir: Path,
     top_k: int = 10,
 ) -> dict[str, Any]:
+    """Evaluate rank-1, top-k, oracle, and mass coverage for all profiles."""
     if not HAS_RDKIT:
         raise RuntimeError("RDKit is required for structural candidate-pool evaluation.")
 
@@ -249,6 +255,7 @@ def render_report(
     discovered_count: int,
     output_paths: dict[str, Path],
 ) -> str:
+    """Render the candidate-pool quality markdown report."""
     lines = [
         "# SELFIES Candidate Pool Quality",
         "",
@@ -318,6 +325,7 @@ def render_report(
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse CLI arguments for candidate-pool evaluation."""
     parser = argparse.ArgumentParser(
         description="Evaluate generated SELFIES profile dirs by rank-1, top-k, and full-pool oracle."
     )
@@ -334,6 +342,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """CLI entry point for SELFIES candidate-pool evaluation."""
     args = parse_args()
     evaluate_candidate_pools(
         run_root=args.run_root.expanduser().resolve(),

@@ -53,6 +53,7 @@ PROFILE_TOLERANCE = {"strict_1da": 1.0, "balanced": 5.0}
 
 
 def fp_from_smiles(smiles: Any):
+    """Compute a Morgan fingerprint for one SMILES string."""
     if not HAS_RDKIT:
         return None
     text = str(smiles or "").strip()
@@ -65,6 +66,7 @@ def fp_from_smiles(smiles: Any):
 
 
 def max_tanimoto(fp, anchor_fps: list[Any]) -> float:
+    """Return the maximum Tanimoto vs a list of anchor fingerprints."""
     if fp is None or not anchor_fps:
         return 0.0
     values = [float(DataStructs.TanimotoSimilarity(fp, anchor_fp)) for anchor_fp in anchor_fps if anchor_fp is not None]
@@ -72,6 +74,7 @@ def max_tanimoto(fp, anchor_fps: list[Any]) -> float:
 
 
 def mass_match(pred_mass: float, parent_mz: float, ion_mode: str) -> dict[str, Any]:
+    """Evaluate precursor mass agreement for a predicted neutral mass."""
     adducts = NEG_ADDUCTS if str(ion_mode) == "negative" else POS_ADDUCTS
     rows = []
     for adduct, fn in adducts.items():
@@ -90,6 +93,7 @@ def mass_match(pred_mass: float, parent_mz: float, ion_mode: str) -> dict[str, A
 
 
 def mass_score(abs_err: float, tolerance_da: float) -> float:
+    """Convert absolute mass error to a clipped [0, 1] score."""
     value = safe_float(abs_err, float("inf"))
     if value <= 0.001:
         return 1.0
@@ -99,6 +103,7 @@ def mass_score(abs_err: float, tolerance_da: float) -> float:
 
 
 def mass_error_bin(abs_err: float, strict_pass: bool) -> int:
+    """Bucket absolute mass error for reporting bins."""
     value = safe_float(abs_err, float("inf"))
     if bool(strict_pass):
         return 0
@@ -112,6 +117,7 @@ def mass_error_bin(abs_err: float, strict_pass: bool) -> int:
 
 
 def load_retrieval_report(baseline_root: Path, lib_id: int) -> pd.DataFrame:
+    """Load the baseline retrieval report for one library."""
     path = baseline_root / f"lib_{int(lib_id)}_{lib_mode(int(lib_id))}" / "retrieval" / "retrieval_report.csv"
     if not path.exists():
         return pd.DataFrame()
@@ -123,6 +129,7 @@ def load_retrieval_report(baseline_root: Path, lib_id: int) -> pd.DataFrame:
 
 
 def load_x_targets(unknown_feature_table: Path, libs: list[int], max_features: int) -> pd.DataFrame:
+    """Load X-domain feature targets for analog generation."""
     targets = feature_summary(read_table(unknown_feature_table), default_scope="x_control")
     targets = targets[targets["lib_id"].astype("Int64").isin(libs) & targets["xid"].astype(str).ne("")].copy()
     if max_features > 0:
@@ -131,6 +138,7 @@ def load_x_targets(unknown_feature_table: Path, libs: list[int], max_features: i
 
 
 def load_hard_targets(hard_holdout_dir: Path, libs: list[int], max_features: int) -> pd.DataFrame:
+    """Load hard holdout targets for analog generation."""
     rows = []
     for lib_id in libs:
         path = hard_holdout_dir / f"x_like_hard_holdout_{int(lib_id)}.csv"
@@ -161,6 +169,7 @@ def prepare_candidate_source(
     known_x: Path,
     hard_holdout_dir: Path,
 ) -> pd.DataFrame:
+    """Build the merged candidate source table for analog runs."""
     candidates = load_training_structures(repo_root, libs)
     if candidates.empty:
         return candidates
@@ -185,6 +194,7 @@ def prepare_candidate_source(
 
 
 def anchors_for_x(target: pd.Series, retrieval_df: pd.DataFrame, anchor_top_n: int) -> list[dict[str, Any]]:
+    """Select retrieval anchors for an X-domain target feature."""
     if retrieval_df.empty:
         return []
     group = retrieval_df[retrieval_df["feature_key"].astype(str).eq(str(target.get("feature_key", "")))].head(
@@ -211,6 +221,7 @@ def anchors_for_x(target: pd.Series, retrieval_df: pd.DataFrame, anchor_top_n: i
 
 
 def anchors_for_hard(target: pd.Series, candidate_source: pd.DataFrame, anchor_top_n: int) -> list[dict[str, Any]]:
+    """Select candidate-source anchors for a hard holdout target."""
     scoped = candidate_source[candidate_source["lib_id"].astype(int).eq(int(target.get("lib_id")))].copy()
     if scoped.empty:
         return []
@@ -253,6 +264,7 @@ def score_feature_candidates(
     tolerance_da: float,
     max_candidates_per_feature: int,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Score and rank analog candidates for one target feature."""
     lib_id = int(target.get("lib_id"))
     ion_mode = str(target.get("ion_mode") or lib_mode(lib_id))
     parent_mz = safe_float(target.get("parent_mz"), 0.0)
@@ -384,6 +396,7 @@ def write_profile(
     anchor_rows: list[dict[str, Any]],
     top_k: int,
 ) -> dict[str, str]:
+    """Write analog profile CSV and denovo report artifacts."""
     profile_dir.mkdir(parents=True, exist_ok=True)
     tolerance = PROFILE_TOLERANCE.get(profile.replace("non_x_holdout_", ""), 5.0)
     candidate_df = pd.DataFrame(candidate_rows)
@@ -453,6 +466,7 @@ def run_analog_generation(
     max_candidates_per_feature: int,
     top_k: int,
 ) -> dict[str, Any]:
+    """Run retrieval-anchored analog generation across targets."""
     if not HAS_RDKIT:
         raise RuntimeError("RDKit is required for retrieval-anchored analog generation.")
     run_root = output_root / "runs" / "retrieval_anchored_analog_v1"
@@ -535,6 +549,7 @@ def run_analog_generation(
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse CLI arguments for analog generation."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, default=Path("models/denovo_x_domain_analog_v1"))
     parser.add_argument(
@@ -558,11 +573,13 @@ def parse_args() -> argparse.Namespace:
 
 
 def resolve(path: Path, repo_root: Path) -> Path:
+    """Resolve a repo-relative or absolute path against the repo root."""
     path = path.expanduser()
     return path if path.is_absolute() else repo_root / path
 
 
 def main() -> None:
+    """CLI entry point for X-domain analog generation."""
     args = parse_args()
     repo_root = REPO_ROOT
     payload = run_analog_generation(

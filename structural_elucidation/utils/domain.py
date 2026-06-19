@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
-"""Shared helpers for X-domain hard holdout and analog diagnostics."""
+"""Shared helpers for X-domain hard holdout and analog diagnostics.
+
+Pipeline context:
+    Normalizes X control IDs, library scope, and feature summaries for
+    cross-library evaluation. Loads training structures and existing holdout
+    keys so hard-limit splits do not leak structures across folds.
+
+Key I/O:
+    ``feature_summary``: peak tables → per-feature metadata rows.
+    ``domain_distance``: m/z, RI, peak-count similarity for analog ranking.
+"""
 
 from __future__ import annotations
 
@@ -15,21 +25,26 @@ import pandas as pd
 from structural_elucidation.utils.chemistry import canonicalize_smiles, inchikey_from_smiles
 from structural_elucidation.utils.io import dataframe_to_markdown, read_table, write_csv, write_json
 
+# ── Library scope defaults ───────────────────────────────────────────
 NEGATIVE_LIBS = {209, 305}
 POSITIVE_LIBS = {400, 402}
 ION_LABELS = {"negative": 0.0, "positive": 1.0}
 DEFAULT_HARD_LIMITS = {209: 58, 305: 12, 400: 34, 402: 7}
 
 
+# ── Library and CLI parsing ──────────────────────────────────────────
 def lib_mode(lib_id: int) -> str:
+    """Map library ID to ionization mode label."""
     return "negative" if int(lib_id) in NEGATIVE_LIBS else "positive"
 
 
 def parse_libs(text: str) -> list[int]:
+    """Parse comma-separated library IDs."""
     return [int(part.strip()) for part in str(text).split(",") if part.strip()]
 
 
 def parse_limits(text: str) -> dict[int, int]:
+    """Parse ``lib:limit`` overrides merged onto ``DEFAULT_HARD_LIMITS``."""
     out = dict(DEFAULT_HARD_LIMITS)
     if not str(text or "").strip():
         return out
@@ -41,7 +56,9 @@ def parse_limits(text: str) -> dict[int, int]:
     return out
 
 
+# ── Safe scalar coercion ─────────────────────────────────────────────
 def safe_float(value: Any, default: float = math.nan) -> float:
+    """Coerce to float; return ``default`` on failure or non-finite values."""
     try:
         out = float(value)
         return out if np.isfinite(out) else default
@@ -50,13 +67,16 @@ def safe_float(value: Any, default: float = math.nan) -> float:
 
 
 def safe_int(value: Any, default: int = 0) -> int:
+    """Coerce to int via float; return ``default`` on failure."""
     try:
         return int(float(value))
     except Exception:
         return default
 
 
+# ── X control ID normalization ───────────────────────────────────────
 def xid_from_feature_key(value: Any) -> str:
+    """Extract ``X-<digits>`` from a feature key string."""
     match = re.search(r"(X-\d+)", str(value or ""))
     return match.group(1) if match else ""
 
@@ -67,11 +87,13 @@ NMD_NAME_PREFIX = re.compile(r"^NMD", re.I)
 
 
 def unknown_label_to_xid(value: Any) -> str:
+    """Map ``Unknown - <n>`` style labels to ``X-<n>`` control IDs."""
     match = UNKNOWN_LABEL_TO_XNUM.search(str(value or "").strip())
     return f"X-{match.group(1)}" if match else ""
 
 
 def is_nmd_compound_name(compound_name: Any, report_name: Any = "") -> bool:
+    """Return whether compound or report name is an NMD-prefixed internal label."""
     for raw in (compound_name, report_name):
         text = str(raw or "").strip()
         if text and NMD_NAME_PREFIX.match(text):
@@ -80,7 +102,15 @@ def is_nmd_compound_name(compound_name: Any, report_name: Any = "") -> bool:
 
 
 def resolve_canonical_control_id(compound_name: Any, report_name: Any = "") -> tuple[str, str, str]:
-    """Return (canonical_control_id, canonical_compound_name, name_normalization)."""
+    """Return canonical control ID, display name, and normalization audit tag.
+
+    Args:
+        compound_name: Primary compound label.
+        report_name: Secondary report/HTML label.
+
+    Returns:
+        Tuple of ``(canonical_control_id, canonical_compound_name, name_normalization)``.
+    """
     original = str(compound_name or "").strip()
     for raw in (compound_name, report_name):
         xid = unknown_label_to_xid(raw)
@@ -97,6 +127,7 @@ def resolve_canonical_control_id(compound_name: Any, report_name: Any = "") -> t
 
 
 def normalize_ion_mode(value: Any) -> str:
+    """Normalize ion mode encodings to ``negative`` or ``positive`` strings."""
     text = str(value or "").strip().lower()
     if text in {"0", "0.0", "negative", "neg"}:
         return "negative"
@@ -106,6 +137,7 @@ def normalize_ion_mode(value: Any) -> str:
 
 
 def has_lib(row: pd.Series, lib_id: int) -> bool:
+    """Return whether a metadata row is associated with ``lib_id``."""
     raw = str(row.get("lib_ids", "") or "")
     parts = {part.strip() for part in raw.replace(",", ";").split(";") if part.strip()}
     if str(int(lib_id)) in parts:
@@ -114,6 +146,18 @@ def has_lib(row: pd.Series, lib_id: int) -> bool:
 
 
 def feature_summary(df: pd.DataFrame, *, default_scope: str) -> pd.DataFrame:
+    """Aggregate peak-level rows to one summary row per ``feature_key``.
+
+    Args:
+        df: Peak or feature table with ``feature_key``.
+        default_scope: Holdout scope label written to output.
+
+    Returns:
+        Per-feature summary with m/z, RI, ion mode, and peak count.
+
+    Raises:
+        ValueError: When ``feature_key`` column is missing.
+    """
     if df.empty:
         return pd.DataFrame()
     work = df.copy()
@@ -158,7 +202,9 @@ def feature_summary(df: pd.DataFrame, *, default_scope: str) -> pd.DataFrame:
     return grouped
 
 
+# ── Holdout and training structure loaders ───────────────────────────
 def load_known_x_comp_ids(known_x: Path) -> set[int]:
+    """Load CompID set from ``known_X`` CSV."""
     if not known_x.exists():
         return set()
     df = read_table(known_x)

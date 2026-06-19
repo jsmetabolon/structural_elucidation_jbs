@@ -62,12 +62,15 @@ class LibContext:
 
 
 def read_json(path: Path) -> Dict[str, Any]:
+    """Per-library run context with manifest metadata and paths."""
+    """Read a JSON file from disk."""
     if not path.exists():
         return {}
     return json.loads(path.read_text())
 
 
 def write_json(path: Path, payload: Dict[str, Any]) -> None:
+    """Write a JSON payload to disk with stable formatting."""
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
 
 
@@ -78,6 +81,7 @@ def dataframe_to_markdown(df: pd.DataFrame) -> str:
     cols = [str(col) for col in df.columns]
 
     def clean(value: Any) -> str:
+        """Normalize a metric value for stable JSON serialization."""
         if pd.isna(value):
             return ""
         return str(value).replace("\n", " ").replace("|", "\\|")
@@ -92,6 +96,7 @@ def dataframe_to_markdown(df: pd.DataFrame) -> str:
 
 
 def existing_path(path_like: Any, run_root: Path) -> Optional[Path]:
+    """Resolve an optional path relative to a run root if it exists."""
     if not path_like:
         return None
     raw = str(path_like)
@@ -113,6 +118,7 @@ def existing_path(path_like: Any, run_root: Path) -> Optional[Path]:
 
 
 def discover_libs(run_root: Path) -> List[LibContext]:
+    """Discover library run directories under a pipeline run root."""
     contexts: List[LibContext] = []
     for lib_dir in sorted(run_root.glob("lib_*_*")):
         manifest_path = lib_dir / "merged_dual_lane_manifest.json"
@@ -136,6 +142,7 @@ def metric_row(
     lane: str = "",
     policy: str = "",
 ) -> Dict[str, Any]:
+    """Build one standardized metric summary row."""
     return {
         "lib_id": int(ctx.lib_id),
         "ion_mode": ctx.ion_mode,
@@ -177,6 +184,7 @@ def evaluate_prediction_path(
     lane: str = "",
     policy: str = "",
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """Evaluate one prediction CSV against controls at multiple scopes."""
     preds = load_predictions(pred_path)
     rows: List[Dict[str, Any]] = []
     per_control_rows: List[Dict[str, Any]] = []
@@ -218,12 +226,14 @@ def evaluate_prediction_path(
 
 
 def numeric_series(df: pd.DataFrame, col: str) -> pd.Series:
+    """Coerce a dataframe column to numeric with NaN for invalid values."""
     if col not in df.columns:
         return pd.Series(dtype=float)
     return pd.to_numeric(df[col], errors="coerce")
 
 
 def mass_coverage_row(ctx: LibContext, profile: str, profile_dir: Path, candidate_df: pd.DataFrame) -> Dict[str, Any]:
+    """Summarize mass-error coverage for one candidate pool."""
     abs_err = numeric_series(candidate_df, "abs_mass_error_da")
     feature_keys = (
         candidate_df["feature_key"].astype(str) if "feature_key" in candidate_df.columns else pd.Series(dtype=str)
@@ -255,6 +265,7 @@ def make_rank_maps(
     denovo_path: Optional[Path],
     mass_tolerance_da: float,
 ) -> Tuple[Dict[Tuple[str, str], int], Dict[Tuple[str, str], int], Dict[Tuple[str, str], int]]:
+    """Build rank lookup maps for oracle vs selected candidates."""
     report_rank_map: Dict[Tuple[str, str], int] = {}
     if denovo_path is not None and denovo_path.exists():
         report_df = pd.read_csv(denovo_path)
@@ -292,6 +303,7 @@ def make_rank_maps(
 
 
 def best_control_match(pred_can: Optional[str], control_smiles: Iterable[str]) -> Tuple[bool, float]:
+    """Return exact-match flag and best Tanimoto vs control SMILES."""
     if pred_can is None:
         return False, 0.0
     exact = False
@@ -313,6 +325,7 @@ def evaluate_full_pool_oracle(
     denovo_path: Optional[Path],
     mass_tolerance_da: float,
 ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+    """Evaluate full-pool oracle metrics for one profile."""
     if (
         candidate_df.empty
         or "feature_key" not in candidate_df.columns
@@ -395,6 +408,7 @@ def evaluate_full_pool_oracle(
             )
 
         def sort_key(item: Dict[str, Any]) -> Tuple[Any, ...]:
+            """Build a sort key tuple for ranking metric rows."""
             abs_mass = item["abs_mass_error_da"]
             report_rank = item["oracle_report_rank"]
             window_rank = item["oracle_mass_window_rank"]
@@ -451,6 +465,7 @@ def evaluate_full_pool_oracle(
 
 
 def oracle_summary(controls: Dict[str, List[str]], rows: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Summarize full-pool oracle rows into headline metrics."""
     covered = [row for row in rows if int(row.get("n_candidates", 0) or 0) > 0]
     best_tans = [float(row.get("best_tanimoto", 0.0) or 0.0) for row in covered]
     exact_count = sum(1 for row in covered if bool(row.get("exact_match")))
@@ -471,6 +486,7 @@ def oracle_summary(controls: Dict[str, List[str]], rows: List[Dict[str, Any]]) -
 
 
 def profile_mass_tolerance(profile_dir: Path, fallback: float = 5.0) -> float:
+    """Read mass tolerance from profile artifacts or fallback."""
     summary = read_json(profile_dir / "selfies_run_summary.json")
     value = summary.get("mass_tolerance_da", fallback)
     try:
@@ -485,6 +501,7 @@ def collect_profile_metrics(
     controls: Dict[str, List[str]],
     top_k: int,
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """Collect SELFIES profile metrics across discovered libs."""
     metric_rows: List[Dict[str, Any]] = []
     per_control_rows: List[Dict[str, Any]] = []
     oracle_rows: List[Dict[str, Any]] = []
@@ -546,6 +563,7 @@ def collect_retrieval_metrics(
     controls: Dict[str, List[str]],
     top_k: int,
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """Collect retrieval-track metrics across discovered libs."""
     retrieval = ctx.manifest.get("retrieval", {}) if isinstance(ctx.manifest.get("retrieval"), dict) else {}
     retrieval_path = existing_path(retrieval.get("merged_predictions_csv"), ctx.lib_dir.parent)
     if retrieval_path is None:
@@ -564,6 +582,7 @@ def collect_retrieval_metrics(
 
 
 def policy_metric_lookup(comparison_path: Path) -> Dict[str, Dict[str, Any]]:
+    """Load policy comparison metrics keyed by policy name."""
     payload = read_json(comparison_path)
     out: Dict[str, Dict[str, Any]] = {}
     for item in payload.get("policy_metrics", []) or []:
@@ -579,6 +598,7 @@ def collect_policy_metrics(
     controls: Dict[str, List[str]],
     top_k: int,
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """Collect merge-policy metrics for the decision package."""
     metric_rows: List[Dict[str, Any]] = []
     per_control_rows: List[Dict[str, Any]] = []
     lane_decision_rows: List[Dict[str, Any]] = []
@@ -636,6 +656,7 @@ def collect_policy_metrics(
 
 
 def selected_vs_augmented_row(ctx: LibContext, run_root: Path) -> Dict[str, Any]:
+    """Compare selected vs augmented candidate coverage for one lib."""
     selected = (
         ctx.manifest.get("selected_delivery", {}) if isinstance(ctx.manifest.get("selected_delivery"), dict) else {}
     )
@@ -693,6 +714,7 @@ def selected_vs_augmented_row(ctx: LibContext, run_root: Path) -> Dict[str, Any]
 
 
 def feature_scope_row(ctx: LibContext) -> Dict[str, Any]:
+    """Summarize feature-scope counts for one library context."""
     scope = ctx.manifest.get("feature_scope", {}) if isinstance(ctx.manifest.get("feature_scope"), dict) else {}
     expected = scope.get("expected_features")
     output = scope.get("output_features")
@@ -712,6 +734,7 @@ def feature_scope_row(ctx: LibContext) -> Dict[str, Any]:
 
 
 def latent_alignment_row(ctx: LibContext) -> Dict[str, Any]:
+    """Summarize latent-space alignment metrics for one library."""
     selfies = ctx.manifest.get("selfies", {}) if isinstance(ctx.manifest.get("selfies"), dict) else {}
     audit = selfies.get("latent_alignment_audit", {}) if isinstance(selfies.get("latent_alignment_audit"), dict) else {}
     return {
@@ -731,6 +754,7 @@ def latent_alignment_row(ctx: LibContext) -> Dict[str, Any]:
 
 
 def global_augmented_audit(run_root: Path) -> Dict[str, Any]:
+    """Audit global augmented-candidate usage across the run root."""
     path = run_root / "metabolon_denovo_augmented_predictions.csv"
     if not path.exists():
         return {"path": str(path), "exists": False}
@@ -748,6 +772,7 @@ def global_augmented_audit(run_root: Path) -> Dict[str, Any]:
 
 
 def choose_next_branch(metrics_df: pd.DataFrame) -> Tuple[str, str, Dict[str, Any]]:
+    """Recommend the next pipeline branch from collected metrics."""
     profile_df = metrics_df[metrics_df["source_type"].eq("selfies_profile")].copy()
     if profile_df.empty:
         return "insufficient_data", "No SELFIES profile metrics were available.", {}
@@ -812,6 +837,7 @@ def write_markdown_report(
     branch_reason: str,
     has_rdkit: bool,
 ) -> None:
+    """Write the decision-package markdown report."""
     lines: List[str] = []
     lines.append("# Post-Run Decision Package")
     lines.append("")
@@ -936,6 +962,7 @@ def build_decision_package(
     output_dir: Path,
     top_k: int,
 ) -> Dict[str, Any]:
+    """Assemble metrics, recommendations, and decision artifacts."""
     output_dir.mkdir(parents=True, exist_ok=True)
     libs = discover_libs(run_root)
     if not libs:
@@ -1054,6 +1081,7 @@ def build_decision_package(
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse CLI arguments for decision-package generation."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-root", required=True, type=Path, help="Completed merged run artifact root.")
     parser.add_argument("--known-x", required=True, type=Path, help="known_X.csv path.")
@@ -1073,6 +1101,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """CLI entry point for decision-package generation."""
     args = parse_args()
     run_root = args.run_root.resolve()
     output_dir = args.output_dir.resolve() if args.output_dir is not None else run_root / "post_run_decision_package"

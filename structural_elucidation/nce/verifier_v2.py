@@ -24,10 +24,12 @@ from structural_elucidation.utils.domain import safe_int
 
 
 def _parse_bins(value: Any) -> list[Any]:
+    """Delegate bin parsing to the shared JSON-list helper in ``evidence``."""
     return parse_json_list(value)
 
 
 def _parse_ms2_pairs(value: Any) -> list[tuple[float, float]]:
+    """Parse ``[[mz, intensity], ...]`` JSON into finite (m/z, intensity) pairs."""
     try:
         parsed = json.loads(str(value or "[]"))
     except Exception:
@@ -47,6 +49,7 @@ def _parse_ms2_pairs(value: Any) -> list[tuple[float, float]]:
 
 
 def _positive_adduct_bins_from_pairs(parent_mz: Any, ms2_pairs_json: Any) -> tuple[list[int], list[int]]:
+    """Derive fragment and loss bins from raw positive-mode MS2 peak pairs."""
     try:
         parent = float(parent_mz)
     except Exception:
@@ -66,6 +69,7 @@ def _positive_adduct_bins_from_pairs(parent_mz: Any, ms2_pairs_json: Any) -> tup
 
 
 def _numeric_score(value: Any, default: float = 0.0) -> float:
+    """Coerce a value to float, returning ``default`` when non-finite."""
     try:
         out = float(value)
     except Exception:
@@ -74,6 +78,7 @@ def _numeric_score(value: Any, default: float = 0.0) -> float:
 
 
 def _mass_or_adduct_score(row: pd.Series) -> float:
+    """Prefer explicit mass-match score, else decay from absolute mass error."""
     mass_match = _numeric_score(row.get("mass_match_score"), default=float("nan"))
     if np.isfinite(mass_match):
         return float(np.clip(mass_match, 0.0, 1.0))
@@ -84,6 +89,7 @@ def _mass_or_adduct_score(row: pd.Series) -> float:
 
 
 def _strict_fragment_overlap_score(smiles: Any, ion_bins: list[Any], loss_bins: list[Any], lib_id: int) -> float:
+    """Portable fragment overlap without the neutral-score fallback used in v1."""
     predicted_ions, predicted_losses = candidate_fragment_bins(str(smiles or ""), int(lib_id))
     ion_values = [int(v) for v in ion_bins if str(v) not in {"", "0", "nan"}]
     loss_values = [int(v) for v in loss_bins if str(v) not in {"", "0", "nan"}]
@@ -128,6 +134,7 @@ def predicted_spectrum_score_v2(
     lib_id: int = 209,
     fallback_on_error: bool = True,
 ) -> float:
+    """Score a candidate with the real NCE matcher, falling back to portable v1."""
     try:
         score = score_smiles_against_observed_bins(
             smiles,
@@ -151,6 +158,7 @@ def annotate_predicted_spectrum_scores_v2(
     smiles_col: str = "predicted_smiles",
     output_col: str = "predicted_spectrum_score_v2",
 ) -> pd.DataFrame:
+    """Annotate candidates with v2 spectrum scores joined from observed MS2 lookup."""
     out = candidates.copy()
     if out.empty:
         out[output_col] = []

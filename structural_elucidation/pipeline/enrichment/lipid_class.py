@@ -1,5 +1,17 @@
 #!/usr/bin/env python3
-"""Add coarse lipid class annotations to equalization rerank top-10 CSVs."""
+"""Add coarse lipid class annotations to equalization rerank top-10 CSVs.
+
+Parses Metabolon-style lipid names and SMILES substructures (when RDKit is
+available) to emit lipid class, chain totals, and shorthand notation.
+
+Pipeline context:
+    Second enrichment stage; reads pathway-enriched top-10 CSVs from
+    ``pipeline_equalization/rerank_lib*/``.
+
+Key I/O:
+    Inputs: ``*_with_pathways.csv`` per library.
+    Outputs: ``*_lipid_class.csv``, ``lipid_class_enrichment_summary.json``.
+"""
 
 from __future__ import annotations
 
@@ -26,17 +38,20 @@ except ImportError:  # pragma: no cover - optional in lightweight environments
     HAS_RDKIT = False
 
 
-DEFAULT_EQUALIZATION_ROOT = Path("models/pipeline_equalization")
-DEFAULT_LIBS = "209,305,400,402"
-DEFAULT_INPUT_NAME = "unified_rerank_all_top10_with_pathways.csv"
-DEFAULT_OUTPUT_NAME = "unified_rerank_all_top10_with_pathways_lipid_class.csv"
-LIPID_COLUMNS = [
+# ── Defaults and output schema ───────────────────────────────────────
+DEFAULT_EQUALIZATION_ROOT: Path = Path("models/pipeline_equalization")
+DEFAULT_LIBS: str = "209,305,400,402"
+DEFAULT_INPUT_NAME: str = "unified_rerank_all_top10_with_pathways.csv"
+DEFAULT_OUTPUT_NAME: str = "unified_rerank_all_top10_with_pathways_lipid_class.csv"
+LIPID_COLUMNS: list[str] = [
     "lipid_class",
     "lipid_chains_total",
     "lipid_shorthand",
     "lipid_classification_source",
 ]
-NAME_COLUMNS = [
+
+# ── Name-parse dictionaries and regex patterns ───────────────────────
+NAME_COLUMNS: list[str] = [
     "library_name",
     "candidate_name",
     "name",
@@ -46,7 +61,7 @@ NAME_COLUMNS = [
     "feature_label",
 ]
 
-ACYL_TO_CHAIN: dict[str, str] = {
+ACYL_TO_CHAIN: dict[str, str] = {  # common acyl prefix → shorthand chain token
     "palmitoyl": "16:0",
     "palmitoleoyl": "16:1",
     "palmitelaidoyl": "16:1",
@@ -77,7 +92,7 @@ ACYL_TO_CHAIN: dict[str, str] = {
     "erucoyl": "22:1",
 }
 
-HEADGROUP_NAME_PATTERNS: list[tuple[re.Pattern[str], str, str]] = [
+HEADGROUP_NAME_PATTERNS: list[tuple[re.Pattern[str], str, str]] = [  # (regex, full_class, lyso_class)
     (re.compile(r"(?:\bGPC\b|phospho\s*choline|phosphocholine|glycerophospho\s*choline)", re.I), "PC", "LPC"),
     (
         re.compile(r"(?:\bGPE\b|phospho\s*ethanolamine|phosphoethanolamine|glycerophospho\s*ethanolamine)", re.I),
@@ -88,7 +103,7 @@ HEADGROUP_NAME_PATTERNS: list[tuple[re.Pattern[str], str, str]] = [
     (re.compile(r"(?:\bGPI\b|phospho\s*inositol|phosphoinositol|glycerophospho\s*inositol)", re.I), "PI", "LPI"),
     (re.compile(r"(?:\bGPG\b|phospho\s*glycerol|phosphoglycerol|glycerophospho\s*glycerol)", re.I), "PG", "LPG"),
 ]
-DIRECT_CLASSES = (
+DIRECT_CLASSES: tuple[str, ...] = (
     "HexCer",
     "Cer",
     "SM",
@@ -106,7 +121,7 @@ DIRECT_CLASSES = (
     "TAG",
     "MAG",
 )
-CLASS_ALIASES = {
+CLASS_ALIASES: dict[str, str] = {
     "DG": "DAG",
     "TG": "TAG",
     "MG": "MAG",
@@ -114,13 +129,13 @@ CLASS_ALIASES = {
     "HEXCER": "HexCer",
     "STEROL": "sterol",
 }
-CHAIN_RE = re.compile(r"(?P<prefix>O-|P-|[dmte])?(?P<carbons>\d{1,2}):(?P<double_bonds>\d{1,2})", re.I)
-DIRECT_PAREN_RE = re.compile(
+CHAIN_RE: re.Pattern[str] = re.compile(r"(?P<prefix>O-|P-|[dmte])?(?P<carbons>\d{1,2}):(?P<double_bonds>\d{1,2})", re.I)
+DIRECT_PAREN_RE: re.Pattern[str] = re.compile(
     r"\b(?P<class>HexCer|Cer|SM|LPC|LPE|LPS|LPI|LPG|PC|PE|PS|PI|PG|DAG|TAG|MAG|DG|TG|MG)\s*"
     r"\((?P<body>[^)]*\d{1,2}:\d{1,2}[^)]*)\)",
     re.I,
 )
-DIRECT_SPACE_RE = re.compile(
+DIRECT_SPACE_RE: re.Pattern[str] = re.compile(
     r"\b(?P<class>HexCer|Cer|SM|LPC|LPE|LPS|LPI|LPG|PC|PE|PS|PI|PG|DAG|TAG|MAG|DG|TG|MG)\s+"
     r"(?P<body>(?:O-|P-|[dmte])?\d{1,2}:\d{1,2}(?:\([^)]*\))?"
     r"(?:[/_ -](?:O-|P-|[dmte])?\d{1,2}:\d{1,2}(?:\([^)]*\))?)*)",
@@ -128,8 +143,11 @@ DIRECT_SPACE_RE = re.compile(
 )
 
 
+# ── Data classes ─────────────────────────────────────────────────────
 @dataclass(frozen=True)
 class Chain:
+    """One acyl or sphingoid chain token (e.g. 18:1)."""
+
     carbons: int
     double_bonds: int
     prefix: str = ""
@@ -141,6 +159,8 @@ class Chain:
 
 @dataclass(frozen=True)
 class LipidAnnotation:
+    """Coarse lipid classification result for one candidate row."""
+
     lipid_class: str = ""
     lipid_chains_total: str = ""
     lipid_shorthand: str = ""
@@ -151,6 +171,7 @@ class LipidAnnotation:
         return not self.lipid_class
 
     def as_dict(self) -> dict[str, str]:
+        """Serialize annotation fields for DataFrame assignment."""
         return {
             "lipid_class": self.lipid_class,
             "lipid_chains_total": self.lipid_chains_total,
@@ -160,6 +181,7 @@ class LipidAnnotation:
 
 
 def parse_args() -> argparse.Namespace:
+    """Build the lipid-class enrichment CLI argument parser."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--equalization-root", type=Path, default=DEFAULT_EQUALIZATION_ROOT)
     parser.add_argument("--libs", nargs="+", default=[DEFAULT_LIBS])
@@ -557,6 +579,7 @@ def annotate_from_smiles(smiles: object) -> LipidAnnotation:
 
 
 def annotate_row(row: pd.Series) -> LipidAnnotation:
+    """Classify one row: prefer name parse, fall back to SMILES SMARTS."""
     name_annotation = annotate_from_name(row)
     if not name_annotation.is_empty:
         return name_annotation
@@ -568,7 +591,9 @@ def annotate_row(row: pd.Series) -> LipidAnnotation:
     return LipidAnnotation()
 
 
+# ── I/O and enrichment driver ────────────────────────────────────────
 def rerank_path(root: Path, lib_id: int, name: str) -> Path:
+    """Path to a named CSV under ``rerank_lib{lib_id}/``."""
     return root / f"rerank_lib{int(lib_id)}" / name
 
 
@@ -596,6 +621,7 @@ def ordered_columns(original_columns: list[str], enriched: pd.DataFrame) -> list
 
 
 def enrich_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    """Add lipid class columns to all rows in a rerank top-10 frame."""
     original_columns = list(frame.columns)
     annotations = [annotate_row(row).as_dict() for _, row in frame.iterrows()]
     out = frame.copy()
@@ -622,6 +648,7 @@ def summarize_lib(lib_id: int, input_path: Path, output_path: Path, frame: pd.Da
 
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
+    """Run lipid-class enrichment for all requested libraries."""
     repo_root = REPO_ROOT
     root = resolve(args.equalization_root, repo_root)
     libs = parse_libs(args.libs)
@@ -655,6 +682,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def main() -> int:
+    """CLI entry point."""
     run(parse_args())
     return 0
 

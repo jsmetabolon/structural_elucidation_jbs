@@ -30,6 +30,7 @@ except ImportError:
 
 
 def canonicalize(smiles: str) -> Optional[str]:
+    """Canonicalize a SMILES string with RDKit sanitization."""
     if not HAS_RDKIT or not smiles or not smiles.strip():
         return None
     mol = Chem.MolFromSmiles(smiles.strip())
@@ -43,6 +44,7 @@ def canonicalize(smiles: str) -> Optional[str]:
 
 
 def tanimoto(smi_a: str, smi_b: str, radius: int = 2) -> float:
+    """Compute Morgan fingerprint Tanimoto similarity between two SMILES."""
     if not HAS_RDKIT:
         return 0.0
     try:
@@ -150,6 +152,7 @@ def load_predictions(
     feature_key_col: str = "feature_key",
     rank_col: str = "rank",
 ) -> pd.DataFrame:
+    """Load and normalize a prediction CSV for control evaluation."""
     if not pred_path.exists():
         return pd.DataFrame()
     try:
@@ -296,6 +299,7 @@ def evaluate_controls(
 
 
 def main() -> None:
+    """CLI entry point for control-benchmark evaluation."""
     parser = argparse.ArgumentParser(description="Evaluate de novo and retrieval predictions against known controls.")
     parser.add_argument(
         "--prediction_dir",

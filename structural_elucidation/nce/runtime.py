@@ -40,6 +40,8 @@ def install_local_nce_shims() -> None:
         easy_query = types.ModuleType("mdsutils.easyQuery")
 
         class EasyQuery:  # pragma: no cover - only used to guard accidental DB paths
+            """Guard class that blocks accidental database access in cache-only mode."""
+
             def __init__(self, *args: Any, **kwargs: Any) -> None:
                 raise RuntimeError("EasyQuery is unavailable in local cache-only NCE mode")
 
@@ -69,6 +71,7 @@ def get_predicted_spectrum_matcher(
     nce_root: str = str(DEFAULT_NCE_ROOT),
     reference_dir: str = str(DEFAULT_REFERENCE_DIR),
 ):
+    """Return a cached ``PredictedSpectrumMatcher`` for the requested library."""
     prepare_nce_runtime(nce_root=nce_root, reference_dir=reference_dir)
     from elucidation.predictedSpectrumMatcher import PredictedSpectrumMatcher
 
@@ -81,6 +84,7 @@ def get_cached_mlims_service(
     nce_root: str = str(DEFAULT_NCE_ROOT),
     reference_dir: str = str(DEFAULT_REFERENCE_DIR),
 ):
+    """Return MLIMS lookup tables from NCE or a local pickle fallback."""
     prepare_nce_runtime(nce_root=nce_root, reference_dir=reference_dir)
     try:
         from elucidation.library_services.cachedMlimsLibraryService import CachedMlimsLibraryService
@@ -91,12 +95,16 @@ def get_cached_mlims_service(
 
 
 class PickleCachedMlimsService:
+    """Minimal MLIMS name lookup backed by pickled reference tables."""
+
     def __init__(self, tables: dict[str, pd.DataFrame]) -> None:
+        """Initialize runtime shim or service state."""
         self.chem_df = tables.get("chemicals", pd.DataFrame()).copy()
         self.cle_df = tables.get("chro_lib_entry", pd.DataFrame()).copy()
         self.comp_df = tables.get("chro_comp_entry", pd.DataFrame()).copy()
 
     def get_name_dict(self) -> dict[Any, str]:
+        """Map ``comp_id`` values to report or fallback compound names."""
         if self.comp_df.empty or "comp_id" not in self.comp_df.columns:
             return {}
         name_col = "report_name" if "report_name" in self.comp_df.columns else "name"
@@ -114,6 +122,7 @@ class PickleCachedMlimsService:
 def get_cached_mlims_service_from_pickle(
     *, reference_dir: str = str(DEFAULT_REFERENCE_DIR)
 ) -> PickleCachedMlimsService:
+    """Load MLIMS tables from the first available ``mlims_tables.pkl`` cache."""
     candidates = [Path(str(reference_dir)).expanduser() / "mlims_tables.pkl", *DEFAULT_MLIMS_TABLE_CANDIDATES]
     for path in candidates:
         if not path.exists():
@@ -126,11 +135,13 @@ def get_cached_mlims_service_from_pickle(
 
 
 def nce_bin_name(bin_id: Any) -> str:
+    """Format a bin id the way NCE spectrum dictionaries name keys."""
     value = int(float(bin_id))
     return f"bin_{value}" if value >= 0 else f"bin_m{-value}"
 
 
 def observed_bin_spectrum(ion_bins: list[Any], loss_bins: list[Any]) -> dict[str, float]:
+    """Build a uniform-weight NCE spectrum dict from observed fragment bins."""
     bins = []
     for value in list(ion_bins or []) + list(loss_bins or []):
         try:
@@ -154,6 +165,7 @@ def score_smiles_against_observed_bins(
     nce_root: Path | str = DEFAULT_NCE_ROOT,
     reference_dir: Path | str = DEFAULT_REFERENCE_DIR,
 ) -> float:
+    """Score one SMILES against observed bins via the real NCE spectrum matcher."""
     if not str(smiles or "").strip():
         return 0.0
     spectrum = observed_bin_spectrum(ion_bins, loss_bins)

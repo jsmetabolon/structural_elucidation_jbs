@@ -77,22 +77,27 @@ POLICIES: dict[str, AssemblyRerankPolicy] = {
 
 
 def clip01(values: pd.Series) -> pd.Series:
+    """Clip a numeric series to the [0, 1] interval."""
+    """Weighted feature policy for assembly candidate reranking."""
     return pd.to_numeric(values, errors="coerce").fillna(0.0).clip(lower=0.0, upper=1.0)
 
 
 def numeric(df: pd.DataFrame, col: str, default: float = 0.0) -> pd.Series:
+    """Read a numeric column with a default fill value."""
     if col not in df.columns:
         return pd.Series(default, index=df.index, dtype=float)
     return pd.to_numeric(df[col], errors="coerce").fillna(default).astype(float)
 
 
 def bool_score(df: pd.DataFrame, col: str) -> pd.Series:
+    """Convert a boolean column to 0/1 float scores."""
     if col not in df.columns:
         return pd.Series(0.0, index=df.index, dtype=float)
     return df[col].fillna(False).astype(str).str.lower().isin({"true", "1", "yes", "y"}).astype(float)
 
 
 def normalize_positive(series: pd.Series) -> pd.Series:
+    """Min-max normalize positive values to [0, 1]."""
     values = pd.to_numeric(series, errors="coerce").fillna(0.0)
     max_value = float(values.max()) if len(values) else 0.0
     if max_value <= 0:
@@ -101,6 +106,7 @@ def normalize_positive(series: pd.Series) -> pd.Series:
 
 
 def operator_score(df: pd.DataFrame) -> pd.Series:
+    """Map operator-family labels to a rerank prior score."""
     family = df.get("operator_family", pd.Series("", index=df.index)).fillna("").astype(str)
     modes = df.get("assembly_generation_modes", pd.Series("", index=df.index)).fillna("").astype(str)
     scores = pd.Series(0.20, index=df.index, dtype=float)
@@ -115,6 +121,7 @@ def operator_score(df: pd.DataFrame) -> pd.Series:
 
 
 def add_score_features(pool: pd.DataFrame, tolerance_da: float) -> pd.DataFrame:
+    """Add derived rerank feature columns to a candidate pool."""
     out = pool.copy()
     abs_err = numeric(out, "abs_mass_error_da", default=float(tolerance_da))
     primary_err = numeric(out, "primary_abs_mass_error_da", default=float(tolerance_da))
@@ -151,6 +158,7 @@ def add_score_features(pool: pd.DataFrame, tolerance_da: float) -> pd.DataFrame:
 
 
 def apply_rerank_policy(pool: pd.DataFrame, policy: AssemblyRerankPolicy, tolerance_da: float) -> pd.DataFrame:
+    """Apply policy weights and compute a composite rerank score."""
     out = add_score_features(pool, tolerance_da)
     component_map = {
         "assembly": "score_assembly",
@@ -176,6 +184,7 @@ def apply_rerank_policy(pool: pd.DataFrame, policy: AssemblyRerankPolicy, tolera
 
 
 def rank_topk(scored: pd.DataFrame, top_k: int) -> pd.DataFrame:
+    """Sort by rerank score and assign top-k ranks per feature."""
     if scored.empty:
         return scored.copy()
     out = scored.copy()
@@ -205,6 +214,7 @@ def rank_topk(scored: pd.DataFrame, top_k: int) -> pd.DataFrame:
 
 
 def write_denovo_report(df: pd.DataFrame, path: Path) -> None:
+    """Write the standard denovo report CSV schema."""
     path.parent.mkdir(parents=True, exist_ok=True)
     out = df.copy()
     if "feature_label" not in out.columns and "feature_key" in out.columns:
@@ -239,6 +249,7 @@ def write_denovo_report(df: pd.DataFrame, path: Path) -> None:
 
 
 def first_value(df: pd.DataFrame, col: str, default: Any = "") -> Any:
+    """Return the first non-null value in a column or a default."""
     if df.empty or col not in df.columns:
         return default
     value = df.iloc[0].get(col, default)
@@ -258,6 +269,7 @@ def eval_reranked(
     candidate_path: Path,
     denovo_path: Path,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Evaluate reranked candidates against known controls."""
     candidate_pool = normalize_prediction_pool(candidate_df, candidate_path)
     denovo_pool = normalize_prediction_pool(ranked_df, denovo_path)
     top_pool = denovo_pool[denovo_pool["_rank"].le(int(top_k))].copy()
@@ -311,6 +323,7 @@ def eval_reranked(
 def load_controls_for_profile(
     v3_root: Path, known_x: Path, known_x_all: Path, lib_id: int, ion_mode: str, profile: str
 ) -> list[Any]:
+    """Load X controls scoped to one library and ion mode."""
     per_path = v3_root / "aggregate" / "denovo_assembly_v3_per_control.csv"
     wanted: set[str] = set()
     if per_path.exists():
@@ -323,6 +336,7 @@ def load_controls_for_profile(
 
 
 def profile_tolerance(profile: str, profile_dir: Path) -> float:
+    """Resolve mass tolerance for a profile directory."""
     summary_path = profile_dir / "selfies_run_summary.json"
     if summary_path.exists():
         try:
@@ -340,6 +354,7 @@ def gate_policy(
     baseline: dict[str, Any],
     per_control: pd.DataFrame,
 ) -> bool:
+    """Select rerank policy variant based on profile acceptance gates."""
     if str(metric.get("metric_scope")) != "top10":
         return False
     lib_id = safe_int(metric.get("lib_id"), -1)
@@ -371,6 +386,7 @@ def run_rerank(
     profiles: list[str],
     top_k: int,
 ) -> dict[str, Any]:
+    """Rerank assembly candidates and write evaluation artifacts."""
     output_root.mkdir(parents=True, exist_ok=True)
     metric_rows: list[dict[str, Any]] = []
     per_rows: list[dict[str, Any]] = []
@@ -489,10 +505,12 @@ def run_rerank(
 
 
 def parse_csv(text: str) -> list[str]:
+    """Parse a comma-separated CLI string into a list."""
     return [part.strip() for part in str(text or "").split(",") if part.strip()]
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse CLI arguments for assembly reranking."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--v3-root", type=Path, default=DEFAULT_V3_ROOT)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
@@ -505,6 +523,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """CLI entry point for assembly reranking."""
     args = parse_args()
     payload = run_rerank(
         v3_root=args.v3_root,

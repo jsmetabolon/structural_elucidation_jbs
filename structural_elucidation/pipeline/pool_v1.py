@@ -1,5 +1,20 @@
 #!/usr/bin/env python3
-"""Build one deduplicated cross-source candidate pool for unified reranking."""
+"""Build one deduplicated cross-source candidate pool for unified reranking.
+
+Merges verifier-scored candidates with truth-blind enumerator outputs,
+deduplicates on (control_id, canonical_2d_smiles), joins isotope signals,
+and splits S0 vs non-S0 controls.
+
+Pipeline context:
+    Follows ``verify`` and precedes ``rerank``. Default extra inputs target
+    lib 209 negative; other scopes use ``default_extra_inputs_for_scope``.
+
+Key I/O:
+    Inputs: ``combined_scored_candidates.csv``, comma-separated extra
+    candidate_metrics CSVs, optional isotope signals, integrated best.
+    Outputs: ``unified_candidates_per_control.csv`` (+ S0 splits),
+    ``preserve_25_pool_check.csv``, summary JSON/markdown.
+"""
 
 from __future__ import annotations
 
@@ -15,7 +30,8 @@ from structural_elucidation.utils.denovo import canonicalize_smiles
 from structural_elucidation.paths import REPO_ROOT, resolve
 from structural_elucidation.utils.domain import dataframe_to_markdown, write_csv, write_json
 
-DEFAULT_EXTRA_INPUTS = (
+# ── Default extra enumerator inputs (lib 209 negative) ───────────────
+DEFAULT_EXTRA_INPUTS: tuple[str, ...] = (
     "models/mlims_anchored_candidates_v1/runs/mlims_anchored_v1/track_control_blind/lib_209_negative/selfies_profiles/strict_1da/candidate_metrics_all.csv",
     "models/mlims_strict_overlay_v1/candidate_metrics_all.csv",
     "models/targeted_combinatorial_v1/candidate_metrics_all.csv",
@@ -38,7 +54,9 @@ DEFAULT_EXTRA_INPUTS = (
 )
 
 
+# ── Input path resolution ────────────────────────────────────────────
 def prefer_verifier_csv(path: Path, repo_root: Path) -> Path:
+    """Prefer ``*_with_verifier.csv`` sibling when the verifier stage has run."""
     resolved = resolve(path, repo_root)
     if resolved.name.endswith("_with_verifier.csv"):
         return resolved
@@ -47,6 +65,7 @@ def prefer_verifier_csv(path: Path, repo_root: Path) -> Path:
 
 
 def default_extra_inputs_for_scope(lib_id: int, ion_mode: str) -> str:
+    """Return comma-separated extra input paths for non-209-negative scopes."""
     scope = f"lib_{int(lib_id)}_{str(ion_mode)}"
     if (int(lib_id), str(ion_mode)) == (209, "negative"):
         return ",".join(DEFAULT_EXTRA_INPUTS)
@@ -70,7 +89,9 @@ def default_extra_inputs_for_scope(lib_id: int, ion_mode: str) -> str:
     )
 
 
+# ── Source-label feature flags for reranker ──────────────────────────
 def source_flags(labels: str) -> dict[str, int]:
+    """Derive binary rerank features from pipe-delimited source labels."""
     text = str(labels or "")
     return {
         "is_peptide": int("peptide_first" in text or "peptide_ranker" in text),
@@ -104,6 +125,7 @@ def source_flags(labels: str) -> dict[str, int]:
 
 
 def load_inputs(scored_path: Path, extra_paths: list[Path], repo_root: Path) -> pd.DataFrame:
+    """Concatenate scored candidates with extra enumerator CSVs."""
     frames: list[pd.DataFrame] = []
     if scored_path.exists():
         frames.append(pd.read_csv(scored_path, low_memory=False))
@@ -124,12 +146,14 @@ def load_inputs(scored_path: Path, extra_paths: list[Path], repo_root: Path) -> 
 
 
 def numeric(df: pd.DataFrame, col: str, default: float = 0.0) -> pd.Series:
+    """Coerce column to float with fillna."""
     if col not in df.columns:
         return pd.Series(default, index=df.index, dtype=float)
     return pd.to_numeric(df[col], errors="coerce").fillna(default)
 
 
 def truthy_series(df: pd.DataFrame, col: str) -> pd.Series:
+    """Parse mixed bool/numeric/string truth values."""
     if col not in df.columns:
         return pd.Series(False, index=df.index, dtype=bool)
     raw = df[col]
@@ -141,6 +165,7 @@ def truthy_series(df: pd.DataFrame, col: str) -> pd.Series:
 
 
 def normalize(df: pd.DataFrame) -> pd.DataFrame:
+    """Standardize pool schema: control_id, canonical SMILES, rank, keep-score."""
     out = df.copy()
     if out.empty:
         return out
@@ -166,6 +191,7 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
     out["canonical_2d_smiles"] = existing.fillna("").astype(str)
     out = out[out["canonical_2d_smiles"].ne("") & out["control_id"].astype(str).str.startswith("X-")].copy()
     out["_rank"] = numeric(out, "rank", default=999999)
+    # Blend spectrum, prior rerank, and generation scores for dedup row selection.
     out["_score_for_keep"] = (
         numeric(out, "predicted_spectrum_score_v2", default=0.0)
         + 0.25 * numeric(out, "rerank_score", default=0.0)
@@ -175,12 +201,14 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def restrict_controls(df: pd.DataFrame, allowed_controls: set[str]) -> pd.DataFrame:
+    """Filter pool rows to the integrated-best control set."""
     if df.empty or not allowed_controls:
         return df
     return df[df["control_id"].astype(str).isin(allowed_controls)].copy()
 
 
 def all_x_controls_for_scope(path: Path, lib_id: int) -> set[str]:
+    """Load all X control IDs for a library from the known-X catalog."""
     if not path.exists():
         return set()
     df = pd.read_csv(path, low_memory=False)
@@ -191,6 +219,7 @@ def all_x_controls_for_scope(path: Path, lib_id: int) -> set[str]:
 
 
 def s0_controls_for_scope(path: Path, lib_id: int) -> set[str]:
+    """Return S0-tier X control IDs for a library."""
     if not path.exists():
         return set()
     df = pd.read_csv(path, low_memory=False)
@@ -203,6 +232,7 @@ def s0_controls_for_scope(path: Path, lib_id: int) -> set[str]:
 
 
 def dedup(df: pd.DataFrame) -> pd.DataFrame:
+    """Collapse duplicate (control, SMILES) rows, aggregating scores and source flags."""
     if df.empty:
         return df
     work = df.copy()
@@ -241,6 +271,7 @@ def dedup(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def join_isotope_signals(pool: pd.DataFrame, isotope_signals_csv: Path | None) -> tuple[pd.DataFrame, dict[str, int]]:
+    """Left-join isotope audit columns; default neutral scores when absent."""
     out = pool.copy()
     stats = {"n_isotope_signal_rows": 0, "n_isotope_joined_rows": 0}
     isotope_cols = [
@@ -272,7 +303,7 @@ def join_isotope_signals(pool: pd.DataFrame, isotope_signals_csv: Path | None) -
             )
     out["isotope_formula_score"] = pd.to_numeric(
         out.get("isotope_formula_score", pd.Series(0.5, index=out.index)), errors="coerce"
-    ).fillna(0.5)
+    ).fillna(0.5)  # 0.5 = uninformative prior when isotope data missing
     out["isotope_ratio_score"] = pd.to_numeric(
         out.get("isotope_ratio_score", pd.Series(0.5, index=out.index)), errors="coerce"
     ).fillna(0.5)
@@ -295,7 +326,9 @@ def join_isotope_signals(pool: pd.DataFrame, isotope_signals_csv: Path | None) -
     return out, stats
 
 
+# ── CLI entry point ──────────────────────────────────────────────────
 def run(args: argparse.Namespace) -> dict[str, Any]:
+    """Build unified pool, join isotopes, write splits and acceptance summary."""
     repo_root = REPO_ROOT
     output_root = resolve(args.output_root, repo_root)
     output_root.mkdir(parents=True, exist_ok=True)
@@ -348,6 +381,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     pool, isotope_stats = join_isotope_signals(pool, isotope_signals_path)
     n_isotope_formula_impossible_dropped = 0
     if bool(getattr(args, "isotope_filter_impossible", True)) and not pool.empty:
+        # Drop structures whose formula is incompatible with observed isotope ratios.
         impossible_mask = pool["isotope_audit_status"].astype(str).eq("formula_impossible")
         n_isotope_formula_impossible_dropped = int(impossible_mask.sum())
         if n_isotope_formula_impossible_dropped:
@@ -440,6 +474,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def main() -> None:
+    """Parse CLI arguments and invoke :func:`run`; exit 2 on acceptance failure."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, default=Path("models/unified_candidate_pool_v1"))
     parser.add_argument(

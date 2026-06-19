@@ -1,5 +1,17 @@
 #!/usr/bin/env python3
-"""Add pathway/subpathway predictions to equalization rerank top-10 CSVs."""
+"""Add pathway/subpathway predictions to equalization rerank top-10 CSVs.
+
+Joins Metabolon super/sub pathway labels from the metabolite synonym reference
+DB (exact or neighbor-based assignment) onto per-library rerank deliverables.
+
+Pipeline context:
+    First enrichment stage after equalization rerank. Reads
+    ``unified_rerank_all_top10.csv`` per lib under ``pipeline_equalization/``.
+
+Key I/O:
+    Inputs: per-lib top-10 CSV, metabolite synonym SQLite DB, optional assignment cache.
+    Outputs: ``*_with_pathways.csv``, ``pathway_assignment_map.csv``, summary JSON.
+"""
 
 from __future__ import annotations
 
@@ -15,9 +27,10 @@ from structural_elucidation.paths import REPO_ROOT, resolve
 from structural_elucidation.utils.chemistry import canonicalize_smiles
 
 
-DEFAULT_EQUALIZATION_ROOT = Path("models/pipeline_equalization")
-DEFAULT_REFERENCE_DB = Path("Metabolite Synonym Database/metabolite_synonyms_merged_with_mtx_giga.sqlite")
-PATHWAY_COLUMNS = [
+# ── Defaults and output column schema ────────────────────────────────
+DEFAULT_EQUALIZATION_ROOT: Path = Path("models/pipeline_equalization")
+DEFAULT_REFERENCE_DB: Path = Path("Metabolite Synonym Database/metabolite_synonyms_merged_with_mtx_giga.sqlite")
+PATHWAY_COLUMNS: list[str] = [
     "predicted_pathway",
     "predicted_subpathway",
     "pathway_confidence_tier",
@@ -27,7 +40,9 @@ PATHWAY_COLUMNS = [
 ]
 
 
+# ── CLI and parsing helpers ──────────────────────────────────────────
 def clean_text(value: object) -> str:
+    """Normalize a cell value to a stripped string, mapping null sentinels to empty."""
     if value is None:
         return ""
     try:
@@ -40,6 +55,7 @@ def clean_text(value: object) -> str:
 
 
 def parse_args() -> argparse.Namespace:
+    """Build the pathway enrichment CLI argument parser."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--equalization-root", type=Path, default=DEFAULT_EQUALIZATION_ROOT)
     parser.add_argument("--reference-db", type=Path, default=DEFAULT_REFERENCE_DB)
@@ -53,6 +69,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def parse_libs(values: list[str]) -> list[int]:
+    """Parse comma-separated library IDs from CLI nargs list."""
     libs: list[int] = []
     for value in values:
         for token in str(value).split(","):
@@ -63,6 +80,7 @@ def parse_libs(values: list[str]) -> list[int]:
 
 
 def canonicalize_for_pathway(value: object) -> str:
+    """Canonicalize SMILES for pathway join keys."""
     text = clean_text(value)
     if not text:
         return ""
@@ -70,10 +88,12 @@ def canonicalize_for_pathway(value: object) -> str:
 
 
 def rerank_path(root: Path, lib_id: int, name: str) -> Path:
+    """Path to a named CSV under ``rerank_lib{lib_id}/``."""
     return root / f"rerank_lib{int(lib_id)}" / name
 
 
 def load_inputs(root: Path, libs: list[int], input_name: str, allow_missing: bool) -> dict[int, pd.DataFrame]:
+    """Load per-library rerank top-10 CSVs from the equalization tree."""
     frames: dict[int, pd.DataFrame] = {}
     missing: list[Path] = []
     for lib_id in libs:
@@ -91,13 +111,16 @@ def load_inputs(root: Path, libs: list[int], input_name: str, allow_missing: boo
     return frames
 
 
+# ── Pathway assignment map ─────────────────────────────────────────
 def load_assignment_cache(path: Path | None) -> pd.DataFrame:
+    """Load cached SMILES→pathway assignments if present."""
     if path is None or not path.exists():
         return normalize_assignment_map(None)
     return normalize_assignment_map(pd.read_csv(path, low_memory=False))
 
 
 def normalize_assignment_map(assignments: pd.DataFrame | None) -> pd.DataFrame:
+    """Normalize assignment-map columns to the pathway enrichment schema."""
     columns = [
         "canonical_smiles",
         "predicted_pathway",
@@ -127,6 +150,7 @@ def normalize_assignment_map(assignments: pd.DataFrame | None) -> pd.DataFrame:
 
 
 def load_reference_pathways(reference_db: Path) -> pd.DataFrame:
+    """Load canonical SMILES with Metabolon super/sub labels from SQLite."""
     query = """
         SELECT
             smiles,
@@ -154,6 +178,7 @@ def load_reference_pathways(reference_db: Path) -> pd.DataFrame:
 
 
 def generate_exact_reference_assignment_map(canonical_smiles: list[str], reference_db: Path) -> pd.DataFrame:
+    """Assign pathways by exact canonical-SMILES match in the reference DB."""
     unique_smiles = sorted(set(clean_text(smiles) for smiles in canonical_smiles if clean_text(smiles)))
     if not unique_smiles:
         return normalize_assignment_map(None)
@@ -191,6 +216,7 @@ def generate_exact_reference_assignment_map(canonical_smiles: list[str], referen
 
 
 def generate_pathway_assignment_map(canonical_smiles: list[str], reference_db: Path) -> pd.DataFrame:
+    """Generate assignments via neighbor search when legacy builder is importable."""
     try:
         from build_v14_all_library_prediction_review_v1 import (  # type: ignore[import-not-found]
             generate_pathway_assignment_map as generate_with_neighbors,
@@ -201,6 +227,7 @@ def generate_pathway_assignment_map(canonical_smiles: list[str], reference_db: P
 
 
 def enrich_pathway_annotations(df: pd.DataFrame, assignment_map: pd.DataFrame | None) -> pd.DataFrame:
+    """Left-join pathway columns onto rerank rows by canonical SMILES."""
     out = df.copy()
     for column in PATHWAY_COLUMNS:
         if column not in out.columns:
@@ -241,6 +268,7 @@ def enrich_pathway_annotations(df: pd.DataFrame, assignment_map: pd.DataFrame | 
 
 
 def apply_amino_acid_pathway_overrides(df: pd.DataFrame) -> pd.DataFrame:
+    """Apply legacy amino-acid pathway overrides when the builder module exists."""
     try:
         from build_v19b_updated_summary_v1 import (  # type: ignore[import-not-found]
             apply_amino_acid_pathway_overrides as apply_legacy_overrides,
@@ -268,6 +296,7 @@ def build_assignment_map(
     reference_db: Path,
     assignment_cache: Path | None,
 ) -> tuple[pd.DataFrame, dict[str, int]]:
+    """Build or extend the SMILES→pathway cache for all unique input SMILES."""
     unique_smiles = sorted(
         {
             canonical
@@ -304,6 +333,7 @@ def build_assignment_map(
 
 
 def ordered_columns(original_columns: list[str], enriched: pd.DataFrame) -> list[str]:
+    """Preserve original column order while appending new pathway columns."""
     columns = list(original_columns)
     for column in PATHWAY_COLUMNS:
         if column not in columns and column in enriched.columns:
@@ -316,6 +346,7 @@ def enrich_one(
     frame: pd.DataFrame,
     assignment_map: pd.DataFrame,
 ) -> pd.DataFrame:
+    """Enrich one library frame and restore original column ordering."""
     original_columns = list(frame.columns)
     out = enrich_pathway_annotations(frame, assignment_map=assignment_map)
     out = apply_amino_acid_pathway_overrides(out)
@@ -327,6 +358,7 @@ def enrich_one(
 
 
 def summarize_lib(lib_id: int, input_path: Path, output_path: Path, frame: pd.DataFrame) -> dict[str, Any]:
+    """Summarize pathway assignment coverage for one library output."""
     status = frame["pathway_assignment_status"].map(clean_text) if "pathway_assignment_status" in frame.columns else pd.Series([], dtype=object)
     tier = frame["pathway_confidence_tier"].map(clean_text) if "pathway_confidence_tier" in frame.columns else pd.Series([], dtype=object)
     path = frame["predicted_pathway"].map(clean_text) if "predicted_pathway" in frame.columns else pd.Series([], dtype=object)
@@ -346,7 +378,9 @@ def summarize_lib(lib_id: int, input_path: Path, output_path: Path, frame: pd.Da
     }
 
 
+# ── CLI entry point ──────────────────────────────────────────────────
 def run(args: argparse.Namespace) -> dict[str, Any]:
+    """Run pathway enrichment for all requested libraries."""
     repo_root = REPO_ROOT
     root = resolve(args.equalization_root, repo_root)
     reference_db = resolve(args.reference_db, repo_root)
@@ -399,6 +433,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def main() -> int:
+    """CLI entry point."""
     run(parse_args())
     return 0
 

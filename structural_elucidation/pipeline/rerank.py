@@ -1,5 +1,20 @@
 #!/usr/bin/env python3
-"""Train and apply a compact unified cross-source reranker."""
+"""Train and apply a compact unified cross-source reranker.
+
+Fits a gradient-boosted or logistic classifier on pooled candidate features,
+validates with leave-one-control-out CV (G3 gate), calibrates per truth-blind
+source with isotonic regression, and emits top-10 ranked outputs.
+
+Pipeline context:
+    Consumes ``unified_candidates_per_control.csv`` from ``pool``. Trains on
+    X-control labels (Tanimoto >= 0.7). Writes scored pool, OOF/full top-10,
+    and generalization diagnostics.
+
+Key I/O:
+    Inputs: unified pool CSV, known_X truth structures, optional non-S0 pool.
+    Outputs: ``unified_candidates_scored.csv``, ``unified_rerank_top10.csv``,
+    ``unified_rerank_all_top10.csv``, isotonic calibrators, G3 reports.
+"""
 
 from __future__ import annotations
 
@@ -22,7 +37,8 @@ from structural_elucidation.evaluation.rerank_assembly import eval_reranked, wri
 from structural_elucidation.paths import REPO_ROOT, resolve
 from structural_elucidation.utils.domain import dataframe_to_markdown, write_csv, write_json
 
-FEATURE_COLUMNS = [
+# ── Reranker feature columns and defaults ────────────────────────────
+FEATURE_COLUMNS: list[str] = [
     "predicted_spectrum_score_v2",
     "mass_match_score",
     "formula_prior_score",
@@ -47,16 +63,16 @@ FEATURE_COLUMNS = [
     "carbon_count_agreement",
 ]
 
-WGCNA_FEATURE_COLUMNS = [
+WGCNA_FEATURE_COLUMNS: list[str] = [
     "wgcna_pathway_match",
     "wgcna_consensus_strength",
 ]
 
-CLASS_MATCH_FEATURE_COLUMNS = [
+CLASS_MATCH_FEATURE_COLUMNS: list[str] = [
     "class_match_score",
 ]
 
-FEATURE_DEFAULTS = {
+FEATURE_DEFAULTS: dict[str, float] = {
     "isotope_formula_score": 0.5,
     "isotope_ratio_score": 0.5,
     "carbon_count_agreement": 0.5,
@@ -64,7 +80,9 @@ FEATURE_DEFAULTS = {
 }
 
 
+# ── Feature engineering ──────────────────────────────────────────────
 def numeric(df: pd.DataFrame, col: str, default: float = 0.0) -> pd.Series:
+    """Coerce column to float with fillna."""
     if col not in df.columns:
         return pd.Series(default, index=df.index, dtype=float)
     return pd.to_numeric(df[col], errors="coerce").fillna(default).astype(float)
@@ -73,6 +91,7 @@ def numeric(df: pd.DataFrame, col: str, default: float = 0.0) -> pd.Series:
 def load_wgcna_consensus(
     path: Path | None = None, *, lib_id: int | None = None, ion_mode: str | None = None
 ) -> pd.DataFrame:
+    """Load per-control WGCNA consensus pathway labels for soft-prior features."""
     if path is None:
         if lib_id is None or ion_mode is None:
             return pd.DataFrame()
@@ -102,6 +121,7 @@ def load_wgcna_consensus(
 
 
 def _infer_lib_ion(df: pd.DataFrame) -> tuple[int | None, str | None]:
+    """Infer lib_id and ion_mode from the first non-null pool row."""
     lib_id = None
     ion_mode = None
     if "lib_id" in df.columns and not df.empty:
@@ -116,6 +136,7 @@ def _infer_lib_ion(df: pd.DataFrame) -> tuple[int | None, str | None]:
 
 
 def add_wgcna_features(df: pd.DataFrame, wgcna_consensus: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Add pathway-match and consensus-strength features from WGCNA evidence."""
     out = df.copy()
     if wgcna_consensus is None:
         lib_id, ion_mode = _infer_lib_ion(out)
@@ -143,7 +164,7 @@ def add_wgcna_features(df: pd.DataFrame, wgcna_consensus: pd.DataFrame | None = 
     has_prediction = predicted.str.len().gt(0)
     merged["wgcna_pathway_match"] = np.where(
         ~has_consensus, 0.5, np.where(has_prediction & predicted.eq(consensus), 1.0, 0.0)
-    )
+    )  # 0.5 when no cohort consensus avoids penalizing sparse WGCNA coverage
     merged["wgcna_consensus_strength"] = (
         pd.to_numeric(merged.get("consensus_super_strength"), errors="coerce").fillna(0.0).clip(0.0, 1.0)
     )
@@ -153,6 +174,7 @@ def add_wgcna_features(df: pd.DataFrame, wgcna_consensus: pd.DataFrame | None = 
 
 
 def add_features(df: pd.DataFrame, wgcna_consensus: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Fill missing feature columns and derive rank/source-density scores."""
     out = df.copy()
     out["min_source_rank_score"] = 1.0 / numeric(out, "min_source_rank", default=999999).clip(lower=1.0)
     out["n_source_rows_score"] = np.log1p(numeric(out, "n_source_rows", default=1.0)).clip(lower=0.0, upper=5.0) / 5.0
@@ -172,6 +194,7 @@ def scope_training_pool(
     ion_mode: str,
     control_scope: str = "x_controls",
 ) -> pd.DataFrame:
+    """Restrict training rows to the requested lib/ion and control scope."""
     out = pool.copy()
     truth_ids = {str(control.control_id) for control in controls}
     if "ion_mode" in out.columns:
@@ -188,6 +211,7 @@ def scope_training_pool(
 
 
 def add_labels(pool: pd.DataFrame, controls: list[Any]) -> pd.DataFrame:
+    """Attach truth Tanimoto and binary label (>= 0.7) per candidate row."""
     truth = {str(control.control_id): list(control.smiles) for control in controls}
     out = pool.copy()
     tans: list[float] = []
@@ -204,7 +228,9 @@ def add_labels(pool: pd.DataFrame, controls: list[Any]) -> pd.DataFrame:
     return out
 
 
+# ── Model factories and prediction ───────────────────────────────────
 def make_model() -> GradientBoostingClassifier:
+    """Return a shallow regularized GBM tuned for small X-control training sets."""
     return GradientBoostingClassifier(
         n_estimators=80,
         learning_rate=0.03,
@@ -216,16 +242,20 @@ def make_model() -> GradientBoostingClassifier:
 
 
 def make_model_b() -> LogisticRegressionCV:
+    """Return L2 logistic regression with ROC-AUC CV as the linear baseline."""
     return LogisticRegressionCV(Cs=10, cv=5, penalty="l2", scoring="roc_auc", max_iter=2000, random_state=17)
 
 
 def _predict_proba(model: Any, frame: pd.DataFrame) -> np.ndarray:
+    """Predict positive-class probability, falling back to point predictions."""
     if hasattr(model, "predict_proba"):
         return model.predict_proba(frame[FEATURE_COLUMNS])[:, 1]
     return np.asarray(model.predict(frame[FEATURE_COLUMNS]), dtype=float)
 
 
+# ── LOOCV evaluation and model selection ─────────────────────────────
 def loocv_scores(pool: pd.DataFrame, model_factory=make_model) -> pd.Series:
+    """Leave-one-control-out predicted probabilities; heuristic fallback when no positives."""
     scores = pd.Series(0.0, index=pool.index, dtype=float)
     controls = sorted(pool["control_id"].astype(str).unique())
     for control_id in controls:
@@ -244,6 +274,7 @@ def loocv_scores(pool: pd.DataFrame, model_factory=make_model) -> pd.Series:
 
 
 def rank1_hits_from_scores(pool: pd.DataFrame, score_col: str) -> int:
+    """Count controls where the top-scored candidate has label_ge_0p7."""
     if pool.empty:
         return 0
     ranked = pool.sort_values(["control_id", score_col], ascending=[True, False], kind="mergesort").drop_duplicates(
@@ -253,6 +284,7 @@ def rank1_hits_from_scores(pool: pd.DataFrame, score_col: str) -> int:
 
 
 def top10_hits_from_scores(pool: pd.DataFrame, score_col: str) -> int:
+    """Count controls with a label_ge_0p7 hit in the top 10 by *score_col*."""
     if pool.empty:
         return 0
     ranked = pool.sort_values(["control_id", score_col], ascending=[True, False], kind="mergesort").copy()
@@ -261,6 +293,7 @@ def top10_hits_from_scores(pool: pd.DataFrame, score_col: str) -> int:
 
 
 def evaluate_model_option(pool: pd.DataFrame, name: str, model_factory) -> dict[str, Any]:
+    """Fit one model variant and return OOF/full rank-1 and top-10 metrics."""
     work = pool.copy()
     work[f"{name}_oof_score"] = loocv_scores(work, model_factory=model_factory)
     if work["label_ge_0p7"].nunique() >= 2:
@@ -285,6 +318,7 @@ def evaluate_model_option(pool: pd.DataFrame, name: str, model_factory) -> dict[
 
 
 def select_regularized_model(pool: pd.DataFrame) -> dict[str, Any]:
+    """Pick the model with smallest full-vs-OOF rank-1 gap (legacy alias)."""
     options = [
         evaluate_model_option(pool, "option_a_regularized_gbm", make_model),
         evaluate_model_option(pool, "option_b_logistic_cv", make_model_b),
@@ -295,6 +329,7 @@ def select_regularized_model(pool: pd.DataFrame) -> dict[str, Any]:
 
 
 def select_model(pool: pd.DataFrame, mode: str = "auto") -> dict[str, Any]:
+    """Select GBM, logistic, or auto-pick by LOOCV rank-1 stability."""
     options = [
         evaluate_model_option(pool, "option_a_regularized_gbm", make_model),
         evaluate_model_option(pool, "option_b_logistic_cv", make_model_b),
@@ -310,7 +345,14 @@ def select_model(pool: pd.DataFrame, mode: str = "auto") -> dict[str, Any]:
 
 
 def g3_gate(full_rank1: int, oof_rank1: int, min_floor_delta: int = 3) -> dict[str, Any]:
-    """G3 validates rerank generalization against the rerank full-fit baseline."""
+    """G3 validates rerank generalization against the rerank full-fit baseline.
+
+    Pass requires rank-1 delta <= 2 and OOF rank-1 within *min_floor_delta*
+    of the full-fit rank-1 (default: rerank baseline minus 3).
+
+    Returns:
+        Dict with ``g3_pass``, rank-1 counts, delta, and floor policy metadata.
+    """
     delta = int(abs(int(full_rank1) - int(oof_rank1)))
     min_oof = int(full_rank1) - int(min_floor_delta)
     return {
@@ -323,12 +365,15 @@ def g3_gate(full_rank1: int, oof_rank1: int, min_floor_delta: int = 3) -> dict[s
     }
 
 
+# ── Per-source isotonic calibration ──────────────────────────────────
 def source_mask(df: pd.DataFrame, source: str) -> pd.Series:
+    """Boolean mask for rows whose source label contains *source*."""
     labels = df.get("source_label", df.get("source_labels", pd.Series("", index=df.index))).fillna("").astype(str)
     return labels.str.contains(source, regex=False)
 
 
 def fit_isotonic_per_source(pool: pd.DataFrame, score_col: str = "unified_oof_score") -> dict[str, Any]:
+    """Fit isotonic calibrators per truth-blind enumerator source."""
     calibrators: dict[str, Any] = {}
     labels = pd.to_numeric(pool.get("label_ge_0p7"), errors="coerce").fillna(0).astype(int)
     scores = pd.to_numeric(pool.get(score_col), errors="coerce").fillna(0.0)
@@ -348,6 +393,7 @@ def fit_isotonic_per_source(pool: pd.DataFrame, score_col: str = "unified_oof_sc
 def apply_isotonic_per_source(
     df: pd.DataFrame, calibrators: dict[str, Any], score_col: str = "unified_final_score"
 ) -> pd.Series:
+    """Apply per-source isotonic maps; uncalibrated rows keep raw scores."""
     raw = pd.to_numeric(df.get(score_col), errors="coerce").fillna(0.0)
     out = raw.copy()
     for source, payload in calibrators.items():
@@ -361,6 +407,7 @@ def apply_isotonic_per_source(
 def oof_drop_attribution(
     pool: pd.DataFrame, full_col: str = "unified_final_score", oof_col: str = "unified_oof_score"
 ) -> pd.DataFrame:
+    """List controls where full-fit rank-1 hits but LOOCV rank-1 misses."""
     rows: list[dict[str, Any]] = []
     work = pool.copy()
     for control_id, group in work.groupby("control_id", dropna=False):
@@ -387,6 +434,7 @@ def oof_drop_attribution(
 
 
 def heuristic_score(df: pd.DataFrame) -> pd.Series:
+    """Weighted fallback score when supervised training is ill-conditioned."""
     return (
         0.34 * numeric(df, "predicted_spectrum_score_v2")
         + 0.22 * numeric(df, "mass_match_score")
@@ -399,6 +447,7 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
 
 
 def rank_frame(scored: pd.DataFrame, score_col: str, top_k: int, policy: str = "unified_rerank_v1") -> pd.DataFrame:
+    """Sort by rerank score and assign per-control ranks up to *top_k*."""
     out = scored.copy()
     out["rerank_policy"] = policy
     out["rerank_score"] = pd.to_numeric(out[score_col], errors="coerce").fillna(0.0)
@@ -424,7 +473,9 @@ def rank_frame(scored: pd.DataFrame, score_col: str, top_k: int, policy: str = "
     return out[out["rank"].le(int(top_k))].reset_index(drop=True)
 
 
+# ── CLI entry point ──────────────────────────────────────────────────
 def run(args: argparse.Namespace) -> dict[str, Any]:
+    """Train/select reranker, score pool, emit top-10 and evaluation artifacts."""
     global FEATURE_COLUMNS
     repo_root = REPO_ROOT
     output_root = resolve(args.output_root, repo_root)
@@ -666,6 +717,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def main() -> None:
+    """Parse CLI arguments and invoke :func:`run`."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, default=Path("models/unified_rerank_v1"))
     parser.add_argument(

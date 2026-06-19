@@ -57,6 +57,8 @@ class AuditControl:
 
 
 def extract_xid(feature_key: Any) -> str | None:
+    """Extract an X-compound id token from a feature key string."""
+    """One control feature with truth structures and observed metadata for audits."""
     match = re.search(r"(X-\d+)", str(feature_key or ""))
     return match.group(1) if match else None
 
@@ -68,6 +70,7 @@ def load_x_controls(
     lib_id: int,
     ion_mode: str,
 ) -> list[AuditControl]:
+    """Load known-X controls for a library and ion mode."""
     controls, _summary = load_controls(
         known_x,
         known_x_all,
@@ -92,6 +95,7 @@ def load_x_controls(
 
 
 def load_non_x_holdouts(holdout_dir: Path, lib_id: int, ion_mode: str) -> list[AuditControl]:
+    """Load non-X hard holdout controls for a library and ion mode."""
     path = holdout_dir / f"non_x_holdout_{int(lib_id)}.csv"
     if not path.exists():
         return []
@@ -125,6 +129,7 @@ def load_non_x_holdouts(holdout_dir: Path, lib_id: int, ion_mode: str) -> list[A
 
 
 def normalize_prediction_pool(df: pd.DataFrame, source_path: Path | None = None) -> pd.DataFrame:
+    """Normalize candidate CSV columns into the audit pool schema."""
     out = df.copy()
     if out.empty:
         return out
@@ -154,6 +159,7 @@ def normalize_prediction_pool(df: pd.DataFrame, source_path: Path | None = None)
 
 
 def pool_for_control(pool: pd.DataFrame, control: AuditControl) -> pd.DataFrame:
+    """Filter the normalized pool to rows for one control feature."""
     if pool.empty:
         return pool
     if control.holdout_scope == "x_control":
@@ -167,6 +173,7 @@ def pool_for_control(pool: pd.DataFrame, control: AuditControl) -> pd.DataFrame:
 
 
 def neutralize_smiles_for_tanimoto(smiles: str) -> str:
+    """Strip salts/charges for fair Tanimoto comparison."""
     canonical = canonicalize_smiles(smiles) or ""
     if not HAS_RDKIT or Chem is None or _UNCHARGER is None or not canonical:
         return canonical
@@ -182,6 +189,7 @@ def neutralize_smiles_for_tanimoto(smiles: str) -> str:
 
 
 def best_tanimoto_for_smiles(predicted: str, controls: Iterable[str]) -> tuple[bool, float]:
+    """Return whether any control matches and the best Tanimoto score."""
     if not predicted:
         return False, 0.0
     exact = False
@@ -203,6 +211,7 @@ def best_tanimoto_for_smiles(predicted: str, controls: Iterable[str]) -> tuple[b
 
 
 def annotate_pool(pool: pd.DataFrame, control: AuditControl) -> pd.DataFrame:
+    """Add per-row Tanimoto and exact-match columns for one control."""
     out = pool.copy()
     if out.empty:
         return out
@@ -229,6 +238,7 @@ def classify_failure(
     top_pool: pd.DataFrame,
     mass_tolerance_da: float,
 ) -> str:
+    """Assign a failure bucket from oracle rank and similarity."""
     if annotated_pool.empty:
         return "no_candidate"
     mass_pool = annotated_pool[
@@ -256,6 +266,7 @@ def control_audit_row(
     denovo_path: Path | None,
     candidate_path: Path | None,
 ) -> dict[str, Any]:
+    """Build one per-control failure-mode audit summary row."""
     full_annotated = annotate_pool(pool_for_control(full_pool, control), control)
     top_annotated = annotate_pool(pool_for_control(top_pool, control), control)
     failure_mode = classify_failure(
@@ -283,6 +294,7 @@ def control_audit_row(
     )
 
     def first_value(df: pd.DataFrame, col: str, default: Any = "") -> Any:
+        """Return the first non-null value in a column or a default."""
         if df.empty or col not in df.columns:
             return default
         value = df.iloc[0].get(col, default)
@@ -325,6 +337,7 @@ def control_audit_row(
 
 
 def metric_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Aggregate per-control audit rows into summary metrics."""
     n_controls = len(rows)
     covered = [row for row in rows if int(row.get("n_candidates", 0) or 0) > 0]
     top_values = [float(row.get("top10_best_tanimoto", 0.0) or 0.0) for row in rows]
@@ -348,6 +361,7 @@ def evaluate_failure_modes(
     output_dir: Path,
     top_k: int,
 ) -> dict[str, Any]:
+    """Run failure-mode evaluation across controls and write outputs."""
     if not HAS_RDKIT:
         raise RuntimeError("RDKit is required for de novo failure-mode evaluation.")
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -448,6 +462,7 @@ def evaluate_failure_modes(
 
 
 def render_report(summary_df: pd.DataFrame, output_dir: Path) -> str:
+    """Render the failure-mode markdown report body."""
     lines = [
         "# De Novo Candidate-Pool Failure Audit",
         "",
@@ -484,6 +499,7 @@ def render_report(summary_df: pd.DataFrame, output_dir: Path) -> str:
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse CLI arguments for failure-mode evaluation."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-root", type=Path, required=True)
     parser.add_argument("--known-x", type=Path, default=Path("known_X.csv"))
@@ -503,6 +519,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """CLI entry point for failure-mode evaluation."""
     args = parse_args()
     run_root = Path(args.run_root).expanduser().resolve()
     known_x = Path(args.known_x).expanduser()

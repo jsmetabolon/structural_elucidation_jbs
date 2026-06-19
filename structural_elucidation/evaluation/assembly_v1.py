@@ -85,6 +85,8 @@ GOOD_TANIMOTO = 0.7
 
 @dataclass(frozen=True)
 class GeneratedCandidate:
+    """One scored de novo candidate with operator and anchor metadata."""
+
     smiles: str
     canonical_smiles: str
     inchikey: str
@@ -97,10 +99,13 @@ class GeneratedCandidate:
 
 
 def canonical_or_empty(smiles: Any) -> str:
+    """Canonicalize SMILES or return an empty string on failure."""
+    """One scored de novo candidate with operator and anchor metadata."""
     return canonicalize_smiles(smiles) or ""
 
 
 def mol_from_smiles(smiles: Any):
+    """Parse a SMILES string into an RDKit molecule or None."""
     if not HAS_RDKIT:
         return None
     canonical = canonical_or_empty(smiles)
@@ -110,6 +115,7 @@ def mol_from_smiles(smiles: Any):
 
 
 def canonical_from_mol(mol: Any) -> str:
+    """Canonicalize an RDKit molecule to an isomeric SMILES string."""
     if not HAS_RDKIT or mol is None:
         return ""
     try:
@@ -270,6 +276,7 @@ def brics_recombination_candidates(
 
 
 def collect_selfies_tokens(smiles_values: Iterable[str], limit: int = 64) -> list[str]:
+    """Collect frequent SELFIES tokens from anchor SMILES strings."""
     if not HAS_SELFIES:
         return []
     tokens: list[str] = []
@@ -295,6 +302,7 @@ def load_structure_exclusion_keys(
     known_x_all: Path,
     hard_holdout_dir: Path,
 ) -> tuple[set[str], set[str]]:
+    """Load structure keys excluded from generation."""
     canonical_keys = {
         str(value)
         for value in candidate_source.get("canonical_smiles_key", pd.Series(dtype=str)).astype(str)
@@ -344,6 +352,7 @@ def prepare_fragment_source(
     repo_root: Path,
     libs: list[int],
 ) -> pd.DataFrame:
+    """Prepare fragment-source SMILES for BRICS recombination."""
     source = load_training_structures(repo_root, libs)
     if source.empty:
         return source
@@ -358,6 +367,7 @@ def prepare_fragment_source(
 
 
 def nearest_db_similarity(fp: Any, db_fps: list[Any]) -> float:
+    """Maximum Tanimoto similarity vs a database fingerprint list."""
     if fp is None or not db_fps:
         return 0.0
     try:
@@ -367,6 +377,7 @@ def nearest_db_similarity(fp: Any, db_fps: list[Any]) -> float:
 
 
 def max_anchor_similarity(fp: Any, anchor_fps: list[Any]) -> float:
+    """Maximum Tanimoto similarity vs anchor fingerprints."""
     if fp is None or not anchor_fps:
         return 0.0
     try:
@@ -376,6 +387,7 @@ def max_anchor_similarity(fp: Any, anchor_fps: list[Any]) -> float:
 
 
 def qed_score(smiles: str) -> float:
+    """Compute the RDKit QED drug-likeness score for a SMILES."""
     mol = mol_from_smiles(smiles)
     if mol is None:
         return 0.0
@@ -394,6 +406,7 @@ def select_fragment_source_smiles(
     anchor_fps: list[Any],
     limit: int = 24,
 ) -> list[str]:
+    """Choose fragment-source SMILES for one target feature."""
     scoped = candidate_source[candidate_source["lib_id"].astype(int).eq(int(lib_id))].copy()
     if scoped.empty:
         return []
@@ -473,6 +486,7 @@ def generate_for_anchor(
     token_pool: list[str],
     per_anchor_limit: int,
 ) -> dict[str, set[str]]:
+    """Generate candidate SMILES from one anchor structure."""
     anchor_smiles = canonical_or_empty(anchor.get("anchor_smiles", ""))
     if not anchor_smiles:
         return {}
@@ -503,6 +517,7 @@ def score_generated_candidates(
     profile: str,
     max_candidates_per_feature: int,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    """Score generated candidates with mass, anchor, and novelty features."""
     lib_id = int(target.get("lib_id"))
     ion_mode = str(target.get("ion_mode") or lib_mode(lib_id))
     parent_mz = safe_float(target.get("parent_mz"), 0.0)
@@ -677,6 +692,7 @@ def write_profile_outputs(
     novelty_rows: list[dict[str, Any]],
     top_k: int,
 ) -> dict[str, str]:
+    """Write candidate metrics and denovo report for one profile."""
     profile_dir.mkdir(parents=True, exist_ok=True)
     candidate_df = pd.DataFrame(candidate_rows)
     if not candidate_df.empty:
@@ -750,6 +766,7 @@ def run_denovo_assembly(
     top_k: int,
     all_x_features: bool = False,
 ) -> dict[str, Any]:
+    """Run targeted de novo assembly for configured libraries and profiles."""
     if not HAS_RDKIT:
         raise RuntimeError("RDKit is required for retrieval-anchored de novo assembly.")
     run_root = output_root / "runs" / "retrieval_anchored_denovo_assembly_v1"
@@ -861,6 +878,7 @@ def evaluate_retrieval_track(
     libs: list[int],
     top_k: int,
 ) -> pd.DataFrame:
+    """Evaluate retrieval-track outputs for assembly comparison."""
     rows: list[dict[str, Any]] = []
     for lib_id in libs:
         mode = lib_mode(int(lib_id))
@@ -918,6 +936,7 @@ def evaluate_retrieval_track(
 
 
 def load_database_analog_metrics(analog_root: Path, libs: list[int]) -> pd.DataFrame:
+    """Load database analog metrics for cross-track comparison."""
     path = analog_root / "aggregate" / "x_domain_analog_v1_metrics.csv"
     if not path.exists():
         return pd.DataFrame()
@@ -944,6 +963,7 @@ def aggregate_denovo_assembly(
     libs: list[int],
     top_k: int,
 ) -> dict[str, Any]:
+    """Aggregate assembly metrics and write summary artifacts."""
     metric_rows: list[dict[str, Any]] = []
     per_control_rows: list[dict[str, Any]] = []
     for lib_dir in sorted(run_root.glob("lib_*_*")):
@@ -1079,6 +1099,7 @@ def render_report(
     gap: pd.DataFrame,
     recommendations: dict[str, Any],
 ) -> str:
+    """Render the assembly aggregate markdown report."""
     metric_cols = [
         col
         for col in [
@@ -1116,6 +1137,7 @@ def render_report(
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse CLI arguments for de novo assembly v1."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     parser.add_argument("--baseline-root", type=Path, default=DEFAULT_BASELINE_ROOT)
@@ -1143,15 +1165,18 @@ def parse_args() -> argparse.Namespace:
 
 
 def resolve(path: Path, repo_root: Path) -> Path:
+    """Resolve a repo-relative or absolute path against the repo root."""
     path = path.expanduser()
     return path if path.is_absolute() else repo_root / path
 
 
 def parse_csv(text: str) -> list[str]:
+    """Parse a comma-separated CLI string into a list."""
     return [part.strip() for part in str(text).split(",") if part.strip()]
 
 
 def main() -> None:
+    """CLI entry point for de novo assembly v1."""
     args = parse_args()
     repo_root = REPO_ROOT
     output_root = resolve(args.output_root, repo_root)

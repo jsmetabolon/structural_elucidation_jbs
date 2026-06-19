@@ -23,6 +23,7 @@ GOOD_TANIMOTO = 0.7
 
 
 def first_value(df: pd.DataFrame, col: str, default: Any = "") -> Any:
+    """Return the first non-null value in a column or a default."""
     if df.empty or col not in df.columns:
         return default
     value = df.iloc[0].get(col, default)
@@ -30,6 +31,7 @@ def first_value(df: pd.DataFrame, col: str, default: Any = "") -> Any:
 
 
 def parse_lib_dir(lib_dir: Path) -> tuple[int, str]:
+    """Parse ``lib_<id>_<ion_mode>`` directory names into components."""
     parts = lib_dir.name.split("_")
     if len(parts) < 3 or parts[0] != "lib":
         raise ValueError(f"Cannot parse lib directory: {lib_dir}")
@@ -37,6 +39,7 @@ def parse_lib_dir(lib_dir: Path) -> tuple[int, str]:
 
 
 def discover_profile_dirs(v3_root: Path) -> list[tuple[int, str, str, Path]]:
+    """List V3 assembly profile directories under the run root."""
     run_root = v3_root / "runs" / "control_targeted_assembly_v3"
     rows: list[tuple[int, str, str, Path]] = []
     for lib_dir in sorted(run_root.glob("lib_*_*")):
@@ -50,6 +53,7 @@ def discover_profile_dirs(v3_root: Path) -> list[tuple[int, str, str, Path]]:
 
 
 def load_evaluated_control_ids(v3_root: Path, lib_id: int, profile: str) -> set[str]:
+    """Load control ids already present in the V3 aggregate audit."""
     path = v3_root / "aggregate" / "denovo_assembly_v3_per_control.csv"
     if not path.exists():
         return set()
@@ -61,6 +65,7 @@ def load_evaluated_control_ids(v3_root: Path, lib_id: int, profile: str) -> set[
 
 
 def top10_miss_reason(oracle_rank: int, oracle_tanimoto: float, top10_tanimoto: float) -> str:
+    """Classify why a high-oracle candidate may be missing from top-k."""
     if oracle_tanimoto < GOOD_TANIMOTO:
         return "no_high_oracle_candidate"
     if oracle_rank <= 10:
@@ -81,6 +86,7 @@ def assess_profile(
     known_x_all: Path,
     top_k: int,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Compare full-pool oracle vs top-k ranks for one V3 profile."""
     candidate_path = profile_dir / "candidate_metrics_all.csv"
     denovo_path = profile_dir / "denovo_report.csv"
     if not candidate_path.exists():
@@ -155,6 +161,7 @@ def assess_v3_outputs(
     out_dir: Path,
     top_k: int,
 ) -> dict[str, Any]:
+    """Run rank-gap assessment across all discovered V3 profiles."""
     out_dir.mkdir(parents=True, exist_ok=True)
     per_rows: list[dict[str, Any]] = []
     operator_rows: list[dict[str, Any]] = []
@@ -234,6 +241,7 @@ def assess_v3_outputs(
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse CLI arguments for V3 output assessment."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--v3-root", type=Path, default=DEFAULT_V3_ROOT)
     parser.add_argument("--known-x", type=Path, default=Path("known_X.csv"))
@@ -244,6 +252,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """CLI entry point for V3 assembly rank-gap assessment."""
     args = parse_args()
     payload = assess_v3_outputs(
         v3_root=args.v3_root,

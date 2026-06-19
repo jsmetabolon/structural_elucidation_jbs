@@ -1,5 +1,17 @@
 #!/usr/bin/env python3
-"""Add peptide composition summary columns to equalization rerank CSVs."""
+"""Add peptide composition summary columns to equalization rerank CSVs.
+
+Derives human-readable peptide composition labels, confidence scores, and
+ordering labels from existing peptide-track columns and optional SMILES inference.
+
+Pipeline context:
+    Third enrichment stage; reads lipid-class-enriched top-10 CSVs from
+    ``pipeline_equalization/rerank_lib*/``.
+
+Key I/O:
+    Inputs: ``*_lipid_class.csv`` per library.
+    Outputs: ``*_peptide_composition.csv``, ``peptide_composition_enrichment_summary.json``.
+"""
 
 from __future__ import annotations
 
@@ -20,18 +32,21 @@ except Exception:  # pragma: no cover - only available in the full EC2 workspace
     _infer_sequence_from_smiles = None
 
 
-DEFAULT_EQUALIZATION_ROOT = Path("models/pipeline_equalization")
-DEFAULT_LIBS = "209,305,400,402"
-DEFAULT_INPUT_NAME = "unified_rerank_all_top10_with_pathways_lipid_class.csv"
-DEFAULT_OUTPUT_NAME = "unified_rerank_all_top10_with_pathways_lipid_class_peptide_composition.csv"
-PEPTIDE_COLUMNS = [
+# ── Defaults and output schema ───────────────────────────────────────
+DEFAULT_EQUALIZATION_ROOT: Path = Path("models/pipeline_equalization")
+DEFAULT_LIBS: str = "209,305,400,402"
+DEFAULT_INPUT_NAME: str = "unified_rerank_all_top10_with_pathways_lipid_class.csv"
+DEFAULT_OUTPUT_NAME: str = (
+    "unified_rerank_all_top10_with_pathways_lipid_class_peptide_composition.csv"
+)
+PEPTIDE_COLUMNS: list[str] = [
     "peptide_composition_label",
     "peptide_composition_confidence",
     "peptide_ordering_confidence",
     "peptide_ordering_label",
     "peptide_length",
 ]
-RESIDUES = {
+RESIDUES: dict[str, str] = {  # three-letter code → display token
     "ALA": "Ala",
     "ARG": "Arg",
     "ASN": "Asn",
@@ -55,7 +70,7 @@ RESIDUES = {
     "VAL": "Val",
     "XLE": "Xle",
 }
-FULL_RESIDUES = {
+FULL_RESIDUES: dict[str, str] = {  # full residue name → display token
     "ALANINE": "Ala",
     "ARGININE": "Arg",
     "ASPARAGINE": "Asn",
@@ -79,7 +94,7 @@ FULL_RESIDUES = {
     "TYROSINE": "Tyr",
     "VALINE": "Val",
 }
-RESIDUE_ORDER = {
+RESIDUE_ORDER: dict[str, int] = {
     residue: idx
     for idx, residue in enumerate(
         [
@@ -106,10 +121,12 @@ RESIDUE_ORDER = {
         ]
     )
 }
-LENGTH_LABELS = {1: "amino acid", 2: "dipeptide", 3: "tripeptide", 4: "tetrapeptide"}
+LENGTH_LABELS: dict[int, str] = {1: "amino acid", 2: "dipeptide", 3: "tripeptide", 4: "tetrapeptide"}
 
 
+# ── CLI and parsing helpers ──────────────────────────────────────────
 def parse_args() -> argparse.Namespace:
+    """Build the peptide-composition enrichment CLI argument parser."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--equalization-root", type=Path, default=DEFAULT_EQUALIZATION_ROOT)
     parser.add_argument("--libs", nargs="+", default=[DEFAULT_LIBS])
@@ -281,6 +298,7 @@ def mass_fit_score(row: pd.Series) -> float:
 
 
 def peptide_composition_confidence(row: pd.Series) -> float:
+    """Blend hypothesis, support, immonium, and mass-fit evidence into [0, 1]."""
     hypothesis = numeric_value(row.get("composition_confidence"), 0.0)
     support = max(
         numeric_value(row.get("composition_support_score"), 0.0),
@@ -291,7 +309,7 @@ def peptide_composition_confidence(row: pd.Series) -> float:
         + 0.30 * clip01(support)
         + 0.15 * immonium_evidence_score(row)
         + 0.15 * mass_fit_score(row)
-    )
+    )  # mass fit weighted lightly because peptide rows often lack tight DA errors
     return clip01(score)
 
 
@@ -329,6 +347,7 @@ def peptide_ordering_confidence(row: pd.Series, composition: str, parsed: dict[s
 
 
 def peptide_ordering_label(ordered: str, composition: str, confidence: float, threshold: float) -> str:
+    """Return ordered sequence when confidence clears threshold, else 'order uncertain'."""
     if not composition:
         return ""
     tokens = composition_tokens(composition)
@@ -340,6 +359,7 @@ def peptide_ordering_label(ordered: str, composition: str, confidence: float, th
 
 
 def annotate_row(row: pd.Series, ordering_threshold: float = 0.65) -> dict[str, Any]:
+    """Build peptide summary columns for one rerank row."""
     if not row_is_peptide_candidate(row):
         return {
             "peptide_composition_label": "",
@@ -368,7 +388,9 @@ def annotate_row(row: pd.Series, ordering_threshold: float = 0.65) -> dict[str, 
     }
 
 
+# ── I/O and enrichment driver ────────────────────────────────────────
 def rerank_path(root: Path, lib_id: int, name: str) -> Path:
+    """Path to a named CSV under ``rerank_lib{lib_id}/``."""
     return root / f"rerank_lib{int(lib_id)}" / name
 
 
@@ -396,6 +418,7 @@ def ordered_columns(original_columns: list[str], enriched: pd.DataFrame) -> list
 
 
 def enrich_frame(frame: pd.DataFrame, ordering_threshold: float = 0.65) -> pd.DataFrame:
+    """Add peptide composition columns to all rows in a rerank top-10 frame."""
     original_columns = list(frame.columns)
     out = frame.copy()
     annotations = [annotate_row(row, ordering_threshold=ordering_threshold) for _, row in out.iterrows()]
@@ -421,6 +444,7 @@ def summarize_lib(lib_id: int, input_path: Path, output_path: Path, frame: pd.Da
 
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
+    """Run peptide-composition enrichment for all requested libraries."""
     repo_root = REPO_ROOT
     root = resolve(args.equalization_root, repo_root)
     libs = parse_libs(args.libs)
@@ -451,6 +475,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def main() -> int:
+    """CLI entry point."""
     run(parse_args())
     return 0
 

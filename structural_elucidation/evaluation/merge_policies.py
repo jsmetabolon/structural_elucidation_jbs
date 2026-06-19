@@ -77,6 +77,8 @@ class PolicyResult:
 
 
 def artifact_filename(prefix: str, stem: str, suffix: str) -> str:
+    """Build a conventional artifact filename from parts."""
+    """Named merge-policy output paths and row counts."""
     normalized = str(prefix).strip()
     if not normalized:
         return f"{stem}{suffix}"
@@ -84,6 +86,7 @@ def artifact_filename(prefix: str, stem: str, suffix: str) -> str:
 
 
 def resolve_existing_artifact(base_dir: Path, candidates: Iterable[str]) -> Path:
+    """Return the first existing artifact path from candidates."""
     for candidate in candidates:
         path = base_dir / candidate
         if path.exists():
@@ -92,6 +95,7 @@ def resolve_existing_artifact(base_dir: Path, candidates: Iterable[str]) -> Path
 
 
 def sigmoid(x: float | pd.Series) -> float | pd.Series:
+    """Apply the logistic sigmoid to scalars or series."""
     return 1.0 / (1.0 + np.exp(-x))
 
 
@@ -114,6 +118,7 @@ def compute_selfies_score(
 
 
 def normalize_score(series: pd.Series) -> pd.Series:
+    """Min-max normalize a score series to [0, 1]."""
     return pd.to_numeric(series, errors="coerce").fillna(0.0).clip(lower=0.0, upper=1.0)
 
 
@@ -156,6 +161,7 @@ def rank_selfies_pool(candidate_metrics_df: pd.DataFrame, tolerance_da: float) -
 
 
 def compare_selfies_pool_to_report(selfies_pool_df: pd.DataFrame, selfies_report_df: pd.DataFrame) -> dict:
+    """Compare SELFIES pool metrics to an existing report."""
     report_pairs = {
         (str(row.feature_key), str(row.predicted_smiles))
         for row in selfies_report_df[["feature_key", "predicted_smiles"]].itertuples(index=False)
@@ -177,6 +183,7 @@ def compare_selfies_pool_to_report(selfies_pool_df: pd.DataFrame, selfies_report
 
 
 def load_track_metric(summary_json_path: Path, track_name: str) -> dict:
+    """Load one track metric block from a summary JSON file."""
     payload = json.loads(summary_json_path.read_text())
     for track in payload.get("tracks", []):
         if str(track.get("track")) == str(track_name):
@@ -185,6 +192,7 @@ def load_track_metric(summary_json_path: Path, track_name: str) -> dict:
 
 
 def score_tuple(metric: dict) -> tuple[float, int]:
+    """Build a sortable metric tuple for policy comparison."""
     return (
         float(metric.get("mean_best_tanimoto", 0.0)),
         int(metric.get("n_topk_tanimoto_ge_0.7", 0)),
@@ -192,6 +200,7 @@ def score_tuple(metric: dict) -> tuple[float, int]:
 
 
 def metric_from_policy_eval(summary_json_path: Path) -> dict:
+    """Extract headline metrics from a policy eval summary JSON."""
     payload = json.loads(summary_json_path.read_text())
     merged_tracks = [t for t in payload.get("tracks", []) if str(t.get("track")) == "merged"]
     if merged_tracks:
@@ -202,6 +211,7 @@ def metric_from_policy_eval(summary_json_path: Path) -> dict:
 
 
 def map_retrieval_rows_for_merge(retrieval_df: pd.DataFrame) -> pd.DataFrame:
+    """Normalize retrieval rows into the merge schema."""
     out = retrieval_df.copy()
     out["track"] = "retrieval"
     out["smiles"] = out["smiles"].astype(str)
@@ -220,6 +230,7 @@ def map_retrieval_rows_for_merge(retrieval_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def map_selfies_rows_for_merge(selfies_pool_df: pd.DataFrame, feature_meta_df: pd.DataFrame) -> pd.DataFrame:
+    """Normalize SELFIES rows into the merge schema."""
     out = selfies_pool_df.copy()
     out["track"] = "selfies"
     out["smiles"] = out["predicted_smiles"].astype(str)
@@ -252,6 +263,7 @@ def map_selfies_rows_for_merge(selfies_pool_df: pd.DataFrame, feature_meta_df: p
 
 
 def joint_sort_rows(pool_df: pd.DataFrame) -> pd.DataFrame:
+    """Sort pooled retrieval and SELFIES rows for joint ranking."""
     if pool_df.empty:
         return pool_df
     sort_df = pool_df.copy()
@@ -273,6 +285,7 @@ def joint_sort_rows(pool_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def finalize_policy_rows(ranked_rows_df: pd.DataFrame, topk: int = 10) -> pd.DataFrame:
+    """Trim policy-ranked rows to top-k per feature."""
     if ranked_rows_df.empty:
         return ranked_rows_df
     out = ranked_rows_df.copy()
@@ -282,6 +295,7 @@ def finalize_policy_rows(ranked_rows_df: pd.DataFrame, topk: int = 10) -> pd.Dat
 
 
 def to_merged_predictions_csv_schema(policy_rows_df: pd.DataFrame, topk: int = 10) -> pd.DataFrame:
+    """Map policy rows to merged-predictions CSV columns."""
     if policy_rows_df.empty:
         return pd.DataFrame(
             columns=[
@@ -363,6 +377,7 @@ def to_merged_predictions_csv_schema(policy_rows_df: pd.DataFrame, topk: int = 1
 
 
 def select_selfies_rows_per_feature(selfies_merge_df: pd.DataFrame, max_per_feature: int) -> pd.DataFrame:
+    """Cap SELFIES rows retained per feature in a policy."""
     if selfies_merge_df.empty:
         return selfies_merge_df
     return (
@@ -377,6 +392,7 @@ def build_policy_retrieval_only(
     feature_keys: Iterable[str],
     retrieval_merge_df: pd.DataFrame,
 ) -> pd.DataFrame:
+    """Build a retrieval-only merged prediction policy."""
     chunks: List[pd.DataFrame] = []
     grouped = retrieval_merge_df.sort_values(["feature_key", "source_rank", "smiles"], kind="mergesort").groupby(
         "feature_key", sort=False
@@ -394,6 +410,7 @@ def build_policy_selfies_only(
     feature_keys: Iterable[str],
     selfies_merge_df: pd.DataFrame,
 ) -> pd.DataFrame:
+    """Build a SELFIES-only merged prediction policy."""
     chunks: List[pd.DataFrame] = []
     grouped = selfies_merge_df.sort_values(["feature_key", "source_rank", "smiles"], kind="mergesort").groupby(
         "feature_key", sort=False
@@ -413,6 +430,7 @@ def build_policy_pin_high_rank1_joint_rest(
     selfies_cap_df: pd.DataFrame,
     rank1_tier_map: Dict[str, str],
 ) -> pd.DataFrame:
+    """Pin high-confidence rank-1 retrieval then joint-fill."""
     chunks: List[pd.DataFrame] = []
     retr_group = retrieval_merge_df.groupby("feature_key", sort=False)
     self_group = selfies_cap_df.groupby("feature_key", sort=False)
@@ -445,6 +463,7 @@ def build_policy_high_protected_medium_low_joint(
     selfies_cap_df: pd.DataFrame,
     rank1_tier_map: Dict[str, str],
 ) -> pd.DataFrame:
+    """Protect high tier rows and joint-rank the rest."""
     chunks: List[pd.DataFrame] = []
     retr_group = retrieval_merge_df.groupby("feature_key", sort=False)
     self_group = selfies_cap_df.groupby("feature_key", sort=False)
@@ -472,6 +491,7 @@ def build_policy_retrieval_rank1_plus_best_selfies(
     retrieval_merge_df: pd.DataFrame,
     selfies_merge_df: pd.DataFrame,
 ) -> pd.DataFrame:
+    """Keep retrieval rank-1 plus best SELFIES per feature."""
     chunks: List[pd.DataFrame] = []
     retr_group = retrieval_merge_df.groupby("feature_key", sort=False)
     self_group = selfies_merge_df.groupby("feature_key", sort=False)
@@ -538,6 +558,7 @@ build_policy_retrieval_rank1_plus_best_selfies = merge_policy.build_policy_retri
 
 
 def resolve_subprocess_python() -> Path:
+    """Resolve the Python executable for subprocess eval hooks."""
     candidates = []
     virtual_env = os.environ.get("VIRTUAL_ENV", "").strip()
     if virtual_env:
@@ -561,6 +582,7 @@ def run_control_eval(
     known_x_all: Path,
     control_lib_id: int,
 ) -> tuple[Path, Path]:
+    """Run control evaluation for one merged prediction artifact."""
     cmd = [
         str(resolve_subprocess_python()),
         str(eval_script),
@@ -595,6 +617,7 @@ def ensure_track_metric_summary(
     retrieval_csv: Path | None = None,
     merged_csv: Path | None = None,
 ) -> Path:
+    """Ensure per-track metric summary JSON exists on disk."""
     if summary_json_path.exists():
         return summary_json_path
 
@@ -634,6 +657,7 @@ def build_comparison_payload(
     selfies_baseline_metric: dict,
     pool_alignment: dict,
 ) -> dict:
+    """Assemble cross-policy comparison metrics and metadata."""
     all_metrics = []
     for result in policy_results:
         metric = dict(result.metric)
@@ -649,11 +673,13 @@ def build_comparison_payload(
     winner_blend = max(blend_metrics, key=score_tuple) if blend_metrics else None
 
     def promotable(metric: dict | None) -> bool:
+        """Return whether a row meets promotion tier gates."""
         if metric is None:
             return False
         return int(metric.get("n_controls_covered", 0)) >= int(PROMOTION_GATES["min_n_controls_covered"])
 
     def passes_keep_gates(metric: dict | None) -> bool:
+        """Return whether a row passes merge keep gates."""
         if metric is None:
             return False
         return (
@@ -706,6 +732,7 @@ def build_comparison_payload(
 
 
 def policy_metric_by_name(comparison_payload: dict, policy_name: str) -> dict:
+    """Look up one policy block inside a comparison payload."""
     for metric in comparison_payload.get("policy_metrics", []):
         if str(metric.get("policy")) == str(policy_name):
             return dict(metric)
@@ -722,6 +749,7 @@ def build_known_x_hitmax_reference_payload(
     selfies_max_per_feature: int,
     lane_policy_name: str | None = None,
 ) -> dict:
+    """Build known-X hit-max reference metrics for policies."""
     hitmax_ceiling = policy_metric_by_name(comparison_payload, HITMAX_REFERENCE_CEILING_POLICY)
     winning_blend = policy_metric_by_name(comparison_payload, lane_policy_name) if lane_policy_name else {}
     if not winning_blend:
@@ -803,6 +831,7 @@ def build_known_x_hitmax_reference_payload(
 
 
 def comparison_table_rows(comparison_payload: dict) -> list[dict]:
+    """Flatten comparison payload into markdown table rows."""
     rows = [
         {
             "policy": "baseline_retrieval",
@@ -834,6 +863,7 @@ def comparison_table_rows(comparison_payload: dict) -> list[dict]:
 
 
 def write_followup_memo(markdown_path: Path, comparison_payload: dict) -> None:
+    """Write a follow-up memo summarizing policy comparison results."""
     decision = comparison_payload["decision"]
     winner = decision.get("winning_blend_policy") or {}
     keep_close = "KEEP" if decision.get("keep_selfies_track") else "CLOSE"
@@ -894,6 +924,7 @@ def write_followup_memo(markdown_path: Path, comparison_payload: dict) -> None:
 
 
 def get_parser() -> argparse.ArgumentParser:
+    """Build the merge-policies CLI argument parser."""
     parser = argparse.ArgumentParser(description="Benchmark fixed SELFIES+retrieval merge policies.")
     parser.add_argument("--selfies-dir", type=str, default="models/x209_selfies_denovo")
     parser.add_argument("--retrieval-dir", type=str, default="models/x209_smiles_predictions_baseline_refresh")
@@ -925,6 +956,7 @@ def get_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
+    """CLI entry point for merge-policy evaluation."""
     args = get_parser().parse_args()
 
     repo_root = REPO_ROOT

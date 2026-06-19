@@ -130,10 +130,20 @@ CONFIDENCE_ORDER = {"low": 0, "medium": 1, "high": 2, "very_high": 3}
 
 
 def diagnostic_table(ion_mode: str) -> dict[str, dict[str, Any]]:
+    """Return the static diagnostic fragment table for the requested ion mode.
+
+    Positive-mode spectra use shifted m/z windows; negative mode uses the base
+    fragment definitions. Callers join these rows into truth-blind enumerators.
+    """
     return DIAGNOSTIC_FRAGMENTS_POS if str(ion_mode).lower().startswith("pos") else DIAGNOSTIC_FRAGMENTS_NEG
 
 
 def confidence_tier(evidence_score: float, n_evidence: int, min_evidence_count: int) -> str:
+    """Map a numeric evidence score and hit count to a string confidence tier.
+
+    Tiers follow the downstream evidence_confidence contract documented in this
+    module's header: low, medium, high, and very_high.
+    """
     if float(evidence_score) >= 0.6 and int(n_evidence) >= int(min_evidence_count) + 1:
         return "very_high"
     if float(evidence_score) >= 0.4 and int(n_evidence) >= int(min_evidence_count):
@@ -144,6 +154,11 @@ def confidence_tier(evidence_score: float, n_evidence: int, min_evidence_count: 
 
 
 def confidence_at_least(value: Any, minimum: str = "medium") -> bool:
+    """Return True when ``value`` meets or exceeds the ``minimum`` tier.
+
+    Accepts either string tiers or numeric evidence scores coerced through
+    ``CONFIDENCE_ORDER`` so promotion gates can compare mixed representations.
+    """
     return CONFIDENCE_ORDER.get(str(value or "").lower(), 0) >= CONFIDENCE_ORDER.get(str(minimum).lower(), 1)
 
 

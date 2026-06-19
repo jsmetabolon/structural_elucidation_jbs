@@ -99,6 +99,7 @@ TARGETED_REACTION_SMARTS = {
 
 
 def normalize_ion_mode(value: Any) -> str:
+    """Normalize lib IDs and free-text labels to ``negative`` or ``positive``."""
     text = str(value or "").strip().lower()
     if text in {"209", "305", "negative", "neg", "0", "0.0"}:
         return "negative"
@@ -108,6 +109,7 @@ def normalize_ion_mode(value: Any) -> str:
 
 
 def lib_ion_mode(lib_id: int) -> str:
+    """Map a chromatography library id to its canonical ionization mode."""
     return "negative" if int(lib_id) in NEGATIVE_LIBS else "positive"
 
 
@@ -148,6 +150,7 @@ def neutral_ion_mass(mz: Any, lib_id: int) -> float:
 
 
 def mass_bin(mass: Any, ppm: float = MASS_BIN_PPM) -> int:
+    """Assign a neutral mass to the legacy NCE logarithmic ppm bin grid."""
     value = float(mass)
     if value <= 0 or not np.isfinite(value):
         return 0
@@ -158,10 +161,12 @@ def mass_bin(mass: Any, ppm: float = MASS_BIN_PPM) -> int:
 
 
 def bin_base(bin_id: int, ppm: float = MASS_BIN_PPM) -> float:
+    """Invert ``mass_bin`` to recover the nominal mass at a bin center."""
     return float(1000.0 / ((1.0 - float(ppm) / 1_000_000.0) ** (int(bin_id) - 299999)))
 
 
 def mass_interval(mass: Any, ppm: float = MASS_BIN_PPM) -> tuple[int, int]:
+    """Return the inclusive low/high bin ids spanning a mass at the given ppm."""
     value = float(mass)
     if value <= 0 or not np.isfinite(value):
         return (0, 0)
@@ -170,6 +175,7 @@ def mass_interval(mass: Any, ppm: float = MASS_BIN_PPM) -> tuple[int, int]:
 
 
 def ion_and_loss_bins(ion_mz: Any, parent_mz: Any, lib_id: int, ppm: float = MASS_BIN_PPM) -> tuple[int, int]:
+    """Compute fragment and neutral-loss bins for one observed MS2 peak."""
     ion_mass = neutral_ion_mass(ion_mz, lib_id)
     parent_mass = neutral_mass_from_precursor(parent_mz, lib_id)
     if not np.isfinite(ion_mass) or not np.isfinite(parent_mass):
@@ -178,6 +184,7 @@ def ion_and_loss_bins(ion_mz: Any, parent_mz: Any, lib_id: int, ppm: float = MAS
 
 
 def parse_json_list(value: Any) -> list[Any]:
+    """Parse a JSON list column or fall back to delimiter-split plain text."""
     if value is None or (isinstance(value, float) and np.isnan(value)):
         return []
     if isinstance(value, list):
@@ -193,6 +200,7 @@ def parse_json_list(value: Any) -> list[Any]:
 
 
 def formula_mass(formula: Any) -> float:
+    """Return monoisotopic neutral mass from an elemental formula string."""
     counts = formula_counts(formula)
     if not counts:
         return float("nan")
@@ -262,6 +270,7 @@ def formula_harmony_score(formula: Any, neutral_mass: Any = None) -> float:
 
 @lru_cache(maxsize=200_000)
 def cached_formula_harmony(formula: str, neutral_mass_bucket: str = "") -> float:
+    """LRU-cached wrapper around ``formula_harmony_score`` for hot enumeration loops."""
     neutral_mass = None
     if neutral_mass_bucket:
         try:
@@ -273,21 +282,29 @@ def cached_formula_harmony(formula: str, neutral_mass_bucket: str = "") -> float
 
 @lru_cache(maxsize=200_000)
 def cached_smiles_formula(smiles: str) -> str:
+    """LRU-cached formula derivation from a canonical SMILES string."""
     return formula_from_smiles(smiles)
 
 
 @lru_cache(maxsize=200_000)
 def cached_smiles_mass(smiles: str) -> float:
+    """LRU-cached exact neutral mass from a canonical SMILES string."""
     return exact_mass_from_smiles(smiles)
 
 
 @lru_cache(maxsize=200_000)
 def cached_smiles_inchikey(smiles: str) -> str:
+    """LRU-cached InChIKey for deduplication and exclusion-table joins."""
     return inchikey_from_smiles(smiles)
 
 
 @lru_cache(maxsize=100_000)
 def ri_proxy_from_smiles(smiles: str) -> float:
+    """Estimate retention index from RDKit descriptors when RI is unavailable.
+
+    The linear proxy is coarse but stable enough to rank candidates when only
+    structure is known.
+    """
     if not HAS_RDKIT or Chem is None or Descriptors is None:
         return float("nan")
     mol = Chem.MolFromSmiles(str(smiles or ""))
@@ -304,6 +321,7 @@ def ri_proxy_from_smiles(smiles: str) -> float:
 
 
 def ri_similarity_score(candidate_smiles: Any, observed_ri: Any, candidate_ri: Any = None) -> float:
+    """Score RI agreement using observed RI and either supplied or proxy candidate RI."""
     try:
         observed = float(observed_ri)
     except Exception:
@@ -322,6 +340,7 @@ def ri_similarity_score(candidate_smiles: Any, observed_ri: Any, candidate_ri: A
 
 @lru_cache(maxsize=100_000)
 def motif_labels_for_smiles(smiles: str) -> tuple[str, ...]:
+    """Return sorted motif labels from SMARTS substructure and formula heuristics."""
     labels: set[str] = set()
     if not HAS_RDKIT or Chem is None:
         return tuple()
@@ -344,6 +363,7 @@ def motif_labels_for_smiles(smiles: str) -> tuple[str, ...]:
 
 
 def motif_labels_for_legacy_fragment(fragment: Any) -> tuple[str, ...]:
+    """Infer motif labels from legacy MS2SMILES fragment text without RDKit."""
     text = str(fragment or "").strip().lower()
     labels: set[str] = set()
     keyword_map = {
@@ -367,6 +387,7 @@ def motif_labels_for_legacy_fragment(fragment: Any) -> tuple[str, ...]:
 def candidate_fragment_bins(
     smiles: str, lib_id: int, ppm: float = MASS_BIN_PPM
 ) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    """Predict fragment and neutral-loss bins by single-bond fragmentation of a SMILES."""
     if not HAS_RDKIT or Chem is None:
         return (tuple(), tuple())
     mol = Chem.MolFromSmiles(str(smiles or ""))
@@ -394,6 +415,7 @@ def candidate_fragment_bins(
 
 
 def overlap_score(left: Iterable[Any], right: Iterable[Any]) -> float:
+    """Geometric-mean-normalized set overlap used by portable spectrum scorers."""
     left_set = {str(item) for item in left if str(item) not in {"", "0", "nan"}}
     right_set = {str(item) for item in right if str(item) not in {"", "0", "nan"}}
     if not left_set or not right_set:
@@ -406,6 +428,7 @@ def overlap_score(left: Iterable[Any], right: Iterable[Any]) -> float:
 def forward_spectrum_score(
     candidate_smiles: Any, observed_ion_bins: Iterable[Any], observed_loss_bins: Iterable[Any], lib_id: int
 ) -> float:
+    """Portable forward-spectrum score from predicted vs observed fragment bins."""
     frag_bins, loss_bins = candidate_fragment_bins(str(candidate_smiles or ""), int(lib_id))
     ion_score = overlap_score(frag_bins, observed_ion_bins)
     loss_score = overlap_score(loss_bins, observed_loss_bins)
@@ -413,6 +436,7 @@ def forward_spectrum_score(
 
 
 def legacy_ms2smiles_summary(path: Path) -> pd.DataFrame:
+    """Summarize legacy MS2SMILES fragment motifs per compound for lib 209."""
     if not path.exists():
         return pd.DataFrame(
             columns=[
@@ -457,11 +481,13 @@ def legacy_ms2smiles_summary(path: Path) -> pd.DataFrame:
 
 
 def clean_structure_key(smiles: Any) -> tuple[str, str]:
+    """Return canonical SMILES and InChIKey for structure deduplication keys."""
     canonical = canonicalize_smiles(smiles) or ""
     return canonical, inchikey_from_smiles(canonical) if canonical else ""
 
 
 def load_excluded_structure_keys(paths: Iterable[Path]) -> pd.DataFrame:
+    """Load canonical structures to exclude from candidate pools across input tables."""
     rows: list[dict[str, Any]] = []
     for path in paths:
         if not path.exists():

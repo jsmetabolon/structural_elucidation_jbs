@@ -1,5 +1,20 @@
 #!/usr/bin/env python3
-"""Build a V16 unified pool while leaving the V1 pool builder unchanged."""
+"""Build a V16 unified pool while leaving the V1 pool builder unchanged.
+
+Thin overlay on ``pool_v1``: reuses V1 merge/dedup logic, then attaches NCE
+draw-count features from scored candidates and refreshes S0/non-S0 splits.
+
+Pipeline context:
+    Called when a prior unified pool CSV exists (lib-specific defaults in
+    ``default_base_pool_for_scope``). Falls back to ``pool_v1.run`` when no
+    base pool is available.
+
+Key I/O:
+    Inputs: base unified pool, scored candidates, extra enumerator CSVs,
+    integrated per-control best for winner-preservation check.
+    Outputs: ``unified_candidates_per_control.csv`` (+ S0 splits),
+    ``unified_candidate_pool_v16_summary.json``.
+"""
 
 from __future__ import annotations
 
@@ -15,10 +30,13 @@ from structural_elucidation.utils.denovo import canonicalize_smiles
 from structural_elucidation.paths import REPO_ROOT, resolve
 from structural_elucidation.utils.domain import write_csv, write_json
 
-NCE_COLS = ["nce_draw_count", "nce_max_log_prob", "nce_mean_log_prob"]
+# ── NCE feature columns overlaid onto the unified pool ───────────────
+NCE_COLS: list[str] = ["nce_draw_count", "nce_max_log_prob", "nce_mean_log_prob"]
 
 
+# ── Scope-specific base pool defaults ────────────────────────────────
 def default_base_pool_for_scope(lib_id: int, ion_mode: str) -> Path | None:
+    """Return the canonical prior unified-pool CSV for a lib/ion scope."""
     lookup = {
         (209, "negative"): Path("models/rerank_lib209_step7_targeted_v2_auto/unified_candidates_scored.csv"),
         (305, "negative"): Path("models/rerank_v9_no_wgcna_lib305_negative/unified_candidates_scored.csv"),
@@ -29,6 +47,7 @@ def default_base_pool_for_scope(lib_id: int, ion_mode: str) -> Path | None:
 
 
 def nce_feature_table(path: Path, repo_root: Path) -> pd.DataFrame:
+    """Extract per-(control, SMILES) NCE draw statistics from scored candidates."""
     resolved = resolve(path, repo_root)
     if not resolved.exists():
         return pd.DataFrame(columns=["control_id", "canonical_2d_smiles", *NCE_COLS])
@@ -58,6 +77,7 @@ def nce_feature_table(path: Path, repo_root: Path) -> pd.DataFrame:
 
 
 def overlay_nce_features(pool: pd.DataFrame, nce_features: pd.DataFrame) -> pd.DataFrame:
+    """Left-join NCE draw features; flag rows sourced from nce_direct."""
     if pool.empty or nce_features.empty:
         return pool
     out = pool.drop(columns=[col for col in NCE_COLS if col in pool.columns], errors="ignore")
@@ -72,6 +92,7 @@ def overlay_nce_features(pool: pd.DataFrame, nce_features: pd.DataFrame) -> pd.D
 
 
 def safe_read_csv(path: Path) -> pd.DataFrame:
+    """Read CSV or return empty frame on missing/empty files."""
     if not path.exists():
         return pd.DataFrame()
     try:
@@ -81,12 +102,14 @@ def safe_read_csv(path: Path) -> pd.DataFrame:
 
 
 def numeric_col(df: pd.DataFrame, col: str, default: float = 0.0) -> pd.Series:
+    """Coerce column to float with fillna."""
     if col not in df.columns:
         return pd.Series(default, index=df.index, dtype=float)
     return pd.to_numeric(df[col], errors="coerce").fillna(default)
 
 
 def normalize_existing_pool(pool: pd.DataFrame) -> pd.DataFrame:
+    """Align legacy pool column names before delegating to V1 normalize."""
     if pool.empty:
         return pool
     out = pool.copy()
@@ -96,6 +119,7 @@ def normalize_existing_pool(pool: pd.DataFrame) -> pd.DataFrame:
 
 
 def load_extra_only(extra_text: str, repo_root: Path) -> pd.DataFrame:
+    """Load comma-separated extra candidate CSVs without the scored-candidates frame."""
     frames: list[pd.DataFrame] = []
     for part in str(extra_text or "").split(","):
         text = part.strip()
@@ -113,6 +137,7 @@ def load_extra_only(extra_text: str, repo_root: Path) -> pd.DataFrame:
 
 
 def refresh_splits(output_root: Path, pool: pd.DataFrame, args: argparse.Namespace, repo_root: Path) -> None:
+    """Write full, S0-only, and non-S0 pool CSV splits."""
     s0_controls = base.s0_controls_for_scope(resolve(args.all_x_catalog, repo_root), int(args.lib_id))
     pool_s0 = (
         pool[pool.get("control_id", pd.Series(dtype=str)).astype(str).isin(s0_controls)].copy()
@@ -132,6 +157,7 @@ def refresh_splits(output_root: Path, pool: pd.DataFrame, args: argparse.Namespa
 def run_from_base_pool(
     args: argparse.Namespace, repo_root: Path, output_root: Path, base_pool_path: Path
 ) -> dict[str, Any]:
+    """Merge base pool + scored + extras, overlay NCE features, check winner preservation."""
     current = safe_read_csv(resolve(args.current_integrated_best, repo_root))
     if "lib_id" in current.columns:
         current = current[pd.to_numeric(current["lib_id"], errors="coerce").eq(int(args.lib_id))].copy()
@@ -195,6 +221,7 @@ def run_from_base_pool(
     write_csv(output_root / "preserve_25_pool_check.csv", preserve)
     n_expected = int(preserve.shape[0])
     n_present = int(preserve["winner_present"].sum()) if not preserve.empty else 0
+    # Require at least 25 of current high-tanimoto winners to survive merge.
     summary = {
         "base_unified_pool_csv": str(resolve(base_pool_path, repo_root)),
         "n_base_rows": int(base_pool.shape[0]),
@@ -219,6 +246,7 @@ def run_from_base_pool(
 
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
+    """Run V16 overlay from base pool or delegate to V1 then overlay NCE features."""
     repo_root = REPO_ROOT
     output_root = resolve(args.output_root, repo_root)
     current_path = resolve(args.current_integrated_best, repo_root)
@@ -260,6 +288,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def main() -> None:
+    """Parse CLI arguments and invoke :func:`run`."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, default=Path("models/unified_candidate_pool_nce_sweep_v16"))
     parser.add_argument("--scored-candidates", type=Path, required=True)

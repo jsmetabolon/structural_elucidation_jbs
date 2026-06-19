@@ -1,3 +1,16 @@
+#!/usr/bin/env python3
+"""Phase-0 mass, adduct, and shortlist helpers for de novo recovery.
+
+Pipeline context:
+    Supports early candidate reconstruction from raw generation samples:
+    neutral-mass matching under multiple adduct hypotheses, soft mass
+    scoring, and Excel/CSV comp-id loaders used before strict reranking.
+
+Key I/O:
+    ``reconstruct_shortlisted_candidates``: raw samples CSV → ranked shortlist.
+    ``best_adduct_neutral_mass_match``: closest adduct/isotope hypothesis per mass.
+"""
+
 from __future__ import annotations
 
 import ast
@@ -22,6 +35,7 @@ except ImportError:
     HAS_RDKIT = False
 
 
+# ── Mass constants and ion modes ─────────────────────────────────────
 PROTON_MASS = 1.007276
 AMMONIUM_MASS = 18.03382
 SODIUM_MINUS_PROTON_MASS = 22.989218
@@ -30,17 +44,21 @@ C13_SHIFT_MASS = 1.003355
 VALID_ION_MODES = {"negative", "positive"}
 
 
+# ── Table hygiene ────────────────────────────────────────────────────
 def clean_col_name(value: object) -> str:
+    """Strip BOM, quotes, and whitespace from a CSV column header."""
     return str(value).strip().strip('"').lstrip("\ufeff")
 
 
 def clean_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Return a copy of ``df`` with normalized column names."""
     out = df.copy()
     out.columns = [clean_col_name(c) for c in out.columns]
     return out
 
 
 def read_csv_clean(path: Path, **kwargs) -> pd.DataFrame:
+    """Read CSV with python engine fallback and cleaned headers."""
     try:
         df = pd.read_csv(path, **kwargs)
     except Exception:
@@ -51,6 +69,7 @@ def read_csv_clean(path: Path, **kwargs) -> pd.DataFrame:
 
 
 def first_nonempty(values: Iterable[object]) -> object:
+    """Return the first non-null, non-blank value from ``values``."""
     for value in values:
         if pd.isna(value):
             continue
@@ -60,7 +79,9 @@ def first_nonempty(values: Iterable[object]) -> object:
     return np.nan
 
 
+# ── RDKit structure helpers ──────────────────────────────────────────
 def canonicalize_smiles(smiles: str) -> str | None:
+    """Return isomeric canonical SMILES when RDKit is available."""
     if not HAS_RDKIT or not smiles or not str(smiles).strip():
         return None
     mol = Chem.MolFromSmiles(str(smiles).strip())
@@ -74,6 +95,7 @@ def canonicalize_smiles(smiles: str) -> str | None:
 
 
 def exact_mol_weight(smiles: str) -> float | None:
+    """Monoisotopic exact mass for ``smiles``; ``None`` when RDKit unavailable."""
     if not HAS_RDKIT:
         return None
     mol = Chem.MolFromSmiles(smiles)
@@ -86,6 +108,7 @@ def exact_mol_weight(smiles: str) -> float | None:
 
 
 def molecular_formula(smiles: str) -> str | None:
+    """Hill-system formula for ``smiles``; ``None`` on parse failure."""
     if not HAS_RDKIT:
         return None
     mol = Chem.MolFromSmiles(smiles)
@@ -97,7 +120,13 @@ def molecular_formula(smiles: str) -> str | None:
         return None
 
 
+# ── Adduct and neutral-mass matching ─────────────────────────────────
 def normalize_ion_mode(ion_mode: str) -> str:
+    """Validate and normalize ion mode to ``negative`` or ``positive``.
+
+    Raises:
+        ValueError: When mode is not in ``VALID_ION_MODES``.
+    """
     mode = str(ion_mode).strip().lower()
     if mode not in VALID_ION_MODES:
         raise ValueError(f"Unsupported ion mode {ion_mode!r}. Expected one of {sorted(VALID_ION_MODES)}.")
@@ -105,6 +134,7 @@ def normalize_ion_mode(ion_mode: str) -> str:
 
 
 def neutral_mass_from_precursor(parent_mz: float, ion_mode: str = "negative") -> float:
+    """Derive neutral mass from observed precursor m/z under [M±H] convention."""
     mode = normalize_ion_mode(ion_mode)
     if mode == "negative":
         return float(parent_mz) + PROTON_MASS  # [M-H]-
@@ -112,22 +142,26 @@ def neutral_mass_from_precursor(parent_mz: float, ion_mode: str = "negative") ->
 
 
 def adduct_neutral_mass_error(predicted_mass: float, parent_mz: float, ion_mode: str = "negative") -> float:
+    """Absolute Da error between predicted neutral mass and [M±H] neutral mass."""
     neutral_mass = neutral_mass_from_precursor(parent_mz, ion_mode=ion_mode)
     return abs(float(predicted_mass) - neutral_mass)
 
 
 def closest_neutral_mass(parent_mz: float, predicted_mass: float, ion_mode: str = "negative") -> float:
+    """Reference neutral mass for ppm error (currently [M±H] only)."""
     _ = float(predicted_mass)
     return neutral_mass_from_precursor(parent_mz, ion_mode=ion_mode)
 
 
 def adduct_neutral_mass_error_ppm(predicted_mass: float, parent_mz: float, ion_mode: str = "negative") -> float:
+    """Parts-per-million mass error relative to ``closest_neutral_mass``."""
     reference_mass = closest_neutral_mass(parent_mz, predicted_mass, ion_mode=ion_mode)
     denom = max(abs(reference_mass), 1e-12)
     return abs(float(predicted_mass) - reference_mass) / denom * 1e6
 
 
 def _adduct_neutral_mass_hypotheses(parent_mz: float, ion_mode: str) -> list[tuple[str, float]]:
+    """Enumerate adduct labels and implied neutral masses for mass matching."""
     mode = normalize_ion_mode(ion_mode)
     mz = float(parent_mz)
     if mode == "negative":
@@ -155,7 +189,21 @@ def best_adduct_neutral_mass_match(
     ion_mode: str = "negative",
     include_isotopes: bool = True,
 ) -> dict[str, object]:
-    """Return the closest neutral-mass/adduct hypothesis for a predicted molecule."""
+    """Return the closest neutral-mass/adduct hypothesis for a predicted molecule.
+
+    Tries common negative/positive adducts and optional C13 isotope shifts so
+    de novo masses can match alternate ionization forms.
+
+    Args:
+        predicted_mass: Candidate neutral or exact mass (Da).
+        parent_mz: Observed precursor m/z.
+        ion_mode: ``negative`` or ``positive``.
+        include_isotopes: When ``True``, allow 0–2 C13 shifts per hypothesis.
+
+    Returns:
+        Dict with ``abs_mass_error_da``, ``hypothesis``, ``adduct``,
+        ``neutral_mass``, ``unshifted_neutral_mass``, ``isotope_shift_count``.
+    """
     pred = float(predicted_mass)
     best: dict[str, object] | None = None
     for adduct, neutral_mass in _adduct_neutral_mass_hypotheses(float(parent_mz), ion_mode):
@@ -194,6 +242,7 @@ def strict_tolerance_da(
     da_floor: float = 0.005,
     ion_mode: str = "negative",
 ) -> float:
+    """PPM-scaled mass tolerance with a minimum Da floor for small molecules."""
     neutral_approx = max(neutral_mass_from_precursor(parent_mz, ion_mode=ion_mode), 0.0)
     return max(neutral_approx * float(ppm) * 1e-6, float(da_floor))
 
@@ -205,6 +254,7 @@ def passes_mass_filter(
     da_floor: float = 0.005,
     ion_mode: str = "negative",
 ) -> bool:
+    """Return whether mass error is within ``strict_tolerance_da``."""
     err = adduct_neutral_mass_error(predicted_mass, parent_mz, ion_mode=ion_mode)
     return err <= strict_tolerance_da(parent_mz, ppm=ppm, da_floor=da_floor, ion_mode=ion_mode)
 
@@ -215,6 +265,7 @@ def soft_mass_score(
     window_da: float = 0.5,
     ion_mode: str = "negative",
 ) -> float:
+    """Linear decay mass score in ``[0, 1]`` over ``window_da``."""
     err = adduct_neutral_mass_error(predicted_mass, parent_mz, ion_mode=ion_mode)
     if err <= 0.001:
         return 1.0
@@ -229,17 +280,21 @@ def pre_strict_shortlist_score(
     support_frac: float,
     latent_cosine: float = float("nan"),
 ) -> float:
+    """Weighted composite for pre-strict shortlist ranking."""
     norm_lp = 1.0 / (1.0 + np.exp(-float(mean_log_prob) - 1.0))
     cos_term = max(0.0, float(latent_cosine)) if not np.isnan(latent_cosine) else 0.0
     return 0.40 * float(mass_score) + 0.25 * norm_lp + 0.20 * float(support_frac) + 0.15 * cos_term
 
 
+# ── Identifiers and loaders ──────────────────────────────────────────
 def extract_xid(text: str) -> str | None:
+    """Extract ``X-<digits>`` token from free text."""
     match = re.search(r"(X-\d+)", str(text))
     return match.group(1) if match else None
 
 
 def safe_literal_list(value: object) -> list[str]:
+    """Parse a Python-literal list column value safely."""
     if pd.isna(value):
         return []
     text = str(value).strip()
@@ -255,6 +310,7 @@ def safe_literal_list(value: object) -> list[str]:
 
 
 def load_jj_mm_merged_info(path: Path, sheet_name: str = "JJ + MM Merged Info") -> pd.DataFrame:
+    """Load the JJ+MM merged Excel sheet with heuristic header detection."""
     raw = pd.read_excel(path, sheet_name=sheet_name, header=None)
     if raw.empty:
         return pd.DataFrame()
@@ -280,6 +336,7 @@ def load_jj_mm_merged_info(path: Path, sheet_name: str = "JJ + MM Merged Info") 
 
 
 def load_comp_id_list(path: Path) -> set[int]:
+    """Load integer comp IDs from a one-column or ``comp_id`` CSV."""
     df = read_csv_clean(path)
     if "comp_id" in df.columns:
         values = df["comp_id"]
@@ -289,6 +346,7 @@ def load_comp_id_list(path: Path) -> set[int]:
 
 
 def load_embedding_id_set(path: Path) -> set[int]:
+    """Collect comp IDs from ``*.pt`` embedding filenames under ``path``."""
     if not path.exists():
         return set()
     ids: set[int] = set()
@@ -306,6 +364,20 @@ def reconstruct_shortlisted_candidates(
     soft_window_da: float = 0.5,
     pre_strict_topn: int = 50,
 ) -> pd.DataFrame:
+    """Rebuild ranked shortlist rows from raw de novo sample draws.
+
+    Aggregates canonical SMILES support and mean log-prob per feature, then
+    scores with soft mass and generation-support terms.
+
+    Args:
+        raw_samples_csv: Per-draw SMILES samples with ``feature_key`` and log-prob.
+        feature_meta_csv: Feature metadata with ``parent_mz`` and ``comp_id``.
+        soft_window_da: Soft mass score window (Da).
+        pre_strict_topn: Maximum shortlist rank to flag ``is_shortlisted``.
+
+    Returns:
+        One row per unique canonical SMILES per feature with shortlist metadata.
+    """
     raw_df = read_csv_clean(raw_samples_csv)
     feature_meta_df = read_csv_clean(feature_meta_csv)
 
@@ -395,6 +467,7 @@ def reconstruct_shortlisted_candidates(
 
 
 def finite_float_or_none(value: object) -> float | None:
+    """Parse finite float or return ``None``."""
     try:
         parsed = float(value)
     except Exception:

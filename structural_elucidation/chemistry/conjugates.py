@@ -25,11 +25,14 @@ RUN_NAME = "multi_conjugate_v1"
 
 
 def lib_scope(args: argparse.Namespace) -> str:
+    """Build the canonical ``lib_<id>_<ion_mode>`` directory label from CLI args."""
     return f"lib_{int(args.lib_id)}_{str(args.ion_mode)}"
 
 
 @dataclass(frozen=True)
 class BaseMolecule:
+    """Seed scaffold used when enumerating conjugate products from a reaction SMARTS."""
+
     name: str
     smiles: str
     family: str
@@ -93,6 +96,7 @@ REQUIRED_COLUMNS = [
 
 
 def reaction_for_name(reaction_name: str) -> Any:
+    """Load an RDKit reaction object for a named targeted-modification SMARTS."""
     smarts = TARGETED_REACTION_SMARTS.get(reaction_name)
     if not smarts or AllChem is None:
         return None
@@ -103,6 +107,7 @@ def reaction_for_name(reaction_name: str) -> Any:
 
 
 def canonical_product_smiles(product: Any) -> str:
+    """Sanitize and canonicalize a single RDKit reaction product molecule."""
     if Chem is None:
         return ""
     try:
@@ -114,6 +119,11 @@ def canonical_product_smiles(product: Any) -> str:
 
 
 def apply_reaction(base_smiles: str, reaction_name: str, max_products: int) -> list[str]:
+    """Run one targeted reaction on a base SMILES and return unique product SMILES.
+
+    Caps enumeration at ``max_products`` so broad SMARTS do not explode the
+    candidate pool for a single seed row.
+    """
     if not HAS_RDKIT or Chem is None:
         return []
     reaction = reaction_for_name(reaction_name)
@@ -140,12 +150,18 @@ def apply_reaction(base_smiles: str, reaction_name: str, max_products: int) -> l
 
 
 def mass_match_score(abs_error: float, tolerance_da: float) -> float:
+    """Linear mass-match score in [0, 1] with zero at or beyond ``tolerance_da``."""
     if not np.isfinite(abs_error):
         return 0.0
     return float(np.clip(1.0 - abs(float(abs_error)) / max(float(tolerance_da), 1e-9), 0.0, 1.0))
 
 
 def seed_reactions(conjugate_name: Any) -> tuple[str, ...]:
+    """Resolve conjugate label text to the reaction SMARTS names to apply.
+
+    Matches exact keys first, then substring keys so seed-queue labels like
+    ``lactoyl_amino`` still route to the lactoyl reaction set.
+    """
     text = str(conjugate_name or "").strip().lower()
     if text in CONJUGATE_REACTIONS:
         return CONJUGATE_REACTIONS[text]
@@ -153,6 +169,11 @@ def seed_reactions(conjugate_name: Any) -> tuple[str, ...]:
 
 
 def build_rows(seed_queue: pd.DataFrame, args: argparse.Namespace) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Expand seed-queue rows into scored conjugate candidates and skip audit rows.
+
+    Each seed may fan out across multiple base scaffolds and reactions; products
+    are deduplicated per feature and capped by ``max_candidates_per_feature``.
+    """
     rows: list[dict[str, Any]] = []
     skipped: list[dict[str, Any]] = []
     if not HAS_RDKIT:
@@ -252,6 +273,7 @@ def build_rows(seed_queue: pd.DataFrame, args: argparse.Namespace) -> tuple[pd.D
 
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
+    """Generate conjugate candidates, evaluate controls, and write summary artifacts."""
     repo_root = REPO_ROOT
     output_root = resolve(args.output_root, repo_root)
     seed_queue_path = resolve(args.seed_queue, repo_root)
@@ -333,6 +355,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def main() -> None:
+    """CLI entry point for multi-conjugate candidate generation."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     parser.add_argument(

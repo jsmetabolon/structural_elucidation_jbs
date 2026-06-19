@@ -20,6 +20,7 @@ from structural_elucidation.utils.domain import safe_int
 
 
 def _parse_bins(value: Any) -> list[int]:
+    """Parse JSON or list bin columns into sorted unique positive integers."""
     out: list[int] = []
     for item in parse_json_list(value):
         try:

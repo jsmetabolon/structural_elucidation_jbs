@@ -1,5 +1,20 @@
 #!/usr/bin/env python3
-"""Score existing candidate pools with the real NCE predicted-spectrum verifier."""
+"""Score existing candidate pools with the real NCE predicted-spectrum verifier.
+
+Runs ``annotate_predicted_spectrum_scores_v2`` across all enumerator outputs,
+writes per-source ``*_with_verifier.csv`` files, and concatenates a combined
+scored pool for downstream merging.
+
+Pipeline context:
+    Bridges enumerator ``candidate_metrics_all.csv`` artifacts to ``pool``.
+    Default inputs cover lib 209 negative; other scopes use
+    ``default_inputs_for_scope``.
+
+Key I/O:
+    Inputs: observed MS2 lookup, comma-separated candidate_metrics CSVs.
+    Outputs: ``combined_scored_candidates.csv``, per-input verifier CSVs,
+    manifest, winner-rank diagnostic, summary JSON/markdown.
+"""
 
 from __future__ import annotations
 
@@ -15,7 +30,8 @@ from structural_elucidation.nce.verifier_v2 import annotate_predicted_spectrum_s
 from structural_elucidation.paths import REPO_ROOT, resolve
 from structural_elucidation.utils.domain import dataframe_to_markdown, write_csv, write_json
 
-DEFAULT_INPUTS = (
+# ── Default verifier input paths (lib 209 negative) ──────────────────
+DEFAULT_INPUTS: tuple[str, ...] = (
     "models/peptide_first_denovo_v1_1/rerank/runs/peptide_first_rerank/lib_209_negative/selfies_profiles/protected_union_control_blind/candidate_metrics_all.csv",
     "models/peptide_first_denovo_v1_1/rerank/runs/peptide_first_rerank/lib_209_negative/selfies_profiles/protected_union_annotation_assisted/candidate_metrics_all.csv",
     "models/peptide_first_denovo_v1_1/rerank_verifier/runs/peptide_first_rerank/lib_209_negative/selfies_profiles/protected_union_control_blind/candidate_metrics_all.csv",
@@ -47,6 +63,7 @@ DEFAULT_INPUTS = (
 
 
 def default_inputs_for_scope(lib_id: int, ion_mode: str) -> tuple[str, ...]:
+    """Return default candidate_metrics paths for non-209-negative scopes."""
     if (int(lib_id), str(ion_mode)) == (209, "negative"):
         return DEFAULT_INPUTS
     scope = f"lib_{int(lib_id)}_{str(ion_mode)}"
@@ -75,6 +92,7 @@ def default_inputs_for_scope(lib_id: int, ion_mode: str) -> tuple[str, ...]:
 
 
 def parse_inputs(text: str, lib_id: int = 209, ion_mode: str = "negative") -> list[Path]:
+    """Parse comma-separated input paths, deduplicating while preserving order."""
     if not str(text or "").strip():
         values = default_inputs_for_scope(int(lib_id), str(ion_mode))
     else:
@@ -92,6 +110,7 @@ def parse_inputs(text: str, lib_id: int = 209, ion_mode: str = "negative") -> li
 
 
 def s0_controls_for_scope(path: Path, lib_id: int) -> set[str]:
+    """Return S0-tier X control IDs for splitting combined scored output."""
     if not path.exists():
         return set()
     df = pd.read_csv(path, low_memory=False)
@@ -105,7 +124,11 @@ def s0_controls_for_scope(path: Path, lib_id: int) -> set[str]:
 def merge_all_x_observed_lookup(
     observed: pd.DataFrame, extra_path: Path, lib_id: int, ion_mode: str
 ) -> tuple[pd.DataFrame, int]:
-    """Extend an S0-only observed lookup with all-X spectra for include-all-x runs."""
+    """Extend an S0-only observed lookup with all-X spectra for include-all-x runs.
+
+    Returns:
+        Merged observed frame and count of newly added controls.
+    """
     if observed.empty or not extra_path.exists():
         return observed, 0
     try:
@@ -130,12 +153,17 @@ def merge_all_x_observed_lookup(
 
 
 def _boolish_series(series: pd.Series) -> pd.Series:
+    """Parse common truthy string values in observed-lookup columns."""
     return series.astype(str).str.lower().isin({"true", "1", "yes", "y"})
 
 
 def prepare_observed_lookup_for_scope(
     observed: pd.DataFrame, lib_id: int, ion_mode: str
 ) -> tuple[pd.DataFrame, dict[str, int]]:
+    """Scope, deduplicate, and rank observed MS2 rows per control for verifier join.
+
+    When multiple observed rows exist per control, prefer richer MS2 evidence.
+    """
     stats = {
         "n_observed_input_rows": int(observed.shape[0]),
         "n_observed_scoped_rows": 0,
@@ -202,6 +230,7 @@ def prepare_observed_lookup_for_scope(
 
 
 def source_label_for_path(path: Path) -> str:
+    """Map an input CSV path to a stable reranker source_label string."""
     text = str(path)
     if "merged_structuremasst_bundle" in text and "selfies_profiles" in text:
         return "merged_structuremasst_selfies_v1"
@@ -263,6 +292,7 @@ def source_label_for_path(path: Path) -> str:
 
 
 def normalize_frame(df: pd.DataFrame, source_label: str, lib_id: int = 209, ion_mode: str = "negative") -> pd.DataFrame:
+    """Normalize candidate_metrics schema before verifier scoring."""
     out = df.copy()
     is_unified_pool = "source_labels" in out.columns and (
         "unified_pool_rank" in out.columns or source_label.startswith("unified_candidate_pool")
@@ -302,6 +332,7 @@ def normalize_frame(df: pd.DataFrame, source_label: str, lib_id: int = 209, ion_
 
 
 def trim_for_scoring(df: pd.DataFrame, max_rank: int) -> pd.DataFrame:
+    """Limit rows per source to top *max_rank* candidates before verifier cost."""
     if df.empty or int(max_rank) <= 0:
         return df
     out = df.copy()
@@ -309,7 +340,9 @@ def trim_for_scoring(df: pd.DataFrame, max_rank: int) -> pd.DataFrame:
     return out[out["_rank_numeric"].le(int(max_rank))].drop(columns=["_rank_numeric"]).copy()
 
 
+# ── CLI entry point ──────────────────────────────────────────────────
 def run(args: argparse.Namespace) -> dict[str, Any]:
+    """Score all configured inputs and write combined verifier outputs."""
     repo_root = REPO_ROOT
     output_root = resolve(args.output_root, repo_root)
     output_root.mkdir(parents=True, exist_ok=True)
@@ -403,6 +436,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             rescored = pd.to_numeric(scored["predicted_spectrum_score_v2"], errors="coerce").fillna(0.0)
             prior = pd.to_numeric(scored["_input_predicted_spectrum_score_v2"], errors="coerce").fillna(0.0)
             scored["predicted_spectrum_score_v2_rescored"] = rescored
+            # Keep the better of pre-verifier and rescored scores for unified pools.
             scored["predicted_spectrum_score_v2"] = pd.concat([prior, rescored], axis=1).max(axis=1)
         scored["canonical_2d_smiles"] = scored["predicted_smiles"].map(lambda value: canonicalize_smiles(value) or "")
         out_path = path.with_name(path.stem + "_with_verifier.csv")
@@ -496,7 +530,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "median_current_winner_verifier_rank": median_rank,
         "acceptance_pass": (
             bool(median_rank <= float(args.max_acceptance_median_rank)) if median_rank != 999999.0 else False
-        ),
+        ),  # median verifier rank of current winners must stay low
     }
     write_json(output_root / "verifier_scoring_summary.json", summary)
     report = [
@@ -520,6 +554,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def main() -> None:
+    """Parse CLI arguments and invoke :func:`run`; exit 2 on acceptance failure."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, default=Path("models/verifier_scoring_v1"))
     parser.add_argument("--observed-lookup", type=Path, default=Path("models/observed_ms2_lookup_v1/per_control.csv"))

@@ -1,3 +1,16 @@
+#!/usr/bin/env python3
+"""MS2 spectrum preprocessing and fixed-bin vectorization.
+
+Pipeline context:
+    Normalizes observed peak lists before encoder inference: relative-intensity
+    filtering, optional base-peak normalization, top-N truncation, then
+  binned vectors via ``rdkit_helpers.spec2vec``.
+
+Key I/O:
+    ``SpectrumPreprocessingConfig``: tunable peak-retention policy.
+    ``preprocess_and_vectorize``: end-to-end peaks-to-vector dict for models.
+"""
+
 from __future__ import annotations
 
 import math
@@ -9,19 +22,25 @@ import numpy as np
 from structural_elucidation.utils.rdkit_helpers import spec2vec
 
 
+# ── Configuration ────────────────────────────────────────────────────
 @dataclass(frozen=True)
 class SpectrumPreprocessingConfig:
+    """Peak-retention policy applied before spectrum vectorization."""
+
     min_rel_intensity_pct: float = 2.0
     top_peaks: int = 25
     disable_basepeak_norm: bool = False
 
     def to_dict(self) -> dict[str, object]:
+        """Serialize config for audit JSON alongside vectorized features."""
         payload = asdict(self)
         payload["basepeak_normalization_enabled"] = not bool(self.disable_basepeak_norm)
         return payload
 
 
+# ── Peak cleaning and normalization ──────────────────────────────────
 def _clean_peak_tuple(value: tuple[object, object]) -> tuple[float, float] | None:
+    """Parse one (m/z, intensity) tuple; drop non-finite or non-positive peaks."""
     try:
         mz = float(value[0])
         intensity = float(value[1])
@@ -35,6 +54,14 @@ def _clean_peak_tuple(value: tuple[object, object]) -> tuple[float, float] | Non
 
 
 def sanitize_peaks(peaks: Iterable[tuple[object, object]]) -> list[tuple[float, float]]:
+    """Drop invalid peaks while preserving caller order.
+
+    Args:
+        peaks: Iterable of (m/z, intensity) pairs.
+
+    Returns:
+        List of finite, positive-intensity peak tuples.
+    """
     cleaned: list[tuple[float, float]] = []
     for peak in peaks:
         parsed = _clean_peak_tuple(peak)
@@ -44,6 +71,14 @@ def sanitize_peaks(peaks: Iterable[tuple[object, object]]) -> list[tuple[float, 
 
 
 def basepeak_normalize(peaks: Iterable[tuple[object, object]]) -> list[tuple[float, float]]:
+    """Scale peak intensities by the maximum observed intensity.
+
+    Args:
+        peaks: Raw peak iterable.
+
+    Returns:
+        Base-peak-normalized peaks, or empty when no valid peaks exist.
+    """
     cleaned = sanitize_peaks(peaks)
     if not cleaned:
         return []
@@ -57,6 +92,18 @@ def preprocess_peaks(
     peaks: Iterable[tuple[object, object]],
     config: SpectrumPreprocessingConfig,
 ) -> dict[str, object]:
+    """Filter, optionally normalize, and truncate peaks for encoding.
+
+    Relative-intensity filtering uses the raw base peak so weak noise is
+    removed before optional base-peak normalization.
+
+    Args:
+        peaks: Observed MS2 peaks.
+        config: Retention and normalization policy.
+
+    Returns:
+        Dict with ``raw_peaks``, retained ``peaks``, counts, and base-peak metadata.
+    """
     raw_peaks = sanitize_peaks(peaks)
     if not raw_peaks:
         return {
@@ -87,12 +134,24 @@ def preprocess_peaks(
     }
 
 
+# ── Vectorization ────────────────────────────────────────────────────
 def vectorize_processed_peaks(
     processed_peaks: Iterable[tuple[float, float]],
     minmass: float,
     maxmass: float,
     resolution: int,
 ) -> dict[str, object]:
+    """Bin retained peaks into a fixed-length intensity vector.
+
+    Args:
+        processed_peaks: Preprocessed (m/z, intensity) peaks.
+        minmass: Lower m/z bound for binning (Da).
+        maxmass: Upper m/z bound for binning (Da).
+        resolution: Bins per Da (e.g. 2 => 0.5 Da bins).
+
+    Returns:
+        Dict with ``vector``, in-range ``peaks``, and out-of-range drop stats.
+    """
     n_bins = int((float(maxmass) - float(minmass)) * int(resolution)) + 1
     peaks = [(float(mz), float(intensity)) for mz, intensity in processed_peaks]
     if not peaks:
@@ -148,6 +207,18 @@ def preprocess_and_vectorize(
     maxmass: float,
     resolution: int,
 ) -> dict[str, object]:
+    """Run peak preprocessing then fixed-bin vectorization in one call.
+
+    Args:
+        peaks: Raw observed MS2 peaks.
+        config: Peak retention policy.
+        minmass: Lower m/z bound for binning (Da).
+        maxmass: Upper m/z bound for binning (Da).
+        resolution: Bins per Da.
+
+    Returns:
+        Merged preprocessing and vectorization metadata dict.
+    """
     result = preprocess_peaks(peaks=peaks, config=config)
     retained_before_range = list(result["peaks"])
     vectorized = vectorize_processed_peaks(
@@ -166,6 +237,14 @@ def preprocess_and_vectorize(
 
 
 def summarize_peak_counts(values: Iterable[int]) -> dict[str, float | int]:
+    """Summarize per-spectrum retained peak counts for QA reports.
+
+    Args:
+        values: Iterable of peak counts (one per spectrum).
+
+    Returns:
+        Count, min/max, quartiles, and mean statistics.
+    """
     counts = np.asarray([int(v) for v in values], dtype=np.int64)
     if counts.size == 0:
         return {

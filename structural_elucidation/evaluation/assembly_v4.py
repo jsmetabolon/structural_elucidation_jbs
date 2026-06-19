@@ -69,10 +69,12 @@ DEFAULT_VARIANT_BY_PROFILE = {"balanced": "v4_balanced", "strict_1da": "v4_mass_
 
 
 def parse_csv(text: str) -> list[str]:
+    """Parse a comma-separated CLI string into a list."""
     return [part.strip() for part in str(text).split(",") if part.strip()]
 
 
 def parse_targets(text: str) -> tuple[list[int], list[str]]:
+    """Parse library and profile target lists from CLI strings."""
     libs: list[int] = []
     profiles: list[str] = []
     for item in parse_csv(text):
@@ -88,6 +90,7 @@ def parse_targets(text: str) -> tuple[list[int], list[str]]:
 
 
 def load_failure_map(path: Path) -> dict[tuple[str, int, str, str], str]:
+    """Load per-target failure buckets from an audit CSV."""
     if not path.exists():
         return {}
     df = read_table(path)
@@ -109,6 +112,7 @@ def load_failure_map(path: Path) -> dict[tuple[str, int, str, str], str]:
 
 
 def target_control_key(target: pd.Series, scope: str) -> str:
+    """Build a stable control key for failure-map lookup."""
     if scope == "x_control":
         return str(target.get("xid", "") or "")
     comp_id = target.get("comp_id", "")
@@ -121,6 +125,7 @@ def failure_bucket_for_target(
     scope: str,
     profile: str,
 ) -> str:
+    """Resolve the failure bucket label for one target row."""
     key = (
         "x_control" if scope == "x_control" else "non_x_known",
         safe_int(target.get("lib_id"), -1),
@@ -131,6 +136,7 @@ def failure_bucket_for_target(
 
 
 def heavy_atom_count(smiles: str) -> int:
+    """Count heavy atoms in a SMILES for broad-operator caps."""
     mol = v1.mol_from_smiles(smiles)
     return int(mol.GetNumHeavyAtoms()) if mol is not None else 0
 
@@ -143,6 +149,7 @@ def mass_delta_directed_candidates(
     tolerance_da: float,
     limit: int,
 ) -> dict[str, set[str]]:
+    """Generate candidates by directed mass-delta edits."""
     anchor = v1.canonical_or_empty(anchor_smiles)
     if not anchor:
         return {}
@@ -169,6 +176,7 @@ def mass_delta_directed_candidates(
 
 
 def mcs_rgroup_edit_candidates(anchor_smiles: str, seed_smiles: list[str], limit: int = 120) -> dict[str, set[str]]:
+    """Generate MCS-guided R-group edit candidates from seeds."""
     if not HAS_RDKIT:
         return {}
     anchor = v1.canonical_or_empty(anchor_smiles)
@@ -219,6 +227,7 @@ def mass_constrained_fragment_replacements(
     tolerance_da: float,
     limit: int,
 ) -> dict[str, set[str]]:
+    """Replace fragments under a mass budget."""
     out: dict[str, set[str]] = defaultdict(set)
     effective_limit = min(int(limit), 40)
     for smiles in v1.brics_recombination_candidates(anchor_smiles, source_smiles[:4], limit=effective_limit):
@@ -234,14 +243,17 @@ def mass_constrained_fragment_replacements(
 
 
 def should_expand_fragments(failure_bucket: str) -> bool:
+    """Return whether failure bucket warrants fragment expansion."""
     return failure_bucket in {"low_structural_similarity", "x_domain_specific_gap", "no_candidate", "exact_known_only"}
 
 
 def should_focus_mass(failure_bucket: str) -> bool:
+    """Return whether failure bucket warrants mass-focused operators."""
     return failure_bucket in {"no_mass_compatible_novel", "no_candidate", "exact_known_only"}
 
 
 def merge_generated(target: dict[str, set[str]], source: dict[str, set[str]]) -> None:
+    """Merge generated candidate sets in place by operator family."""
     for smiles, modes in source.items():
         target[smiles].update(modes)
 
@@ -289,6 +301,7 @@ def generate_for_anchor_v4(
     failure_bucket: str,
     per_anchor_limit: int,
 ) -> dict[str, set[str]]:
+    """Generate v4 candidates for one anchor using failure-aware operators."""
     anchor_smiles = v1.canonical_or_empty(anchor.get("anchor_smiles", ""))
     if not anchor_smiles:
         return {}
@@ -352,6 +365,7 @@ def generate_for_anchor_v4(
 
 
 def primary_operator(modes: set[str]) -> str:
+    """Choose the primary operator label from active mode flags."""
     priority = [
         "mass_delta_directed_atom_isostere",
         "mcs_rgroup_edit",
@@ -370,10 +384,12 @@ def primary_operator(modes: set[str]) -> str:
 
 
 def is_broad_operator(operator_set: str) -> bool:
+    """Return whether an operator set is considered broad enumeration."""
     return "broad_mass_filtered_" in str(operator_set)
 
 
 def broad_cap_for_lib(lib_id: int) -> int:
+    """Return per-library cap on broad-operator candidates."""
     if int(lib_id) == 305:
         return 25
     if int(lib_id) == 209:
@@ -393,6 +409,7 @@ def score_components(
     formula_anchor_match: bool,
     operator_family: str,
 ) -> dict[str, float]:
+    """Compute component scores used by the v4 assembly ranker."""
     mass_component = mass_score(abs_err, max(float(tolerance), 1.0))
     support_component = min(1.0, safe_float(support_count, 0.0) / 3.0)
     formula_component = 1.0 if formula_anchor_match else 0.0
@@ -461,6 +478,7 @@ def score_generated_candidates_v4(
     max_candidates_per_feature: int,
     failure_bucket: str,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    """Score v4 candidates with failure-aware feature weights."""
     lib_id = int(target.get("lib_id"))
     ion_mode = str(target.get("ion_mode") or lib_mode(lib_id))
     parent_mz = safe_float(target.get("parent_mz"), 0.0)
@@ -676,14 +694,17 @@ def score_generated_candidates_v4(
 
 
 def base_profile_name(profile: str) -> str:
+    """Strip variant suffixes to recover the base profile name."""
     return str(profile).replace("non_x_holdout_", "")
 
 
 def default_variant_for_profile(profile: str) -> str:
+    """Return the default scoring variant for a profile."""
     return DEFAULT_VARIANT_BY_PROFILE.get(base_profile_name(profile), "v4_balanced")
 
 
 def sort_for_variant(df: pd.DataFrame, variant: str) -> pd.DataFrame:
+    """Sort candidates using the ranking rules for one variant."""
     if df.empty:
         return df.copy()
     score_col = f"{variant}_score"
@@ -698,6 +719,7 @@ def sort_for_variant(df: pd.DataFrame, variant: str) -> pd.DataFrame:
 
 
 def build_denovo_report(candidate_df: pd.DataFrame, *, variant: str, top_k: int) -> pd.DataFrame:
+    """Build the denovo report dataframe for one scoring variant."""
     if candidate_df.empty:
         return pd.DataFrame()
     rows: list[dict[str, Any]] = []
@@ -731,6 +753,7 @@ def write_profile_outputs_v4(
     structure_rows: list[dict[str, Any]],
     top_k: int,
 ) -> dict[str, str]:
+    """Write v4 profile outputs including variant reports."""
     profile_dir.mkdir(parents=True, exist_ok=True)
     default_variant = default_variant_for_profile(profile)
     candidate_df = pd.DataFrame(candidate_rows)
@@ -836,6 +859,7 @@ def run_denovo_assembly_v4(
     top_k: int,
     all_x_features: bool = False,
 ) -> dict[str, Any]:
+    """Run failure-aware de novo assembly v4 across targets."""
     if not HAS_RDKIT:
         raise RuntimeError("RDKit is required for retrieval-anchored de novo assembly V4.")
     run_root = output_root / "runs" / RUN_NAME
@@ -953,6 +977,7 @@ def run_denovo_assembly_v4(
 
 
 def v4_acceptance(metrics: pd.DataFrame) -> dict[str, Any]:
+    """Evaluate v4 acceptance gates from aggregated metrics."""
     rows = []
     if metrics.empty:
         return {"accepted_rows": [], "next_branch": "No V4 metrics were produced."}
@@ -994,6 +1019,7 @@ def v4_acceptance(metrics: pd.DataFrame) -> dict[str, Any]:
 
 
 def write_v4_aggregate_aliases(output_root: Path, aggregate_payload: dict[str, Any]) -> dict[str, Any]:
+    """Write v3-compatible aggregate alias artifacts for v4 runs."""
     aggregate_dir = output_root / "aggregate"
     metrics_path = aggregate_dir / "denovo_assembly_v4_metrics.csv"
     deltas_path = aggregate_dir / "denovo_assembly_v4_deltas.csv"
@@ -1055,6 +1081,7 @@ def write_v4_aggregate_aliases(output_root: Path, aggregate_payload: dict[str, A
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse CLI arguments for de novo assembly v4."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     parser.add_argument("--baseline-root", type=Path, default=DEFAULT_BASELINE_ROOT)
@@ -1080,6 +1107,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """CLI entry point for de novo assembly v4."""
     args = parse_args()
     repo_root = REPO_ROOT
     output_root = resolve(args.output_root, repo_root)
