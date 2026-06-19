@@ -1,3 +1,5 @@
+"""Tests for Metabolon lipid name parsing and SMILES-based lipid classification."""
+
 from __future__ import annotations
 
 import pytest
@@ -24,6 +26,7 @@ from structural_elucidation.pipeline.enrichment.lipid_class import (
     ],
 )
 def test_name_lipid_classification(name: str, lipid_class: str, chains_total: str, shorthand: str) -> None:
+    """Parse Metabolon-style lipid names into class, chain totals, and shorthand."""
     annotation = parse_metabolon_lipid_name(name)
     assert annotation.lipid_class == lipid_class
     assert annotation.lipid_chains_total == chains_total
@@ -73,6 +76,7 @@ def test_name_lipid_classification(name: str, lipid_class: str, chains_total: st
     ],
 )
 def test_smiles_lipid_classification(smiles: str, lipid_class: str, chains_total: str) -> None:
+    """Classify lipids from SMILES via SMARTS headgroup matching."""
     annotation = annotate_from_smiles(smiles)
     assert annotation.lipid_class == lipid_class
     assert annotation.lipid_chains_total == chains_total

@@ -1,5 +1,30 @@
 #!/usr/bin/env python3
-"""Build a self-contained HTML exploration report for any X compound."""
+"""Self-contained HTML exploration reports for X-compound structural elucidation.
+
+ARCHITECTURE OVERVIEW
+---------------------
+The report pipeline has four layers:
+
+1. **Data assembly** — ``build_report`` loads rerank CSVs, ``known_X`` metadata,
+   metabolite SQLite, optional peak tables, and WGCNA correlation exports.
+   ``predictions_to_candidate_pool`` normalizes heterogeneous prediction columns.
+
+2. **Chemistry & scoring** — RDKit fingerprints (``mol_fp``, ``similarity``),
+   Open Babel SVG rendering (``render_smiles_svg``), spectrum alignment
+   (``score_smiles_spectrum_alignment``), and MCS consensus heatmaps
+   (``consensus_atom_support``).
+
+3. **Network graphs** — Morgan Tanimoto edges (``build_pairwise_similarity_edges``),
+   greedy/union clustering, and force-directed layout produce SVG networks for
+   library neighbors and extended known/X similarity views.
+
+4. **HTML emission** — ``render_html`` stitches Metro-themed CSS, tabbed candidate
+   panels, and public/internal variants; ``render_guides_html`` emits placeholder
+   info-card pages. Outputs land under ``output/reports/<control_id>/``.
+
+CLI: ``python -m structural_elucidation.reports.compound --control-id X-25003 ...``
+"""
+
 
 from __future__ import annotations
 
@@ -52,8 +77,14 @@ STRUCTURE_LABEL_FONT_SIZE = 12.0
 STRUCTURE_PADDING = 18.0
 STRUCTURE_FONT_FAMILY = "Arial, Helvetica, sans-serif"
 
+# Report default paths resolve via structural_elucidation.paths.REPO_ROOT
+
+
+# ── IO and SQLite helpers ─────────────────────────────────────────────────────
 
 def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
+    """Write a list of row dicts to CSV; empty input yields an empty file."""
+
     path.parent.mkdir(parents=True, exist_ok=True)
     if not rows:
         path.write_text("")
@@ -65,11 +96,15 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def query_df(db_path: Path, sql: str, params: tuple[Any, ...] = ()) -> pd.DataFrame:
+    """Run a parameterized SQL query against the metabolite SQLite DB."""
+
     with sqlite3.connect(db_path) as conn:
         return pd.read_sql_query(sql, conn, params=params)
 
 
-def mol_fp(smiles: str):
+def mol_fp(smiles: str) -> tuple[Any, Any] | tuple[None, None]:
+    """Parse SMILES and return ``(mol, morgan_fp)`` or ``(None, None)``."""
+
     if not HAS_RDKIT:
         return None, None
     mol = Chem.MolFromSmiles(str(smiles or ""))
@@ -83,6 +118,8 @@ def mol_fp(smiles: str):
 
 
 def similarity(smiles_a: str, smiles_b: str) -> float:
+    """Tanimoto similarity between two SMILES strings."""
+
     _, fp_a = mol_fp(smiles_a)
     _, fp_b = mol_fp(smiles_b)
     if fp_a is None or fp_b is None:
@@ -91,6 +128,8 @@ def similarity(smiles_a: str, smiles_b: str) -> float:
 
 
 def structure_image(smiles: str, path: Path, legend: str = "") -> None:
+    """Render a 2D structure PNG via RDKit when available."""
+
     path.parent.mkdir(parents=True, exist_ok=True)
     if not HAS_RDKIT:
         return
@@ -100,7 +139,11 @@ def structure_image(smiles: str, path: Path, legend: str = "") -> None:
     Draw.MolToFile(mol, str(path), size=(520, 360), legend=legend)
 
 
+# ── Structure rendering (Open Babel / SVG) ────────────────────────────────────
+
 def resolve_obabel_path() -> Path | None:
+    """Locate Open Babel binary for SMILES-to-mol-block conversion."""
+
     which_path = shutil.which("obabel")
     candidates = [Path(which_path).resolve()] if which_path else []
     candidates.extend(candidate.resolve() for candidate in OBABEL_PATH_CANDIDATES)
@@ -118,6 +161,8 @@ def resolve_obabel_path() -> Path | None:
 
 
 def parse_mol_block(mol_block: str) -> dict[str, Any] | None:
+    """Parse an MDL V2000 mol block into atom/bond coordinate dicts."""
+
     lines = [line.rstrip("\n") for line in mol_block.splitlines()]
     if len(lines) < 3:
         return None
@@ -170,6 +215,8 @@ def parse_mol_block(mol_block: str) -> dict[str, Any] | None:
 
 
 def generate_smiles_mol_block(smiles: str) -> str | None:
+    """Generate a 2D V2000 mol block from SMILES via Open Babel."""
+
     if not smiles:
         return None
     obabel_path = resolve_obabel_path()
@@ -187,6 +234,8 @@ def generate_smiles_mol_block(smiles: str) -> str | None:
 
 
 def _structure_label_for_atom(atom_index: int, structure: dict[str, Any], stereochemical_hydrogens: set[int]) -> str:
+    """Choose element label text for SVG atom rendering."""
+
     atom = structure["atoms"][atom_index]
     element = atom["element"]
     bonds = [bond for bond in structure["bonds"] if bond["a1"] == atom_index or bond["a2"] == atom_index]
@@ -200,6 +249,8 @@ def _structure_label_for_atom(atom_index: int, structure: dict[str, Any], stereo
 
 
 def _structure_label_radius(label: str) -> float:
+    """Estimate label collision radius for bond shortening."""
+
     if not label:
         return 0.0
     width_estimate = STRUCTURE_LABEL_FONT_SIZE * (0.35 + 0.28 * len(label))
@@ -207,6 +258,8 @@ def _structure_label_radius(label: str) -> float:
 
 
 def _structure_label_color(element: str) -> str:
+    """Element-specific fill color for heteroatom labels."""
+
     palette = {
         "N": "#2E6BE6",
         "O": "#D62728",
@@ -226,6 +279,8 @@ def _shorten_segment(
     start_shorten: float,
     end_shorten: float,
 ) -> tuple[tuple[float, float], tuple[float, float]] | None:
+    """Trim a bond segment so labels do not overlap endpoints."""
+
     dx = end[0] - start[0]
     dy = end[1] - start[1]
     length = math.hypot(dx, dy)
@@ -244,6 +299,8 @@ def _parallel_offset(
     end: tuple[float, float],
     offset: float,
 ) -> tuple[tuple[float, float], tuple[float, float]]:
+    """Offset a bond segment perpendicular to its axis (double bonds)."""
+
     dx = end[0] - start[0]
     dy = end[1] - start[1]
     length = math.hypot(dx, dy)
@@ -255,6 +312,8 @@ def _parallel_offset(
 
 
 def render_mol_block_svg(mol_block: str) -> str | None:
+    """Render a V2000 mol block as inline SVG with stereochemistry wedges."""
+
     structure = parse_mol_block(mol_block)
     if not structure:
         return None
@@ -407,6 +466,8 @@ def render_mol_block_svg(mol_block: str) -> str | None:
 
 
 def render_smiles_svg(smiles: str) -> str | None:
+    """Render SMILES as inline SVG via Open Babel mol block fallback chain."""
+
     if not smiles:
         return None
     mol_block = generate_smiles_mol_block(smiles)
@@ -417,7 +478,11 @@ def render_smiles_svg(smiles: str) -> str | None:
     return None
 
 
+# ── Scoring, consensus, and candidate cards ───────────────────────────────────
+
 def confidence_bucket(row: pd.Series) -> str:
+    """Map neighbor Tanimoto similarity to high/medium/context tier labels."""
+
     sim = float(row.get("similarity_to_target", 0.0) or 0.0)
     if sim >= 0.75:
         return "high"
@@ -457,6 +522,8 @@ def heatmap_color(value: float) -> str:
 
 
 def compact_candidate_scores(candidates: pd.DataFrame) -> pd.DataFrame:
+    """Select and round report-facing columns from a candidate score frame."""
+
     candidates = candidates.copy()
     if "candidate_report_score" not in candidates.columns:
         if "lactoyl_rerank_score" in candidates.columns:
@@ -497,6 +564,8 @@ def compact_candidate_scores(candidates: pd.DataFrame) -> pd.DataFrame:
 
 
 def consensus_atom_support(reference_smiles: str, candidates: pd.DataFrame) -> tuple[list[dict[str, Any]], str]:
+    """MCS atom-support heatmap SVG and per-atom support CSV rows for one reference."""
+
     rows: list[dict[str, Any]] = []
     if not HAS_RDKIT or candidates.empty:
         return rows, "<p class='note'>Consensus structure unavailable because RDKit or candidate rows are missing.</p>"
@@ -550,6 +619,7 @@ def consensus_atom_support(reference_smiles: str, candidates: pd.DataFrame) -> t
     scale = min((canvas_w - 2 * margin) / width, (canvas_h - 2 * margin) / height)
 
     def xy(atom_idx: int) -> tuple[float, float]:
+        """Map RDKit 2D conformer coordinates to SVG canvas space."""
         x, y = coords[atom_idx]
         return margin + (x - min_x) * scale, canvas_h - (margin + (y - min_y) * scale)
 
@@ -624,6 +694,8 @@ def build_candidate_consensus_maps(
 
 
 def candidate_consensus_scale_html() -> str:
+    """HTML legend for the consensus atom-support color scale."""
+
     return """
           <div class="consensus-scale" aria-label="Consensus heatmap scale">
             <div class="consensus-scale-bar"></div>
@@ -636,6 +708,8 @@ def candidate_consensus_scale_html() -> str:
 
 
 def candidate_consensus_summary_html(summary: dict[str, Any]) -> str:
+    """HTML summary block for the selected top candidate."""
+
     if not summary:
         return "<p class='note'>No candidate summary available.</p>"
     score = summary.get("candidate_report_score", "")
@@ -658,6 +732,8 @@ def candidate_structure_card_html(
     *,
     title: str,
 ) -> str:
+    """HTML card combining structure SVG, scores, and optional consensus overlay."""
+
     smiles = str(row.get("predicted_smiles", "") or "").strip()
     structure_svg = render_smiles_svg(smiles) if smiles else None
     if structure_svg:
@@ -689,7 +765,11 @@ def candidate_structure_card_html(
     )
 
 
+# ── Correlation rows (legacy X-25003) ───────────────────────────────────────
+
 def load_real_correlation_rows_LEGACY() -> tuple[list[dict[str, Any]], str | None]:
+    """Legacy X-25003 WGCNA correlation lookup (superseded by generic loader)."""
+
     anchor_names = {
         "x-25003",
         "n-lactoylalanine",
@@ -724,6 +804,8 @@ def build_placeholder_correlation_rows_LEGACY(
     *,
     limit: int = 5,
 ) -> list[dict[str, Any]]:
+    """Legacy proxy correlation rows when WGCNA anchors are absent."""
+
     proxy_rows: list[dict[str, Any]] = []
     for row in extended_unknown_rows:
         x_id = str(row.get("x_compound_id", "") or "")
@@ -747,6 +829,8 @@ def build_placeholder_correlation_rows_LEGACY(
 
 
 def candidate_fragment_and_loss_masses(smiles: str) -> tuple[list[float], list[float]]:
+    """Enumerate single-bond fragment and neutral-loss masses for spectrum matching."""
+
     if not HAS_RDKIT:
         return [], []
     mol = Chem.MolFromSmiles(str(smiles or ""))
@@ -773,11 +857,15 @@ def candidate_fragment_and_loss_masses(smiles: str) -> tuple[list[float], list[f
 
 
 def slugify_label(text: str) -> str:
+    """URL-safe slug for guide section anchor IDs."""
+
     slug = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
     return slug or "guide"
 
 
 def render_guides_html_LEGACY(guide_targets: list[tuple[str, str]]) -> str:
+    """Legacy X-25003 placeholder guide page HTML."""
+
     guide_blocks = (
         "".join(
             f"<section class='guide-card' id='guide-{slug}'><h2>{html.escape(label)}</h2><p>{html.escape(label)} guide will go here.</p></section>"
@@ -820,12 +908,16 @@ def render_guides_html_LEGACY(guide_targets: list[tuple[str, str]]) -> str:
 """
 
 
+# ── Spectrum alignment ─────────────────────────────────────────────────────────
+
 def score_smiles_spectrum_alignment(
     candidates: pd.DataFrame,
     peaks: pd.DataFrame,
     *,
     tolerance_da: float,
 ) -> pd.DataFrame:
+    """Score candidates by matching fragment ions and neutral losses to peak table."""
+
     out = candidates.copy()
     default_cols = {
         "smiles_spectrum_alignment_score": 0.0,
@@ -904,7 +996,11 @@ def score_smiles_spectrum_alignment(
     return pd.DataFrame(rows)
 
 
+# ── HTML / CSS ───────────────────────────────────────────────────────────────
+
 def css() -> str:
+    """Return Metro-themed CSS shared by public and internal report variants."""
+
     return """
     :root {
       --metro-navy: #001D37;
@@ -1028,7 +1124,11 @@ def css() -> str:
     """
 
 
+# ── Similarity networks ──────────────────────────────────────────────────────
+
 def network_svg(nodes: list[dict[str, Any]], edges: list[dict[str, Any]]) -> str:
+    """Render positioned similarity nodes and edges as inline SVG."""
+
     by_id = {node["id"]: node for node in nodes}
     edge_parts = []
     node_parts = []
@@ -1087,6 +1187,8 @@ def build_pairwise_similarity_edges(
     pair_edge_min: float,
     max_edges_per_node: int,
 ) -> list[dict[str, Any]]:
+    """Build capped Morgan Tanimoto edges with target vs pair thresholds."""
+
     scored: list[tuple[float, str, str, dict[str, Any]]] = []
     for i, left in enumerate(nodes):
         for right in nodes[i + 1 :]:
@@ -1173,12 +1275,14 @@ def pairwise_similarity_clusters(
     parent = {node_id: node_id for node_id in node_ids}
 
     def find(node_id: str) -> str:
+        """Union-find root with path compression."""
         while parent[node_id] != node_id:
             parent[node_id] = parent[parent[node_id]]
             node_id = parent[node_id]
         return node_id
 
     def union(left: str, right: str) -> None:
+        """Merge two node clusters by rank."""
         left_root = find(left)
         right_root = find(right)
         if left_root != right_root:
@@ -1214,6 +1318,8 @@ def cluster_layout_network(
     height: float = 1180.0,
     cluster_threshold: float = 0.50,
 ) -> list[dict[str, Any]]:
+    """Assign x/y coordinates via cluster-aware force layout for network SVG."""
+
     node_map = {str(node["id"]): dict(node) for node in nodes}
     target_id = next((str(node["id"]) for node in nodes if node["kind"] == "target"), None)
     clusters = pairwise_similarity_clusters(nodes, edges, cluster_threshold=cluster_threshold)
@@ -1427,6 +1533,8 @@ def force_layout_network(
     height: float = 920.0,
     iterations: int = 260,
 ) -> list[dict[str, Any]]:
+    """Simple force-directed layout when cluster layout is not used."""
+
     center_x = width / 2.0
     center_y = height / 2.0
     ids = [str(node["id"]) for node in nodes]
@@ -1508,6 +1616,8 @@ def force_layout_network(
 
 
 def extended_network_svg(nodes: list[dict[str, Any]], edges: list[dict[str, Any]]) -> str:
+    """Render the expanded known+X similarity network as large-format SVG."""
+
     by_id = {str(node["id"]): node for node in nodes}
     edge_parts = []
     node_parts = []
@@ -1562,6 +1672,8 @@ def extended_network_svg(nodes: list[dict[str, Any]], edges: list[dict[str, Any]
     )
 
 
+# ── Structural possibility tree (X-25003 template) ─────────────────────────────
+
 def x25003_structural_possibility_summary(
     *,
     candidate_scores: pd.DataFrame,
@@ -1569,6 +1681,8 @@ def x25003_structural_possibility_summary(
     target_smiles: str,
     target_formula: str,
 ) -> list[dict[str, Any]]:
+    """Summarize lactoyl-amino-acid structural possibility branches for decision tree."""
+
     if candidate_scores.empty:
         return []
     smiles = candidate_scores.get("predicted_smiles", pd.Series(dtype=str)).astype(str)
@@ -1587,6 +1701,7 @@ def x25003_structural_possibility_summary(
     )
 
     def top_smiles(mask: pd.Series) -> str:
+        """Return rank-1 SMILES among candidates matching ``mask``."""
         rows = candidate_scores.loc[mask] if len(mask) == len(candidate_scores) else pd.DataFrame()
         if rows.empty:
             return ""
@@ -1637,9 +1752,12 @@ def x25003_structural_possibility_summary(
 
 
 def x25003_structural_possibility_tree_svg(rows: list[dict[str, Any]]) -> str:
+    """Static SVG decision tree annotated with branch candidate counts."""
+
     by_id = {str(row["structural_possibility_class"]): row for row in rows}
 
     def count(row_id: str) -> str:
+        """Format candidate count for a structural possibility branch leaf."""
         value = by_id.get(row_id, {}).get("candidate_count", 0)
         return str(value)
 
@@ -1756,6 +1874,7 @@ def build_extended_similarity_network(
     control_id: str = "X-00000",
     target_name: str = "target",
 ) -> dict[str, Any]:
+    """Build expanded known+X similarity network with render and full neighbor tables."""
     known_rows: list[dict[str, Any]] = []
     _, target_fp = mol_fp(target_smiles)
     if target_fp is None:
@@ -1905,6 +2024,8 @@ def render_html(
     correlation_blocker: str | None,
     variant: str,
 ) -> str:
+    """Assemble full HTML report page for public or internal ``variant``."""
+
     public_mode = variant == "public"
     variant_label = "Public" if variant == "public" else "Internal"
     pubchem_link = f"https://pubchem.ncbi.nlm.nih.gov/#query={quote(str(target['name']))}"
@@ -2077,6 +2198,7 @@ def render_html(
     guide_targets: list[tuple[str, str]] = []
 
     def info_button(label: str) -> str:
+        """Emit public-mode info link and record guide target for guides.html."""
         if not public_mode:
             return ""
         slug = slugify_label(label)
@@ -2088,6 +2210,7 @@ def render_html(
         )
 
     def heading_with_info(tag: str, label: str, *, include_info: bool = True) -> str:
+        """Wrap a section heading with optional public-mode info button."""
         if not include_info:
             return f"<{tag}>{html.escape(label)}</{tag}>"
         return f"<{tag}>{html.escape(label)}{info_button(label)}</{tag}>"
@@ -2638,11 +2761,17 @@ def render_html(
 """
 
 
+# ── Report assembly ────────────────────────────────────────────────────────────
+
 def control_slug(control_id: str) -> str:
+    """Filesystem-safe slug from a control id (e.g. ``X-25003`` -> ``x-25003``)."""
+
     return re.sub(r"[^a-z0-9]+", "-", control_id.lower()).strip("-") or "compound"
 
 
 def predictions_to_candidate_pool(predictions: pd.DataFrame, control_id: str) -> pd.DataFrame:
+    """Filter and normalize rerank/prediction rows for one ``control_id``."""
+
     work = predictions.copy()
     id_col = "control_id" if "control_id" in work.columns else "x_compound_id"
     work = work[work[id_col].astype(str).eq(control_id)].copy()
@@ -2680,12 +2809,16 @@ def predictions_to_candidate_pool(predictions: pd.DataFrame, control_id: str) ->
 
 
 def lookup_known_x_row(known_x: pd.DataFrame, control_id: str) -> dict[str, Any]:
+    """Return the first ``known_X`` row matching ``control_id`` in Unknown column."""
+
     unk = known_x.get("Unknown", pd.Series("", index=known_x.index)).astype(str)
     rows = known_x[unk.eq(control_id)]
     return rows.iloc[0].to_dict() if not rows.empty else {}
 
 
 def resolve_chemical_id(db_path: Path, known_x_row: dict[str, Any], target_name: str) -> str:
+    """Resolve metabolite DB chemical_id from known_X or canonical name lookup."""
+
     if known_x_row.get("KNOWN"):
         return str(known_x_row["KNOWN"]).strip()
     if not db_path.exists():
@@ -2705,6 +2838,8 @@ def load_real_correlation_rows(
     chemical_id: str,
     target_name: str,
 ) -> tuple[list[dict[str, Any]], str | None]:
+    """Attempt WGCNA module-anchor lookup for real abundance correlation rows."""
+
     anchor_names = {control_id.lower(), target_name.lower()}
     if target_name:
         anchor_names.add(target_name.strip().lower())
@@ -2732,6 +2867,8 @@ def build_placeholder_correlation_rows(
     exclude_control_id: str,
     limit: int = 5,
 ) -> list[dict[str, Any]]:
+    """Build proxy correlation rows from nearest verified X-structure neighbors."""
+
     proxy_rows: list[dict[str, Any]] = []
     for row in extended_unknown_rows:
         x_id = str(row.get("x_compound_id", "") or "")
@@ -2755,6 +2892,8 @@ def build_placeholder_correlation_rows(
 
 
 def render_guides_html(control_id: str, guide_targets: list[tuple[str, str]]) -> str:
+    """Render placeholder guide cards linked from public report info buttons."""
+
     guide_blocks = (
         "".join(
             f"<section class='guide-card' id='guide-{slug}'><h2>{html.escape(label)}</h2><p>{html.escape(label)} guide will go here.</p></section>"
@@ -2795,6 +2934,8 @@ def render_guides_html(control_id: str, guide_targets: list[tuple[str, str]]) ->
 
 
 def build_report(args: argparse.Namespace) -> dict[str, Any]:
+    """Orchestrate data load, scoring, network build, and HTML/CSV artifact emission."""
+
     repo_root = REPO_ROOT
     control_id = str(args.control_id).strip()
     slug = control_slug(control_id)
@@ -3127,7 +3268,11 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     return payload
 
 
+# ── CLI entrypoint ────────────────────────────────────────────────────────────
+
 def main() -> None:
+    """CLI entrypoint: parse args and invoke ``build_report``."""
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--control-id", required=True, help="X compound control id, e.g. X-25003")
     parser.add_argument("--predictions", type=Path, required=True, help="Rerank or candidate pool CSV")

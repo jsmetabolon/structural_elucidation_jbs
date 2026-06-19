@@ -1,3 +1,5 @@
+"""Tests for peptide composition normalization and row-level enrichment."""
+
 from __future__ import annotations
 
 import pandas as pd
@@ -11,17 +13,20 @@ from structural_elucidation.pipeline.enrichment.peptide_composition import (
 
 
 def test_normalize_peptide_composition_collapses_xle() -> None:
+    """Leu/Ile ambiguity collapses to ``Xle`` in canonical composition strings."""
     assert normalize_peptide_composition("Val-Leu-Gly") == "Gly-Val-Xle"
     assert normalize_peptide_composition("isoleucine, alanine") == "Ala-Xle"
 
 
 def test_peptide_composition_label_generation() -> None:
+    """Human-readable labels reflect peptide length and residue order."""
     assert peptide_composition_label("Ala-Val") == "dipeptide: Ala, Val"
     assert peptide_composition_label("Gly-Val-Xle") == "tripeptide: Gly, Val, Xle"
     assert peptide_composition_label("Ala-Ala") == "dipeptide: Ala, Ala"
 
 
 def test_high_confidence_ordered_tripeptide() -> None:
+    """Strong spectrum and ordering evidence yields high composition and order confidence."""
     row = pd.Series(
         {
             "normalized_peptide_composition": "Gly-Val-Xle",
@@ -47,6 +52,7 @@ def test_high_confidence_ordered_tripeptide() -> None:
 
 
 def test_low_ordering_confidence_keeps_composition_deliverable() -> None:
+    """Weak ordering evidence must not block composition-only deliverables."""
     row = pd.Series(
         {
             "normalized_peptide_composition": "Ala-Val",
@@ -66,6 +72,7 @@ def test_low_ordering_confidence_keeps_composition_deliverable() -> None:
 
 
 def test_identical_residue_dipeptide_has_unambiguous_order() -> None:
+    """Homogeneous dipeptides have trivially unique sequence order."""
     row = pd.Series(
         {
             "normalized_peptide_composition": "Ala-Ala",
@@ -79,6 +86,7 @@ def test_identical_residue_dipeptide_has_unambiguous_order() -> None:
 
 
 def test_non_peptide_rows_get_empty_columns() -> None:
+    """Non-peptide candidates receive blank peptide enrichment columns."""
     enriched = enrich_frame(pd.DataFrame([{"predicted_smiles": "CCO", "rank": 1}]))
     assert enriched.loc[0, "peptide_composition_label"] == ""
     assert enriched.loc[0, "peptide_ordering_label"] == ""

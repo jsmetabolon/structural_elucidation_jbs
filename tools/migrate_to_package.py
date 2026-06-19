@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""One-shot migration: flat src/ -> structural_elucidation package layout."""
+"""One-shot migration: flat src/ -> structural_elucidation package layout.
+
+Copies legacy ``src/*.py`` modules into the packaged tree, rewrites imports to
+``structural_elucidation.*``, deduplicates shared IO/chemistry helpers, and
+creates ``paths.py`` plus subpackage ``__init__.py`` skeletons.
+"""
 
 from __future__ import annotations
 
@@ -7,9 +12,13 @@ import re
 import shutil
 from pathlib import Path
 
+# ── Paths ─────────────────────────────────────────────────────────────────────
+
 REPO = Path(__file__).resolve().parents[1]
 SRC = REPO / "src"
 PKG = REPO / "structural_elucidation"
+
+# ── Module mapping (legacy name -> package relative path) ───────────────────────
 
 MODULE_MAP: dict[str, str] = {
     "score_candidates_with_verifier_v1": "pipeline/verify.py",
@@ -62,6 +71,8 @@ OLD_TO_NEW: dict[str, str] = {
 
 RESOLVE_IMPORT = "from structural_elucidation.paths import resolve"
 
+# ── Subpackage layout ─────────────────────────────────────────────────────────
+
 SUBPACKAGES = [
     "pipeline",
     "inference",
@@ -74,11 +85,13 @@ SUBPACKAGES = [
 
 
 def _pkg_path(old_name: str) -> str:
+    """Return dotted import path for a legacy module name."""
     rel = MODULE_MAP[old_name]
     return f"structural_elucidation.{rel.replace('/', '.').removesuffix('.py')}"
 
 
 def rewrite_imports(text: str) -> str:
+    """Replace flat ``src/`` import names with ``structural_elucidation.*`` paths."""
     text = re.sub(r"^#\s*flake8:\s*noqa\s*\n", "", text, flags=re.MULTILINE)
     text = re.sub(
         r"from run_retrieval_anchored_denovo_assembly_v4 import resolve",
@@ -105,6 +118,7 @@ def rewrite_imports(text: str) -> str:
 
 
 def create_paths() -> None:
+    """Write ``structural_elucidation/paths.py`` with ``REPO_ROOT`` and ``resolve``."""
     (PKG / "paths.py").write_text(
         '''"""Repository path resolution helpers."""
 
@@ -126,6 +140,7 @@ def resolve(path: Path, repo_root: Path | None = None) -> Path:
 
 
 def create_utils_io() -> None:
+    """Write shared table IO helpers extracted from duplicated legacy modules."""
     (PKG / "utils" / "io.py").write_text(
         '''"""Shared table and file IO helpers."""
 
@@ -187,6 +202,7 @@ def write_json(path: Path, payload: dict[str, Any]) -> None:
 
 
 def create_utils_chemistry() -> None:
+    """Write shared RDKit chemistry helpers extracted from duplicated legacy modules."""
     (PKG / "utils" / "chemistry.py").write_text(
         '''"""Shared chemistry helpers."""
 
@@ -419,6 +435,7 @@ def patch_repo_root(text: str, depth: int = 2) -> str:
 
 
 def migrate_file(old_name: str, rel_path: str) -> None:
+    """Copy one legacy module into the package tree with import and path patches."""
     src_path = SRC / f"{old_name}.py"
     dst_path = PKG / rel_path
     dst_path.parent.mkdir(parents=True, exist_ok=True)
@@ -440,6 +457,7 @@ def migrate_file(old_name: str, rel_path: str) -> None:
 
 
 def create_skeleton() -> None:
+    """Create package root, subpackages, paths, and shared utils modules."""
     if PKG.exists():
         shutil.rmtree(PKG)
     PKG.mkdir()
@@ -460,6 +478,7 @@ __description__ = "Mass-spectrometry structural elucidation inference and rerank
 
 
 def main() -> None:
+    """Run full flat-src to packaged migration."""
     create_skeleton()
     for old_name, rel_path in MODULE_MAP.items():
         migrate_file(old_name, rel_path)

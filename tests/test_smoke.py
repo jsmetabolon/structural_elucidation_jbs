@@ -1,19 +1,29 @@
-"""Smoke test for structural_elucidation package layout and imports."""
+"""Smoke tests for structural_elucidation package layout and imports.
+
+Validates directory layout, critical file presence, and that core modules import
+without error. Import failures are reported but may be skipped when optional
+deps (RDKit, torch) are absent in CI.
+"""
 
 from __future__ import annotations
 
 import importlib
 import sys
 from pathlib import Path
+from typing import Any, Callable
 
 try:
     import pytest
 except ImportError:  # pragma: no cover
     pytest = None  # type: ignore[assignment]
 
+# ── Path bootstrap ────────────────────────────────────────────────────────────
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+
+# ── Expected layout ───────────────────────────────────────────────────────────
 
 REQUIRED_DIRS = [
     "structural_elucidation",
@@ -70,12 +80,14 @@ CORE_MODULES = [
 ]
 
 
-def _smoke_mark(func):
+def _smoke_mark(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Apply ``pytest.mark.smoke`` when pytest is installed."""
     return pytest.mark.smoke(func) if pytest is not None else func
 
 
 @_smoke_mark
 def test_layout() -> None:
+    """Assert required directories and files exist under the repo root."""
     missing_dirs = [d for d in REQUIRED_DIRS if not (REPO_ROOT / d).exists()]
     missing_files = [f for f in REQUIRED_FILES if not (REPO_ROOT / f).exists()]
     assert not missing_dirs, f"Missing dirs: {missing_dirs}"
@@ -84,6 +96,7 @@ def test_layout() -> None:
 
 @_smoke_mark
 def test_imports() -> None:
+    """Import every core module listed in ``CORE_MODULES``."""
     failed = []
     for mod in CORE_MODULES:
         try:
@@ -95,6 +108,7 @@ def test_imports() -> None:
 
 @_smoke_mark
 def test_nce_paths() -> None:
+    """NCE runtime defaults must resolve under ``vendor/`` in this repo."""
     from structural_elucidation.nce import runtime as nce
 
     assert nce.DEFAULT_NCE_ROOT == REPO_ROOT / "vendor" / "nce"
@@ -103,6 +117,7 @@ def test_nce_paths() -> None:
 
 @_smoke_mark
 def test_predict_smiles_rename() -> None:
+    """Legacy ``predict_x209_smiles`` name must not appear in predict.py."""
     text = (REPO_ROOT / "structural_elucidation/inference/predict.py").read_text(encoding="utf-8")
     assert "predict_x209_smiles" not in text
     assert "from structural_elucidation.utils.phase0 import" in text
@@ -110,6 +125,7 @@ def test_predict_smiles_rename() -> None:
 
 @_smoke_mark
 def test_paths_module() -> None:
+    """``paths.REPO_ROOT`` and ``resolve`` must agree with this test's repo root."""
     from structural_elucidation.paths import REPO_ROOT as pkg_root, resolve
 
     assert pkg_root == REPO_ROOT
@@ -117,6 +133,7 @@ def test_paths_module() -> None:
 
 
 def _run_without_pytest() -> None:
+    """Run layout/path smoke checks when executed as ``python test_smoke.py``."""
     test_layout()
     test_paths_module()
     test_predict_smiles_rename()

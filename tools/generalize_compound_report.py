@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
-"""Post-process copied X-25003 report builder into generic build_compound_report.py."""
+"""Post-process copied X-25003 report builder into generic build_compound_report.py.
+
+Rewrites compound-specific identifiers (X-25003, lactoyl anchors) into
+parameterized ``control_id`` / ``target_name`` fields and injects a generic
+``build_report`` CLI. Run once after copying the legacy report from parent repo.
+"""
 
 from __future__ import annotations
 
 import re
 from pathlib import Path
+
+# ── Target file ───────────────────────────────────────────────────────────────
 
 TARGET = Path(__file__).resolve().parents[1] / "src" / "build_compound_report.py"
 
@@ -511,6 +518,7 @@ if __name__ == "__main__":
 
 
 def main() -> None:
+    """Apply regex substitutions to generalize the legacy X-25003 report builder."""
     text = TARGET.read_text(encoding="utf-8")
 
     text = text.replace(

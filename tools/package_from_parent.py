@@ -12,11 +12,14 @@ import re
 import shutil
 from pathlib import Path
 
+# ── Paths ─────────────────────────────────────────────────────────────────────
+
 PARENT = Path(__file__).resolve().parents[2]
 DEST = Path(__file__).resolve().parents[1] / "structural_elucidation"
 
-# source path (relative to PARENT) -> dest filename in src/
+# ── Copy map (parent-relative source -> dest filename in structural_elucidation/) ──
 # Only modules on the inference / report critical path are packaged here.
+
 COPY_MAP: dict[str, str] = {
     "predict_x209_smiles.py": "predict_smiles.py",
     "merged_encoder/predict_merged.py": "predict_merged.py",
@@ -59,7 +62,9 @@ COPY_MAP: dict[str, str] = {
     "utils.py": "utils.py",
 }
 
-IMPORT_REPLACEMENTS = [
+# ── Import rewrites applied to copied content ─────────────────────────────────
+
+IMPORT_REPLACEMENTS: list[tuple[str, str]] = [
     (r"\bpredict_x209_smiles\b", "predict_smiles"),
     (r"\bx209_retrieval_scoring\b", "retrieval_scoring"),
     (r"\bx209_merge_policy\b", "merge_policy"),
@@ -74,6 +79,7 @@ IMPORT_REPLACEMENTS = [
 
 
 def rewrite_content(text: str, dest_name: str) -> str:
+    """Apply legacy-name import rewrites and per-file special cases."""
     for pattern, repl in IMPORT_REPLACEMENTS:
         text = re.sub(pattern, repl, text)
     if dest_name == "predict_merged.py":
@@ -115,6 +121,7 @@ def rewrite_content(text: str, dest_name: str) -> str:
 
 
 def main() -> None:
+    """Copy modules from parent repo into ``structural_elucidation/`` with rewrites."""
     DEST.mkdir(parents=True, exist_ok=True)
     copied = []
     missing = []
