@@ -139,6 +139,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def parse_libs(values: list[str]) -> list[int]:
+    """Parse comma-separated library id tokens into a list of integers."""
     libs: list[int] = []
     for value in values:
         for token in str(value).split(","):
@@ -149,6 +150,7 @@ def parse_libs(values: list[str]) -> list[int]:
 
 
 def clean_text(value: object) -> str:
+    """Return stripped text for a cell value, mapping null/NaN to empty string."""
     if value is None:
         return ""
     try:
@@ -160,6 +162,7 @@ def clean_text(value: object) -> str:
 
 
 def numeric_value(value: object, default: float = 0.0) -> float:
+    """Coerce a value to float, returning ``default`` when non-finite or invalid."""
     try:
         out = float(value)
         return out if math.isfinite(out) else default
@@ -168,10 +171,12 @@ def numeric_value(value: object, default: float = 0.0) -> float:
 
 
 def clip01(value: float) -> float:
+    """Clamp a numeric score to ``[0, 1]`` and round to six decimals."""
     return round(float(min(1.0, max(0.0, value))), 6)
 
 
 def boolish(value: object) -> bool:
+    """Interpret spreadsheet truthy/falsey strings and numeric sentinels as bool."""
     text = clean_text(value).lower()
     if text in {"true", "t", "yes", "y", "1", "pass", "passed", "tight", "supported"}:
         return True
@@ -181,6 +186,7 @@ def boolish(value: object) -> bool:
 
 
 def parse_residue_tokens(value: Any) -> list[str]:
+    """Extract normalized residue display tokens from free-text peptide names."""
     text = clean_text(value)
     if not text:
         return []
@@ -198,6 +204,7 @@ def parse_residue_tokens(value: Any) -> list[str]:
 
 
 def normalize_peptide_composition(value: Any) -> str:
+    """Return alphabetically sorted residue tokens joined by hyphens."""
     tokens = parse_residue_tokens(value)
     if not tokens:
         return ""
@@ -205,18 +212,22 @@ def normalize_peptide_composition(value: Any) -> str:
 
 
 def normalize_ordered_sequence(value: Any) -> str:
+    """Return residue tokens in source order joined by hyphens."""
     return "-".join(parse_residue_tokens(value))
 
 
 def composition_tokens(value: Any) -> list[str]:
+    """Split a normalized composition string into residue tokens."""
     return [token for token in normalize_peptide_composition(value).split("-") if token]
 
 
 def peptide_length_label(length: int) -> str:
+    """Map residue count to a human-readable length label."""
     return LENGTH_LABELS.get(int(length), f"{int(length)}-residue peptide")
 
 
 def peptide_composition_label(composition: Any) -> str:
+    """Format composition tokens as ``dipeptide: Ala, Gly`` style text."""
     tokens = composition_tokens(composition)
     if not tokens:
         return ""
@@ -224,6 +235,7 @@ def peptide_composition_label(composition: Any) -> str:
 
 
 def infer_sequence_from_smiles(smiles: Any) -> dict[str, Any]:
+    """Delegate SMILES-to-peptide inference when EC2 utilities are importable."""
     if _infer_sequence_from_smiles is None:
         return {}
     try:
@@ -234,6 +246,7 @@ def infer_sequence_from_smiles(smiles: Any) -> dict[str, Any]:
 
 
 def row_is_peptide_candidate(row: pd.Series) -> bool:
+    """Return whether rerank row metadata marks a peptide hypothesis."""
     if clean_text(row.get("normalized_peptide_composition")):
         return True
     if boolish(row.get("is_peptide_candidate")):
@@ -242,6 +255,7 @@ def row_is_peptide_candidate(row: pd.Series) -> bool:
 
 
 def extract_composition_and_order(row: pd.Series) -> tuple[str, str, dict[str, Any]]:
+    """Derive normalized composition, ordered sequence, and SMILES parse payload."""
     composition = normalize_peptide_composition(row.get("normalized_peptide_composition"))
     ordered = normalize_ordered_sequence(row.get("candidate_ordered_sequence"))
     parsed = infer_sequence_from_smiles(row.get("predicted_smiles"))
@@ -260,6 +274,7 @@ def extract_composition_and_order(row: pd.Series) -> tuple[str, str, dict[str, A
 
 
 def immonium_evidence_score(row: pd.Series) -> float:
+    """Score immonium and neutral-loss evidence supporting residue composition."""
     if boolish(row.get("immonium_evidence")) or boolish(row.get("high_confidence_residue_composition_support")):
         return 1.0
     score = max(
@@ -276,6 +291,7 @@ def immonium_evidence_score(row: pd.Series) -> float:
 
 
 def mass_fit_score(row: pd.Series) -> float:
+    """Score how well peptide neutral mass matches observed precursor mass."""
     raw = row.get("peptide_neutral_mass_fit")
     if boolish(raw):
         numeric = numeric_value(raw, math.nan)
@@ -314,6 +330,7 @@ def peptide_composition_confidence(row: pd.Series) -> float:
 
 
 def b_y_ion_score(row: pd.Series) -> float:
+    """Score sequence-supporting b/y fragment evidence for ordering confidence."""
     b_score = numeric_value(row.get("spectrum_b_ion_score"), math.nan)
     y_score = numeric_value(row.get("spectrum_y_ion_score"), math.nan)
     scores = [value for value in (b_score, y_score) if math.isfinite(value)]
@@ -325,10 +342,12 @@ def b_y_ion_score(row: pd.Series) -> float:
 
 
 def only_one_ordering(tokens: list[str]) -> bool:
+    """Return whether all composition tokens are identical (order is trivial)."""
     return bool(tokens) and len(set(tokens)) == 1
 
 
 def peptide_ordering_confidence(row: pd.Series, composition: str, parsed: dict[str, Any]) -> float:
+    """Blend rank, connectivity, b/y, and support scores for sequence order."""
     tokens = composition_tokens(composition)
     if only_one_ordering(tokens):
         return 1.0
@@ -395,6 +414,7 @@ def rerank_path(root: Path, lib_id: int, name: str) -> Path:
 
 
 def load_inputs(root: Path, libs: list[int], input_name: str, allow_missing: bool) -> dict[int, pd.DataFrame]:
+    """Load lipid-class-enriched rerank CSVs for each requested library id."""
     frames: dict[int, pd.DataFrame] = {}
     missing: list[Path] = []
     for lib_id in libs:
@@ -410,6 +430,7 @@ def load_inputs(root: Path, libs: list[int], input_name: str, allow_missing: boo
 
 
 def ordered_columns(original_columns: list[str], enriched: pd.DataFrame) -> list[str]:
+    """Preserve original columns and append new peptide summary fields."""
     columns = list(original_columns)
     for column in PEPTIDE_COLUMNS:
         if column not in columns and column in enriched.columns:
@@ -429,6 +450,7 @@ def enrich_frame(frame: pd.DataFrame, ordering_threshold: float = 0.65) -> pd.Da
 
 
 def summarize_lib(lib_id: int, input_path: Path, output_path: Path, frame: pd.DataFrame) -> dict[str, Any]:
+    """Summarize peptide-composition enrichment counts for one library output."""
     labels = frame["peptide_composition_label"].fillna("").astype(str)
     ordering = frame["peptide_ordering_label"].fillna("").astype(str)
     length = pd.to_numeric(frame["peptide_length"], errors="coerce")

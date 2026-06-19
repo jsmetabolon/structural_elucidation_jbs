@@ -29,6 +29,7 @@ class AffineLatentCalibrator(nn.Module):
             self.linear.bias.zero_()
 
     def forward(self, z: torch.Tensor) -> torch.Tensor:
+        """Apply the learned affine map to a batch of latent vectors."""
         return self.linear(z)
 
 

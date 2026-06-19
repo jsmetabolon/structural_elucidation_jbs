@@ -1,3 +1,8 @@
+"""HTTP resources implementing shallow and deep health pings.
+
+Returns JSON health payloads used by load balancers and orchestration probes.
+"""
+
 import logging
 from flask_restplus import Resource
 from ..business import perform_shallow_ping, DiscoveryDeepPing

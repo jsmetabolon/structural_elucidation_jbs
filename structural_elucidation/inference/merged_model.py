@@ -214,6 +214,7 @@ class MergedNet1D(Net1D):
         ion_mode: torch.Tensor | float | int | None = None,
         lib_id: torch.Tensor | int | None = None,
     ) -> torch.Tensor:
+        """Encode spectra with optional parent m/z, ion mode, and library conditioning."""
         x = self.pool(F.relu(self.bn1(self.conv1(x))))
         x = self.pool(F.relu(self.bn2(self.conv2(x))))
         x = self.pool(F.relu(self.bn3(self.conv3(x))))

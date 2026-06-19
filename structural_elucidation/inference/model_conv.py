@@ -294,6 +294,7 @@ class Net1D(nn.Module):
         x: torch.Tensor,
         parent_mz: torch.Tensor | None = None,
     ) -> torch.Tensor:
+        """Encode 1-D spectra into a latent embedding with optional parent m/z conditioning."""
         if self.legacy_mode:
             x = self.pool1(F.relu(self.norm1(self.conv1(x))))
             x = self.pool2(F.relu(self.norm2(self.conv2(x))))

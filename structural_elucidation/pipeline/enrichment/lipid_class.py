@@ -154,6 +154,7 @@ class Chain:
 
     @property
     def token(self) -> str:
+        """Render the chain as a shorthand token including any sphingoid prefix."""
         return f"{self.prefix}{self.carbons}:{self.double_bonds}"
 
 
@@ -168,6 +169,7 @@ class LipidAnnotation:
 
     @property
     def is_empty(self) -> bool:
+        """Return whether the annotation lacks a resolved lipid class."""
         return not self.lipid_class
 
     def as_dict(self) -> dict[str, str]:
@@ -193,6 +195,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def parse_libs(values: list[str]) -> list[int]:
+    """Parse comma-separated library id tokens into a list of integers."""
     libs: list[int] = []
     for value in values:
         for token in str(value).split(","):
@@ -203,6 +206,7 @@ def parse_libs(values: list[str]) -> list[int]:
 
 
 def clean_text(value: object) -> str:
+    """Return stripped text for a cell value, mapping null/NaN to empty string."""
     if value is None:
         return ""
     try:
@@ -214,12 +218,14 @@ def clean_text(value: object) -> str:
 
 
 def clean_display_name(value: object) -> str:
+    """Normalize whitespace and underscores for display-oriented lipid names."""
     text = clean_text(value)
     text = re.sub(r"\s+", " ", text.replace("_", " ")).strip()
     return text
 
 
 def normalize_class(value: str) -> str:
+    """Map lipid class aliases and case variants to canonical shorthand tokens."""
     text = clean_text(value)
     if not text:
         return ""
@@ -233,6 +239,7 @@ def normalize_class(value: str) -> str:
 
 
 def parse_chain_token(value: str) -> Chain | None:
+    """Parse one chain token such as ``18:1`` or ``d18:1`` into a ``Chain``."""
     token = clean_text(value)
     token = re.sub(r"\([^)]*\)", "", token)
     match = CHAIN_RE.search(token)
@@ -245,6 +252,7 @@ def parse_chain_token(value: str) -> Chain | None:
 
 
 def extract_chains(value: str) -> list[Chain]:
+    """Extract all ``C:DB`` chain tokens present in a free-text string."""
     chains: list[Chain] = []
     for match in CHAIN_RE.finditer(clean_text(value)):
         chain = parse_chain_token(match.group(0))
@@ -254,12 +262,14 @@ def extract_chains(value: str) -> list[Chain]:
 
 
 def total_chain_notation(chains: list[Chain]) -> str:
+    """Sum carbons and double bonds across chains into ``totalC:totalDB`` notation."""
     if not chains:
         return ""
     return f"{sum(chain.carbons for chain in chains)}:{sum(chain.double_bonds for chain in chains)}"
 
 
 def shorthand_for(lipid_class: str, chains: list[Chain], *, source: str) -> LipidAnnotation:
+    """Build a ``LipidAnnotation`` with class, totals, and display shorthand."""
     klass = normalize_class(lipid_class)
     if not klass:
         return LipidAnnotation()
@@ -277,6 +287,7 @@ def shorthand_for(lipid_class: str, chains: list[Chain], *, source: str) -> Lipi
 
 
 def parse_direct_lipid_token(value: object) -> LipidAnnotation:
+    """Parse explicit ``PC (18:1/16:0)``-style tokens from a display name."""
     text = clean_display_name(value)
     if not text:
         return LipidAnnotation()
@@ -294,6 +305,7 @@ def parse_direct_lipid_token(value: object) -> LipidAnnotation:
 
 
 def acyl_prefix_to_chain(prefix: str) -> Chain | None:
+    """Resolve a named acyl prefix (for example ``oleoyl``) to a chain token."""
     text = clean_display_name(prefix).lower().rstrip("-")
     if not text:
         return None
@@ -312,6 +324,7 @@ def acyl_prefix_to_chain(prefix: str) -> Chain | None:
 
 
 def find_named_acyl_chains(text: str) -> list[Chain]:
+    """Collect acyl chains mentioned by name in metabolite annotation text."""
     hits: list[tuple[int, Chain]] = []
     lowered = text.lower()
     for acyl, chain_text in ACYL_TO_CHAIN.items():
@@ -332,6 +345,7 @@ def find_named_acyl_chains(text: str) -> list[Chain]:
 
 
 def detect_named_headgroup(text: str, chain_count: int) -> str:
+    """Infer glycerophospholipid headgroup class from free-text cues."""
     for pattern, full_class, lyso_class in HEADGROUP_NAME_PATTERNS:
         if pattern.search(text):
             lyso_hint = bool(re.search(r"\blyso|glycerophospho", text, flags=re.I))
@@ -344,6 +358,7 @@ def detect_named_headgroup(text: str, chain_count: int) -> str:
 
 
 def parse_metabolon_lipid_name(value: object) -> LipidAnnotation:
+    """Parse Metabolon-style lipid names into coarse class annotations."""
     text = clean_display_name(value)
     if not text:
         return LipidAnnotation()
@@ -372,6 +387,7 @@ def parse_metabolon_lipid_name(value: object) -> LipidAnnotation:
 
 
 def annotate_from_name(row: pd.Series) -> LipidAnnotation:
+    """Return the first non-empty lipid annotation found in name columns."""
     for column in NAME_COLUMNS:
         if column not in row.index:
             continue
@@ -383,12 +399,14 @@ def annotate_from_name(row: pd.Series) -> LipidAnnotation:
 
 @lru_cache(maxsize=128)
 def compiled_smarts(smarts: str):
+    """Return a cached RDKit SMARTS pattern, or ``None`` when RDKit is absent."""
     if not HAS_RDKIT:
         return None
     return Chem.MolFromSmarts(smarts)
 
 
 def mol_from_smiles(smiles: object):
+    """Parse SMILES into an RDKit molecule, returning ``None`` on failure."""
     if not HAS_RDKIT:
         return None
     text = clean_text(smiles)
@@ -401,11 +419,13 @@ def mol_from_smiles(smiles: object):
 
 
 def has_substructure(mol: Any, smarts: str) -> bool:
+    """Return whether ``mol`` contains the SMARTS substructure pattern."""
     pattern = compiled_smarts(smarts)
     return bool(mol is not None and pattern is not None and mol.HasSubstructMatch(pattern))
 
 
 def count_substructures(mol: Any, smarts: str) -> int:
+    """Count unique substructure matches for a SMARTS pattern in ``mol``."""
     pattern = compiled_smarts(smarts)
     if mol is None or pattern is None:
         return 0
@@ -413,6 +433,7 @@ def count_substructures(mol: Any, smarts: str) -> int:
 
 
 def is_carbonyl_carbon(atom: Any) -> bool:
+    """Return whether an atom is an acyl/amide carbonyl carbon."""
     if atom.GetAtomicNum() != 6:
         return False
     has_double_o = False
@@ -427,6 +448,7 @@ def is_carbonyl_carbon(atom: Any) -> bool:
 
 
 def carbonyl_hetero_types(atom: Any) -> set[int]:
+    """Return heteroatom atomic numbers single-bonded to a carbonyl carbon."""
     out: set[int] = set()
     for bond in atom.GetBonds():
         other = bond.GetOtherAtom(atom)
@@ -436,11 +458,14 @@ def carbonyl_hetero_types(atom: Any) -> set[int]:
 
 
 def carbon_chain_path_from(mol: Any, start_idx: int, blocked: set[int]) -> list[int]:
+    """Follow the longest acyclic carbon path from a start atom."""
     def valid_carbon(idx: int) -> bool:
+        """Return whether an atom index is a non-aromatic aliphatic carbon."""
         atom = mol.GetAtomWithIdx(idx)
         return atom.GetAtomicNum() == 6 and not atom.GetIsAromatic() and idx not in blocked
 
     def dfs(idx: int, visited: tuple[int, ...]) -> list[int]:
+        """Depth-first search for the longest valid carbon path from ``idx``."""
         best = list(visited)
         atom = mol.GetAtomWithIdx(idx)
         for neighbor in atom.GetNeighbors():
@@ -459,6 +484,7 @@ def carbon_chain_path_from(mol: Any, start_idx: int, blocked: set[int]) -> list[
 
 
 def count_double_bonds_on_path(mol: Any, path: list[int]) -> int:
+    """Count double bonds along a contiguous atom-index path."""
     count = 0
     for left, right in zip(path, path[1:]):
         bond = mol.GetBondBetweenAtoms(int(left), int(right))
@@ -468,6 +494,7 @@ def count_double_bonds_on_path(mol: Any, path: list[int]) -> int:
 
 
 def acyl_chains_from_smiles(mol: Any, hetero_atomic_num: int | None = None) -> list[Chain]:
+    """Enumerate acyl chain lengths from ester or amide carbonyls in a molecule."""
     chains: list[Chain] = []
     seen_carbonyls: set[int] = set()
     for atom in mol.GetAtoms():
@@ -495,6 +522,7 @@ def acyl_chains_from_smiles(mol: Any, hetero_atomic_num: int | None = None) -> l
 
 
 def has_sugar_like_ring(mol: Any) -> bool:
+    """Heuristically detect hexose/pentose rings with multiple exocyclic oxygens."""
     for ring in mol.GetRingInfo().AtomRings():
         if len(ring) not in {5, 6}:
             continue
@@ -514,6 +542,7 @@ def has_sugar_like_ring(mol: Any) -> bool:
 
 
 def is_sterol_like(mol: Any) -> bool:
+    """Heuristically detect sterol/scaffold-like polycyclic structures."""
     if has_substructure(mol, "C1CCC2(C(C1)CCC1C2CCC2(C)C(CC1)CC2)C"):
         return True
     rings = mol.GetRingInfo().AtomRings()
@@ -522,6 +551,7 @@ def is_sterol_like(mol: Any) -> bool:
 
 
 def has_ceramide_backbone(mol: Any) -> bool:
+    """Return whether SMARTS patterns for a ceramide backbone are present."""
     return any(
         has_substructure(mol, smarts)
         for smarts in (
@@ -532,6 +562,7 @@ def has_ceramide_backbone(mol: Any) -> bool:
 
 
 def detect_smiles_headgroup(mol: Any) -> str:
+    """Infer coarse lipid class from SMARTS headgroup and linkage patterns."""
     ester_count = count_substructures(mol, "[CX3](=O)[OX2H0][#6]")
     amide_count = count_substructures(mol, "[CX3](=O)[NX3]")
     if has_substructure(mol, "[PX4](=[OX1])([OX2H,OX1-])([OX2][#6])[OX2][CH2][CH2][NX4+]([CH3])([CH3])[CH3]") or has_substructure(
@@ -558,6 +589,7 @@ def detect_smiles_headgroup(mol: Any) -> str:
 
 
 def annotate_from_smiles(smiles: object) -> LipidAnnotation:
+    """Classify a SMILES string into lipid class, chains, and shorthand."""
     mol = mol_from_smiles(smiles)
     if mol is None:
         return LipidAnnotation()
@@ -598,6 +630,7 @@ def rerank_path(root: Path, lib_id: int, name: str) -> Path:
 
 
 def load_inputs(root: Path, libs: list[int], input_name: str, allow_missing: bool) -> dict[int, pd.DataFrame]:
+    """Load pathway-enriched rerank CSVs for each requested library id."""
     frames: dict[int, pd.DataFrame] = {}
     missing: list[Path] = []
     for lib_id in libs:
@@ -613,6 +646,7 @@ def load_inputs(root: Path, libs: list[int], input_name: str, allow_missing: boo
 
 
 def ordered_columns(original_columns: list[str], enriched: pd.DataFrame) -> list[str]:
+    """Preserve original columns and append new lipid enrichment fields."""
     columns = list(original_columns)
     for column in LIPID_COLUMNS:
         if column not in columns and column in enriched.columns:
@@ -632,6 +666,7 @@ def enrich_frame(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 def summarize_lib(lib_id: int, input_path: Path, output_path: Path, frame: pd.DataFrame) -> dict[str, Any]:
+    """Summarize lipid-class enrichment counts for one library output."""
     lipid_class = frame["lipid_class"].fillna("").astype(str)
     shorthand = frame["lipid_shorthand"].fillna("").astype(str)
     source = frame["lipid_classification_source"].fillna("").astype(str)

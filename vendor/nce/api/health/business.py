@@ -1,3 +1,9 @@
+"""Health ping orchestration for shallow and deep service checks.
+
+Wraps shared healthserver probes and wires NCE-specific dependency clients
+for metadata, library, and internal-standard services.
+"""
+
 from healthserver.shallow.shallow_ping import ShallowPing
 from healthserver.deep.deep_ping_base import DeepPingBase
 from healthserver.deep.deep_ping import IDeepPing

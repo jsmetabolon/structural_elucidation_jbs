@@ -330,6 +330,7 @@ def normalize_formula(value: object) -> str | None:
 
 
 def unique_preserve_order(values: Iterable[object]) -> list[str]:
+    """Deduplicate normalized strings while preserving first-seen order."""
     out: list[str] = []
     seen: set[str] = set()
     for value in values:
@@ -342,6 +343,7 @@ def unique_preserve_order(values: Iterable[object]) -> list[str]:
 
 
 def unique_formulas(values: Iterable[object]) -> list[str]:
+    """Deduplicate validated molecular formulas while preserving order."""
     out: list[str] = []
     seen: set[str] = set()
     for value in values:
@@ -354,6 +356,7 @@ def unique_formulas(values: Iterable[object]) -> list[str]:
 
 
 def formula_element_counts(value: object) -> dict[str, int]:
+    """Parse a formula into per-element integer atom counts."""
     formula = normalize_formula(value)
     if formula is None:
         return {}
@@ -365,6 +368,7 @@ def formula_element_counts(value: object) -> dict[str, int]:
 
 
 def safe_int(value: object) -> int | None:
+    """Parse an integer from messy table text, returning ``None`` on failure."""
     try:
         parsed = int(float(str(value)))
     except Exception:
@@ -373,6 +377,7 @@ def safe_int(value: object) -> int | None:
 
 
 def safe_float(value: object) -> float | None:
+    """Parse a finite float from messy table text, returning ``None`` on failure."""
     try:
         parsed = float(str(value))
     except Exception:
@@ -383,6 +388,7 @@ def safe_float(value: object) -> float | None:
 
 
 def extract_inline_formulas(text: object) -> list[str]:
+    """Pull validated molecular formulas embedded in comment text."""
     normalized = normalize_text(text)
     if normalized is None:
         return []
@@ -391,6 +397,7 @@ def extract_inline_formulas(text: object) -> list[str]:
 
 
 def isotope_element_hints_from_label(label: object) -> dict[str, int]:
+    """Parse isotope bracket tokens into minimum heavy-atom counts."""
     text = normalize_text(label)
     if text is None:
         return {}
@@ -411,6 +418,7 @@ def isotope_element_hints_from_label(label: object) -> dict[str, int]:
 
 
 def collect_isotope_labels(values: Iterable[object]) -> list[str]:
+    """Collect unique labels that encode isotope enrichment hints."""
     out: list[str] = []
     seen: set[str] = set()
     for value in values:
@@ -427,6 +435,7 @@ def collect_isotope_labels(values: Iterable[object]) -> list[str]:
 
 
 def merge_isotope_element_hints(*label_groups: Iterable[object]) -> dict[str, int]:
+    """Merge isotope hints from multiple label groups by max count."""
     hints: dict[str, int] = {}
     for labels in label_groups:
         for label in labels:
@@ -439,6 +448,7 @@ def formula_satisfies_isotope_hints(
     formula: object,
     isotope_element_hints: dict[str, int] | None,
 ) -> bool | None:
+    """Return whether a formula meets minimum isotope element counts."""
     if not isotope_element_hints:
         return None
     counts = formula_element_counts(formula)
@@ -451,6 +461,7 @@ def annotate_formula_against_html_signals(
     formula: object,
     feature_signal: dict[str, object] | None,
 ) -> dict[str, object]:
+    """Attach isotope-consistency flags for one formula vs HTML signals."""
     feature_signal = feature_signal or {}
     isotope_element_hints = dict(feature_signal.get("isotope_element_hints") or {})
     consistent = formula_satisfies_isotope_hints(formula, isotope_element_hints)
@@ -469,6 +480,7 @@ def detect_feature_isotopologue_reason(
     *,
     correct_isotopologue_detection: bool = False,
 ) -> str | None:
+    """Infer why a feature is flagged as a likely isotopologue."""
     for label in buddy_labels:
         text = normalize_text(label)
         if text is None:
@@ -491,6 +503,7 @@ def detect_feature_isotopologue_reason(
 
 
 def parse_isotope_label(label: object) -> dict[str, object] | None:
+    """Parse buddy or isotope-table labels into element, key, and multiplicity."""
     text = normalize_text(label)
     if text is None:
         return None
@@ -533,6 +546,7 @@ def parse_isotope_label(label: object) -> dict[str, object] | None:
 
 
 def expected_isotope_ratio(element_count: int, isotope_key: str, k: int) -> float | None:
+    """Compute binomial expected isotopologue intensity ratio for ``k`` labels."""
     if element_count < 0 or k <= 0 or element_count < k:
         return None
     abundance = ISOTOPE_ABUNDANCE.get(str(isotope_key))
@@ -542,6 +556,7 @@ def expected_isotope_ratio(element_count: int, isotope_key: str, k: int) -> floa
 
 
 def isotope_ratio_score(observed_ratio: float, expected_ratio: float) -> float | None:
+    """Score observed vs expected isotope ratio on a log-distance scale."""
     if observed_ratio <= 0.0 or expected_ratio <= 0.0:
         return None
     distance = abs(math.log(float(observed_ratio) / float(expected_ratio)))
@@ -553,6 +568,7 @@ def audit_candidate_formula_against_html_signals(
     feature_signal: dict[str, object] | None,
     ratio_supported_min_score: float = 0.5,
 ) -> dict[str, object]:
+    """Run full isotope audit including ratio support for one formula."""
     feature_signal = feature_signal or {}
     base = annotate_formula_against_html_signals(formula, feature_signal)
     signal_rows = list(feature_signal.get("observed_isotope_rows") or [])
@@ -612,6 +628,7 @@ def audit_candidate_formula_against_html_signals(
 
 
 def table_headers(table) -> tuple[str, ...]:
+    """Normalize ``<thead>`` cell text into a tuple of snake_case headers."""
     thead = table.find("thead")
     if thead is None:
         return ()
@@ -623,6 +640,7 @@ def table_headers(table) -> tuple[str, ...]:
 
 
 def is_candidate_isotope_header_set(headers: tuple[str, ...]) -> bool:
+    """Return whether headers match the candidate-isotope table signature."""
     if len(headers) < 6:
         return False
     if headers[:5] != ("tally", "delta", "ratio", "isotope", "has_is"):
@@ -631,12 +649,14 @@ def is_candidate_isotope_header_set(headers: tuple[str, ...]) -> bool:
 
 
 def identify_table_kind(headers: tuple[str, ...]) -> str | None:
+    """Map normalized headers to a known Metabolon HTML table kind."""
     if is_candidate_isotope_header_set(headers):
         return "candidate_isotopes"
     return TABLE_SIGNATURES.get(headers)
 
 
 def table_rows(table, headers: tuple[str, ...]) -> list[dict[str, object]]:
+    """Parse HTML table body rows into typed dict records."""
     tbody = table.find("tbody")
     if tbody is None:
         return []
@@ -667,6 +687,7 @@ def table_rows(table, headers: tuple[str, ...]) -> list[dict[str, object]]:
 
 
 def extract_comments_block(html: str) -> list[str]:
+    """Extract normalized comment paragraphs from the Comments section."""
     match = re.search(
         r"<h2>\s*Comments\s*</h2>(.*?)(?:<button class=\"accordion\">|</body>)",
         html,
@@ -686,14 +707,17 @@ def extract_comments_block(html: str) -> list[str]:
 
 
 def strip_embedded_image_payloads(html: str) -> str:
+    """Remove inline base64 ``<img>`` payloads to shrink HTML before parsing."""
     return re.sub(r"<img\b[^>]*\bsrc=[\"']data:image/[^\"']+[\"'][^>]*>", "", html, flags=re.IGNORECASE)
 
 
 def is_x_row(row: dict[str, object], xid: str) -> bool:
+    """Return whether a table row name column matches the feature X identifier."""
     return normalize_text(row.get("name")) == xid
 
 
 def build_formula_weight_counter(rows: Iterable[dict[str, object]], formula_key: str) -> dict[str, int]:
+    """Tally candidate formulas weighted by library match counts."""
     weights: dict[str, int] = defaultdict(int)
     for row in rows:
         formula = normalize_formula(row.get(formula_key))
@@ -705,6 +729,7 @@ def build_formula_weight_counter(rows: Iterable[dict[str, object]], formula_key:
 
 
 def counter_stats(counter: Counter[str]) -> tuple[str | None, int, float]:
+    """Return top counter value, count, and share for dominance heuristics."""
     if not counter:
         return None, 0, 0.0
     top_value, top_count = counter.most_common(1)[0]
@@ -720,6 +745,7 @@ def empty_signal_record(
     source_html: object,
     parse_status: str,
 ) -> dict[str, object]:
+    """Build a parse-status placeholder signal dict for missing HTML input."""
     source_text = normalize_text(source_html) or ""
     return {
         "feature_key": feature_key,
@@ -736,6 +762,7 @@ def normalize_observed_isotope_row(
     *,
     source_table: str,
 ) -> dict[str, object] | None:
+    """Normalize one buddy or candidate-isotope row for scoring joins."""
     label_text = normalize_text(row.get("isotope") if source_table == "candidate_isotopes" else row.get("buddy"))
     parsed = parse_isotope_label(label_text)
     if parsed is None:
@@ -758,6 +785,7 @@ def normalize_observed_isotope_row(
 
 
 def artifact_observed_isotope_rows(rows: Iterable[dict[str, object]]) -> list[dict[str, object]]:
+    """Trim isotope rows to stable JSON-serializable fields for artifacts."""
     out: list[dict[str, object]] = []
     for row in rows:
         out.append(

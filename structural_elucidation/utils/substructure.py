@@ -48,6 +48,7 @@ def read_table(path: Path) -> pd.DataFrame:
 
 
 def pick_col(df: pd.DataFrame, options: Sequence[str]) -> str | None:
+    """Return the first matching column name from a case-insensitive option list."""
     lookup = {str(col).lower(): str(col) for col in df.columns}
     for option in options:
         col = lookup.get(str(option).lower())
@@ -57,6 +58,7 @@ def pick_col(df: pd.DataFrame, options: Sequence[str]) -> str | None:
 
 
 def decode_fp_binary(value: object) -> bytes | None:
+    """Decode base64 or raw bytes fingerprint payloads from the index."""
     if value is None:
         return None
     if isinstance(value, bytes):
@@ -73,6 +75,7 @@ def decode_fp_binary(value: object) -> bytes | None:
 
 
 def canonicalize_smiles(smiles: str) -> str | None:
+    """Canonicalize SMILES with RDKit, or pass through when RDKit is absent."""
     if not HAS_RDKIT:
         text = str(smiles or "").strip()
         return text if text else None
@@ -90,6 +93,7 @@ def canonicalize_smiles(smiles: str) -> str | None:
 
 
 def morgan_fp_from_smiles(smiles: str):
+    """Build a 2048-bit radius-2 Morgan fingerprint from SMILES."""
     if not HAS_RDKIT:
         return None
     mol = Chem.MolFromSmiles(str(smiles))
@@ -99,6 +103,7 @@ def morgan_fp_from_smiles(smiles: str):
 
 
 def pattern_fp_from_smiles(smiles: str):
+    """Build an RDKit pattern fingerprint suitable for substructure screening."""
     if not HAS_RDKIT:
         return None
     mol = Chem.MolFromSmiles(str(smiles))
@@ -108,6 +113,7 @@ def pattern_fp_from_smiles(smiles: str):
 
 
 def smiles_matches_substructure(smiles: str, query_smarts: str) -> bool:
+    """Return whether ``smiles`` contains the SMARTS/SMILES query."""
     if not HAS_RDKIT:
         return False
     mol = Chem.MolFromSmiles(str(smiles or "").strip())
@@ -118,6 +124,7 @@ def smiles_matches_substructure(smiles: str, query_smarts: str) -> bool:
 
 
 def tanimoto_similarity_smiles(smiles_a: str, smiles_b: str) -> float:
+    """Compute Morgan Tanimoto similarity between two SMILES strings."""
     if not HAS_RDKIT:
         return 0.0
     fp_a = morgan_fp_from_smiles(smiles_a)
@@ -234,6 +241,7 @@ def _mean(values: Sequence[float]) -> float:
 
 
 def np_is_finite(value: object) -> bool:
+    """Return whether a value coerces to a finite float."""
     try:
         return bool(math.isfinite(float(value)))
     except Exception:
@@ -410,6 +418,7 @@ def run_substructure_query(
     fingerprint_index_path: Path,
     max_results: int,
 ) -> pd.DataFrame:
+    """Screen the fingerprint index for catalog entries matching a substructure."""
     if not HAS_RDKIT:
         raise RuntimeError("RDKit is required for substructure search.")
 
@@ -490,6 +499,7 @@ def run_tanimoto_query(
     threshold: float,
     max_results: int,
 ) -> pd.DataFrame:
+    """Retrieve catalog entries above a Morgan Tanimoto threshold."""
     if not HAS_RDKIT:
         raise RuntimeError("RDKit is required for Tanimoto search.")
     query_can = canonicalize_smiles(query_smiles)
@@ -543,6 +553,7 @@ def run_tanimoto_query(
 
 
 def parse_args() -> argparse.Namespace:
+    """Build the substructure/Tanimoto catalog search CLI argument parser."""
     parser = argparse.ArgumentParser(
         description="Run substructure or Tanimoto search against precomputed catalog fingerprints."
     )
@@ -563,6 +574,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """CLI entry point for catalog substructure or Tanimoto search."""
     args = parse_args()
     mode = str(args.mode).strip().lower()
     if mode == "substructure":

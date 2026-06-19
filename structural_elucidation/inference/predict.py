@@ -113,6 +113,7 @@ def robust_torch_load(path: Path, map_location: str = "cpu", weights_only: bool 
     original_rebuild = getattr(torch._utils, "_rebuild_device_tensor_from_numpy", None)
 
     def load() -> object:
+        """Call ``torch.load`` with version-compatible ``weights_only`` support."""
         try:
             return torch.load(path, map_location=map_location, weights_only=weights_only)
         except TypeError:
@@ -122,6 +123,7 @@ def robust_torch_load(path: Path, map_location: str = "cpu", weights_only: bool 
         return load()
 
     def rebuild_on_cpu(data, dtype, device, requires_grad):
+        """Rebuild pickled tensors on CPU when checkpoints target unavailable MPS."""
         if str(device).startswith("mps"):
             tensor = torch.from_numpy(data).to(dtype=dtype, device="cpu")
             tensor.requires_grad = requires_grad

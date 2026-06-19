@@ -1,3 +1,9 @@
+"""Integration harness that runs miner discovery through API providers.
+
+Wires miner MIO providers against live service endpoints for manual or
+dispatcher-driven discovery smoke tests.
+"""
+
 import os
 import logging
 from api import settings
