@@ -1,9 +1,7 @@
-"""
-This program ingests the downloads of HMDB and ClassyFire notations
-and maps them to chemical_ids and comp_ids.
-It's all saved in a pickle file, which can then be used in various ways such as for training
-MS2 -> ChemicalOntology predictions.
-The pickle file should be backed up in the L:New Compound Discovery/reference folder.
+"""Build Chemont training pickle from HMDB and ClassyFire downloads.
+
+Maps HMDB metabolites to MLIMS chemical ids and ClassyFire ontology labels for
+use by train_chemont_models.py and ChemontPredictor at inference time.
 """
 
 from collections import defaultdict

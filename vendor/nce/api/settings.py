@@ -1,3 +1,9 @@
+"""Environment-driven configuration for the Compound Discovery API.
+
+Loads Flask, downstream service URIs (metadata, curation, is-matching,
+library, FMS), discovery defaults, and logging dict used at app startup.
+"""
+
 import os
 from os import getenv
 
@@ -96,6 +102,7 @@ api_logging_config_dict = {
 
 
 def add_to_dict(settings_module, config_dict):
+    """Copy uppercase module-level settings into a Flask ``config`` dict."""
     for setting in dir(settings_module):
         # you can write your filter here
         if setting == "LIBRARY_SERVICE_ENDPOINT":

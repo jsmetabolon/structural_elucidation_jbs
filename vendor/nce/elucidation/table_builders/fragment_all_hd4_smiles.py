@@ -1,3 +1,9 @@
+"""Extract unique fragment neutral masses from all HD4 library SMILES.
+
+One-off reference builder that pickles distinct fragment masses in the 50–1000 Da
+range for modeling and matching tables.
+"""
+
 from functools import reduce
 from operator import add
 

@@ -83,6 +83,7 @@ def build_fake_spectrum(spectrum, ri, precursor):
 
 
 def analyze_feature(d):
+    """Run MS1/MS2 elucidation for one MLIMS unknown row and return a summary dict."""
     d["mz"] = d["parent_mass"]
     d["report_name"] = d["unknown_name"]
     d["ms1_spectra"] = []

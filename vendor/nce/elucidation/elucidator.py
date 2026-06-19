@@ -1,3 +1,10 @@
+"""Batch elucidation driver for discovered features.
+
+Reads discovery pickle files, runs per-feature MS1/MS2 analysis with
+optional multiprocessing, and writes summary spreadsheets and elucidation
+pickles. Primary CLI entry is ``run_nme``; invoked by ``pipeline_runner``.
+"""
+
 import argparse
 import gc
 import logging
@@ -89,10 +96,7 @@ def make_argv_from_opts(opts):
 
 
 def get_arguments():
-    """
-    Use argparse get arguments from command line.
-    :return: a Namespace object with option values.
-    """
+    """Parse CLI options for study, library, feature filters, and worker count."""
     parser = argparse.ArgumentParser(description="""Feature Elucidation.""")
     parser.add_argument("-v", "--verbosity", action="count", help="increase output verbosity")
     parser.add_argument("-s", "--study", "--ssid", help="sample set id", type=str)
@@ -447,6 +451,7 @@ def init_logging(opts):
 
 
 def run_nme(opts):
+    """Run elucidation for one study/library: fan out workers, merge summaries."""
     local_base_dir = BASE_DIR
     delivery_base_dir = DELIVERY_DIR
     # Save original opts for later

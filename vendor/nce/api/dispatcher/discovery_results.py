@@ -1,3 +1,6 @@
+"""Container for completed discovery results keyed by curation set and library."""
+
+
 class DiscoveryResults:
     def __init__(self, csid: str, lib_id: int, results: dict):
         self._csid = csid

@@ -135,6 +135,8 @@ def bar(fd):
 
 
 class Ms1Cluster:
+    """Merge MS1 buddy data for features sharing inferred neutral masses."""
+
     def __init__(self, serial, feature_dicts):
         feat0 = feature_dicts[0]
         self.feature_dicts = feature_dicts
@@ -191,6 +193,8 @@ class Ms1Cluster:
 
 
 class Ms1ClusterReporter:
+    """Write an HTML report for one Ms1Cluster."""
+
     def __init__(self, c):
         self.c = c
         self.rep = None

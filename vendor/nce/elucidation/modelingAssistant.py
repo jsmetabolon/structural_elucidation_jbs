@@ -82,6 +82,7 @@ The 'ppm' is wrt big_m, which is relevant for a loss. Otherwise, big_m=m (I expe
 
 
 class ModelingAssistant:
+    """Per-library singleton for bin-pair spectrum matrices and ML feature extraction."""
 
     __instances__ = dict()
 

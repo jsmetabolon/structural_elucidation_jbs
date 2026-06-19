@@ -1,3 +1,5 @@
+"""File Management Service persisters for async discovery result payloads."""
+
 import logging
 import os
 import socket
@@ -18,6 +20,7 @@ class Persister(ABC):
 
     @abstractmethod
     def persist(self, token: str, data: DiscoveryResults):
+        """Upload discovery results and return an FMS locator string."""
         pass
 
 

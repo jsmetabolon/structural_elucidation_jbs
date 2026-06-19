@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Mar 26 14:56:43 2019
+"""Shared helpers for NCE elucidation runs.
 
-@author: rdwyer
+Pickle I/O, timing/memory reporting, git labels, plotting resets, and
+database credential loaders used across elucidation modules in spec2mol
+v21 inference.
 """
 
 import datetime

@@ -1,3 +1,5 @@
+"""Flask-RESTPlus request parsers for discovery list endpoints."""
+
 from flask_restplus import reqparse
 
 pagination_arguments = reqparse.RequestParser()

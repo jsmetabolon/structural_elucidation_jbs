@@ -1,7 +1,7 @@
-"""
-This program builds a cache of arithmetically possible formulas by mass.
-The resulting file is read by FormulaFinder.
-If it is run with the -j flag, it will explain itself...
+"""Build fmla_finder_cache.pkl of arithmetically possible molecular formulas.
+
+Precomputes packed formula tables by mass for FormulaFinder. Run when element
+count limits change; output is synced to REFERENCE_DIR for inference.
 """
 
 import sys

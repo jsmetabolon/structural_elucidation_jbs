@@ -1,3 +1,5 @@
+"""REST endpoints for synchronous compound discovery by curation set."""
+
 import logging
 
 from flask_restplus import Resource

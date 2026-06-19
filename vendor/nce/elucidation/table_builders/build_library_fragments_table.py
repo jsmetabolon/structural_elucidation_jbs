@@ -1,3 +1,9 @@
+"""Enumerate HD4 library SMILES fragments and write library_fragments.pkl.
+
+Queries MLIMS for canonical library structures, fragments them with RDKit,
+and pickles mass-indexed fragment counts for FragmentFinder at inference time.
+"""
+
 from collections import Counter
 from functools import reduce
 from operator import add

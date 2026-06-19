@@ -1,3 +1,5 @@
+"""Value object describing a single async discovery request."""
+
 from typing import Any
 
 

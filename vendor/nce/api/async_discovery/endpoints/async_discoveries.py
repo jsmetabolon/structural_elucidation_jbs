@@ -1,3 +1,5 @@
+"""REST endpoints for enqueueing asynchronous discovery jobs."""
+
 import logging
 import uuid
 

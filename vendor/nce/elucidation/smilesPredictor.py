@@ -1,4 +1,9 @@
 # coding: utf-8
+"""MS2-to-SMILES fragment prediction using per-library sklearn models.
+
+Loads models trained by table_builders/train_ms2smiles_models.py and scores
+consensus spectrum bins during MS2Consensus analysis.
+"""
 
 import pandas as pd
 from elucidation.modelingAssistant import ModelingAssistant

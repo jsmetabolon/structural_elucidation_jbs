@@ -1,4 +1,10 @@
 # coding: utf-8
+"""Train per-library SMILES-to-MS2 forward models (SMILES2MS2).
+
+Fits sklearn regressors predicting binned MS2 intensities from fragment and
+subformula features; output is smiles2ms2_models_{lib}.pkl for PredictedSpectrumMatcher.
+"""
+
 import argparse
 import datetime
 import sys
@@ -19,6 +25,7 @@ def elapsed_time(comment):
 
 
 def getArguments(argv):
+    """Parse CLI options for SMILES2MS2 model training."""
     parser = argparse.ArgumentParser(description="""train smile2ms2 to predict MS2 from SMILES.""")
     parser.add_argument("-l", "--library", type=int, help="library")
     return parser.parse_args(argv[1:])

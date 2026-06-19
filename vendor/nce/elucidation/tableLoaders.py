@@ -1,3 +1,9 @@
+"""Load versioned reference pickles and CSVs for NCE elucidation models.
+
+Resolves latest timestamped files under REFERENCE_DIR for formula caches, ML
+models, Chemont definitions, and library fragment tables used at inference time.
+"""
+
 import logging
 import os
 

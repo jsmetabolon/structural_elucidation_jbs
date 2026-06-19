@@ -1,10 +1,10 @@
-# ---------------------------------------------------------
-#
-# Name: New Compound Discovery PKL Loader
-# Author: Duncan McPherson
-# Description: This script will load PKL files output by the elucidator.py script into the Oracle database
-#
-# ---------------------------------------------------------
+"""Load elucidation PKL artifacts into the mLIMS Oracle database.
+
+Bulk-inserts compound, library-entry, and mass-spectrum rows for newly
+discovered features that pass RI-window and rediscovery filters. Called
+at the end of ``pipeline_runner.run_pipeline`` when no matching origin
+exists in ``chro_lib_entry``.
+"""
 import sys
 
 user = "DSRWUSER"
@@ -426,6 +426,7 @@ def get_arguments():
 
 
 def load_pkls(opts):
+    """Load one PKL file or directory of elucidation pickles into mLIMS."""
     file_path = opts.filepath
     if opts.db:
         connect_string = dbs[opts.db]

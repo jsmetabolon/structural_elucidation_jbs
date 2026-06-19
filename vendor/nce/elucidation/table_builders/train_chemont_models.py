@@ -1,9 +1,10 @@
 # coding: utf-8
+"""Train per-library Chemont category classifiers from MS2 bin features.
 
+Fits sklearn logistic models on library spectra with ClassyFire labels and
+writes chemont_models_{lib}.pkl consumed by ChemontPredictor.
 """
-This program trains models to predict Chemical Ontology categories from MS2 spectra.
-The results are used by ChemontPredictor.
-"""
+
 import argparse
 import datetime
 import sys

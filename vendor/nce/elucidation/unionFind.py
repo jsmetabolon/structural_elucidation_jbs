@@ -1,7 +1,15 @@
+"""Disjoint-set union-find for merging MS1 feature clusters.
+
+Small utility used by Ms1ClusterAnalyzer to combine precursor clusters that
+share feature names after RI/mass grouping.
+"""
+
 from collections import defaultdict
 
 
 class UnionFind:
+    """Track disjoint sets and merge clusters of related feature identifiers."""
+
     def __init__(self, elements=[]):
         self.parent = {e: e for e in elements}
 

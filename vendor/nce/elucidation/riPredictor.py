@@ -1,3 +1,9 @@
+"""Retention-index prediction from molecular formula or SMILES.
+
+Loads per-library sklearn models from ri_models pickles and scores how well a
+candidate structure's predicted RI matches the feature RI during elucidation.
+"""
+
 from argparse import Namespace
 from bisect import bisect
 
@@ -6,22 +12,8 @@ from elucidation.chemFacts import split_fmla, dbe
 from elucidation.rdkitUtils import smiles_mass, fragment_smiles, fmla_mass, fmla_for_smiles, logp
 from elucidation.tableLoaders import ri_model_loader
 
-"""
-This class is for predicting RI of a compound from its molecular formula or its SMILES string.
-The class is initialized for the given library by reading pickled sklearn objects from a file.
-The predictors return two values.
-The first value is a predicted RI.
-The second value is a confidence score of sorts. It is based on absolute residuals collected during the
-cross-validation process.  The confidence score reflects the probability that the predicted RI is a likely estimate.
-For example, if the prediction is 751 for a given SMILES string, and the observed RI of the feature being elucidate is 
-760, this is obviously a very close match.  The score in this case is 1, meaning that fewer than 10% of estimates
-collected during cross validation were this good.  If the observed RI is 948, the score (for library 209) is 5, meaning
-than fewer than 50% of estimates from cross-validation were this good.
-The observed RI (other_ri) is optional.  If absent, the methods predict RI and report a score of -1.
-"""
-
-
 class RiPredictor:
+    """Per-library singleton RI regressor with cross-validation confidence scores."""
 
     __instances__ = {}
 

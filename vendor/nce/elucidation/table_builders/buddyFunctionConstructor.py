@@ -1,5 +1,8 @@
-"""
-This is a free-standing program to generate the code in buddyFunctions.py using the sympy symbolic algebra package.
+"""Offline code generator for buddyFunction.py adduct delta tables.
+
+Uses SymPy to symbolically derive MS1 buddy mass relationships and emits the
+build_delta_df source consumed by MS1Analyzer. Run manually when ion chemistry
+rules change.
 """
 
 import argparse

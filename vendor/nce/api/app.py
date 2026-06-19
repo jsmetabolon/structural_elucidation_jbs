@@ -1,3 +1,9 @@
+"""Flask application entry point for the Compound Discovery API.
+
+Bootstraps logging, registers REST namespaces (sync discovery, async
+discovery, health), and starts the background dispatcher thread.
+"""
+
 import logging
 import os
 from logging.config import dictConfig
@@ -25,6 +31,7 @@ dictConfig(api_logging_config_dict)
 
 
 def initialize_app(flask_app):
+    """Wire API blueprints, config, and async dispatcher onto a Flask app."""
     notifier = SnsNotifier()
     persister = FmsPersister()
     app_container.dispatcher = Dispatcher(notifier, persister)
@@ -41,6 +48,7 @@ def initialize_app(flask_app):
 
 
 def main():
+    """Run the development server with settings from ``api.settings``."""
     initialize_app(app)
     # noinspection PyPep8
     logging.info(

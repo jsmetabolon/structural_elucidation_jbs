@@ -1,4 +1,9 @@
 # coding: utf-8
+"""Train per-library MS2-to-SMILES fragment classifiers (MS2SMILES).
+
+Builds bin-feature matrices from library spectra and fragment SMILES, fits
+sklearn models, and writes ms2smiles_models_{lib}.pkl for SmilesPredictor.
+"""
 
 import argparse
 import datetime
@@ -21,6 +26,7 @@ def elapsed_time(comment):
 
 
 def getArguments(argv):
+    """Parse CLI options for MS2SMILES model training."""
     parser = argparse.ArgumentParser(description="""MS2SMILES training.""")
     parser.add_argument("-l", "--library", type=int, help="library")
     return parser.parse_args(argv[1:])

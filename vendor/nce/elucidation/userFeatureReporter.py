@@ -1,3 +1,9 @@
+"""User-facing HTML report generator for a single elucidated feature.
+
+Wraps reformatter and dfExplainer to drop debug columns and emit standalone
+HTML reports. Used as FeatureReporter from elucidator.py in spec2mol inference.
+"""
+
 import logging
 from argparse import Namespace
 from functools import reduce
@@ -22,14 +28,6 @@ from elucidation.conveniences import (
     pickle_load,
 )
 
-"""
-This module generates a report for a feature.  
-This is factored out from Feature like this so that it is easy to generate reports in different formats.
-"""
-
-"""
-This is a list of columns that could be interesting in a debugging report, but not for elucidator.
-"""
 columns_to_drop = qw(
     "bucket cand_fmla neutral_mass lib_fraction supporting_pairs total_prob c_o_v predict details"
 ) + qw("recall precision prob theor_delta mass_range")
@@ -71,6 +69,8 @@ def build_explainer(df_in, **kwargs):
 
 
 class UserFeatureReporter:
+    """Build and write a standalone HTML elucidation report for one feature."""
+
     def __init__(self, feature):
         """
         UserFeatureReporter generates a freestanding HTML report on a single feature.

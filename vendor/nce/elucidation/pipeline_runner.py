@@ -1,3 +1,9 @@
+"""End-to-end NCE pipeline: discovery, elucidation, and mLIMS PKL load.
+
+Chains ``discovery.discoverer``, ``elucidation.elucidator``, and
+``NCDPKLLoader.PKLLoader`` across all four HD4 libraries for a sample set.
+"""
+
 from dotenv import load_dotenv
 load_dotenv()
 import discovery.discoverer as nmd
@@ -51,6 +57,7 @@ def make_opts_for_loader(elucidations_dir):
 
 
 def run_pipeline(ssid):
+    """Run discovery, elucidation, and optional DB load for one sample set id."""
     libs = [209, 305, 400, 402]
     for libid in libs:
         opts_nmd = make_opts_for_nmd(ssid, libid)

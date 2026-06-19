@@ -1,10 +1,8 @@
-"""
-This program will totally delete the Postgres SMILES matching database and
-rebuild it from CSVs, etc., from the original sources.  If you only want certain sources,
-you can comment out parts of the program or import the file and call individual functions.
-Some of the functions involve web scrapes, which can take an hour or so, and one involves
-running biotransformer, which takes several hours.  The results of these are cached, so
-it shouldn't be necessary to rerun all that unless the on-line source has changed.
+"""Rebuild the Postgres smiles_db compound-matching database from source files.
+
+CLI and function library for dropping and repopulating smiles_db from ZINC,
+HMDB, MLIMS, LipidMaps, and other public structure sources. Seeds neutral-mass
+lookups used by PostgresSmilesDb during elucidation.
 """
 
 

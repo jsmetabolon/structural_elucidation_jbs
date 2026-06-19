@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
+"""Train per-library retention-index RandomForest models from library metadata.
+
+Fits formula- and fragment-based RI regressors and writes ri_models_{lib}.pkl
+loaded by RiPredictor during feature elucidation.
+"""
 
 import argparse
 import sys
@@ -21,6 +26,7 @@ from sklearn.model_selection import KFold
 
 
 def get_arguments(argv):
+    """Parse CLI options for RI model training."""
     parser = argparse.ArgumentParser(description="""RI prediction training.""")
     parser.add_argument(
         "-l",

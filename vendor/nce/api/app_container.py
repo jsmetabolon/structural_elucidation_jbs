@@ -1,3 +1,9 @@
+"""Shared Flask app instance and request-level response caching hooks.
+
+Holds the module-level ``app`` and ``dispatcher`` singletons imported
+by API endpoints and the async discovery worker thread.
+"""
+
 import logging
 from typing import Any, Optional
 

@@ -1,6 +1,9 @@
+"""Synchronize reference model and cache pickles between local and archive paths.
+
+Compares timestamped .pkl files under REFERENCE_DIR and a network archive,
+copying the newer version to both locations before inference or retraining.
 """
-This program is to fetch the most recent reference files from the L: drive.
-"""
+
 import argparse
 import os
 import shutil

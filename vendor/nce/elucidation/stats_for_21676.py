@@ -1,3 +1,9 @@
+"""One-off cohort statistics script for study 21676 feature annotations.
+
+Correlates integrated peak areas with clinical metadata and writes
+annotations.csv. Retained vendor utility, not part of the spec2mol inference CLI.
+"""
+
 from collections import Counter
 from glob import glob
 import pandas as pd

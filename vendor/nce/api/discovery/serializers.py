@@ -1,3 +1,5 @@
+"""Flask-RESTPlus response models for discovery API payloads."""
+
 from flask_restplus import fields
 from api.restplus import api
 

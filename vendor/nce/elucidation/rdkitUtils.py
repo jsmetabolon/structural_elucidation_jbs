@@ -1,3 +1,9 @@
+"""RDKit helpers for SMILES manipulation, depiction, and Excel export.
+
+Canonicalization, fragmentation, formula/mass derivation, and molecule images
+for elucidation reports and table-building scripts in spec2mol v21 inference.
+"""
+
 import base64
 import logging
 from functools import reduce

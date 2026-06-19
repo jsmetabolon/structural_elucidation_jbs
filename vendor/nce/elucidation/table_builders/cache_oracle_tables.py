@@ -1,3 +1,9 @@
+"""Snapshot MLIMS Oracle tables to a timestamped mlims_tables pickle.
+
+Exports chromatography library, chemical, and sample-set tables for
+CachedMlimsLibraryService and offline spec2mol inference without live Oracle.
+"""
+
 import os
 import pandas as pd
 from elucidation.conveniences import qw, pickle_dump, now_string

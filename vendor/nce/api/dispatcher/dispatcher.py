@@ -1,3 +1,9 @@
+"""Background worker that drains async discovery jobs from a queue.
+
+Consumes ``UnitOfWork`` items, runs miner discovery with caching,
+persists results to FMS, and publishes SNS completion notifications.
+"""
+
 import logging
 import os
 from queue import Queue

@@ -1,3 +1,9 @@
+"""Styled HTML and Excel formatting for elucidation summary DataFrames.
+
+Applies column-specific renderers (formulas, SMILES links, spectra plots) and
+exposes reformat as the main entry used by UserFeatureReporter and elucidator.
+"""
+
 import base64
 import io
 import logging

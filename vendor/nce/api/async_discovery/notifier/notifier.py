@@ -1,3 +1,5 @@
+"""SNS notification adapters for async discovery completion and failure."""
+
 import logging
 from abc import ABC, abstractmethod
 from typing import Optional, Dict

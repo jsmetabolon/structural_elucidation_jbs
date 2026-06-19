@@ -1,3 +1,9 @@
+"""Flask-RESTPlus API singleton and global error handlers.
+
+Defines the Swagger-backed ``Api`` instance shared by discovery and
+health endpoint namespaces.
+"""
+
 import logging
 import traceback
 

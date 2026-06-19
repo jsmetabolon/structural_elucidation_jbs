@@ -1,3 +1,9 @@
+"""Single-scan MS1 or MS2 spectrum wrapper with binned intensity lookup.
+
+Rehydrates pickled scan dicts from discovery and supports fast m/z bin and
+intensity queries used by MS1Analyzer and MS2Consensus.
+"""
+
 import logging
 from operator import itemgetter
 
@@ -10,6 +16,8 @@ from numpy import searchsorted
 
 # This class represents a single observed spectrum, MS1 or MS2.
 class Spectrum(object):
+    """One Thermo MS1 or MS2 scan with sentinel-padded mass arrays for lookup."""
+
     def __init__(self, d):
         """
         Create a Spectrum object based on a single scan from a Thermo file.
