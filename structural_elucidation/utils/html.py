@@ -1,3 +1,16 @@
+#!/usr/bin/env python3
+"""Parse Metabolon HTML feature reports into structured formula/isotope signals.
+
+Pipeline context:
+    Truth-blind enrichment and isotope audits read per-feature HTML exports
+    to extract formula constraints, buddy labels, mass-library ion names, and
+    isotope ratio tables without re-opening reports in downstream steps.
+
+Key I/O:
+    ``parse_html_signals``: HTML path → feature signal dict for scoring joins.
+    ``audit_candidate_formula_against_html_signals``: formula vs isotope audit.
+"""
+
 from __future__ import annotations
 
 import math
@@ -8,6 +21,7 @@ from typing import Iterable
 
 from bs4 import BeautifulSoup
 
+# ── Formula parsing patterns ───────────────────────────────────────────
 INLINE_FORMULA_RE = re.compile(r"(?<![A-Za-z0-9])((?:[A-Z][a-z]?\d*){2,}(?:[+-]\d*)?)(?![A-Za-z0-9])")
 FORMULA_TOKEN_RE = re.compile(r"([A-Z][a-z]?)(\d*)")
 VALID_ELEMENTS = {
@@ -130,6 +144,7 @@ VALID_ELEMENTS = {
     "Zn",
     "Zr",
 }
+# ── HTML table typing ────────────────────────────────────────────────
 FORMULA_COLUMNS = {"mol_formula", "neutral", "formula"}
 INT_COLUMNS = {"comp_id", "chemical_id", "lib_id", "library_matches", "tally"}
 FLOAT_COLUMNS = {
@@ -175,6 +190,7 @@ TABLE_SIGNATURES: dict[tuple[str, ...], str] = {
     ): "candidate_formula",
     ("match_score", "lib_id", "comp_id", "parent_mass", "ri", "formula", "smiles", "name"): "parent_mass_matches",
 }
+# ── Isotopologue detection ─────────────────────────────────────────────
 COMMENT_ISOTOPOLOGUE_WARNING_RE = re.compile(
     r"(\bisotope of\b|\bpotential overlap\b.*\bisotope\b|\bappears to be\b.*\bisotope\b)",
     flags=re.IGNORECASE,
@@ -213,6 +229,7 @@ ELEMENT_PREDICT_HEADERS = {
     "Cl": "cl_predict",
     "Br": "br_predict",
 }
+# ── Default empty signal record ────────────────────────────────────────
 EMPTY_SIGNAL_RECORD = {
     "comment_count": 0,
     "comment_texts": [],
@@ -273,12 +290,15 @@ EMPTY_SIGNAL_RECORD = {
 }
 
 
+# ── Text and formula normalization ───────────────────────────────────
 def normalize_header(text: object) -> str:
+    """Normalize HTML table header text to snake_case identifiers."""
     value = str(text).replace("\xa0", " ").strip().lower()
     return re.sub(r"[^a-z0-9]+", "_", value).strip("_")
 
 
 def normalize_text(value: object) -> str | None:
+    """Collapse whitespace and map empty/nan/null sentinels to ``None``."""
     if value is None:
         return None
     if isinstance(value, float) and not math.isfinite(value):
@@ -290,6 +310,7 @@ def normalize_text(value: object) -> str | None:
 
 
 def normalize_formula(value: object) -> str | None:
+    """Validate and compact a molecular formula string."""
     text = normalize_text(value)
     if text is None:
         return None
@@ -758,6 +779,21 @@ def parse_html_signals(
     candidate_formula_max: int,
     correct_isotopologue_detection: bool = False,
 ) -> dict[str, object]:
+    """Parse one feature HTML report into a structured signal record.
+
+    Extracts comments, mass-library rows, buddy labels, candidate formulas,
+    and isotope tables; derives usable formula sets for downstream scoring.
+
+    Args:
+        source_html: Path to HTML file (or missing/unavailable sentinel).
+        feature_key: Internal feature identifier.
+        feature_label: Display X ID used to detect X-specific table rows.
+        candidate_formula_max: Max unique candidate formulas for narrow usable set.
+        correct_isotopologue_detection: Use feature/self buddy labels for isotopologue flag.
+
+    Returns:
+        Signal dict matching ``EMPTY_SIGNAL_RECORD`` keys plus metadata.
+    """
     source_text = normalize_text(source_html)
     if source_text is None:
         return empty_signal_record(

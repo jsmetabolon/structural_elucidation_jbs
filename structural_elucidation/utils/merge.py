@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
-"""Shared X209 retrieval/SELFIES merge policy helpers."""
+"""Shared X209 retrieval/SELFIES merge policy helpers.
+
+Pipeline context:
+    Implements composite SELFIES scoring, per-feature deduplication, and
+    multiple merge policies (retrieval-only, tier-pinned joint sort, etc.)
+    used by benchmark and production rerank assembly.
+
+Key I/O:
+    ``rank_selfies_pool``: mass-window SELFIES ranking per feature.
+    ``to_merged_predictions_csv_schema``: policy rows → deliverable CSV columns.
+"""
 
 from __future__ import annotations
 
@@ -13,7 +23,9 @@ SELFIES_SCORE_FORMULA_VERSION = (
 )
 
 
+# ── Scoring primitives ───────────────────────────────────────────────
 def sigmoid(x: float | pd.Series) -> float | pd.Series:
+    """Element-wise logistic transform."""
     return 1.0 / (1.0 + np.exp(-x))
 
 
@@ -22,7 +34,10 @@ def compute_selfies_score(
     generation_support_fraction: float | pd.Series,
     mean_log_prob: float | pd.Series,
 ) -> float | pd.Series:
-    """Composite score used for policy-level SELFIES ranking."""
+    """Composite score used for policy-level SELFIES ranking.
+
+    See ``SELFIES_SCORE_FORMULA_VERSION`` for weight breakdown.
+    """
     is_series = isinstance(mass_match_score, pd.Series)
     index = mass_match_score.index if is_series else None
     mm = pd.to_numeric(mass_match_score, errors="coerce")
@@ -36,11 +51,20 @@ def compute_selfies_score(
 
 
 def normalize_score(series: pd.Series) -> pd.Series:
+    """Clip numeric scores to ``[0, 1]`` with NaN → 0."""
     return pd.to_numeric(series, errors="coerce").fillna(0.0).clip(lower=0.0, upper=1.0)
 
 
 def rank_selfies_pool(candidate_metrics_df: pd.DataFrame, tolerance_da: float) -> pd.DataFrame:
-    """Rank SELFIES pool for a given mass window and enforce per-feature SMILES uniqueness."""
+    """Rank SELFIES pool for a given mass window and enforce per-feature SMILES uniqueness.
+
+    Args:
+        candidate_metrics_df: Per-candidate SELFIES metrics with mass errors.
+        tolerance_da: Maximum absolute mass error (Da) to retain.
+
+    Returns:
+        Ranked pool with ``selfies_score``, ``normalized_merge_score``, ``selfies_rank``.
+    """
     pool = candidate_metrics_df.copy()
     required_columns = {
         "feature_key": pd.Series(dtype=str),
@@ -95,6 +119,7 @@ def rank_selfies_pool(candidate_metrics_df: pd.DataFrame, tolerance_da: float) -
 
 
 def compare_selfies_pool_to_report(selfies_pool_df: pd.DataFrame, selfies_report_df: pd.DataFrame) -> dict:
+    """Compare (feature_key, SMILES) pair sets between pool and report exports."""
     report_pairs = {
         (str(row.feature_key), str(row.predicted_smiles))
         for row in selfies_report_df[["feature_key", "predicted_smiles"]].itertuples(index=False)
@@ -115,7 +140,9 @@ def compare_selfies_pool_to_report(selfies_pool_df: pd.DataFrame, selfies_report
     }
 
 
+# ── Track normalization for joint merge ────────────────────────────────
 def map_retrieval_rows_for_merge(retrieval_df: pd.DataFrame) -> pd.DataFrame:
+    """Add unified merge/sort columns for retrieval track rows."""
     out = retrieval_df.copy()
     out["track"] = "retrieval"
     out["smiles"] = out["smiles"].astype(str)
@@ -142,6 +169,7 @@ def map_retrieval_rows_for_merge(retrieval_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def map_selfies_rows_for_merge(selfies_pool_df: pd.DataFrame, feature_meta_df: pd.DataFrame) -> pd.DataFrame:
+    """Add unified merge/sort columns for SELFIES track rows."""
     out = selfies_pool_df.copy()
     out["track"] = "selfies"
     out["smiles"] = out["predicted_smiles"].astype(str)
@@ -183,6 +211,7 @@ def map_selfies_rows_for_merge(selfies_pool_df: pd.DataFrame, feature_meta_df: p
 
 
 def joint_sort_rows(pool_df: pd.DataFrame) -> pd.DataFrame:
+    """Sort mixed retrieval/SELFIES rows by score, error, support, and track priority."""
     if pool_df.empty:
         return pool_df
     sort_df = pool_df.copy()
@@ -204,6 +233,7 @@ def joint_sort_rows(pool_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def finalize_policy_rows(ranked_rows_df: pd.DataFrame, topk: int = 10) -> pd.DataFrame:
+    """Assign ``policy_rank`` and ``include_topk`` after policy-specific ordering."""
     if ranked_rows_df.empty:
         return ranked_rows_df
     out = ranked_rows_df.copy()
@@ -213,6 +243,7 @@ def finalize_policy_rows(ranked_rows_df: pd.DataFrame, topk: int = 10) -> pd.Dat
 
 
 def to_merged_predictions_csv_schema(policy_rows_df: pd.DataFrame, topk: int = 10) -> pd.DataFrame:
+    """Project policy rows into the merged predictions deliverable schema."""
     columns = [
         "feature_key",
         "track",
@@ -272,6 +303,7 @@ def to_merged_predictions_csv_schema(policy_rows_df: pd.DataFrame, topk: int = 1
 
 
 def select_selfies_rows_per_feature(selfies_merge_df: pd.DataFrame, max_per_feature: int) -> pd.DataFrame:
+    """Cap SELFIES rows per feature by ``source_rank``."""
     if selfies_merge_df.empty:
         return selfies_merge_df
     return (
@@ -282,10 +314,12 @@ def select_selfies_rows_per_feature(selfies_merge_df: pd.DataFrame, max_per_feat
     )
 
 
+# ── Merge policy builders ────────────────────────────────────────────
 def build_policy_retrieval_only(
     feature_keys: Iterable[str],
     retrieval_merge_df: pd.DataFrame,
 ) -> pd.DataFrame:
+    """Per-feature retrieval-only policy (no SELFIES rows)."""
     chunks: List[pd.DataFrame] = []
     grouped = retrieval_merge_df.sort_values(["feature_key", "source_rank", "smiles"], kind="mergesort").groupby(
         "feature_key", sort=False
@@ -303,6 +337,7 @@ def build_policy_selfies_only(
     feature_keys: Iterable[str],
     selfies_merge_df: pd.DataFrame,
 ) -> pd.DataFrame:
+    """Per-feature SELFIES-only policy (no retrieval rows)."""
     chunks: List[pd.DataFrame] = []
     grouped = selfies_merge_df.sort_values(["feature_key", "source_rank", "smiles"], kind="mergesort").groupby(
         "feature_key", sort=False
@@ -322,6 +357,7 @@ def build_policy_pin_high_rank1_joint_rest(
     selfies_cap_df: pd.DataFrame,
     rank1_tier_map: Dict[str, str],
 ) -> pd.DataFrame:
+    """Pin rank-1 retrieval when tier is high; joint-sort remainder with SELFIES."""
     chunks: List[pd.DataFrame] = []
     retr_group = retrieval_merge_df.groupby("feature_key", sort=False)
     self_group = selfies_cap_df.groupby("feature_key", sort=False)
@@ -354,6 +390,7 @@ def build_policy_high_protected_medium_low_joint(
     selfies_cap_df: pd.DataFrame,
     rank1_tier_map: Dict[str, str],
 ) -> pd.DataFrame:
+    """Keep retrieval-only ordering for high tier; joint-sort medium/low tiers."""
     chunks: List[pd.DataFrame] = []
     retr_group = retrieval_merge_df.groupby("feature_key", sort=False)
     self_group = selfies_cap_df.groupby("feature_key", sort=False)
@@ -381,6 +418,7 @@ def build_policy_retrieval_rank1_plus_best_selfies(
     retrieval_merge_df: pd.DataFrame,
     selfies_merge_df: pd.DataFrame,
 ) -> pd.DataFrame:
+    """Place retrieval rank-1 first, then one eligible SELFIES hit, then remaining retrieval."""
     chunks: List[pd.DataFrame] = []
     retr_group = retrieval_merge_df.groupby("feature_key", sort=False)
     self_group = selfies_merge_df.groupby("feature_key", sort=False)
@@ -432,6 +470,7 @@ def build_policy_top5_selfies_then_joint_rest(
     retrieval_merge_df: pd.DataFrame,
     selfies_cap_df: pd.DataFrame,
 ) -> pd.DataFrame:
+    """Front-load top five SELFIES rows, then joint-sort retrieval with remainder."""
     chunks: List[pd.DataFrame] = []
     retr_group = retrieval_merge_df.groupby("feature_key", sort=False)
     self_group = selfies_cap_df.groupby("feature_key", sort=False)

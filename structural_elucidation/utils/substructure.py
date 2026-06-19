@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
-"""Substructure and similarity utilities for expanded catalog retrieval."""
+"""Substructure and similarity utilities for expanded catalog retrieval.
+
+Pipeline context:
+    Supports MCS consensus SMARTS from retrieval pools, structural neighbor
+    scoring for rerank enrichment, and CLI substructure/Tanimoto catalog search
+    against precomputed Morgan/pattern fingerprint indexes.
+
+Key I/O:
+    ``build_feature_consensus_smarts_from_retrieval``: per-feature SMARTS maps.
+    ``run_substructure_query`` / ``run_tanimoto_query``: catalog search CLIs.
+"""
 
 from __future__ import annotations
 
@@ -25,6 +35,7 @@ except Exception:  # pragma: no cover - environment dependent
 
 
 def read_table(path: Path) -> pd.DataFrame:
+    """Read CSV or pickle table with normalized column headers."""
     if path.suffix.lower() in {".pkl", ".pickle"}:
         df = pd.read_pickle(path)
     else:
@@ -122,6 +133,16 @@ def build_consensus_smarts(
     min_mcs_atoms: int = 6,
     timeout_sec: int = 3,
 ) -> str | None:
+    """Find MCS SMARTS shared by at least two input SMILES.
+
+    Args:
+        smiles_values: Candidate SMILES for one feature or query set.
+        min_mcs_atoms: Minimum MCS atom count to accept.
+        timeout_sec: RDKit MCS timeout per call.
+
+    Returns:
+        SMARTS string, or ``None`` when MCS is too small or RDKit unavailable.
+    """
     if not HAS_RDKIT:
         return None
     mols = []
@@ -156,6 +177,11 @@ def build_feature_consensus_smarts_from_retrieval(
     min_mcs_atoms: int = 6,
     timeout_sec: int = 3,
 ) -> tuple[dict[str, str], dict[str, str]]:
+    """Build per-feature consensus SMARTS and top SMILES from retrieval rows.
+
+    Returns:
+        Tuple of ``(consensus_smarts_by_feature, top_smiles_by_feature)``.
+    """
     if retrieval_df.empty:
         return {}, {}
     required = {"feature_key", "smiles"}
@@ -352,6 +378,7 @@ def compute_structural_neighbor_scores(
 
 
 def load_fingerprint_index(path: Path) -> dict[int, dict[str, Any]]:
+    """Load comp_id-keyed fingerprint index from pickle (dict or list payload)."""
     with path.open("rb") as handle:
         payload = pickle.load(handle)
     if isinstance(payload, dict):

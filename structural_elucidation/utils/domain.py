@@ -214,6 +214,7 @@ def load_known_x_comp_ids(known_x: Path) -> set[int]:
 
 
 def load_x_structure_keys(known_x_all: Path) -> tuple[set[str], set[str]]:
+    """Load canonical SMILES and InChIKey sets from known-X structure table."""
     if not known_x_all.exists():
         return set(), set()
     df = read_table(known_x_all)
@@ -228,6 +229,7 @@ def load_x_structure_keys(known_x_all: Path) -> tuple[set[str], set[str]]:
 
 
 def load_existing_holdout_keys(holdout_dir: Path) -> tuple[set[int], set[str], set[str]]:
+    """Union comp IDs and structure keys from all holdout CSV exports."""
     comp_ids: set[int] = set()
     canonicals: set[str] = set()
     inchikeys: set[str] = set()
@@ -251,6 +253,7 @@ def load_existing_holdout_keys(holdout_dir: Path) -> tuple[set[int], set[str], s
 
 
 def load_train_exclude_comp_ids(holdout_dir: Path) -> set[int]:
+    """Load comp IDs listed in ``train_exclude_*.csv`` holdout files."""
     out: set[int] = set()
     if not holdout_dir.exists():
         return out
@@ -265,6 +268,7 @@ def load_train_exclude_comp_ids(holdout_dir: Path) -> set[int]:
 
 
 def load_training_structures(repo_root: Path, libs: Iterable[int]) -> pd.DataFrame:
+    """Load decoder training SMILES scoped to requested library IDs."""
     paths = {
         "negative": repo_root / "merged_encoder/data/decoder_train_neg_209_305_smiles.csv",
         "positive": repo_root / "merged_encoder/data/decoder_train_pos_400_402_smiles.csv",
@@ -313,6 +317,14 @@ def domain_distance(
     target_latent_distance: float = math.nan,
     candidate_latent_distance: float = math.nan,
 ) -> dict[str, float]:
+    """Composite analog distance for hard-holdout neighbor selection.
+
+    Components are scaled m/z delta (/50 Da), RI delta (/1000), log peak-count
+    delta, and optional latent distance.
+
+    Returns:
+        Dict with ``domain_distance`` total and per-component breakdown.
+    """
     mz_delta = abs(safe_float(candidate_parent_mz, 0.0) - safe_float(target_parent_mz, 0.0)) / 50.0
     ri_delta = abs(safe_float(candidate_ri, 0.0) - safe_float(target_ri, 0.0)) / 1000.0
     peak_delta = abs(
@@ -333,9 +345,11 @@ def domain_distance(
 
 
 def canonical_key(smiles: Any) -> str:
+    """Canonical SMILES key or empty string."""
     return canonicalize_smiles(smiles) or ""
 
 
 def inchikey_key(smiles: Any) -> str:
+    """InChIKey from canonical SMILES, or empty string."""
     canonical = canonical_key(smiles)
     return inchikey_from_smiles(canonical) if canonical else ""

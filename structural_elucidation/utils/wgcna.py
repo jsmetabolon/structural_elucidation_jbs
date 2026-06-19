@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
-"""Unified readers for the local WGCNA cohort exports."""
+"""Unified readers for the local WGCNA cohort exports.
+
+Pipeline context:
+    Compound reports and enrichment steps join module assignments and
+    correlation matrices from cached HELIOS, Twins UK, and PRIMM exports
+    under ``data/wgcna_cache/``.
+
+Key I/O:
+    ``load_module_assignments``: normalized module membership per metabolite.
+    ``load_correlation_matrix``: cached square correlation table per cohort.
+"""
 
 from __future__ import annotations
 
@@ -11,6 +21,7 @@ import pandas as pd
 
 from structural_elucidation.paths import REPO_ROOT
 
+# ── Cohort cache layout ──────────────────────────────────────────────
 CACHE_ROOT = REPO_ROOT / "data" / "wgcna_cache"
 
 COHORT_INPUTS: dict[str, dict[str, Any]] = {
@@ -73,6 +84,7 @@ def _first_present(row: pd.Series, names: list[str], default: Any = "") -> Any:
 
 
 def normalize_control_id(value: Any) -> str:
+    """Map free text to ``X-<n>`` control ID when an X token is present."""
     text = str(value or "").strip()
     match = re.search(r"\bX[-_ ]?0*(\d+)\b", text, flags=re.IGNORECASE)
     if match:
@@ -81,6 +93,7 @@ def normalize_control_id(value: Any) -> str:
 
 
 def normalize_corr_label(value: Any) -> str:
+    """Normalize correlation matrix row/column labels to ``X<n>`` style."""
     text = str(value or "").strip()
     if not text:
         return ""
@@ -219,6 +232,7 @@ def load_putative_details(cohort: str) -> pd.DataFrame:
 
 
 def all_cohorts() -> list[str]:
+    """Return registered WGCNA cohort names."""
     return list(COHORT_INPUTS)
 
 
