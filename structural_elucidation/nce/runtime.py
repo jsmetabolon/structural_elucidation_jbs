@@ -43,6 +43,7 @@ def install_local_nce_shims() -> None:
             """Guard class that blocks accidental database access in cache-only mode."""
 
             def __init__(self, *args: Any, **kwargs: Any) -> None:
+                """Reject construction so cache-only runs never open a live DB connection."""
                 raise RuntimeError("EasyQuery is unavailable in local cache-only NCE mode")
 
         easy_query.EasyQuery = EasyQuery

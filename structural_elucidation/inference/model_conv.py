@@ -145,6 +145,7 @@ class Net1D(nn.Module):
     """
 
     def __init__(self, *args, **kwargs):
+        """Dispatch to legacy config-based or mass-conditioned encoder construction."""
         super().__init__()
         self.legacy_mode = False
 

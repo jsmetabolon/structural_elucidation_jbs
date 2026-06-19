@@ -95,6 +95,7 @@ class MergedNet1D(Net1D):
     """Mass-conditioned ``Net1D`` extended with ion_mode + lib_id embeddings."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Extend mass-conditioned ``Net1D`` with ion-mode and library-id embeddings."""
         super().__init__(*args, **kwargs)
         if self.legacy_mode:
             raise ValueError(

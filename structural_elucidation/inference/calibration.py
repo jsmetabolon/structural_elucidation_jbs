@@ -18,6 +18,7 @@ class AffineLatentCalibrator(nn.Module):
     """Learned affine map ``z -> W z + b`` over 512-d encoder latents."""
 
     def __init__(self, dim: int = 512) -> None:
+        """Create an identity-initialized affine map over ``dim``-dimensional latents."""
         super().__init__()
         self.linear = nn.Linear(dim, dim)
         self.reset_parameters()
