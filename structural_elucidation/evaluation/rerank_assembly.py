@@ -37,6 +37,8 @@ GOOD_TANIMOTO = 0.7
 
 @dataclass(frozen=True)
 class AssemblyRerankPolicy:
+    """Weighted feature policy for assembly candidate reranking."""
+
     name: str
     weights: dict[str, float]
     description: str
@@ -77,7 +79,6 @@ POLICIES: dict[str, AssemblyRerankPolicy] = {
 
 
 def clip01(values: pd.Series) -> pd.Series:
-    """Clip a numeric series to the [0, 1] interval."""
     """Weighted feature policy for assembly candidate reranking."""
     return pd.to_numeric(values, errors="coerce").fillna(0.0).clip(lower=0.0, upper=1.0)
 

@@ -46,6 +46,8 @@ _UNCHARGER = rdMolStandardize.Uncharger() if rdMolStandardize is not None else N
 
 @dataclass(frozen=True)
 class AuditControl:
+    """One control feature with truth structures and observed metadata for audits."""
+
     control_id: str
     holdout_scope: str
     lib_id: int
@@ -57,7 +59,6 @@ class AuditControl:
 
 
 def extract_xid(feature_key: Any) -> str | None:
-    """Extract an X-compound id token from a feature key string."""
     """One control feature with truth structures and observed metadata for audits."""
     match = re.search(r"(X-\d+)", str(feature_key or ""))
     return match.group(1) if match else None

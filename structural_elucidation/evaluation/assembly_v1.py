@@ -99,7 +99,6 @@ class GeneratedCandidate:
 
 
 def canonical_or_empty(smiles: Any) -> str:
-    """Canonicalize SMILES or return an empty string on failure."""
     """One scored de novo candidate with operator and anchor metadata."""
     return canonicalize_smiles(smiles) or ""
 

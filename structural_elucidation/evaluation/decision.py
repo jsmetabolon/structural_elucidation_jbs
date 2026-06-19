@@ -55,6 +55,8 @@ METRIC_COLUMNS = [
 
 @dataclass(frozen=True)
 class LibContext:
+    """Per-library run context with manifest metadata and paths."""
+
     lib_dir: Path
     lib_id: int
     ion_mode: str
@@ -62,7 +64,6 @@ class LibContext:
 
 
 def read_json(path: Path) -> Dict[str, Any]:
-    """Per-library run context with manifest metadata and paths."""
     """Read a JSON file from disk."""
     if not path.exists():
         return {}

@@ -98,7 +98,7 @@ class PickleCachedMlimsService:
     """Minimal MLIMS name lookup backed by pickled reference tables."""
 
     def __init__(self, tables: dict[str, pd.DataFrame]) -> None:
-        """Initialize runtime shim or service state."""
+        """Load chemical, library-entry, and compound tables from a pickle dict."""
         self.chem_df = tables.get("chemicals", pd.DataFrame()).copy()
         self.cle_df = tables.get("chro_lib_entry", pd.DataFrame()).copy()
         self.comp_df = tables.get("chro_comp_entry", pd.DataFrame()).copy()

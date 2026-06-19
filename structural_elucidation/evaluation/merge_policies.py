@@ -67,6 +67,8 @@ PLAN_HARD_WINDOW_REFERENCE = {
 
 @dataclass
 class PolicyResult:
+    """Named merge-policy output paths and row counts."""
+
     name: str
     diagnostic: bool
     ranked_csv: Path
@@ -77,7 +79,6 @@ class PolicyResult:
 
 
 def artifact_filename(prefix: str, stem: str, suffix: str) -> str:
-    """Build a conventional artifact filename from parts."""
     """Named merge-policy output paths and row counts."""
     normalized = str(prefix).strip()
     if not normalized:
