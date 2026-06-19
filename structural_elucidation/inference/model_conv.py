@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+"""1-D CNN spectrum encoder (``Net1D``) and checkpoint compatibility helpers.
+
+Supports both legacy config-driven constructors and the mass-conditioned
+encoder used by X209 / merged-library inference. Shape inference utilities
+recover compatible ``length_in`` from stored ``fc1`` / ``conv3`` weights.
+"""
+
 from __future__ import annotations
 
 import torch
@@ -12,10 +20,12 @@ def conv_out_dim(
     padding: int,
     dilation: int,
 ) -> int:
+    """Output length after a 1-D convolution or pooling layer."""
     return (length_in + 2 * padding - dilation * (kernel - 1) - 1) // stride + 1
 
 
 def _pool_halve_dim(length_in: int) -> int:
+    """Length after ``MaxPool1d(kernel=2, stride=2)``."""
     return conv_out_dim(
         length_in=length_in,
         kernel=2,
@@ -26,6 +36,7 @@ def _pool_halve_dim(length_in: int) -> int:
 
 
 def pooled_length_after_three_halves(length_in: int) -> int:
+    """Spectral length after three successive halving pools in ``Net1D``."""
     length = int(length_in)
     for _ in range(3):
         length = _pool_halve_dim(length)
@@ -36,6 +47,20 @@ def infer_mass_conditioned_compatible_length(
     state_dict: dict[str, torch.Tensor],
     preferred_length_in: int | None = None,
 ) -> int | None:
+    """Infer ``length_in`` compatible with a mass-conditioned checkpoint.
+
+    Derives pooled length from ``fc1.weight`` in-features and ``conv3`` channel
+    count, then maps back to an 8×-upsampled input width band.
+
+    Args:
+        state_dict: Encoder checkpoint tensors.
+        preferred_length_in: Caller-requested bin count; clamped into the
+            compatible band when present.
+
+    Returns:
+        Compatible ``length_in``, or ``preferred_length_in`` when tensors are
+        missing or shapes are inconsistent.
+    """
     fc1_weight = state_dict.get("fc1.weight")
     conv3_weight = state_dict.get("conv3.weight")
     if not isinstance(fc1_weight, torch.Tensor):
@@ -69,6 +94,15 @@ def load_compatible_state_dict(
     model: nn.Module,
     state_dict: dict[str, torch.Tensor],
 ) -> dict[str, object]:
+    """Load only shape-matching tensors; report skips and missing keys.
+
+    Args:
+        model: Target module (typically ``Net1D``).
+        state_dict: Checkpoint weights.
+
+    Returns:
+        Load report with counts, key lists, and per-key shape mismatches.
+    """
     model_state = model.state_dict()
     filtered: dict[str, torch.Tensor] = {}
     skipped_mismatched: dict[str, dict[str, list[int]]] = {}
@@ -101,13 +135,13 @@ def load_compatible_state_dict(
 
 
 class Net1D(nn.Module):
-    """
-    Encoder used by both legacy and mass-conditioned X209 workflows.
+    """Encoder used by legacy and mass-conditioned spectral workflows.
 
     Supported constructor patterns:
-    - New (mass-conditioned):
-      Net1D(length_in=..., minmass=..., maxmass=..., ...)
-    - Legacy (older scripts): Net1D(args, length_in)
+
+    - **Mass-conditioned (current):**
+      ``Net1D(length_in=..., minmass=..., maxmass=..., ...)``
+    - **Legacy:** ``Net1D(args, length_in)`` with a config object as first arg.
     """
 
     def __init__(self, *args, **kwargs):
@@ -122,6 +156,7 @@ class Net1D(nn.Module):
         self._init_mass_conditioned(*args, **kwargs)
 
     def _init_legacy(self, *args, **kwargs) -> None:
+        """Build encoder from historical config objects (pre-mass-conditioning)."""
         cfg = args[0] if args else kwargs.pop("args")
         if len(args) >= 2:
             length_in = int(args[1])
@@ -192,7 +227,7 @@ class Net1D(nn.Module):
         self.fc2 = nn.Linear(int(cfg.fc_dim_1), int(cfg.emb_dim))
         self.norm3 = nn.BatchNorm1d(int(cfg.fc_dim_1))
 
-        # Legacy attributes used by old script conventions.
+        # Legacy scripts expect these attributes even without mass conditioning.
         self.apply_tanh = True
         self.minmass = 0.0
         self.maxmass = 1.0
@@ -200,6 +235,7 @@ class Net1D(nn.Module):
         self.parent_mz_max = 1.0
 
     def _init_mass_conditioned(self, *args, **kwargs) -> None:
+        """Build three-conv mass-conditioned encoder matching augmented checkpoints."""
         if "length_in" in kwargs:
             length_in = int(kwargs.pop("length_in"))
         elif args:
@@ -219,8 +255,7 @@ class Net1D(nn.Module):
         if kwargs:
             raise TypeError("Unexpected keyword arguments: " f"{sorted(kwargs.keys())}")
 
-        # Shape-compatible with stored checkpoints such as
-        # models/spectra_encoder_augmented_209_400/best_encoder.pt.
+        # Shape-compatible with models/spectra_encoder_augmented_209_400/best_encoder.pt
         self.conv1 = nn.Conv1d(1, 32, kernel_size=5, stride=1, padding=2)
         self.bn1 = nn.BatchNorm1d(32)
         self.conv2 = nn.Conv1d(32, 64, kernel_size=5, stride=1, padding=2)
@@ -249,6 +284,7 @@ class Net1D(nn.Module):
         self.mz_alpha = nn.Parameter(torch.tensor(1.0, dtype=torch.float32))
 
     def _normalize_parent_mz(self, parent_mz: torch.Tensor) -> torch.Tensor:
+        """Scale precursor m/z to [0, 1] using training normalization bounds."""
         denom = max(self.parent_mz_max - self.parent_mz_min, 1e-6)
         normalized = (parent_mz - self.parent_mz_min) / denom
         return normalized.clamp(0.0, 1.0).unsqueeze(-1)

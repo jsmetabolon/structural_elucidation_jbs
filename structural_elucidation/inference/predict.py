@@ -1,5 +1,35 @@
 #!/usr/bin/env python3
-"""Batch-predict SMILES with scores for merged-library features."""
+"""Batch SMILES prediction for merged-library spectral features.
+
+Architecture overview
+---------------------
+The pipeline encodes MS2 feature tables with a mass-conditioned ``Net1D``
+encoder (optionally calibrated), then runs two complementary tracks:
+
+**Track A — mass-gated retrieval**
+    Cosine KNN over a comp_id-keyed embedding bank within progressive
+    precursor-mass gates (0.05 → 0.5 → 1.0 Da). Optional reranking blends
+    latent cosine, fragment explanation, HTML formula bonus, prevalence, and
+    structural-neighbor scores into ``retrieval_score``.
+
+**Track B — constrained de novo generation**
+    Mass- (and optionally RI-) conditioned decoder sampling from query
+    latents, with soft-mass shortlisting and strict adduct-aware gating.
+    Optional retrieval-guided latent proposals interpolate toward top analogs.
+
+**Merged output**
+    Track A rank-1 rows and Track B survivors are combined via
+    ``--merge_policy`` (default ``pin_high_rank1_joint_rest``) into
+    ``{prefix}_merged_predictions.csv``. Policies may pull SELFIES-scored
+    candidates from ``candidate_metrics_all`` and joint-sort retrieval +
+    de novo rows per feature. ``--skip_constrained_denovo`` emits
+    retrieval-only merged outputs.
+
+Primary artifacts (under ``--output_dir``):
+    ``{prefix}_retrieval_report.csv``, ``{prefix}_denovo_report.csv``,
+    ``{prefix}_merged_predictions.csv``, ``{prefix}_feature_latents.pt``,
+    ``{prefix}_run_summary.json``.
+"""
 
 from __future__ import annotations
 
@@ -13,7 +43,7 @@ import subprocess
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Dict, Iterable, List, Sequence, Tuple
+from typing import Iterable, Sequence
 
 import numpy as np
 import pandas as pd
@@ -76,6 +106,8 @@ from structural_elucidation.utils.merge import (
 )
 
 
+# ── torch / checkpoint helpers ────────────────────────────────────────────────
+
 def robust_torch_load(path: Path, map_location: str = "cpu", weights_only: bool = False):
     """Load with compatibility across torch versions."""
     original_rebuild = getattr(torch._utils, "_rebuild_device_tensor_from_numpy", None)
@@ -124,7 +156,10 @@ def register_moses_aliases() -> None:
         sys.modules[alias] = importlib.import_module(real_name)
 
 
+# ── feature table I/O ─────────────────────────────────────────────────────────
+
 def read_table(path: Path) -> pd.DataFrame:
+    """Load a CSV with tolerant delimiter detection and BOM stripping."""
     try:
         df = pd.read_csv(path, sep=None, engine="python")
     except Exception:
@@ -134,6 +169,7 @@ def read_table(path: Path) -> pd.DataFrame:
 
 
 def load_feature_table(path: Path) -> pd.DataFrame:
+    """Load encoder-ready feature table and enforce required columns."""
     if path.suffix.lower() in {".pkl", ".pickle"}:
         df = pd.read_pickle(path)
     else:
@@ -166,12 +202,13 @@ def load_feature_table(path: Path) -> pd.DataFrame:
 
 
 def vectorize_peaks(
-    peaks: Iterable[Tuple[float, float]],
+    peaks: Iterable[tuple[float, float]],
     minmass: float,
     maxmass: float,
     resolution: int,
     preprocessing_config: SpectrumPreprocessingConfig,
 ) -> np.ndarray:
+    """Vectorize peak list via shared spectrum preprocessing pipeline."""
     return preprocess_and_vectorize(
         peaks=peaks,
         config=preprocessing_config,
@@ -182,13 +219,17 @@ def vectorize_peaks(
 
 
 def normalize_scalar(value: float, min_value: float, max_value: float) -> float:
+    """Linearly scale a scalar into [0, 1] using inclusive bounds."""
     if max_value <= min_value:
         return 0.0
     scaled = (float(value) - float(min_value)) / (float(max_value) - float(min_value))
     return float(np.clip(scaled, 0.0, 1.0))
 
 
+# ── chemistry helpers ─────────────────────────────────────────────────────────
+
 def validate_smiles(smiles: str) -> bool:
+    """Return True when SMILES parses and sanitizes under RDKit."""
     if not HAS_RDKIT:
         return True
     if not smiles or not smiles.strip():
@@ -204,6 +245,7 @@ def validate_smiles(smiles: str) -> bool:
 
 
 def exact_mol_weight(smiles: str) -> float | None:
+    """Exact molecular weight from SMILES, or None when invalid."""
     if not HAS_RDKIT:
         return None
     mol = Chem.MolFromSmiles(smiles)
@@ -216,6 +258,7 @@ def exact_mol_weight(smiles: str) -> float | None:
 
 
 def adduct_neutral_mass_error(predicted_mass: float, parent_mz: float, ion_mode: str = "negative") -> float:
+    """Delegate to shared adduct-aware neutral-mass error in Da."""
     return shared_adduct_neutral_mass_error(predicted_mass, parent_mz, ion_mode=ion_mode)
 
 
@@ -225,7 +268,7 @@ def passes_strict_mass_filter(predicted_mass: float, parent_mz: float, ion_mode:
     return err <= shared_strict_tolerance_da(parent_mz, ion_mode=ion_mode)
 
 
-_MASS_SCORE_PLATEAU_DA = 0.001
+_MASS_SCORE_PLATEAU_DA: float = 0.001  # full mass score below this Da error
 
 
 def mass_match_score(
@@ -300,6 +343,8 @@ def composite_confidence(
     return float(np.clip(score, 0.0, 1.0))
 
 
+# ── encoder ─────────────────────────────────────────────────────────────────────
+
 def load_encoder_checkpoint(
     ckpt_path: Path,
     n_bins: int,
@@ -310,6 +355,7 @@ def load_encoder_checkpoint(
     device: torch.device,
     apply_tanh: bool = True,
 ) -> tuple[Net1D, int, dict[str, object]]:
+    """Load mass-conditioned ``Net1D`` encoder with shape-compatible bin width."""
     state = robust_torch_load(ckpt_path, map_location="cpu", weights_only=False)
     if not isinstance(state, dict):
         raise RuntimeError(f"Expected state_dict in {ckpt_path}, got {type(state)}")
@@ -328,6 +374,7 @@ def load_encoder_checkpoint(
 
 
 def align_vector_length(vec: np.ndarray, target_n_bins: int) -> np.ndarray:
+    """Truncate or zero-pad a binned spectrum to ``target_n_bins``."""
     current_n_bins = int(vec.shape[0])
     if current_n_bins == int(target_n_bins):
         return vec
@@ -347,11 +394,12 @@ def encode_features(
     device: torch.device,
     preprocessing_config: SpectrumPreprocessingConfig,
     encoder_n_bins: int | None = None,
-) -> Tuple[List[dict], torch.Tensor, Dict[str, torch.Tensor], Dict[str, list[tuple[float, float]]]]:
+) -> tuple[list[dict], torch.Tensor, dict[str, torch.Tensor], dict[str, list[tuple[float, float]]]]:
+    """Encode grouped feature peaks to latents and per-feature metadata rows."""
     feature_rows = []
     latents = []
-    latent_map: Dict[str, torch.Tensor] = {}
-    processed_peak_map: Dict[str, list[tuple[float, float]]] = {}
+    latent_map: dict[str, torch.Tensor] = {}
+    processed_peak_map: dict[str, list[tuple[float, float]]] = {}
 
     grouped = features_df.groupby("feature_key", sort=True)
     for feature_key, sub in grouped:
@@ -399,7 +447,10 @@ def encode_features(
     return feature_rows, latent_tensor, latent_map, processed_peak_map
 
 
+# ── decoder artifacts ─────────────────────────────────────────────────────────
+
 def derive_model_specific_artifact_name(model_name: str, prefix: str, extension: str) -> str:
+    """Build ``{prefix}_{model_stem}{extension}`` from a decoder checkpoint name."""
     stem = Path(model_name).stem
     suffix = stem[len("model_") :] if stem.startswith("model_") else stem
     return f"{prefix}_{suffix}{extension}"
@@ -412,6 +463,7 @@ def resolve_decoder_artifact_path(
     model_name: str,
     prefix: str,
 ) -> Path:
+    """Pick model-specific or generic decoder artifact path in ``decoder_dir``."""
     if explicit_name:
         return (decoder_dir / explicit_name).resolve()
     specific = decoder_dir / derive_model_specific_artifact_name(model_name, prefix, ".nb")
@@ -421,12 +473,14 @@ def resolve_decoder_artifact_path(
 
 
 def derive_decoder_summary_path(decoder_dir: Path, model_name: str, explicit_path: str) -> Path:
+    """Resolve fine-tune summary JSON beside decoder checkpoints."""
     if explicit_path:
         return Path(explicit_path).expanduser().resolve()
     return (decoder_dir / derive_model_specific_artifact_name(model_name, "finetune", "_summary.json")).resolve()
 
 
 def maybe_load_decoder_summary_payload(summary_path: Path | None) -> dict[str, object] | None:
+    """Load decoder summary JSON when the path exists and is a dict."""
     if summary_path is None or not summary_path.exists():
         return None
     loaded = json.loads(summary_path.read_text())
@@ -438,6 +492,7 @@ def maybe_load_decoder_summary_payload(summary_path: Path | None) -> dict[str, o
 def resolve_decoder_mass_normalization(
     decoder_summary_payload: dict[str, object] | None,
 ) -> tuple[float | None, float | None, str]:
+    """Read mass norm bounds from decoder summary JSON when available."""
     if not isinstance(decoder_summary_payload, dict):
         return None, None, "runtime_args"
     mass_norm = decoder_summary_payload.get("mass_normalization")
@@ -451,6 +506,7 @@ def resolve_decoder_mass_normalization(
 
 
 def derive_decoder_diagnosis_output_dir(output_dir: Path, explicit_path: str) -> Path:
+    """Default sibling directory for post-run decoder mass diagnosis."""
     if explicit_path:
         return Path(explicit_path).expanduser().resolve()
     return (output_dir.parent / f"{output_dir.name}_decoder_mass_diagnosis").resolve()
@@ -463,6 +519,7 @@ def load_decoder(
     config_name: str = "",
     vocab_name: str = "",
 ):
+    """Load constrained de novo decoder (vocab, config, weights) onto device."""
     register_moses_aliases()
     from decoder.moses.models_storage import ModelsStorage
 
@@ -543,6 +600,7 @@ def run_decoder_mass_diagnosis(
     gate_fail_on_ri_mismatch: bool,
     ion_mode: str,
 ) -> dict:
+    """Invoke ``analyze_decoder_mass_conditioning.py`` and return gate metadata."""
     diagnosis_script = repo_root / "analyze_decoder_mass_conditioning.py"
     cmd = [
         python_executable,
@@ -592,22 +650,25 @@ def run_decoder_mass_diagnosis(
     }
 
 
+# ── Track B sampling ────────────────────────────────────────────────────────────
+
 def sample_generation_support(
     decoder,
-    feature_keys: List[str],
+    feature_keys: list[str],
     latent_tensor: torch.Tensor,
-    mass_conditions: List[float] | None,
-    ri_conditions: List[float] | None,
+    mass_conditions: list[float] | None,
+    ri_conditions: list[float] | None,
     num_samples: int,
     temp: float,
     batch_size: int,
     max_len: int,
     top_p: float = 0.0,
-    temps: List[float] | None = None,
-) -> Tuple[Dict[str, Counter], Dict[str, int], pd.DataFrame, Dict[str, Dict[str, float]]]:
-    counts: Dict[str, Counter] = {k: Counter() for k in feature_keys}
+    temps: list[float] | None = None,
+) -> tuple[dict[str, Counter], dict[str, int], pd.DataFrame, dict[str, dict[str, float]]]:
+    """Batch decoder sampling; aggregate per-SMILES counts and log-probs."""
+    counts: dict[str, Counter] = {k: Counter() for k in feature_keys}
     draws = {k: 0 for k in feature_keys}
-    log_prob_accum: Dict[str, Dict[str, List[float]]] = defaultdict(lambda: defaultdict(list))
+    log_prob_accum: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
     raw_rows = []
     n = len(feature_keys)
 
@@ -687,14 +748,17 @@ def sample_generation_support(
                 )
 
     raw_df = pd.DataFrame(raw_rows)
-    best_log_probs: Dict[str, Dict[str, float]] = {}
+    best_log_probs: dict[str, dict[str, float]] = {}
     for fk, smi_dict in log_prob_accum.items():
         best_log_probs[fk] = {smi: max(lps) for smi, lps in smi_dict.items()}
 
     return counts, draws, raw_df, best_log_probs
 
 
+# ── embedding bank / retrieval tables ───────────────────────────────────────────
+
 def _extract_embedding_tensor(obj, source: Path) -> torch.Tensor:
+    """Normalize per-comp_id ``.pt`` payloads to a 1-D float tensor."""
     if torch.is_tensor(obj):
         z = obj
     elif isinstance(obj, (tuple, list)):
@@ -716,7 +780,8 @@ def _extract_embedding_tensor(obj, source: Path) -> torch.Tensor:
     return z
 
 
-def load_embedding_bank(emb_dir: Path) -> Tuple[List[int], torch.Tensor]:
+def load_embedding_bank(emb_dir: Path) -> tuple[list[int], torch.Tensor]:
+    """Load comp_id-keyed latent bank from ``emb_dir/*.pt`` files."""
     bank_ids = []
     bank_rows = []
     for emb_file in sorted(emb_dir.glob("*.pt")):
@@ -733,7 +798,8 @@ def load_embedding_bank(emb_dir: Path) -> Tuple[List[int], torch.Tensor]:
     return bank_ids, torch.stack(bank_rows, dim=0)
 
 
-def _pick_col(df: pd.DataFrame, options: List[str]) -> str | None:
+def _pick_col(df: pd.DataFrame, options: list[str]) -> str | None:
+    """Case-insensitive column lookup from an ordered candidate list."""
     lookup = {c.lower(): c for c in df.columns}
     for candidate in options:
         col = lookup.get(candidate.lower())
@@ -742,7 +808,7 @@ def _pick_col(df: pd.DataFrame, options: List[str]) -> str | None:
     return None
 
 
-def load_retrieval_smiles(path: Path) -> Dict[int, str]:
+def load_retrieval_smiles(path: Path) -> dict[int, str]:
     """Load comp_id -> SMILES from the canonical retrieval table (comp_id_to_smiles_209.csv)."""
     df = read_table(path)
     id_col = _pick_col(df, ["comp_id", "COMP_ID", "id"])
@@ -751,7 +817,7 @@ def load_retrieval_smiles(path: Path) -> Dict[int, str]:
         raise KeyError(f"No comp_id column in {path}; found: {df.columns.tolist()}")
     if smiles_col is None:
         raise KeyError(f"No SMILES column in {path}; found: {df.columns.tolist()}")
-    out: Dict[int, str] = {}
+    out: dict[int, str] = {}
     for _, row in df.iterrows():
         try:
             cid = int(row[id_col])
@@ -763,7 +829,7 @@ def load_retrieval_smiles(path: Path) -> Dict[int, str]:
     return out
 
 
-def load_retrieval_inchikey14(path: Path) -> Dict[int, str]:
+def load_retrieval_inchikey14(path: Path) -> dict[int, str]:
     """Load comp_id -> InChIKey first block from retrieval SMILES table."""
     if not path.exists():
         return {}
@@ -773,7 +839,7 @@ def load_retrieval_inchikey14(path: Path) -> Dict[int, str]:
     smiles_col = _pick_col(df, ["smiles", "SMILES", "canonical_smiles"])
     if id_col is None:
         return {}
-    out: Dict[int, str] = {}
+    out: dict[int, str] = {}
     for _, row in df.iterrows():
         try:
             cid = int(row[id_col])
@@ -792,7 +858,7 @@ def load_retrieval_inchikey14(path: Path) -> Dict[int, str]:
     return out
 
 
-def load_prevalence_map(path: Path) -> Dict[str, float]:
+def load_prevalence_map(path: Path) -> dict[str, float]:
     """Load inchikey14 -> prevalence score from FASSTrecords prevalence CSV."""
     if not path.exists():
         return {}
@@ -801,7 +867,7 @@ def load_prevalence_map(path: Path) -> Dict[str, float]:
     score_col = _pick_col(df, ["prevalence_score"])
     if key_col is None or score_col is None:
         return {}
-    out: Dict[str, float] = {}
+    out: dict[str, float] = {}
     for _, row in df.iterrows():
         key = str(row[key_col]).strip()
         if not key:
@@ -816,7 +882,7 @@ def load_prevalence_map(path: Path) -> Dict[str, float]:
     return out
 
 
-def load_retrieval_mass_hints(path: Path, ion_mode: str = "negative") -> Dict[int, float]:
+def load_retrieval_mass_hints(path: Path, ion_mode: str = "negative") -> dict[int, float]:
     """Load optional comp_id -> parent_mz hints from retrieval SMILES CSV."""
     if not path.exists():
         return {}
@@ -836,7 +902,7 @@ def load_retrieval_mass_hints(path: Path, ion_mode: str = "negative") -> Dict[in
     if id_col is None:
         return {}
 
-    out: Dict[int, float] = {}
+    out: dict[int, float] = {}
     for _, row in df.iterrows():
         try:
             cid = int(row[id_col])
@@ -864,14 +930,14 @@ def load_retrieval_mass_hints(path: Path, ion_mode: str = "negative") -> Dict[in
     return out
 
 
-def load_retrieval_names(path: Path) -> Dict[int, str]:
+def load_retrieval_names(path: Path) -> dict[int, str]:
     """Load comp_id -> display name from name_dict.csv."""
     df = read_table(path)
     id_col = _pick_col(df, ["comp_id", "COMP_ID", "id"])
     name_col = _pick_col(df, ["name", "SHORT_NAME", "CHEMICAL_NAME", "COMPOUND_NAME"])
     if id_col is None or name_col is None:
         return {}
-    out: Dict[int, str] = {}
+    out: dict[int, str] = {}
     for _, row in df.iterrows():
         try:
             cid = int(row[id_col])
@@ -883,7 +949,7 @@ def load_retrieval_names(path: Path) -> Dict[int, str]:
     return out
 
 
-def load_retrieval_mz(path: Path, fallback_hints: Dict[int, float] | None = None) -> Dict[int, float]:
+def load_retrieval_mz(path: Path, fallback_hints: dict[int, float] | None = None) -> dict[int, float]:
     """Load comp_id -> precursor m/z from pickle, with optional fallback hints."""
     import pickle
 
@@ -899,7 +965,7 @@ def load_retrieval_mz(path: Path, fallback_hints: Dict[int, float] | None = None
     return out
 
 
-def load_chemical_map(path: Path) -> Tuple[Dict[int, str], Dict[int, str]]:
+def load_chemical_map(path: Path) -> tuple[dict[int, str], dict[int, str]]:
     """Legacy loader kept for optional enrichment from MASTER_METABOLITE_LIST.csv."""
     df = read_table(path)
     id_col = _pick_col(df, ["CHEMICAL_ID", "chemical_id", "id"])
@@ -909,8 +975,8 @@ def load_chemical_map(path: Path) -> Tuple[Dict[int, str], Dict[int, str]]:
     if id_col is None or smiles_col is None:
         return {}, {}
 
-    id_to_smiles: Dict[int, str] = {}
-    id_to_name: Dict[int, str] = {}
+    id_to_smiles: dict[int, str] = {}
+    id_to_name: dict[int, str] = {}
     for _, row in df.iterrows():
         try:
             chem_id = int(row[id_col])
@@ -928,7 +994,10 @@ def load_chemical_map(path: Path) -> Tuple[Dict[int, str], Dict[int, str]]:
     return id_to_smiles, id_to_name
 
 
+# ── HTML / isotope audit ────────────────────────────────────────────────────────
+
 def serialize_list_columns_for_csv(df: pd.DataFrame, columns: Sequence[str]) -> pd.DataFrame:
+    """JSON-encode list/dict columns so CSV exports round-trip cleanly."""
     out = df.copy()
     for column in columns:
         if column in out.columns:
@@ -942,6 +1011,7 @@ def build_html_signal_feature_tables(
     feature_meta_df: pd.DataFrame,
     candidate_formula_max: int,
 ) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, dict[str, object]]]:
+    """Parse HTML signals into formula and isotope feature tables per feature_key."""
     formula_rows: list[dict[str, object]] = []
     isotope_rows: list[dict[str, object]] = []
     signal_lookup: dict[str, dict[str, object]] = {}
@@ -1017,6 +1087,7 @@ def annotate_dataframe_with_isotope_audit(
     formula_column: str,
     smiles_column: str | None = None,
 ) -> pd.DataFrame:
+    """Attach isotope audit columns from HTML signal lookup to a dataframe."""
     if df.empty:
         return df.copy()
 
@@ -1051,6 +1122,7 @@ def build_isotope_audit_summary(
     merged_df: pd.DataFrame,
     html_isotope_csv_path: Path,
 ) -> dict[str, object]:
+    """Summarize isotope audit status counts across retrieval/denovo/merged tables."""
     parse_status_counts = (
         html_isotope_df.get("parse_status", pd.Series(dtype=object))
         .fillna("unavailable")
@@ -1107,11 +1179,14 @@ def build_isotope_audit_summary(
     }
 
 
-SPECTRUM_PAIR_RE = re.compile(r"\(\s*([-+0-9.eE]+)\s*,\s*([-+0-9.eE]+)\s*\)")
-FRAGMENT_BLOCK_RE = re.compile(r'^\s*"(?P<fragments>.*)"\s*,\s*"(?P<spectrum>\[.*\])"\s*$')
+# ── fragment DB parsing ─────────────────────────────────────────────────────
+
+SPECTRUM_PAIR_RE: re.Pattern[str] = re.compile(r"\(\s*([-+0-9.eE]+)\s*,\s*([-+0-9.eE]+)\s*\)")
+FRAGMENT_BLOCK_RE: re.Pattern[str] = re.compile(r'^\s*"(?P<fragments>.*)"\s*,\s*"(?P<spectrum>\[.*\])"\s*$')
 
 
 def parse_spectrum_literal(text: str) -> list[tuple[float, float]]:
+    """Parse ``(mz, intensity)`` pairs from a spectrum literal string."""
     peaks: list[tuple[float, float]] = []
     for mz_text, intensity_text in SPECTRUM_PAIR_RE.findall(str(text)):
         try:
@@ -1122,6 +1197,7 @@ def parse_spectrum_literal(text: str) -> list[tuple[float, float]]:
 
 
 def load_fragment_database(path: Path) -> dict[int, dict[str, object]]:
+    """Load comp_id-keyed fragment spectra from library CSV exports."""
     if not path.exists():
         return {}
 
@@ -1167,6 +1243,7 @@ def compute_fragment_match_metrics(
     candidate_peaks: list[tuple[float, float]],
     tolerance_da: float = 0.02,
 ) -> dict[str, float | int]:
+    """Score observed vs candidate fragment spectra within Da tolerance."""
     if not observed_peaks:
         return {
             "fragment_match_count": 0,
@@ -1207,9 +1284,9 @@ def compute_fragment_match_metrics(
     }
 
 
-MASS_GATES_DA = [0.05, 0.5, 1.0]
+MASS_GATES_DA: list[float] = [0.05, 0.5, 1.0]  # progressive retrieval mass gates
 
-RETRIEVAL_SCORE_TIERS = [
+RETRIEVAL_SCORE_TIERS: list[tuple[float, str]] = [  # min score -> tier label
     (0.70, "high"),
     (0.55, "medium"),
     (0.40, "low"),
@@ -1217,6 +1294,7 @@ RETRIEVAL_SCORE_TIERS = [
 
 
 def precursor_mass_score(abs_mass_diff: float, gate_da: float) -> float:
+    """Triangular [0, 1] score from absolute mass error within a gate window."""
     if not np.isfinite(abs_mass_diff) or gate_da <= 0:
         return 0.0
     if abs_mass_diff <= 0.001:
@@ -1227,27 +1305,30 @@ def precursor_mass_score(abs_mass_diff: float, gate_da: float) -> float:
 
 
 def retrieval_confidence_tier(retrieval_score: float) -> str:
+    """Map retrieval score to high/medium/low/reject tier labels."""
     for min_score, label in RETRIEVAL_SCORE_TIERS:
         if float(retrieval_score) >= min_score:
             return label
     return "reject"
 
 
+# ── Track A retrieval ───────────────────────────────────────────────────────────
+
 def compute_mass_gated_retrieval(
-    feature_keys: List[str],
-    feature_parent_mzs: List[float],
+    feature_keys: list[str],
+    feature_parent_mzs: list[float],
     feature_latents: torch.Tensor,
-    feature_peak_map: Dict[str, list[tuple[float, float]]],
-    bank_ids: List[int],
+    feature_peak_map: dict[str, list[tuple[float, float]]],
+    bank_ids: list[int],
     bank_latents: torch.Tensor,
-    bank_mz: Dict[int, float],
-    id_to_smiles: Dict[int, str],
-    id_to_name: Dict[int, str],
-    id_to_inchikey14: Dict[int, str] | None,
-    fragment_db: Dict[int, dict[str, object]] | None,
-    html_formula_lookup: Dict[str, set[str]] | None,
+    bank_mz: dict[int, float],
+    id_to_smiles: dict[int, str],
+    id_to_name: dict[int, str],
+    id_to_inchikey14: dict[int, str] | None,
+    fragment_db: dict[int, dict[str, object]] | None,
+    html_formula_lookup: dict[str, set[str]] | None,
     retrieval_scoring_config: RetrievalScoringConfig | None,
-    prevalence_map: Dict[str, float] | None,
+    prevalence_map: dict[str, float] | None,
     topk: int = 10,
     fragment_match_tolerance_da: float = 0.02,
     fragment_match_target: float = 5.0,
@@ -1450,7 +1531,10 @@ def compute_mass_gated_retrieval(
     return pd.DataFrame(rows)
 
 
+# ── scoring / artifact writers ──────────────────────────────────────────────────
+
 def cosine_value(a: torch.Tensor, b: torch.Tensor) -> float:
+    """Cosine similarity between two 1-D tensors."""
     a = a.float()
     b = b.float()
     denom = float(a.norm().item() * b.norm().item())
@@ -1459,8 +1543,9 @@ def cosine_value(a: torch.Tensor, b: torch.Tensor) -> float:
     return float(torch.dot(a, b).item() / denom)
 
 
-def build_smiles_mu_cache(decoder, vocab, smiles_set: Iterable[str]) -> Dict[str, torch.Tensor]:
-    cache: Dict[str, torch.Tensor] = {}
+def build_smiles_mu_cache(decoder, vocab, smiles_set: Iterable[str]) -> dict[str, torch.Tensor]:
+    """Cache decoder encoder means ``mu`` for generated SMILES strings."""
+    cache: dict[str, torch.Tensor] = {}
     for smiles in sorted(set(smiles_set)):
         if not isinstance(smiles, str) or not smiles.strip():
             continue
@@ -1504,6 +1589,7 @@ def build_alignment_report(
 
 
 def summarize_numeric_array(values: np.ndarray) -> dict[str, float | int]:
+    """Return count/min/median/mean/max summary for a numeric array."""
     arr = np.asarray(values, dtype=np.float32)
     if arr.size == 0:
         return {"count": 0, "min": 0.0, "median": 0.0, "mean": 0.0, "max": 0.0}
@@ -1517,6 +1603,7 @@ def summarize_numeric_array(values: np.ndarray) -> dict[str, float | int]:
 
 
 def artifact_filename(prefix: str, stem: str, suffix: str) -> str:
+    """Build ``{prefix}_{stem}{suffix}`` when prefix is non-empty."""
     normalized = str(prefix).strip()
     if not normalized:
         return f"{stem}{suffix}"
@@ -1524,6 +1611,7 @@ def artifact_filename(prefix: str, stem: str, suffix: str) -> str:
 
 
 def write_dataframe_with_aliases(df: pd.DataFrame, primary_path: Path, alias_paths: Iterable[Path]) -> None:
+    """Write CSV to primary path and legacy alias filenames."""
     df.to_csv(primary_path, index=False)
     for alias_path in alias_paths:
         if alias_path == primary_path:
@@ -1532,6 +1620,7 @@ def write_dataframe_with_aliases(df: pd.DataFrame, primary_path: Path, alias_pat
 
 
 def write_json_with_aliases(payload: dict[str, object], primary_path: Path, alias_paths: Iterable[Path]) -> None:
+    """Write JSON to primary path and legacy alias filenames."""
     text = json.dumps(payload, indent=2)
     primary_path.write_text(text)
     for alias_path in alias_paths:
@@ -1541,6 +1630,7 @@ def write_json_with_aliases(payload: dict[str, object], primary_path: Path, alia
 
 
 def write_tensor_with_aliases(payload: object, primary_path: Path, alias_paths: Iterable[Path]) -> None:
+    """Write ``torch.save`` payload to primary path and aliases."""
     torch.save(payload, primary_path)
     for alias_path in alias_paths:
         if alias_path == primary_path:
@@ -1549,6 +1639,7 @@ def write_tensor_with_aliases(payload: object, primary_path: Path, alias_paths: 
 
 
 def choose_encoder_checkpoint(path: Path) -> Path:
+    """Resolve encoder checkpoint with historical fallback search paths."""
     if path.exists():
         return path
 
@@ -1565,7 +1656,10 @@ def choose_encoder_checkpoint(path: Path) -> Path:
     raise FileNotFoundError(f"Encoder checkpoint not found at {path} and no fallback checkpoint exists.")
 
 
+# ── CLI ─────────────────────────────────────────────────────────────────────────
+
 def get_parser() -> argparse.ArgumentParser:
+    """Build CLI parser for Track A/B prediction and merge policies."""
     parser = argparse.ArgumentParser(
         description="Predict and score SMILES for all X_209 features using encoder+decoder."
     )
@@ -1915,6 +2009,8 @@ def get_parser() -> argparse.ArgumentParser:
     return parser
 
 
+# ── Track B ranking helpers ─────────────────────────────────────────────────────
+
 def canonicalize_smiles(smiles: str) -> str | None:
     """Return canonical SMILES or None if invalid."""
     if not HAS_RDKIT or not smiles or not smiles.strip():
@@ -1958,9 +2054,9 @@ def pre_strict_shortlist_score(
 
 def build_latent_proposals(
     z_query: torch.Tensor,
-    retrieval_latents: List[torch.Tensor],
-    alphas: List[float] = (0.1, 0.2, 0.3),
-) -> List[torch.Tensor]:
+    retrieval_latents: list[torch.Tensor],
+    alphas: list[float] = (0.1, 0.2, 0.3),
+) -> list[torch.Tensor]:
     """Create interpolated latent proposals from retrieval analogs.
 
     Given z_query and retrieved z vectors, produce:
@@ -1977,17 +2073,17 @@ def build_latent_proposals(
 
 def decode_from_proposals(
     decoder,
-    proposals: List[torch.Tensor],
+    proposals: list[torch.Tensor],
     mass_cond: float,
     ri_cond: float | None,
     num_samples_per_proposal: int,
     temp: float,
     max_len: int,
     top_p: float = 0.0,
-) -> Tuple[Counter, Dict[str, float]]:
+) -> tuple[Counter, dict[str, float]]:
     """Decode from multiple latent proposals, returning merged counts and best log-probs."""
     merged_counts: Counter = Counter()
-    best_lps: Dict[str, float] = {}
+    best_lps: dict[str, float] = {}
 
     device = decoder.device
     for z in proposals:
@@ -2034,9 +2130,9 @@ def denovo_rerank_score(
 
 
 def rank_denovo_candidates(
-    candidates: List[dict],
+    candidates: list[dict],
     max_candidates: int = 20,
-) -> List[dict]:
+) -> list[dict]:
     """Rank surviving de novo candidates by mass consistency, log-prob, cosine, support."""
     candidates.sort(
         key=lambda r: (
@@ -2051,6 +2147,7 @@ def rank_denovo_candidates(
 
 
 def main() -> None:
+    """Run encoder, Track A retrieval, Track B de novo, and merged output."""
     args = get_parser().parse_args()
     ion_mode = normalize_ion_mode(str(args.ion_mode))
 
@@ -2419,7 +2516,7 @@ def main() -> None:
             samples_per = int(args.proposal_samples_per)
             print(f"  Generating latent proposals: alphas={proposal_alphas}, samples_per={samples_per}")
 
-            retrieval_latent_cache: Dict[int, torch.Tensor] = {}
+            retrieval_latent_cache: dict[int, torch.Tensor] = {}
             for bid, bz in zip(bank_ids, bank_latents):
                 retrieval_latent_cache[bid] = bz
 
@@ -2468,9 +2565,9 @@ def main() -> None:
             print(f"  Latent proposals generated: {n_proposal_generated} additional samples")
 
         print("  Canonicalizing and deduplicating raw generations...")
-        canonical_counts: Dict[str, Counter] = {k: Counter() for k in feature_keys}
-        canonical_log_probs: Dict[str, Dict[str, float]] = defaultdict(dict)
-        raw_to_canonical: Dict[str, str | None] = {}
+        canonical_counts: dict[str, Counter] = {k: Counter() for k in feature_keys}
+        canonical_log_probs: dict[str, dict[str, float]] = defaultdict(dict)
+        raw_to_canonical: dict[str, str | None] = {}
         n_raw_total = 0
         n_valid_unique = 0
 
@@ -2496,7 +2593,7 @@ def main() -> None:
 
         for counter in canonical_counts.values():
             candidate_smiles_set.update(counter.keys())
-        smiles_mu_cache: Dict[str, torch.Tensor] = {}
+        smiles_mu_cache: dict[str, torch.Tensor] = {}
         if bool(args.compute_candidate_latent_cosine):
             smiles_mu_cache = build_smiles_mu_cache(
                 decoder=decoder,

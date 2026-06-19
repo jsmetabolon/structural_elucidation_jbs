@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+"""Merged-ionization encoder extending ``Net1D`` with library conditioning.
+
+Adds learnable ``ion_mode`` and ``lib_id`` embeddings on top of the
+mass-conditioned latent, enabling a single checkpoint to serve libraries
+209, 305, 400, and 402 under negative or positive ionization.
+"""
+
 from __future__ import annotations
 
 from typing import Any
@@ -8,7 +16,9 @@ import torch.nn.functional as F
 
 from structural_elucidation.inference.model_conv import Net1D, load_compatible_state_dict
 
-ION_MODE_TO_INDEX = {
+# ── conditioning index maps ───────────────────────────────────────────────────
+
+ION_MODE_TO_INDEX: dict[str, int] = {
     "negative": 0,
     "neg": 0,
     "n": 0,
@@ -21,16 +31,27 @@ ION_MODE_TO_INDEX = {
     "1.0": 1,
 }
 
-LIB_ID_TO_INDEX = {
+LIB_ID_TO_INDEX: dict[int, int] = {
     209: 0,
     305: 1,
     400: 2,
     402: 3,
 }
-LIB_INDEX_TO_ID = {v: k for k, v in LIB_ID_TO_INDEX.items()}
+LIB_INDEX_TO_ID: dict[int, int] = {v: k for k, v in LIB_ID_TO_INDEX.items()}
 
 
 def ion_mode_label_to_scalar(value: str | float | int | None) -> float | None:
+    """Parse CLI / table ion-mode labels into 0.0 (negative) or 1.0 (positive).
+
+    Args:
+        value: Label, numeric scalar, or ``None``.
+
+    Returns:
+        ``0.0``, ``1.0``, or ``None`` when input is ``None``.
+
+    Raises:
+        ValueError: When the label cannot be parsed.
+    """
     if value is None:
         return None
     if isinstance(value, (int, float)):
@@ -49,6 +70,11 @@ def ion_mode_label_to_scalar(value: str | float | int | None) -> float | None:
 
 
 def lib_id_to_index(value: int | str) -> int:
+    """Map raw library id (209/305/400/402) or embedding index to 0..3.
+
+    Raises:
+        ValueError: For unsupported library identifiers.
+    """
     try:
         raw = int(value)
     except Exception as exc:
@@ -66,9 +92,9 @@ def lib_id_to_index(value: int | str) -> int:
 
 
 class MergedNet1D(Net1D):
-    """Mass-conditioned Net1D extended with ion_mode + lib_id embeddings."""
+    """Mass-conditioned ``Net1D`` extended with ion_mode + lib_id embeddings."""
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         if self.legacy_mode:
             raise ValueError(
@@ -88,6 +114,7 @@ class MergedNet1D(Net1D):
         x: torch.Tensor,
         ion_mode: torch.Tensor | float | int | None,
     ) -> torch.Tensor | None:
+        """Broadcast ion-mode indices to batch size ``x.shape[0]``."""
         batch_size = int(x.shape[0])
 
         if ion_mode is None:
@@ -134,6 +161,7 @@ class MergedNet1D(Net1D):
         x: torch.Tensor,
         lib_id: torch.Tensor | int | None,
     ) -> torch.Tensor | None:
+        """Broadcast library embedding indices, accepting raw ids or 0..3 indices."""
         batch_size = int(x.shape[0])
 
         if lib_id is None:
@@ -172,7 +200,7 @@ class MergedNet1D(Net1D):
             lib_t = lib_t.to(dtype=torch.long)
 
         out = torch.empty_like(lib_t)
-        # MPS does not implement aten::_unique2 on some torch builds.
+        # MPS lacks aten::_unique2 on some torch builds — iterate unique values on CPU.
         unique_values = sorted({int(v) for v in lib_t.detach().cpu().tolist()})
         for value in unique_values:
             idx = lib_id_to_index(int(value))
@@ -230,7 +258,20 @@ def load_compatible_state_dict_for_merged(
     *,
     ignore_new_conditioning_params: bool = True,
 ) -> dict[str, object]:
-    """Load checkpoint weights while optionally preserving fresh conditioning params."""
+    """Load checkpoint weights while optionally preserving fresh conditioning params.
+
+    When ``ignore_new_conditioning_params`` is true, freshly initialized
+    ``mode_embedding`` / ``lib_embedding`` weights are kept instead of
+    overwriting from checkpoints that predate merged conditioning.
+
+    Args:
+        model: Target ``MergedNet1D`` instance.
+        state_dict: Encoder checkpoint tensors.
+        ignore_new_conditioning_params: Skip conditioning keys listed above.
+
+    Returns:
+        Load report from ``load_compatible_state_dict`` plus conditioning metadata.
+    """
     skipped_conditioning_keys: list[str] = []
 
     if ignore_new_conditioning_params:

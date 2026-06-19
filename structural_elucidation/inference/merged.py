@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""Merged-ionization inference wrapper over predict_smiles.py."""
+"""Merged-ionization inference wrapper over ``predict.main``.
+
+``predict_merged.py`` monkey-patches shared ``predict`` hooks to:
+
+1. Load ``MergedNet1D`` instead of plain ``Net1D``.
+2. Require ``--ion_mode`` and ``--lib_id`` and inject library-specific defaults.
+3. Filter the feature table to the requested ion mode / library before inference.
+
+The wrapper forwards all remaining CLI flags to ``predict.main`` unchanged.
+"""
 
 from __future__ import annotations
 
@@ -32,11 +41,14 @@ except ImportError:
         load_compatible_state_dict_for_merged,
     )
 
+# ── patched predict hooks ─────────────────────────────────────────────────────
 
 _ORIGINAL_GET_PARSER = shared_predict.get_parser
-_ENCODER_DEFAULT_ION_MODE = 0.0
-_ENCODER_DEFAULT_LIB_IDX = 0
-_LIB_TO_MODE = {
+_ENCODER_DEFAULT_ION_MODE: float = 0.0
+_ENCODER_DEFAULT_LIB_IDX: int = 0
+
+# Canonical ion-mode expectation per Metabolon library id.
+_LIB_TO_MODE: dict[int, str] = {
     209: "negative",
     305: "negative",
     400: "positive",
@@ -45,10 +57,12 @@ _LIB_TO_MODE = {
 
 
 def _path_exists(path: Path) -> bool:
+    """Return True when ``path`` is an existing regular file."""
     return path.exists() and path.is_file()
 
 
 def _first_existing(candidates: Iterable[Path]) -> Path | None:
+    """Return the first resolvable path from ``candidates``, or ``None``."""
     for candidate in candidates:
         path = Path(candidate)
         if path.exists():
@@ -57,10 +71,12 @@ def _first_existing(candidates: Iterable[Path]) -> Path | None:
 
 
 def _has_flag(argv: list[str], flag: str) -> bool:
+    """True when ``flag`` appears as a token or ``flag=value`` prefix."""
     return any(token == flag or token.startswith(f"{flag}=") for token in argv)
 
 
 def _extract_arg_value(argv: list[str], flag: str) -> str | None:
+    """Read ``flag`` value from ``argv`` (``--flag value`` or ``--flag=value``)."""
     for idx, token in enumerate(argv):
         if token == flag and idx + 1 < len(argv):
             return argv[idx + 1]
@@ -70,6 +86,7 @@ def _extract_arg_value(argv: list[str], flag: str) -> str | None:
 
 
 def _remove_arg(argv: list[str], flag: str) -> tuple[list[str], str | None]:
+    """Remove ``flag`` and its value from ``argv``; return cleaned argv + value."""
     out: list[str] = []
     value: str | None = None
     skip_next = False
@@ -94,6 +111,11 @@ def _remove_arg(argv: list[str], flag: str) -> tuple[list[str], str | None]:
 
 
 def _parse_ion_mode(argv: list[str]) -> str:
+    """Parse required ``--ion_mode`` from wrapper argv.
+
+    Raises:
+        ValueError: When flag is missing or not ``negative`` / ``positive``.
+    """
     mode = _extract_arg_value(argv, "--ion_mode")
     if mode is None:
         raise ValueError("predict_merged.py requires --ion_mode (negative or positive).")
@@ -104,6 +126,7 @@ def _parse_ion_mode(argv: list[str]) -> str:
 
 
 def _load_table(path: Path) -> pd.DataFrame:
+    """Load CSV, TSV, or pickle feature tables."""
     if path.suffix.lower() == ".csv":
         return pd.read_csv(path)
     if path.suffix.lower() == ".tsv":
@@ -117,6 +140,15 @@ def _write_temp_filtered_feature_table(
     ion_mode: str,
     lib_id: int | None,
 ) -> Path:
+    """Filter merged feature table to one ion mode / library and write temp CSV.
+
+    The shared ``predict`` pipeline expects a per-run feature slice so encoder
+    conditioning and retrieval defaults align with the requested library.
+
+    Raises:
+        KeyError: When ``lib_id`` is set but the table lacks ``lib_id``.
+        RuntimeError: When filtering removes every row.
+    """
     df = _load_table(feature_table)
     filtered = df.copy()
 
@@ -148,7 +180,7 @@ def _write_temp_filtered_feature_table(
     Path(tmp_name).unlink(missing_ok=True)
     filtered.to_csv(tmp_name, index=False)
 
-    # close OS fd from mkstemp
+    # Close OS fd from mkstemp — pandas wrote via path, not the raw descriptor.
     try:
         import os
 
@@ -159,7 +191,8 @@ def _write_temp_filtered_feature_table(
     return Path(tmp_name).resolve()
 
 
-def _patched_get_parser():
+def _patched_get_parser() -> argparse.ArgumentParser:
+    """Extend base parser with merged-ionization-only flags."""
     parser = _ORIGINAL_GET_PARSER()
     parser.add_argument(
         "--encoder_ion_mode",
@@ -207,7 +240,8 @@ def _patched_load_encoder_checkpoint(
     parent_mz_max: float,
     device: torch.device,
     apply_tanh: bool = True,
-):
+) -> tuple[MergedNet1D, int, dict[str, object]]:
+    """Load ``MergedNet1D`` with library / ion-mode defaults from wrapper globals."""
     state = shared_predict.robust_torch_load(ckpt_path, map_location="cpu", weights_only=False)
     if not isinstance(state, dict):
         raise RuntimeError(f"Expected state_dict in {ckpt_path}, got {type(state)}")
@@ -238,6 +272,12 @@ def _patched_load_encoder_checkpoint(
 
 
 def _prepare_argv(argv: list[str]) -> list[str]:
+    """Validate merged flags, inject defaults, and filter the feature table.
+
+    Wrapper-only arguments are stripped before ``predict`` parses argv. Library-
+    specific retrieval banks, fragment DBs, and decoder checkpoints are filled in
+    when the caller omits explicit paths.
+    """
     ion_mode = _parse_ion_mode(argv)
 
     # Wrapper-only args removed before shared parser sees them.
@@ -386,6 +426,7 @@ def _prepare_argv(argv: list[str]) -> list[str]:
 
 
 def main() -> None:
+    """Patch ``predict`` hooks, prepare argv, and delegate to ``predict.main``."""
     shared_predict.get_parser = _patched_get_parser
     shared_predict.load_encoder_checkpoint = _patched_load_encoder_checkpoint
 

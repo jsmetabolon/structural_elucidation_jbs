@@ -1,11 +1,20 @@
+#!/usr/bin/env python3
+"""Weighted retrieval reranking over latent, mass, fragment, and HTML signals.
+
+Combines cosine similarity with precursor mass fit, fragment explanation,
+HTML formula bonus, prevalence, and structural-neighbor scores into a
+single ``retrieval_score`` used by Track A mass-gated KNN.
+"""
+
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict
 
-VALID_COMPONENTS = (
+# ── scoring component registry ────────────────────────────────────────────────
+
+VALID_COMPONENTS: tuple[str, ...] = (
     "latent_cosine",
     "precursor_mass_score",
     "fragment_explained_intensity_fraction",
@@ -18,7 +27,7 @@ VALID_COMPONENTS = (
     "prevalence_score",
 )
 
-DEFAULT_RETRIEVAL_WEIGHTS: Dict[str, float] = {
+DEFAULT_RETRIEVAL_WEIGHTS: dict[str, float] = {
     "latent_cosine": 0.30,
     "precursor_mass_score": 0.15,
     "fragment_explained_intensity_fraction": 0.18,
@@ -34,17 +43,25 @@ DEFAULT_RETRIEVAL_WEIGHTS: Dict[str, float] = {
 
 @dataclass(frozen=True)
 class RetrievalScoringConfig:
-    weights: Dict[str, float]
+    """Immutable reranking weights and latent-cosine transform mode."""
+
+    weights: dict[str, float]
     latent_cos_transform: str = "raw"
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
+        """Serialize config for run summaries and reproducibility logs."""
         return {
             "weights": {k: float(v) for k, v in self.weights.items()},
             "latent_cos_transform": str(self.latent_cos_transform),
         }
 
 
-def normalize_weights(weights: Dict[str, float]) -> Dict[str, float]:
+def normalize_weights(weights: dict[str, float]) -> dict[str, float]:
+    """Restrict to ``VALID_COMPONENTS`` and L1-normalize to sum 1.
+
+    Raises:
+        ValueError: When all component weights are zero or negative total.
+    """
     cleaned = {name: float(weights.get(name, 0.0)) for name in VALID_COMPONENTS}
     total = float(sum(cleaned.values()))
     if total <= 0:
@@ -53,6 +70,19 @@ def normalize_weights(weights: Dict[str, float]) -> Dict[str, float]:
 
 
 def resolve_scoring_config(weights_json_path: str | Path | None) -> RetrievalScoringConfig:
+    """Load reranking weights from JSON or fall back to ``DEFAULT_RETRIEVAL_WEIGHTS``.
+
+    Args:
+        weights_json_path: Optional JSON with ``weights`` and
+            ``latent_cos_transform`` (``raw`` or ``scaled01``).
+
+    Returns:
+        Normalized ``RetrievalScoringConfig``.
+
+    Raises:
+        FileNotFoundError: When a non-empty path does not exist.
+        ValueError: On malformed JSON or invalid transform mode.
+    """
     if weights_json_path is None or not str(weights_json_path).strip():
         return RetrievalScoringConfig(weights=normalize_weights(DEFAULT_RETRIEVAL_WEIGHTS), latent_cos_transform="raw")
 
@@ -77,6 +107,7 @@ def resolve_scoring_config(weights_json_path: str | Path | None) -> RetrievalSco
 
 
 def latent_cos_feature_value(latent_cosine: float, mode: str) -> float:
+    """Map raw cosine [-1, 1] to feature space (optionally scaled to [0, 1])."""
     if mode == "scaled01":
         return float((float(latent_cosine) + 1.0) / 2.0)
     return float(latent_cosine)
@@ -95,6 +126,26 @@ def compute_retrieval_score(
     prevalence_score: float = 0.0,
     config: RetrievalScoringConfig | None = None,
 ) -> float:
+    """Weighted linear combination of retrieval feature components.
+
+    Args:
+        latent_cosine: Cosine similarity between query and bank latent.
+        precursor_mass_score: Mass-fit score within the active gate window.
+        fragment_explained_intensity_fraction: Fraction of query intensity
+            explained by candidate fragment spectrum.
+        fragment_matched_peak_fraction: Fraction of query peaks matched.
+        html_formula_bonus: 1.0 when candidate formula is in HTML usable set.
+        isotope_formula_score: Reserved isotope-formula component (often 0).
+        fragment_match_count_score: Normalized fragment match count.
+        substructure_consensus_score: MCS-based neighbor consensus.
+        tanimoto_neighbor_score: Fingerprint similarity among top analogs.
+        prevalence_score: FASSTrecords prevalence for candidate InChIKey14.
+        config: Scoring weights; defaults to built-in profile when ``None``.
+
+    Returns:
+        Scalar retrieval score in approximately [0, 1] when features are
+        themselves bounded.
+    """
     scoring_cfg = config or resolve_scoring_config(None)
     features = {
         "latent_cosine": latent_cos_feature_value(latent_cosine, scoring_cfg.latent_cos_transform),
