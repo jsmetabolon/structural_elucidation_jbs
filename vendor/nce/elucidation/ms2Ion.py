@@ -1,3 +1,9 @@
+"""One binned ion in an MS2 consensus spectrum with formula and SMILES support.
+
+Resolves candidate formulas, library fragment SMILES, and MS2SMILES predictions
+for a single mass bucket within MS2Consensus.
+"""
+
 import logging
 from collections import defaultdict
 from itertools import product as cartesian
@@ -13,6 +19,8 @@ from elucidation.conveniences import qw, sort_df_by_vector
 
 
 class MS2Ion(object):
+    """Represent one consensus MS2 ion bucket and its structural annotations."""
+
     def __init__(self, bucket_, consensus_):
         """
         Builds one ion for the MS2 consensus.

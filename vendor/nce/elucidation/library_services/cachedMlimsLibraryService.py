@@ -1,3 +1,9 @@
+"""Offline MLIMS snapshot loader for elucidation without live Oracle access.
+
+Reads mlims_tables.pkl from REFERENCE_DIR and mirrors MlimsLibraryService
+queries from cached DataFrames. Used when spec2mol inference runs air-gapped.
+"""
+
 import os
 
 import pandas as pd
@@ -7,6 +13,8 @@ from mdsutils.easyQuery import EasyQuery
 
 
 class CachedMlimsLibraryService:
+    """Singleton library service backed by a pickled MLIMS table dump."""
+
     __instance__ = None
     __name_dict__ = None
 

@@ -1,3 +1,10 @@
+"""Postgres smiles_db access for neutral-mass compound lookup during elucidation.
+
+Singleton SQLAlchemy client querying the compound-discovery smiles database for
+structures near a feature's inferred neutral mass. Populated by table_builders
+populate_matching_database.py.
+"""
+
 import pandas as pd
 from elucidation.binning import plus_5ppm, minus_5ppm
 from elucidation.rdkitUtils import canonicalize_smiles, smiles_mass
@@ -6,6 +13,7 @@ from sqlalchemy import create_engine
 
 
 class PostgresSmilesDb:
+    """Singleton reader for the Postgres compound-discovery smiles_db table."""
 
     __instance__ = None
 

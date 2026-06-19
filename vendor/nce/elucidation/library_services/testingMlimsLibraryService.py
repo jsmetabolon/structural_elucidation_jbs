@@ -1,9 +1,17 @@
+"""Regression harness comparing live and cached MLIMS library providers.
+
+Delegates each LibraryService call to both MlimsLibraryService and
+CachedMlimsLibraryService and raises on mismatches during development.
+"""
+
 import pandas as pd
 from library_services.cachedMlimsLibraryService import CachedMlimsLibraryService
 from library_services.mlimsLibraryService import MlimsLibraryService
 
 
 class TestingMlimsLibraryService:
+    """Dual-backend LibraryService wrapper for parity testing."""
+
     __instance__ = None
     __name_dict__ = None
 

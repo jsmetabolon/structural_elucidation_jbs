@@ -1,8 +1,16 @@
+"""Precomputed MS1 buddy/adduct mass-delta tables per HD4 library.
+
+Provides build_delta_df, the lookup used by MS1Analyzer to relate feature
+peaks to co-eluting adducts, dimers, and isotopologues during elucidation.
+Generated offline by table_builders/buddyFunctionConstructor.py.
+"""
+
 import pandas as pd
 from elucidation.conveniences import qw
 
 
 def build_delta_df(ff, lib_id):
+    """Return the buddy-function delta table for the given library id."""
 
     if lib_id in (400, 402):
         df = pd.DataFrame(

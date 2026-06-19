@@ -1,5 +1,8 @@
-"""
-This is not currently used during elucidation per se, but it is used to populate the matching database.
+"""Peptide SMILES generation and mass lookup for the compound-matching database.
+
+Builds mono- through tetrapeptide dictionaries from standard amino acids and
+supports neutral-mass guessing for oligopeptide annotations. Consumed by
+populate_matching_database.py when seeding the Postgres smiles_db table.
 """
 import io
 from collections import defaultdict

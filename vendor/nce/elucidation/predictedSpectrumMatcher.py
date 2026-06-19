@@ -1,3 +1,10 @@
+"""Match observed MS2 spectra to SMILES2MS2 forward models and smiles_db.
+
+Scores candidate structures from Postgres or library formulas using per-library
+models trained by table_builders/train_smiles2ms2_models.py. Used from
+MS2Consensus and spec2mol structural_elucidation runtime.
+"""
+
 import logging
 from functools import reduce
 from operator import add, itemgetter
@@ -11,9 +18,7 @@ from elucidation.conveniences import funcTime
 
 
 class PredictedSpectrumMatcher(object):
-    """
-
-    """
+    """Per-library singleton matcher using SMILES2MS2 sklearn models."""
 
     __instances__ = {}  # singleton-ish: one per library.
 

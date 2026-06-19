@@ -1,3 +1,10 @@
+"""Training loop for the vendored MOSES translation decoder.
+
+Pipeline context:
+    Offline decoder training only. Inference loads pretrained weights via
+    ``predict.load_decoder`` and never instantiates ``TranslationTrainer``.
+"""
+
 import torch
 import torch.optim as optim
 from tqdm.auto import tqdm
@@ -18,12 +25,15 @@ import torch.nn.functional as F
 
 
 class TranslationTrainer(MosesTrainer):
+    """Trainer for ``TranslationModel`` with regression auxiliary loss."""
+
     def __init__(self, config):
         self.config = config
         self.tb_writer = None
         self.collate_fn = None
 
     def get_vocabulary(self, data):
+        """Build a one-hot SMILES vocabulary from training strings."""
         return SmilesOneHotVocab.from_data(data, tokenizer=smiles_tokenize)
 
     def set_collate_fn(self, collate_fn):
@@ -258,6 +268,7 @@ class TranslationTrainer(MosesTrainer):
                 )
 
     def fit(self, model, regression_model, train_data, val_data=None):
+        """Run the full training schedule and return the trained ``model``."""
         logger = Logger() if self.config.log_file is not None else None
         if self.tb_writer is None:
             self.tb_writer = SummaryWriter(log_dir=self.config.tb_loc)

@@ -1,10 +1,26 @@
+"""Mass- and RI-conditioned SMILES translation VAE (MOSES decoder core).
+
+Pipeline context:
+    ``TranslationModel`` is the Track B de novo generator in
+    ``structural_elucidation.inference.predict``. Encoder latents from MS2
+    features are decoded into SMILES with optional precursor-mass and RI
+    conditioning via ``sample`` and ``forward_decoder``.
+
+Key I/O:
+    ``sample`` — latent tensor in, list of SMILES (and optional log-probs) out.
+    ``forward_encoder`` — token batch in, ``(mu, logvar, z, kl_loss)`` out.
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
 class TranslationModel(nn.Module):
+    """GRU encoder–decoder VAE with mass/RI latent conditioning for SMILES."""
+
     def __init__(self, vocab, config):
+        """Build the model from a pickled vocab and config namespace."""
         super().__init__()
 
         self.vocabulary = vocab
@@ -99,9 +115,11 @@ class TranslationModel(nn.Module):
 
     @property
     def device(self):
+        """Torch device of the first model parameter."""
         return next(self.parameters()).device
 
     def string2tensor(self, string, device="model"):
+        """Encode a SMILES string to a 1-D ``LongTensor`` on model or given device."""
         ids = self.vocabulary.string2ids(string, add_bos=True, add_eos=True)
         tensor = torch.tensor(
             ids,
@@ -112,6 +130,7 @@ class TranslationModel(nn.Module):
         return tensor
 
     def tensor2string(self, tensor):
+        """Decode a token tensor back to a SMILES string."""
         ids = tensor.tolist()
         string = self.vocabulary.ids2string(ids, rem_bos=True, rem_eos=True)
 
@@ -209,11 +228,13 @@ class TranslationModel(nn.Module):
         return mu, logvar, z, kl_loss, recon_loss
 
     def forward_encoder(self, x):
-        """Encoder step, emulating z ~ E(x) = q_E(z|x)
+        """Encode token batch ``x`` into latent ``(mu, logvar, z, kl_loss)``.
 
-        :param x: list of tensors of longs, input sentence x
-        :return: (n_batch, d_z) of floats, sample of latent vector z
-        :return: float, kl term component of loss
+        Args:
+            x: Iterable of 1-D token tensors, or a 2-D ``LongTensor`` batch.
+
+        Returns:
+            Tuple of latent mean, log-variance, sampled ``z``, and KL term.
         """
 
         x = [self.x_emb(i_x) for i_x in x]
@@ -312,14 +333,20 @@ class TranslationModel(nn.Module):
         mass=None,
         ri=None,
     ):
-        """Generating n_batch samples in eval mode (`z` could be
-        not on same device)
+        """Autoregressively decode SMILES from latent vectors.
 
-        :param n_batch: number of sentences to generate
-        :param max_len: max len of samples
-        :param z: (n_batch, d_z) of floats, latent vector z or None
-        :param temp: temperature of softmax
-        :return: list of tensors of strings, samples sequence x
+        Args:
+            n_batch: Number of sequences to generate.
+            max_len: Maximum decode length in tokens.
+            z: Optional ``(n_batch, d_z)`` latent; sampled from prior if None.
+            temp: Softmax temperature for token sampling.
+            top_p: Nucleus-filter threshold (unused placeholder).
+            return_log_probs: If True, return ``(smiles, mean_log_probs)``.
+            mass: Optional per-row precursor mass conditioning tensor.
+            ri: Optional per-row retention-index conditioning tensor.
+
+        Returns:
+            List of SMILES strings, or ``(list, mean_log_probs)`` when requested.
         """
         with torch.no_grad():
             if z is None:

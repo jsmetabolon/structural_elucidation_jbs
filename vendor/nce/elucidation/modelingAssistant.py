@@ -1,3 +1,10 @@
+"""Modeling-bin utilities for spectrum-to-structure ML in NCE elucidation.
+
+Maps neutralized m/z and losses to logarithmic bin pairs for training and
+runtime matching. Shared by MS2 matchers, SMILES predictors, and Chemont
+models in spec2mol v21 inference.
+"""
+
 import logging
 from collections import defaultdict, Counter
 from functools import reduce

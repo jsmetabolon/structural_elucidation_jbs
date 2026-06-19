@@ -1,3 +1,9 @@
+"""Lookup SMILES substructure fragments by neutral mass from library tables.
+
+Loads the library_fragments pickle and returns HD4 fragment SMILES consistent
+with an observed MS2 ion or neutral loss during MS2Ion analysis.
+"""
+
 import numpy as np
 from elucidation.binning import plus_5ppm, minus_5ppm
 from elucidation.conveniences import qw
@@ -8,6 +14,8 @@ from elucidation.tableLoaders import library_fragments_loader
 
 
 class FragmentFinder:
+    """Per-library singleton index of fragment masses to SMILES substructures."""
+
     __instances__ = {}
 
     @staticmethod

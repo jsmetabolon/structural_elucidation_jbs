@@ -1,3 +1,10 @@
+"""Central Feature object orchestrating per-compound NCE elucidation.
+
+Rehydrates a discovered feature pickle and runs MS1 analysis, formula scoring,
+MS2 consensus, library matching, and RI/SMILES predictions. Instantiated by
+elucidator.py for each feature in a spec2mol inference batch.
+"""
+
 import logging
 from time import time
 
@@ -24,6 +31,8 @@ from elucidation.spectrum import Spectrum
 
 
 class Feature(object):
+    """Run the full elucidation workflow for one discovered LC-MS feature."""
+
     def __init__(self, d, opts):
         """
         Creates a new feature from a list of (RI,m/z) pairs.

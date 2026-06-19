@@ -1,15 +1,8 @@
-"""
-InChIKeys are created by a one-way hash function on the structure (InChI) into 27-letter strings.
-InChiKeys are solely for database searching.  Structure can't be recovered.
-Theoretically, InChiKeys are not unique, but in practice, the probability of collisions is negligible.
-However, we can't recover the structure from the hash value.
-Unichem to the rescue, sort of.  They have an API that looks up inchikeys and return inchi.
-It works most of the time, but not every inchikey will be found.
-Once we have inchi, we can use rdkit to get SMILES.
-Getting throttled on the unichem website is a possibility, but I haven't had any trouble.
+"""Resolve InChIKeys to InChI, RDKit molecules, and SMILES via ChemBL UniChem.
 
-Note that we have a giant database of our own now, so we should be tapping it before hitting chembl.
-But we don't commonly do this, so I'm just implementing this part for now.  #TODO
+Fallback structure lookup when a compound identifier cannot be resolved from
+the local Postgres smiles_db. Used sparingly during elucidation reporting
+when only an InChIKey is available.
 """
 
 from chembl_webresource_client.unichem import unichem_client as unichem

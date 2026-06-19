@@ -1,7 +1,16 @@
+"""Argparse definitions for offline MOSES translation-model training.
+
+Pipeline context:
+    At inference time the pickled ``config.nb`` artifact supplies hyperparameters
+    directly. This module is used when retraining the decoder and when
+    ``ModelsStorage`` registers the ``translation`` CLI parser.
+"""
+
 import argparse
 
 
 def get_parser(parser=None):
+    """Add translation-model and training flags to an ``ArgumentParser``."""
     if parser is None:
         parser = argparse.ArgumentParser()
 

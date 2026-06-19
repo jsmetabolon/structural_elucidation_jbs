@@ -1,4 +1,9 @@
 # coding: utf-8
+"""HTML report primitives for per-feature elucidation output.
+
+Provides heading/box helpers, embedded PNG encoding, and FileReporter for
+writing standalone HTML reports consumed by UserFeatureReporter and MS1 clustering.
+"""
 
 import base64
 import datetime
@@ -74,6 +79,8 @@ class NullReporter:
 
 
 class FileReporter(object):
+    """Accumulate HTML fragments and flush them to a report file on disk."""
+
     _text = ""
     _fp = None
     _title = None

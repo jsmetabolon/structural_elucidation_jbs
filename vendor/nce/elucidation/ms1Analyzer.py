@@ -1,3 +1,9 @@
+"""MS1 adduct, isotope, and buddy-peak analysis for a discovered feature.
+
+Interprets co-eluting MS1 peaks relative to the feature m/z using buddy-function
+deltas and library ion nomenclature. Invoked from Feature during elucidation.
+"""
+
 from collections import defaultdict, Counter
 from functools import reduce
 from operator import add, itemgetter
@@ -19,6 +25,8 @@ from elucidation.conveniences import is_empty_df, qw, lmap
 
 
 class MS1Analyzer:
+    """Aggregate MS1 spectra for one feature and infer adduct/isotope relationships."""
+
     def __init__(self, feature, spectra):
         self.spectra = spectra
         self.feature = feature

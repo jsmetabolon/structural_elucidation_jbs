@@ -1,4 +1,9 @@
 # coding: utf-8
+"""Predict Chemical Ontology (ClassyFire) categories from MS2 spectra.
+
+Loads per-library sklearn models trained by table_builders/train_chemont_models.py
+and scores consensus spectra during MS2Consensus analysis in spec2mol inference.
+"""
 
 from operator import itemgetter
 

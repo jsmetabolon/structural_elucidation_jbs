@@ -1,3 +1,10 @@
+"""Build and annotate the consensus MS2 spectrum for one feature.
+
+Buckets replicate MS2 scans, assigns formulas and fragment SMILES per ion, and
+runs library, Chemont, RI, and predicted-spectrum matchers during Feature
+elucidation in spec2mol v21 inference.
+"""
+
 import logging
 from collections import Counter, defaultdict
 from functools import reduce
@@ -44,6 +51,8 @@ def analyze_ms2_isotopes(buckets):
 
 
 class MS2Consensus(object):
+    """Aggregate MS2 scans into a normalized consensus spectrum with annotations."""
+
     def __init__(self, feature_):
         """
         Creates an MS2Consensus object for the consensus MS2 spectrum.

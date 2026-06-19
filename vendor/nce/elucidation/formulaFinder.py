@@ -1,3 +1,9 @@
+"""Fast exact-mass molecular formula lookup from precomputed reference tables.
+
+Loads pickled formula caches built by table_builders/formula_finder_builder.py
+and returns candidate formulas within ppm tolerance for MS1 and MS2 ions.
+"""
+
 from bisect import bisect_left, bisect_right
 from collections import Counter
 
@@ -46,6 +52,8 @@ from elucidation.tableLoaders import fmla_finder_cache_loader
 
 
 class FormulaFinder(object):
+    """Singleton lookup of packed molecular formulas indexed by mass bin."""
+
     __instances__ = {}
     __large_bins__ = None
     __large_ints__ = None

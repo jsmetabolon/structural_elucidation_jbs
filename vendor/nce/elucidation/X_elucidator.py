@@ -1,3 +1,10 @@
+"""Elucidate MLIMS unknown (X) compounds from stored MS2 spectra.
+
+Standalone CLI alternative to the full discovery-to-elucidation pipeline in
+elucidator.py. Used in spec2mol v21 inference to batch-annotate library
+unknowns and export summary spreadsheets with structure predictions.
+"""
+
 import argparse
 
 import elucidation.chemFacts as cf

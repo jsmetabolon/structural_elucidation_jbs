@@ -1,3 +1,9 @@
+"""Post-elucidation clustering of features by inferred neutral mass and RI.
+
+Groups related features across a batch summary and emits HTML cluster reports.
+Called from elucidator.py after all features in a run are processed.
+"""
+
 from functools import reduce
 from operator import add, itemgetter
 
@@ -17,6 +23,8 @@ local_base_dir = BASE_DIR
 
 
 class Ms1ClusterAnalyzer:
+    """Cluster elucidated features that share inferred masses within an RI window."""
+
     def __init__(self, summary_df, debug=1e9):
         df = summary_df[summary_df["inferred_masses"].notnull()]
         quads = lzip(df.serial, df.ri, df.mz, df.inferred_masses)

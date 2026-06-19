@@ -1,3 +1,9 @@
+"""Core chemistry constants, periodic-table data, and formula utilities.
+
+Loads isotope masses and provides ion-mode-aware neutralization, formula
+parsing, DBE checks, and exact-mass calculations used throughout NCE
+elucidation and spec2mol v21 inference.
+"""
 # TODO turn these dictionaries into functions, and perhaps turn it all into a singleton class.
 import logging
 from collections import defaultdict
@@ -6,11 +12,6 @@ import numpy as np
 import pandas as pd
 import regex as re
 from elucidation.conveniences import qw
-
-"""
-A lot of this is concerned with loading up a periodic table and deriving various other tables from it.
-Then there are some functions for working with formulas.
-"""
 
 POS_MODE_LIBRARIES = (400, 402)
 NEG_MODE_LIBRARIES = (209, 305)

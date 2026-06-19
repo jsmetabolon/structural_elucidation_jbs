@@ -1,4 +1,10 @@
 # coding: utf-8
+"""Cosine-similarity MS2 library matching against MLIMS reference spectra.
+
+Singleton matcher comparing observed ions and losses to the full HD4 library
+using ModelingAssistant bin pairs. Used from MS2Consensus for top library hits.
+"""
+
 from elucidation.binning import minus_5ppm, plus_5ppm
 from elucidation.modelingAssistant import ModelingAssistant
 from elucidation.conveniences import qw

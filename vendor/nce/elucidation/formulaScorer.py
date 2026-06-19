@@ -1,5 +1,10 @@
 # !/usr/bin/env python
 # coding: utf-8
+"""Score candidate formulas by library formula-frequency harmony.
+
+Uses a LocalOutlierFactor model over library formula distributions to rank
+FormulaFinder candidates during Feature elucidation.
+"""
 
 from collections import defaultdict
 
@@ -35,6 +40,8 @@ def get_ff_fmlas():
 
 
 class FormulaScorer:
+    """Singleton scorer that ranks formulas by library harmony."""
+
     __instance__ = None
 
     @staticmethod

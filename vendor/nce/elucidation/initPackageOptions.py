@@ -1,3 +1,9 @@
+"""Import-time pandas, seaborn, and sklearn warning suppression for elucidation.
+
+Imported via exec() at elucidator startup so notebook-style display defaults
+and filtered warnings apply before heavy NCE modules load.
+"""
+
 from warnings import filterwarnings
 import pandas as pd
 import seaborn as sns

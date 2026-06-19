@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Mar  1 12:17:24 2019
+"""Logarithmic mass binning and ppm tolerance helpers for NCE elucidation.
 
-@author: rdwyer
+Maps m/z values to discrete bins and tests proximity at 5/10/20 ppm. Shared
+by formula finding, MS2 consensus building, and modeling bin-pair logic in
+spec2mol v21 inference.
 """
 
 from collections import defaultdict

@@ -1,15 +1,18 @@
+"""Live Oracle MLIMS queries for library matching during elucidation.
+
+Singleton service fetching named/unknown compounds, MS2 spectra, ion tables,
+and rediscovery data from production MLIMS. Default backend for LibraryService.
+"""
+
 import os
 import pandas as pd
 from dotenv import load_dotenv
 from mdsutils.easyQuery import EasyQuery
 
-"""
-Fetches library from MLIMS.  
-Not going to document everything until redundancy is straightened out.
-"""
-
 
 class MlimsLibraryService:
+    """Singleton Oracle-backed access to MLIMS chromatography library tables."""
+
     __get_named_ms2__ = {}
     __get_unnamed_nmd__ = {}
     __get_named_nmd__ = {}

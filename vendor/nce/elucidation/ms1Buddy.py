@@ -1,3 +1,9 @@
+"""Weighted summary of one MS1 buddy peak relative to a feature.
+
+Combines repeated (delta, intensity-ratio) observations across MS1 scans into
+stable buddy labels used by MS1Analyzer for neutral-mass inference.
+"""
+
 import numpy as np
 from elucidation.conveniences import qw, lmap
 from statsmodels.stats.weightstats import DescrStatsW  # need this for std err of mean
@@ -7,6 +13,8 @@ import regex as re
 
 
 class MS1Buddy:
+    """Represent one co-eluting MS1 buddy hypothesis with median delta and ratio."""
+
     def __init__(self, ms1, label, dr_tuples):
         self.me = self
         self.label = label

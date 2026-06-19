@@ -1,3 +1,10 @@
+"""Learning-rate and KL annealing schedules for decoder training.
+
+Pipeline context:
+    Used only by ``TranslationTrainer`` during offline training. Inference
+    loads fixed weights and does not import these schedulers.
+"""
+
 import math
 from torch.optim.lr_scheduler import _LRScheduler
 

@@ -1,3 +1,15 @@
+"""SMILES tokenization, vocabulary, and training helpers for the MOSES decoder.
+
+Pipeline context:
+  Pickled ``SmilesOneHotVocab`` objects in ``models/decoder/vocab.nb`` supply
+  token IDs for ``TranslationModel``. ``structural_elucidation.inference.predict``
+  also calls ``vocab.string2ids`` when caching encoder means for alignment.
+
+Key I/O:
+  ``SmilesVocab.string2ids`` / ``ids2string`` — SMILES ↔ token sequences.
+  ``SmilesOneHotVocab`` — one-hot embedding matrix copied into the model.
+"""
+
 import random
 import re
 import torch
@@ -57,12 +69,16 @@ class SS:
 
 
 def smiles_tokenize(smiles):
+    """Split a SMILES string into regex-defined atom and bond tokens."""
     return re.findall(REGEX_SML, smiles)
 
 
 class SmilesVocab:
+    """Character-level SMILES vocabulary with BOS/EOS/PAD/UNK specials."""
+
     @classmethod
     def from_data(cls, data, tokenizer=smiles_tokenize, max_smiles=1000000, *args, **kwargs):
+        """Build vocabulary from an iterable of SMILES strings."""
         chars = set()
         for string in data[:max_smiles]:
             chars.update(tokenizer(string))
@@ -70,6 +86,7 @@ class SmilesVocab:
         return cls(chars, *args, **kwargs)
 
     def __init__(self, chars, tokenizer=smiles_tokenize, ss=SS):
+        """Initialize from a set of token characters plus special symbols."""
         if (ss.bos in chars) or (ss.eos in chars) or \
                 (ss.pad in chars) or (ss.unk in chars):
             raise ValueError('SS in chars')
@@ -113,6 +130,7 @@ class SmilesVocab:
         return self.i2c[id]
 
     def string2ids(self, string, add_bos=False, add_eos=False):
+        """Tokenize ``string`` and return integer token IDs."""
         ids = [self.char2id(c) for c in self.tokenizer(string)]
 
         if add_bos:
@@ -123,6 +141,7 @@ class SmilesVocab:
         return ids
 
     def ids2string(self, ids, rem_bos=True, rem_eos=True):
+        """Decode token IDs back to a SMILES string."""
         if len(ids) == 0:
             return ''
         if rem_bos and ids[0] == self.bos:
@@ -138,6 +157,8 @@ class SmilesVocab:
 
 
 class SmilesOneHotVocab(SmilesVocab):
+    """``SmilesVocab`` with a fixed one-hot embedding matrix for the decoder."""
+
     def __init__(self, *args, **kwargs):
         super(SmilesOneHotVocab, self).__init__(*args, **kwargs)
         self.vectors = torch.eye(len(self.c2i))
