@@ -102,19 +102,38 @@ def query_df(db_path: Path, sql: str, params: tuple[Any, ...] = ()) -> pd.DataFr
         return pd.read_sql_query(sql, conn, params=params)
 
 
+_MOL_FP_CACHE: dict[str, tuple[Any, Any]] = {}
+
+
 def mol_fp(smiles: str) -> tuple[Any, Any] | tuple[None, None]:
-    """Parse SMILES and return ``(mol, morgan_fp)`` or ``(None, None)``."""
+    """Parse SMILES and return ``(mol, morgan_fp)`` or ``(None, None)``.
+
+    Results are memoized by SMILES string: the extended similarity network does
+    O(N^2) pairwise comparisons and would otherwise re-parse and re-fingerprint
+    the same molecules tens of thousands of times per report. The fingerprint is
+    deterministic per SMILES, so caching is output-identical.
+    """
 
     if not HAS_RDKIT:
         return None, None
-    mol = Chem.MolFromSmiles(str(smiles or ""))
+    key = str(smiles or "")
+    cached = _MOL_FP_CACHE.get(key)
+    if cached is not None:
+        return cached
+    mol = Chem.MolFromSmiles(key)
     if mol is None:
-        return None, None
+        result: tuple[Any, Any] = (None, None)
+        _MOL_FP_CACHE[key] = result
+        return result
     try:
         Chem.SanitizeMol(mol)
     except Exception:
-        return None, None
-    return mol, MORGAN.GetFingerprint(mol)
+        result = (None, None)
+        _MOL_FP_CACHE[key] = result
+        return result
+    result = (mol, MORGAN.GetFingerprint(mol))
+    _MOL_FP_CACHE[key] = result
+    return result
 
 
 def similarity(smiles_a: str, smiles_b: str) -> float:
