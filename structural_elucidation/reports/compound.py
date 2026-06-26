@@ -1921,10 +1921,18 @@ def build_extended_similarity_network(
         x_all["node_type"] = "unknown"
         x_all["confidence"] = x_all.apply(confidence_bucket, axis=1)
 
-    known_render = known_all[known_all["similarity_to_target"] >= known_min_similarity].head(max_known_render).copy()
-    x_render = x_all[x_all["similarity_to_target"] >= x_min_similarity].copy()
-    if not x_render.empty:
-        x_render = x_render[x_render["x_compound_id"].astype(str) != control_id].copy()
+    if known_all.empty:
+        known_render = known_all.copy()
+    else:
+        known_render = (
+            known_all[known_all["similarity_to_target"] >= known_min_similarity].head(max_known_render).copy()
+        )
+    if x_all.empty:
+        x_render = x_all.copy()
+    else:
+        x_render = x_all[x_all["similarity_to_target"] >= x_min_similarity].copy()
+        if not x_render.empty and "x_compound_id" in x_render.columns:
+            x_render = x_render[x_render["x_compound_id"].astype(str) != control_id].copy()
 
     nodes: list[dict[str, Any]] = [
         {
