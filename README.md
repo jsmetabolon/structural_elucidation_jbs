@@ -105,6 +105,34 @@ Optional flags: `--target-smiles`, `--target-name`, `--candidate-pool`, `--hypot
 
 Reports degrade gracefully when `vendor/metabolite_synonyms.sqlite` or WGCNA cohort files are missing (synonym/network/correlation sections use placeholders or are omitted).
 
+## Batch reports for all X compounds
+
+Generate one report bundle per `control_id` found in the rerank CSVs, plus a master `index.html`:
+
+```bash
+# Quick scope check (no generation): how many compounds per lib?
+DRY_RUN=1 OUT_ROOT=output/pipeline_equalization ./generate_all_reports.sh
+
+# Generate everything (resumes by default; one isolated subprocess per compound)
+OUT_ROOT=output/pipeline_equalization JOBS=8 ./generate_all_reports.sh
+```
+
+Or call the module directly:
+
+```bash
+python -m structural_elucidation.reports.batch \
+  --equalization-root output/pipeline_equalization \
+  --out-dir output/reports --jobs 8
+```
+
+Outputs land under `output/reports/`:
+
+- `output/reports/<control_id>/` — full per-compound bundle (same as the single-compound builder)
+- `output/reports/index.html` — searchable/sortable master table linking every compound
+- `output/reports/reports_index.csv`, `output/reports/batch_summary.json`
+
+Key flags: `--jobs N` (parallelism), `--overwrite` (rebuild existing), `--limit N` (quick test), `--dry-run`, `--control-ids X-1,X-2` / `@file`, `--index-only` (rebuild master index from existing manifests), `--observed-lookup-dir` (per-lib peak CSVs for MS-fit scoring). One compound failing never aborts the batch; failures are recorded in `batch_summary.json` with a `_build.log` in the compound dir.
+
 ## Verification
 
 ```bash
