@@ -1,0 +1,16 @@
+{
+  "generated_at": "2026-06-26T15:50:08Z",
+  "out_dir": "/workspace/output/reports",
+  "jobs": 8,
+  "predictions": [
+    "/workspace/output/pipeline_equalization/rerank_lib209/unified_rerank_all_top10.csv",
+    "/workspace/output/pipeline_equalization/rerank_lib305/unified_rerank_all_top10.csv",
+    "/workspace/output/pipeline_equalization/rerank_lib400/unified_rerank_all_top10.csv",
+    "/workspace/output/pipeline_equalization/rerank_lib402/unified_rerank_all_top10.csv"
+  ],
+  "total_control_ids": 3897,
+  "generated": 3897,
+  "skipped_existing": 0,
+  "failed": [],
+  "elapsed_seconds": 4193.78
+}
