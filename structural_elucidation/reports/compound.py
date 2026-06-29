@@ -582,6 +582,32 @@ def compact_candidate_scores(candidates: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+_MCS_SMARTS_CACHE: dict[tuple[str, str], str] = {}
+
+
+def cached_mcs_smarts(smiles_a: str, mol_a: Any, smiles_b: str, mol_b: Any) -> str:
+    """Memoized ``rdFMCS`` smartsString for a SMILES pair (symmetric key).
+
+    The consensus heatmap compares every top-10 reference against every top-10
+    candidate, i.e. ~100 MCS calls per report over the same ~10 molecules. MCS is
+    symmetric, so caching by the unordered SMILES pair roughly halves the calls;
+    each avoided call also skips the expensive ``timeout`` budget when a pair
+    would otherwise re-hit the MCS time limit.
+    """
+
+    key = (smiles_a, smiles_b) if smiles_a <= smiles_b else (smiles_b, smiles_a)
+    cached = _MCS_SMARTS_CACHE.get(key)
+    if cached is not None:
+        return cached
+    try:
+        mcs = rdFMCS.FindMCS([mol_a, mol_b], timeout=2, matchValences=False, ringMatchesRingOnly=False)
+        smarts = mcs.smartsString
+    except Exception:
+        smarts = ""
+    _MCS_SMARTS_CACHE[key] = smarts
+    return smarts
+
+
 def consensus_atom_support(reference_smiles: str, candidates: pd.DataFrame) -> tuple[list[dict[str, Any]], str]:
     """MCS atom-support heatmap SVG and per-atom support CSV rows for one reference."""
 
@@ -603,13 +629,10 @@ def consensus_atom_support(reference_smiles: str, candidates: pd.DataFrame) -> t
         cand = Chem.MolFromSmiles(smiles)
         if cand is None:
             continue
-        try:
-            mcs = rdFMCS.FindMCS([ref, cand], timeout=2, matchValences=False, ringMatchesRingOnly=False)
-        except Exception:
+        smarts = cached_mcs_smarts(reference_smiles, ref, smiles, cand)
+        if not smarts:
             continue
-        if not mcs.smartsString:
-            continue
-        patt = Chem.MolFromSmarts(mcs.smartsString)
+        patt = Chem.MolFromSmarts(smarts)
         if patt is None:
             continue
         match = ref.GetSubstructMatch(patt)
