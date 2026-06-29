@@ -152,6 +152,46 @@ def similarity(smiles_a: str, smiles_b: str) -> float:
     return float(TanimotoSimilarity(fp_a, fp_b))
 
 
+def compute_2d_coords_robust(mol: Any) -> None:
+    """Lay out 2D coordinates, preferring CoordGen but falling back to the default
+    depictor when CoordGen collapses atoms onto each other (which makes structure
+    and consensus images unreadable). Picks whichever layout best separates atoms.
+    """
+
+    if not HAS_RDKIT:
+        return
+
+    def min_pair_dist() -> float:
+        conf = mol.GetConformer()
+        n = mol.GetNumAtoms()
+        if n < 2:
+            return 9.0
+        pts = [(conf.GetAtomPosition(i).x, conf.GetAtomPosition(i).y) for i in range(n)]
+        return min(
+            ((pts[i][0] - pts[j][0]) ** 2 + (pts[i][1] - pts[j][1]) ** 2) ** 0.5
+            for i in range(n)
+            for j in range(i + 1, n)
+        )
+
+    try:
+        rdDepictor.SetPreferCoordGen(True)
+        rdDepictor.Compute2DCoords(mol)
+        coordgen_dist = min_pair_dist()
+        if coordgen_dist < 0.30:
+            rdDepictor.SetPreferCoordGen(False)
+            rdDepictor.Compute2DCoords(mol)
+            if min_pair_dist() < coordgen_dist:
+                rdDepictor.SetPreferCoordGen(True)
+                rdDepictor.Compute2DCoords(mol)
+    except Exception:
+        try:
+            rdDepictor.Compute2DCoords(mol)
+        except Exception:
+            pass
+    finally:
+        rdDepictor.SetPreferCoordGen(True)
+
+
 def structure_image(smiles: str, path: Path, legend: str = "") -> None:
     """Render a 2D structure PNG via RDKit when available."""
 
@@ -162,6 +202,7 @@ def structure_image(smiles: str, path: Path, legend: str = "") -> None:
     if mol is None:
         return
     try:
+        compute_2d_coords_robust(mol)
         Draw.MolToFile(mol, str(path), size=(520, 360), legend=legend)
     except Exception:
         # Some molecules trip RDKit's drawer (e.g. "zero length vector"); a single
@@ -631,7 +672,7 @@ def consensus_atom_support(reference_smiles: str, candidates: pd.DataFrame) -> t
             rows,
             "<p class='note'>Consensus structure unavailable because the reference SMILES could not be parsed.</p>",
         )
-    rdDepictor.Compute2DCoords(ref)
+    compute_2d_coords_robust(ref)
     n_atoms = ref.GetNumAtoms()
     support = [0.0] * n_atoms
     valid = 0
