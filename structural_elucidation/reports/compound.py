@@ -161,7 +161,12 @@ def structure_image(smiles: str, path: Path, legend: str = "") -> None:
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         return
-    Draw.MolToFile(mol, str(path), size=(520, 360), legend=legend)
+    try:
+        Draw.MolToFile(mol, str(path), size=(520, 360), legend=legend)
+    except Exception:
+        # Some molecules trip RDKit's drawer (e.g. "zero length vector"); a single
+        # un-renderable structure image must not abort the whole report.
+        return
 
 
 # ── Structure rendering (Open Babel / SVG) ────────────────────────────────────
