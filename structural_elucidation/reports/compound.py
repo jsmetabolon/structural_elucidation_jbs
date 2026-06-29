@@ -655,10 +655,30 @@ def consensus_atom_support(reference_smiles: str, candidates: pd.DataFrame) -> t
     max_x = max(x for x, _ in coords)
     min_y = min(y for _, y in coords)
     max_y = max(y for _, y in coords)
-    width = max(max_x - min_x, 1e-6)
-    height = max(max_y - min_y, 1e-6)
-    canvas_w, canvas_h, margin = 720.0, 430.0, 58.0
-    scale = min((canvas_w - 2 * margin) / width, (canvas_h - 2 * margin) / height)
+
+    # Render at a constant pixels-per-bond density so structures of any size read
+    # similarly: a small molecule gets a small canvas (scaled up inside its box,
+    # large glyphs) and a large molecule gets a proportionally larger canvas that
+    # the viewBox scales down, so atom circles never overlap. Because the density
+    # is fixed, glyph sizes are constant rather than fixed against a fixed canvas.
+    bond_lengths = []
+    for bond in ref.GetBonds():
+        ax, ay = coords[bond.GetBeginAtomIdx()]
+        bx, by = coords[bond.GetEndAtomIdx()]
+        dist = ((ax - bx) ** 2 + (ay - by) ** 2) ** 0.5
+        if dist > 1e-6:
+            bond_lengths.append(dist)
+    typical_bond = sorted(bond_lengths)[len(bond_lengths) // 2] if bond_lengths else 1.5
+    target_bond_px = 46.0
+    scale = target_bond_px / max(typical_bond, 1e-6)
+    radius = 16.0
+    symbol_font = 13.0
+    conf_font = 9.0
+    bond_stroke = 6.0
+    circle_stroke = 2.5
+    margin = radius + 22.0
+    canvas_w = max(max_x - min_x, 1e-6) * scale + 2 * margin
+    canvas_h = max(max_y - min_y, 1e-6) * scale + 2 * margin
 
     def xy(atom_idx: int) -> tuple[float, float]:
         """Map RDKit 2D conformer coordinates to SVG canvas space."""
@@ -667,26 +687,27 @@ def consensus_atom_support(reference_smiles: str, candidates: pd.DataFrame) -> t
 
     bond_parts = []
     for bond in ref.GetBonds():
-        a = bond.GetBeginAtomIdx()
-        b = bond.GetEndAtomIdx()
-        x1, y1 = xy(a)
-        x2, y2 = xy(b)
+        x1, y1 = xy(bond.GetBeginAtomIdx())
+        x2, y2 = xy(bond.GetEndAtomIdx())
         bond_parts.append(
-            f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" stroke="#24445F" stroke-opacity=".42" stroke-width="4" stroke-linecap="round" />'
+            f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" '
+            f'stroke="#24445F" stroke-opacity=".42" stroke-width="{bond_stroke:.1f}" stroke-linecap="round" />'
         )
 
     atom_parts = []
     for atom in ref.GetAtoms():
         idx = atom.GetIdx()
-        x, y = xy(idx)
         value = confidence[idx]
         color = heatmap_color(value)
         symbol = html.escape(atom.GetSymbol())
+        x, y = xy(idx)
         atom_parts.append(
             f'<g class="consensus-atom" data-confidence="{value:.3f}" transform="translate({x:.1f},{y:.1f})">'
-            f'<circle r="24" fill="{color}" stroke="white" stroke-width="3"><title>Atom {idx + 1} {symbol}: consensus {value:.2f}</title></circle>'
-            f'<text text-anchor="middle" y="5">{symbol}</text>'
-            f'<text class="atom-confidence" text-anchor="middle" y="39">{value:.2f}</text></g>'
+            f'<circle r="{radius:.1f}" fill="{color}" stroke="white" stroke-width="{circle_stroke:.1f}">'
+            f'<title>Atom {idx + 1} {symbol}: consensus {value:.2f}</title></circle>'
+            f'<text text-anchor="middle" y="{symbol_font * 0.35:.1f}" font-size="{symbol_font:.1f}">{symbol}</text>'
+            f'<text class="atom-confidence" text-anchor="middle" y="{radius + conf_font:.1f}" '
+            f'font-size="{conf_font:.1f}">{value:.2f}</text></g>'
         )
         rows.append(
             {
@@ -701,7 +722,8 @@ def consensus_atom_support(reference_smiles: str, candidates: pd.DataFrame) -> t
 
     svg = "\n".join(
         [
-            "<svg class='consensus-svg' viewBox='0 0 720 430' role='img' aria-label='Candidate consensus atom heatmap'>",
+            f"<svg class='consensus-svg' viewBox='0 0 {canvas_w:.0f} {canvas_h:.0f}' "
+            "role='img' aria-label='Candidate consensus atom heatmap'>",
             *bond_parts,
             *atom_parts,
             "</svg>",
@@ -1661,6 +1683,7 @@ def extended_network_svg(nodes: list[dict[str, Any]], edges: list[dict[str, Any]
     """Render the expanded known+X similarity network as large-format SVG."""
 
     by_id = {str(node["id"]): node for node in nodes}
+    target_id = next((str(node["id"]) for node in nodes if node.get("kind") == "target"), "target")
     edge_parts = []
     node_parts = []
     for edge in edges:
@@ -1700,7 +1723,7 @@ def extended_network_svg(nodes: list[dict[str, Any]], edges: list[dict[str, Any]
             f'data-pathway="{html.escape(str(node.get("pathway", "")))}" tabindex="0" '
             f'transform="translate({node["x"]:.1f},{node["y"]:.1f})">'
             f'<circle r="{node["radius"]:.1f}" fill="{html.escape(str(node["color"]))}" stroke="{stroke}" stroke-width="{stroke_width:.1f}">'
-            f'<title>{html.escape(str(node["label"]))}\\nType: {html.escape(str(node["kind"]))}\\nSimilarity to X-25003: {sim:.3f}\\n{html.escape(str(node.get("pathway", "")))}</title>'
+            f'<title>{html.escape(str(node["label"]))}\\nType: {html.escape(str(node["kind"]))}\\nSimilarity to {html.escape(target_id)}: {sim:.3f}\\n{html.escape(str(node.get("pathway", "")))}</title>'
             f"</circle>"
             f"{label_html}</g>"
         )
@@ -2078,6 +2101,11 @@ def render_html(
 
     public_mode = variant == "public"
     variant_label = "Public" if variant == "public" else "Internal"
+    control_id = str(target.get("control_id", "")).strip() or "compound"
+    slug = control_slug(control_id)
+    pathway_super = str(db_detail.get("super_pathway") or db_detail.get("metabolon_super") or "").strip()
+    pathway_sub = str(db_detail.get("pathway") or db_detail.get("metabolon_sub") or "").strip()
+    pathway_badge_html = f"<span class='badge'>{html.escape(pathway_super)}</span>" if pathway_super else ""
     pubchem_link = f"https://pubchem.ncbi.nlm.nih.gov/#query={quote(str(target['name']))}"
     top_candidate = candidate_scores[0] if candidate_scores else {}
     syn_col_count = 1 if public_mode else 3
@@ -2268,7 +2296,7 @@ def render_html(
     header_metrics_html = ""
     if not public_mode:
         header_metrics_html = f"""
-        <div class="metric-card"><div class="metric-label">Final status</div><div class="metric-value">N-lactoylalanine</div><div class="metric-note">Best current interpretation</div></div>
+        <div class="metric-card"><div class="metric-label">Top candidate</div><div class="metric-value">{html.escape(target['name'])}</div><div class="metric-note">Rank-1 displayed candidate</div></div>
         <div class="metric-card"><div class="metric-label">Candidate rows</div><div class="metric-value">{len(candidate_scores)}</div><div class="metric-note">Displayed SMILES candidates</div></div>
         <div class="metric-card"><div class="metric-label">Known neighbors</div><div class="metric-value">{len(neighbors)}</div><div class="metric-note">Structured DB neighborhood</div></div>
         <div class="metric-card"><div class="metric-label">Mass error</div><div class="metric-value">{evidence['mass_error_da']:.6f}</div><div class="metric-note">Neutral mass Da</div></div>"""
@@ -2312,7 +2340,7 @@ def render_html(
         <div class="network-stat"><span>X rendered</span><strong>{int(extended_stats.get('n_x_render', 0))}</strong></div>
       </div>
       <div class="extended-network-wrap">{extended_network_svg_html}</div>
-      <p class="note">Sidecars: <a href="data/extended_similarity_network_nodes.csv">nodes CSV</a>, <a href="data/extended_similarity_network_edges.csv">edges CSV</a>, <a href="data/all_known_similarity_to_target.csv">all known similarities</a>, <a href="data/all_unknown_similarity_to_target.csv">all X similarities</a>.</p>
+      <p class="note">Sidecars: <a href="data/extended_similarity_network_nodes.csv">nodes CSV</a>, <a href="data/extended_similarity_network_edges.csv">edges CSV</a>, <a href="data/all_known_similarity_to_{slug}.csv">all known similarities</a>, <a href="data/all_unknown_similarity_to_{slug}.csv">all X similarities</a>.</p>
     </section>"""
     internal_sections = ""
     if variant == "internal":
@@ -2322,16 +2350,16 @@ def render_html(
       <h2>Structure Consensus Heat Map</h2>
       <p class="note">
         The final consensus atom-position confidence map is shown beside the most likely structure at the top of the report.
-        X-25003 currently has one candidate-consensus support map, so that same map is used as the final consensus-guided confidence visual.
+        This compound currently has one candidate-consensus support map, so that same map is used as the final consensus-guided confidence visual.
       </p>
-      <p class="note">Sidecars: <a href="data/x25003_consensus_atom_support.csv">x25003_consensus_atom_support.csv</a> and <a href="data/x25003_evidence_summary.csv">x25003_evidence_summary.csv</a>.</p>
+      <p class="note">Sidecars: <a href="data/{slug}_consensus_atom_support.csv">{slug}_consensus_atom_support.csv</a> and <a href="data/{slug}_evidence_summary.csv">{slug}_evidence_summary.csv</a>.</p>
     </section>
 
     <section class="section">
       <h2>Structural Possibility Decision Tree</h2>
       <p class="note">Expanded internal view showing the main structure classes retained after mass, fragment, and neighborhood gating.</p>
       <div class="decision-tree-box">{structural_possibility_tree_svg}</div>
-      <p class="note">Sidecar: <a href="data/x25003_structural_possibility_summary.csv">x25003_structural_possibility_summary.csv</a>.</p>
+      <p class="note">Sidecar: <a href="data/{slug}_structural_possibility_summary.csv">{slug}_structural_possibility_summary.csv</a>.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Class</th><th>Candidate Count</th><th>Top Candidate</th><th>Top Candidate SMILES</th><th>Interpretation</th><th>Dominant Gate</th></tr></thead>
@@ -2357,7 +2385,7 @@ def render_html(
         <div class="network-stat"><span>X rendered</span><strong>{int(extended_stats.get('n_x_render', 0))}</strong></div>
       </div>
       <div class="extended-network-wrap">{extended_network_svg_html}</div>
-      <p class="note">Sidecars: <a href="data/extended_similarity_network_nodes.csv">nodes CSV</a>, <a href="data/extended_similarity_network_edges.csv">edges CSV</a>, <a href="data/all_known_similarity_to_target.csv">all known similarities</a>, <a href="data/all_unknown_similarity_to_target.csv">all X similarities</a>.</p>
+      <p class="note">Sidecars: <a href="data/extended_similarity_network_nodes.csv">nodes CSV</a>, <a href="data/extended_similarity_network_edges.csv">edges CSV</a>, <a href="data/all_known_similarity_to_{slug}.csv">all known similarities</a>, <a href="data/all_unknown_similarity_to_{slug}.csv">all X similarities</a>.</p>
     </section>
 
     <section class="section">
@@ -2388,7 +2416,7 @@ def render_html(
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>X-25003 Structure Resolution ({variant_label})</title>
+  <title>{html.escape(control_id)} Structure Resolution ({variant_label})</title>
   <style>
     :root {{
       color-scheme: light;
@@ -2497,15 +2525,15 @@ def render_html(
     <div class="hero-grid">
       <div>
         <p class="eyebrow">X-Compound Elucidation Dashboard • {variant_label}</p>
-        <h1>X-25003</h1>
+        <h1>{html.escape(control_id)}</h1>
         <p class="subtitle">
-          lib_209_negative structure-resolution report for formula <code>{html.escape(target['formula'])}</code>.
-          Current best interpretation is <strong>N-lactoylalanine</strong>; the structure shown here comes from the control-blind N-lactoyl amino acid rule candidate.
+          Structure-resolution report for <strong>{html.escape(control_id)}</strong>, formula <code>{html.escape(target['formula'])}</code>.
+          The most likely candidate structure is shown below.
         </p>
         <p>
           <span class="badge ok">top-1 candidate</span>
           <span class="badge ok">Tanimoto {evidence['top10_best_tanimoto']:.3f}</span>
-          <span class="badge">Amino Acid / Lactoyl Amino Acid</span>
+          {pathway_badge_html}
         </p>
       </div>
       <div><div class="metrics">{header_metrics_html}</div></div>
@@ -2515,14 +2543,14 @@ def render_html(
     <section class="section">
       {heading_with_info("h2", "Top Candidate Compound")}
       <p class="note">
-        On average, 80% of compounds identified in Metabolon data sets meet Level 1 criteria through fingerprint matching to an authentic reference standard analyzed with the same experimental methods. The remaining compounds are identified through Metabolon’s structural elucidation workflow; the X-25003 evidence stack below follows that dashboard structure.
+        On average, 80% of compounds identified in Metabolon data sets meet Level 1 criteria through fingerprint matching to an authentic reference standard analyzed with the same experimental methods. The remaining compounds are identified through Metabolon’s structural elucidation workflow; the evidence stack below follows that dashboard structure.
       </p>
       <div class="call-grid">
         <div class="structure-card">
           {heading_with_info("h3", "Most Likely Structure", include_info=False)}
           {structure_panel_html}
           <p><strong>{html.escape(target['name'])}</strong></p>
-          <p class="note">Exact stereochemistry is not overclaimed here; the rule candidate matches the verified structure at fingerprint level.</p>
+          <p class="note">Exact stereochemistry is not overclaimed; this is the top-ranked candidate structure for this feature.</p>
         </div>
         <div class="structure-card">
           {heading_with_info("h3", "Final Consensus Atom-Position Confidence", include_info=False)}
@@ -2535,19 +2563,19 @@ def render_html(
               <span>1.0 high support</span>
             </div>
           </div>
-          <p class="note">Sidecar: <a href="data/x25003_consensus_atom_support.csv">x25003_consensus_atom_support.csv</a>.</p>
+          <p class="note">Sidecar: <a href="data/{slug}_consensus_atom_support.csv">{slug}_consensus_atom_support.csv</a>.</p>
         </div>
       </div>
       <div class="metrics">
-        <div class="metric-card"><div class="metric-label">Top Candidate Confidence Level</div><div class="metric-value">99.9%</div><div class="metric-note">Level 2C</div></div>
-        <div class="metric-card"><div class="metric-label">Candidate Chemical Pathway</div><div class="metric-value">Lactoyl Amino Acid</div><div class="metric-note">Most likely pathway from similar molecules</div></div>
-        <div class="metric-card"><div class="metric-label">Candidate Chemical SubPathway</div><div class="metric-value">{html.escape(str(db_detail.get('metabolon_sub', '') or 'Lactoyl Amino Acid'))}</div><div class="metric-note">Metabolon subpathway metadata</div></div>
-        <div class="metric-card"><div class="metric-label">Pathway Confidence Level</div><div class="metric-value">10/10 (high)</div><div class="metric-note">Pathway-supported top-candidate context</div></div>
+        <div class="metric-card"><div class="metric-label">Rank-1 candidate Tanimoto</div><div class="metric-value">{evidence['top10_best_tanimoto']:.3f}</div><div class="metric-note">Top reranked candidate vs target structure</div></div>
+        <div class="metric-card"><div class="metric-label">Candidate Chemical Pathway</div><div class="metric-value">{html.escape(pathway_super or 'Not in reference DB')}</div><div class="metric-note">Metabolite DB super-pathway</div></div>
+        <div class="metric-card"><div class="metric-label">Candidate Chemical SubPathway</div><div class="metric-value">{html.escape(pathway_sub or 'Not in reference DB')}</div><div class="metric-note">Metabolite DB sub-pathway</div></div>
+        <div class="metric-card"><div class="metric-label">Library neighbors</div><div class="metric-value">{len(neighbors)}</div><div class="metric-note">DB structures above similarity floor</div></div>
       </div>
       <div class="structure-card" style="margin-top:18px;">
         {heading_with_info("h3", "Identification Evidence", include_info=False)}
         <div class="metrics">
-          <div class="metric-card copyable-card" tabindex="0" data-copy-value="{evidence['parent_mz']:.4f}"><span class="copy-hint">Click to copy</span><div class="metric-label">Observed parent m/z</div><div class="metric-value">{evidence['parent_mz']:.4f}</div><div class="metric-note">X-25003 feature</div></div>
+          <div class="metric-card copyable-card" tabindex="0" data-copy-value="{evidence['parent_mz']:.4f}"><span class="copy-hint">Click to copy</span><div class="metric-label">Observed parent m/z</div><div class="metric-value">{evidence['parent_mz']:.4f}</div><div class="metric-note">{html.escape(control_id)} feature</div></div>
           <div class="metric-card copyable-card" tabindex="0" data-copy-value="{target['exact_mass']:.6f}"><span class="copy-hint">Click to copy</span><div class="metric-label">Exact mass</div><div class="metric-value">{target['exact_mass']:.6f}</div><div class="metric-note">Candidate neutral mass</div></div>
           <div class="metric-card copyable-card" tabindex="0" data-copy-value="{html.escape(target['smiles'], quote=True)}"><span class="copy-hint">Click to copy</span><div class="metric-label">Top Candidate SMILES</div><div class="metric-value"><code>{html.escape(target['smiles'])}</code></div><div class="metric-note"><a href="{pubchem_link}">Other DB Links (PubChem of Top Candidate)</a></div></div>
           <div class="metric-card copyable-card" tabindex="0" data-copy-value="{html.escape(target['inchikey'], quote=True)}"><span class="copy-hint">Click to copy</span><div class="metric-label">InChIKey</div><div class="metric-value">{html.escape(target['inchikey'])}</div><div class="metric-note">From candidate SMILES</div></div>
@@ -2628,7 +2656,7 @@ def render_html(
 {internal_sections}
   </main>
   <footer>
-    Generated by build_x25003_bio_exploration_report.py from local Spec2Mol outputs plus the local metabolite synonym DB.
+    Generated by the structural elucidation report builder from Spec2Mol outputs plus the local metabolite synonym DB.
   </footer>
   <div id="hover-tooltip" class="hover-tooltip" aria-hidden="true"></div>
   <script>
@@ -2883,6 +2911,47 @@ def resolve_chemical_id(db_path: Path, known_x_row: dict[str, Any], target_name:
     return ""
 
 
+def is_real_chemical_id(db_path: Path, chemical_id: str) -> bool:
+    """True when ``chemical_id`` is an actual ``metabolites.chemical_id`` row."""
+
+    if not db_path.exists() or not chemical_id:
+        return False
+    try:
+        df = query_df(db_path, "SELECT 1 FROM metabolites WHERE chemical_id = ? LIMIT 1", (chemical_id,))
+    except Exception:
+        return False
+    return not df.empty
+
+
+def resolve_db_identity_by_inchikey(db_path: Path, inchikey: str) -> tuple[str, str] | None:
+    """Match a target InChIKey skeleton to a DB metabolite.
+
+    Returns ``(chemical_id, canonical_name)`` when the 2D structure (first
+    InChIKey block) matches a metabolite row, else ``None``. This lets reports
+    populate the library-match/synonyms sections and show a real display name
+    even when ``known_X`` only carries a free-text ``KNOWN`` label.
+    """
+
+    if not db_path.exists() or not inchikey:
+        return None
+    skeleton = inchikey.split("-")[0]
+    if len(skeleton) < 14:
+        return None
+    try:
+        df = query_df(
+            db_path,
+            "SELECT chemical_id, canonical_name FROM metabolites "
+            "WHERE inchikeys LIKE ? AND canonical_name IS NOT NULL AND trim(canonical_name) <> '' LIMIT 1",
+            (f"%{skeleton}%",),
+        )
+    except Exception:
+        return None
+    if df.empty:
+        return None
+    row = df.iloc[0]
+    return str(row["chemical_id"]), str(row["canonical_name"])
+
+
 def load_real_correlation_rows(
     control_id: str,
     chemical_id: str,
@@ -3029,13 +3098,23 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     kx_row = lookup_known_x_row(known_x, control_id)
     chemical_id = str(args.chemical_id or resolve_chemical_id(db_path, kx_row, target_name) or "").strip()
 
+    target_inchikey = inchikey_from_smiles(target_smiles)
+    if not args.chemical_id:
+        db_identity = resolve_db_identity_by_inchikey(db_path, target_inchikey)
+        if db_identity:
+            resolved_chem_id, resolved_name = db_identity
+            if not is_real_chemical_id(db_path, chemical_id):
+                chemical_id = resolved_chem_id
+            if target_name == control_id and resolved_name:
+                target_name = resolved_name
+
     target = {
         "control_id": control_id,
         "name": target_name,
         "smiles": target_smiles,
         "formula": formula_from_smiles(target_smiles),
         "exact_mass": exact_mass_from_smiles(target_smiles),
-        "inchikey": inchikey_from_smiles(target_smiles),
+        "inchikey": target_inchikey,
     }
     target_structure_svg = render_smiles_svg(target_smiles)
     asset_base = f"{slug}_structure"
