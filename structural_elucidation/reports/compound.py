@@ -54,6 +54,12 @@ try:
 
     HAS_RDKIT = True
     MORGAN = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)
+    try:
+        # CoordGen gives far better 2D layouts for large/macrocyclic molecules and
+        # avoids the atom-position collapse that makes consensus images unreadable.
+        rdDepictor.SetPreferCoordGen(True)
+    except Exception:  # pragma: no cover - older RDKit without CoordGen toggle
+        pass
 except ImportError:  # pragma: no cover
     Chem = None
     Draw = None
