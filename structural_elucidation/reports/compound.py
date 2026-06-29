@@ -774,7 +774,8 @@ def consensus_atom_support(reference_smiles: str, candidates: pd.DataFrame) -> t
 
     svg = "\n".join(
         [
-            f"<svg class='consensus-svg' viewBox='0 0 {canvas_w:.0f} {canvas_h:.0f}' "
+            f"<svg class='consensus-svg' width='{canvas_w:.0f}' height='{canvas_h:.0f}' "
+            f"viewBox='0 0 {canvas_w:.0f} {canvas_h:.0f}' "
             "role='img' aria-label='Candidate consensus atom heatmap'>",
             *bond_parts,
             *atom_parts,
@@ -1198,7 +1199,7 @@ def css() -> str:
     .network-stat strong { display: block; margin-top: 3px; font-size: 18px; color: var(--metro-navy); }
     .consensus-layout { display: grid; grid-template-columns: minmax(360px, .95fr) 1.05fr; gap: 18px; align-items: start; }
     .consensus-box { background: white; border: 1px solid var(--line); border-radius: 14px; padding: 12px; overflow: hidden; }
-    .consensus-svg { width: 100%; height: auto; display: block; }
+    .consensus-svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
     .consensus-scale { margin-top: 10px; }
     .consensus-scale-bar { height: 16px; border-radius: 999px; background: linear-gradient(90deg, #2C7BB6 0%, #FDAE61 50%, #D7191C 100%); border: 1px solid rgba(40,73,110,.16); }
     .consensus-scale-labels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; color: var(--metro-slate); font-size: 11px; font-weight: 800; }
@@ -2548,7 +2549,7 @@ def render_html(
     .node.hidden,.edge.hidden,tr.hidden,.ext-node.hidden,.ext-edge.hidden,tr.ext-hidden {{ display:none; }}
     .consensus-layout {{ display:grid; grid-template-columns:minmax(360px,.9fr) minmax(0,1.1fr); gap:18px; align-items:start; }}
     .consensus-box {{ background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px; overflow:hidden; }}
-    .consensus-svg {{ width:100%; height:auto; display:block; }}
+    .consensus-svg {{ max-width:100%; height:auto; display:block; margin:0 auto; }}
     .consensus-scale {{ margin-top:10px; }}
     .consensus-scale-bar {{ height:16px; border-radius:999px; background:linear-gradient(90deg,#2C7BB6 0%,#FDAE61 50%,#D7191C 100%); border:1px solid var(--line); }}
     .consensus-scale-labels {{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:5px; color:var(--muted); font-size:11px; font-weight:700; }}
