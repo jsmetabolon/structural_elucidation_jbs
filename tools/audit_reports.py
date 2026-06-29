@@ -30,16 +30,19 @@ import re
 from pathlib import Path
 from typing import Any
 
-# Literals that should never appear in a report that is not actually X-25003.
+# Unambiguous template-leak markers from the X-25003 source template. These never
+# occur as legitimate data (a real neighbor named "X-25003" in the similarity
+# network is fine and is intentionally NOT matched here).
 STALE_PATTERNS = {
-    "X-25003": re.compile(r"X-25003"),
-    "x25003": re.compile(r"x25003"),
-    "N-lactoylalanine": re.compile(r"N-lactoylalanine"),
-    "Lactoyl Amino Acid": re.compile(r"Lactoyl Amino Acid"),
-    "lib_209_negative": re.compile(r"lib_209_negative"),
-    "conf 99.9%": re.compile(r"99\.9%"),
-    "Level 2C": re.compile(r"Level 2C"),
-    "10/10": re.compile(r"10/10"),
+    "h1_x25003": re.compile(r"<h1>X-25003</h1>"),
+    "title_x25003": re.compile(r"X-25003 Structure Resolution"),
+    "x25003_link": re.compile(r"x25003_[a-z_]*\.csv"),
+    "to_target_link": re.compile(r"_to_target\.csv"),
+    "fabricated_level2c": re.compile(r"Level 2C"),
+    "fabricated_10of10": re.compile(r"10/10"),
+    "x25003_feature": re.compile(r"X-25003 feature"),
+    "lactoyl_subtitle": re.compile(r"interpretation is <strong>N-lactoylalanine"),
+    "lib_209_negative": re.compile(r"lib_209_negative structure-resolution"),
 }
 
 TITLE_RE = re.compile(r"<title>([^<]*)</title>")
@@ -174,12 +177,14 @@ def summarize(records: list[dict[str, Any]], crowd_threshold: float) -> dict[str
     worst_links = sorted(records, key=lambda r: r.get("n_broken_links", 0), reverse=True)[:25]
     return {
         "n_reports": n,
-        "reports_with_stale_X25003": count(lambda r: r.get("n[X-25003]", 0) > 0),
+        "reports_with_template_leak": count(
+            lambda r: any(r.get(f"n[{lbl}]", 0) > 0 for lbl in STALE_PATTERNS)
+        ),
         "reports_with_wrong_h1": count(lambda r: not r.get("h1_ok", False)),
         "reports_with_wrong_title": count(lambda r: not r.get("title_ok", False)),
         "reports_with_broken_links": count(lambda r: r.get("n_broken_links", 0) > 0),
-        "reports_with_fabricated_confidence": count(lambda r: r.get("n[Level 2C]", 0) > 0),
-        "reports_with_hardcoded_name_lactoyl": count(lambda r: r.get("n[N-lactoylalanine]", 0) > 0),
+        "reports_with_fabricated_confidence": count(lambda r: r.get("n[fabricated_level2c]", 0) > 0),
+        "reports_with_hardcoded_name_lactoyl": count(lambda r: r.get("n[lactoyl_subtitle]", 0) > 0),
         "reports_name_is_control_id": count(lambda r: r.get("name_is_control_id", False)),
         "reports_synonyms_empty": count(lambda r: r.get("synonyms_empty", False)),
         "reports_crowded_consensus_over_threshold": count(
