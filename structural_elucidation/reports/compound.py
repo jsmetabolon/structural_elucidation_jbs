@@ -2123,12 +2123,79 @@ def build_extended_similarity_network(
     }
 
 
+def resolve_pathway_display(db_detail: dict[str, Any], rank1: Any) -> dict[str, Any]:
+    """Resolve super/sub pathway for the report.
+
+    Prefers an exact metabolite-DB record; otherwise falls back to the neighbor
+    consensus prediction carried on the rank-1 rerank row (``predicted_pathway`` /
+    ``predicted_subpathway`` + ``pathway_confidence_tier`` /
+    ``pathway_best_reference_similarity``, produced by the pathway enrichment).
+    Returns super/sub plus the provenance so the report can label predicted vs
+    exact honestly.
+    """
+
+    def clean(value: Any) -> str:
+        text = str("" if value is None else value).strip()
+        return "" if text.lower() in {"", "nan", "none", "null", "<na>"} else text
+
+    exact_super = clean(db_detail.get("super_pathway")) or clean(db_detail.get("metabolon_super"))
+    exact_sub = clean(db_detail.get("pathway")) or clean(db_detail.get("metabolon_sub"))
+    if exact_super or exact_sub:
+        return {
+            "super": exact_super,
+            "sub": exact_sub,
+            "source": "exact",
+            "tier": "high",
+            "similarity": 1.0,
+            "status": "exact_reference_match",
+            "note": "From reference DB record",
+        }
+
+    pred_super = clean(rank1.get("predicted_pathway"))
+    pred_sub = clean(rank1.get("predicted_subpathway"))
+    if pred_super or pred_sub:
+        tier = clean(rank1.get("pathway_confidence_tier")) or "low"
+        status = clean(rank1.get("pathway_assignment_status")) or "neighbor_prediction"
+        similarity = 0.0
+        sim_raw = rank1.get("pathway_best_reference_similarity")
+        if sim_raw is not None and not pd.isna(sim_raw):
+            try:
+                similarity = float(sim_raw)
+            except (TypeError, ValueError):
+                similarity = 0.0
+        sim_txt = (
+            f"nearest reference similarity {similarity:.2f}, {tier} confidence"
+            if similarity > 0
+            else f"{tier} confidence"
+        )
+        return {
+            "super": pred_super,
+            "sub": pred_sub,
+            "source": "predicted",
+            "tier": tier,
+            "similarity": similarity,
+            "status": status,
+            "note": f"Predicted ({sim_txt})",
+        }
+
+    return {
+        "super": "",
+        "sub": "",
+        "source": "none",
+        "tier": "",
+        "similarity": 0.0,
+        "status": clean(rank1.get("pathway_assignment_status")) or "no_reference_match",
+        "note": "No reference match above similarity threshold",
+    }
+
+
 def render_html(
     *,
     out_dir: Path,
     target: dict[str, Any],
     evidence: dict[str, Any],
     db_detail: dict[str, Any],
+    pathway_info: dict[str, Any],
     synonyms: list[dict[str, Any]],
     neighbors: list[dict[str, Any]],
     nodes: list[dict[str, Any]],
@@ -2156,8 +2223,9 @@ def render_html(
     variant_label = "Public" if variant == "public" else "Internal"
     control_id = str(target.get("control_id", "")).strip() or "compound"
     slug = control_slug(control_id)
-    pathway_super = str(db_detail.get("super_pathway") or db_detail.get("metabolon_super") or "").strip()
-    pathway_sub = str(db_detail.get("pathway") or db_detail.get("metabolon_sub") or "").strip()
+    pathway_super = str(pathway_info.get("super") or "").strip()
+    pathway_sub = str(pathway_info.get("sub") or "").strip()
+    pathway_note = str(pathway_info.get("note") or "")
     pathway_badge_html = f"<span class='badge'>{html.escape(pathway_super)}</span>" if pathway_super else ""
     pubchem_link = f"https://pubchem.ncbi.nlm.nih.gov/#query={quote(str(target['name']))}"
     top_candidate = candidate_scores[0] if candidate_scores else {}
@@ -2621,8 +2689,8 @@ def render_html(
       </div>
       <div class="metrics">
         <div class="metric-card"><div class="metric-label">Rank-1 candidate Tanimoto</div><div class="metric-value">{evidence['top10_best_tanimoto']:.3f}</div><div class="metric-note">Top reranked candidate vs target structure</div></div>
-        <div class="metric-card"><div class="metric-label">Candidate Chemical Pathway</div><div class="metric-value">{html.escape(pathway_super or 'Not in reference DB')}</div><div class="metric-note">Metabolite DB super-pathway</div></div>
-        <div class="metric-card"><div class="metric-label">Candidate Chemical SubPathway</div><div class="metric-value">{html.escape(pathway_sub or 'Not in reference DB')}</div><div class="metric-note">Metabolite DB sub-pathway</div></div>
+        <div class="metric-card"><div class="metric-label">Candidate Chemical Pathway</div><div class="metric-value">{html.escape(pathway_super or 'Not available')}</div><div class="metric-note">{html.escape(pathway_note or 'Metabolite DB super-pathway')}</div></div>
+        <div class="metric-card"><div class="metric-label">Candidate Chemical SubPathway</div><div class="metric-value">{html.escape(pathway_sub or 'Not available')}</div><div class="metric-note">{html.escape(pathway_note or 'Metabolite DB sub-pathway')}</div></div>
         <div class="metric-card"><div class="metric-label">Library neighbors</div><div class="metric-value">{len(neighbors)}</div><div class="metric-note">DB structures above similarity floor</div></div>
       </div>
       <div class="structure-card" style="margin-top:18px;">
@@ -3252,6 +3320,21 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         )
         syn_df.to_csv(data_dir / "metabolite_db_synonyms.csv", index=False)
 
+    pathway_info = resolve_pathway_display(db_detail, rank1)
+    pd.DataFrame(
+        [
+            {
+                "control_id": control_id,
+                "predicted_pathway": pathway_info["super"],
+                "predicted_subpathway": pathway_info["sub"],
+                "pathway_source": pathway_info["source"],
+                "pathway_confidence_tier": pathway_info["tier"],
+                "pathway_best_reference_similarity": pathway_info["similarity"],
+                "pathway_assignment_status": pathway_info["status"],
+            }
+        ]
+    ).to_csv(data_dir / f"{slug}_pathway_prediction.csv", index=False)
+
     correlation_rows, correlation_blocker = load_real_correlation_rows(control_id, chemical_id, target_name)
 
     all_structured = pd.DataFrame()
@@ -3385,6 +3468,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         target=target,
         evidence=evidence,
         db_detail=db_detail,
+        pathway_info=pathway_info,
         synonyms=syn_df.fillna("").to_dict(orient="records"),
         neighbors=neighbors,
         nodes=nodes,
