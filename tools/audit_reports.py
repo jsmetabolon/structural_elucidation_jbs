@@ -155,6 +155,14 @@ def audit_one(bundle: Path, lib_map: dict[str, str]) -> dict[str, Any]:
     rec["consensus_overlap_ratio"] = crowd["overlap_ratio"] if crowd else 0.0
 
     rec["synonyms_empty"] = "No synonyms returned" in text
+    rec["pathway_source"] = ""
+    for pw in (bundle / "data").glob("*_pathway_prediction.csv"):
+        try:
+            row = next(csv.DictReader(pw.open(encoding="utf-8")), {})
+            rec["pathway_source"] = str(row.get("pathway_source", ""))
+        except Exception:
+            pass
+        break
     return rec
 
 
@@ -187,6 +195,9 @@ def summarize(records: list[dict[str, Any]], crowd_threshold: float) -> dict[str
         "reports_with_hardcoded_name_lactoyl": count(lambda r: r.get("n[lactoyl_subtitle]", 0) > 0),
         "reports_name_is_control_id": count(lambda r: r.get("name_is_control_id", False)),
         "reports_synonyms_empty": count(lambda r: r.get("synonyms_empty", False)),
+        "pathway_exact": count(lambda r: r.get("pathway_source") == "exact"),
+        "pathway_predicted": count(lambda r: r.get("pathway_source") == "predicted"),
+        "pathway_none": count(lambda r: r.get("pathway_source") in ("none", "")),
         "reports_crowded_consensus_over_threshold": count(
             lambda r: r.get("consensus_overlap_ratio", 0.0) > crowd_threshold
         ),
