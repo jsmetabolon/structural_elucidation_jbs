@@ -74,6 +74,7 @@ def load_rank1_predictions(root: Path, libs: list[str], pred_name: str) -> pd.Da
                 {
                     "control_id": cid,
                     "lib": lib,
+                    "predicted_smiles": clean(r.get("predicted_smiles")),
                     "predicted_pathway": clean(r.get("predicted_pathway")),
                     "predicted_subpathway": clean(r.get("predicted_subpathway")),
                     "tier": clean(r.get("pathway_confidence_tier")),
@@ -98,6 +99,90 @@ def load_ground_truth(known_x_path: Path) -> pd.DataFrame:
         out[cid] = {"true_super": sup, "true_sub": clean(r.get("Draft Subpathway"))}
     frame = pd.DataFrame([{"control_id": k, **v} for k, v in out.items()])
     return frame
+
+
+def build_db_inchikey_map(db_path: Path) -> dict[str, tuple[str, str]]:
+    """InChIKey skeleton -> (metabolon_super, metabolon_sub) from the reference DB."""
+
+    import sqlite3
+
+    con = sqlite3.connect(str(db_path))
+    db = pd.read_sql_query(
+        "SELECT inchikeys, metabolon_super, metabolon_sub FROM metabolites "
+        "WHERE TRIM(COALESCE(inchikeys,'')) <> '' AND TRIM(COALESCE(metabolon_super,'')) <> ''",
+        con,
+    )
+    con.close()
+    out: dict[str, tuple[str, str]] = {}
+    for _, r in db.iterrows():
+        for ik in str(r["inchikeys"]).replace("|", ";").split(";"):
+            sk = ik.strip().split("-")[0]
+            if len(sk) >= 14:
+                out.setdefault(sk, (clean(r["metabolon_super"]), clean(r["metabolon_sub"])))
+    return out
+
+
+def inchikey_skeleton(smiles: str) -> str:
+    """First InChIKey block for a SMILES (2D structure hash), or ''."""
+
+    from rdkit import Chem
+
+    mol = Chem.MolFromSmiles(str(smiles or "").split("|")[0].strip())
+    if mol is None:
+        return ""
+    try:
+        return Chem.MolToInchiKey(mol).split("-")[0]
+    except Exception:
+        return ""
+
+
+def evaluate_vs_reference_db(
+    pred: pd.DataFrame, gt: pd.DataFrame, db_map: dict[str, tuple[str, str]]
+) -> dict[str, Any]:
+    """Accuracy of predicted pathway vs the reference-DB Metabolon taxonomy that
+    the predictor is built to reproduce (exact-structure subset via InChIKey), plus
+    the DB-vs-known_X annotation agreement (the ceiling for a known_X-based score).
+    """
+
+    rows: list[dict[str, Any]] = []
+    for _, r in pred.iterrows():
+        sk = inchikey_skeleton(r.get("predicted_smiles"))
+        if not sk or sk not in db_map:
+            continue
+        db_super, db_sub = db_map[sk]
+        rows.append(
+            {
+                "control_id": r["control_id"],
+                "predicted_pathway": r["predicted_pathway"],
+                "predicted_subpathway": r["predicted_subpathway"],
+                "db_super": db_super,
+                "db_sub": db_sub,
+            }
+        )
+    ex = pd.DataFrame(rows)
+    if ex.empty:
+        return {"n_exact_structure_in_db": 0}
+    ex["correct_super"] = ex.apply(lambda x: norm(x["predicted_pathway"]) == norm(x["db_super"]), axis=1)
+    ex_sub = ex[ex["db_sub"].map(norm).ne("")]
+    result: dict[str, Any] = {
+        "n_exact_structure_in_db": int(len(ex)),
+        "super_accuracy_vs_db": round(float(ex["correct_super"].mean()), 4),
+        "sub_accuracy_vs_db": (
+            round(float((ex_sub["predicted_subpathway"].map(norm) == ex_sub["db_sub"].map(norm)).mean()), 4)
+            if len(ex_sub)
+            else 0.0
+        ),
+    }
+    truth = gt.set_index("control_id")["true_super"].to_dict()
+    agree = tot = 0
+    for _, x in ex.iterrows():
+        ks = norm(truth.get(x["control_id"], ""))
+        if ks and ks not in EXCLUDE_TRUTH:
+            tot += 1
+            agree += int(ks == norm(x["db_super"]))
+    if tot:
+        result["db_vs_known_x_super_agreement"] = {"n": int(tot), "agreement": round(agree / tot, 4)}
+    return result
 
 
 def similarity_bin(value: float) -> str:
@@ -282,6 +367,28 @@ def leave_one_out_validation(db_path: Path, k: int, floor: float, power: float) 
     }
 
 
+def reference_db_md_lines(summary: dict[str, Any]) -> list[str]:
+    """Markdown for the reference-DB-taxonomy accuracy section (headline metric)."""
+
+    ref = summary.get("reference_db_evaluation") or {}
+    if not ref.get("n_exact_structure_in_db"):
+        return []
+    lines = [
+        "## Accuracy vs reference-DB taxonomy (the labels the predictor targets)",
+        f"- Exact-structure controls (InChIKey found in reference DB): **{ref['n_exact_structure_in_db']}**",
+        f"- **Super-pathway accuracy vs reference DB: {ref['super_accuracy_vs_db']:.1%}** "
+        f"(sub-pathway {ref['sub_accuracy_vs_db']:.1%})",
+    ]
+    agreement = ref.get("db_vs_known_x_super_agreement")
+    if agreement:
+        lines.append(
+            f"- Caveat: the reference DB and known_X annotations agree only {agreement['agreement']:.1%} "
+            f"(n={agreement['n']}) even on identical structures, so any known_X-based score is capped near that."
+        )
+    lines.append("")
+    return lines
+
+
 def write_markdown(summary: dict[str, Any], out_path: Path) -> None:
     """Write a short human-readable audit summary."""
 
@@ -295,10 +402,12 @@ def write_markdown(summary: dict[str, Any], out_path: Path) -> None:
         f"- Tier: {cov['tier_counts']}",
         f"- best_reference_similarity p10/p50/p90: {cov['best_similarity_pctiles']}",
         "",
-        "## Accuracy vs known_X ground truth",
+        *reference_db_md_lines(summary),
+        "## Agreement with known_X annotation (independent labels, not the predictor's taxonomy)",
         f"- Evaluable (super): **{acc['n_evaluable_super']}** controls",
-        f"- **Super-pathway accuracy: {acc['super_accuracy']:.1%}**",
-        f"- Sub-pathway accuracy: {acc['sub_accuracy']:.1%} "
+        f"- Super-pathway agreement with known_X: {acc['super_accuracy']:.1%} "
+        "(understated: known_X uses a different Metabolon annotation than the reference DB the predictor targets)",
+        f"- Sub-pathway agreement: {acc['sub_accuracy']:.1%} "
         f"(given correct super: {acc['sub_accuracy_given_correct_super']:.1%}; n={acc['n_evaluable_sub']})",
         "",
         "### Super accuracy by confidence tier",
@@ -347,6 +456,11 @@ def main() -> None:
 
     summary, ev = build_summary(pred, gt)
 
+    db_path = Path(args.db)
+    if db_path.exists():
+        print("[pathway-audit] scoring vs reference-DB taxonomy (exact-structure subset) ...")
+        summary["reference_db_evaluation"] = evaluate_vs_reference_db(pred, gt, build_db_inchikey_map(db_path))
+
     ev_out = ev[
         [
             "control_id", "lib", "predicted_pathway", "true_super", "correct_super",
@@ -357,13 +471,21 @@ def main() -> None:
     (out_dir / "audit_pathway_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     write_markdown(summary, out_dir / "audit_pathway_summary.md")
 
+    ref = summary.get("reference_db_evaluation") or {}
+    if ref.get("n_exact_structure_in_db"):
+        print(
+            f"[pathway-audit] vs reference-DB taxonomy: super {ref['super_accuracy_vs_db']:.1%} / "
+            f"sub {ref['sub_accuracy_vs_db']:.1%} on {ref['n_exact_structure_in_db']} exact-structure controls"
+        )
+        g = ref.get("db_vs_known_x_super_agreement")
+        if g:
+            print(f"[pathway-audit] reference-DB vs known_X agreement: {g['agreement']:.1%} (n={g['n']})")
     a = summary["accuracy"]
-    print(f"[pathway-audit] super accuracy: {a['super_accuracy']:.1%} on {a['n_evaluable_super']} evaluable")
     print(
-        f"[pathway-audit] sub accuracy:   {a['sub_accuracy']:.1%} "
-        f"(given correct super {a['sub_accuracy_given_correct_super']:.1%})"
+        f"[pathway-audit] known_X agreement: super {a['super_accuracy']:.1%} on {a['n_evaluable_super']} "
+        "evaluable (understated - known_X uses a different taxonomy than the predictor targets)"
     )
-    print(f"[pathway-audit] by tier: {a['super_accuracy_by_tier']}")
+    print(f"[pathway-audit] known_X agreement by tier: {a['super_accuracy_by_tier']}")
 
     if args.loo:
         db_path = Path(args.db)
