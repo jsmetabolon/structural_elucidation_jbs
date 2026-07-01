@@ -2227,6 +2227,24 @@ def render_html(
     pathway_sub = str(pathway_info.get("sub") or "").strip()
     pathway_note = str(pathway_info.get("note") or "")
     pathway_badge_html = f"<span class='badge'>{html.escape(pathway_super)}</span>" if pathway_super else ""
+    # Top-candidate structural similarity: Tanimoto of the rank-1 predicted structure
+    # to its nearest reference metabolite (1.0 when it is an exact reference match).
+    # This is the meaningful "how close is our call" number; the old header showed
+    # ``score_rank`` (an internal, mostly-empty pool field) mislabeled as Tanimoto.
+    try:
+        top_similarity = float(pathway_info.get("similarity") or 0.0)
+    except (TypeError, ValueError):
+        top_similarity = 0.0
+    pathway_source = str(pathway_info.get("source") or "").strip()
+    if pathway_source == "exact":
+        top_similarity_badge = "Exact reference match"
+        top_similarity_note = "Top candidate structure exactly matches a reference DB metabolite"
+    elif top_similarity > 0:
+        top_similarity_badge = f"Nearest-ref Tanimoto {top_similarity:.2f}"
+        top_similarity_note = "Max Tanimoto of top candidate to nearest reference metabolite"
+    else:
+        top_similarity_badge = "No reference match"
+        top_similarity_note = "No reference structure above the similarity floor"
     pubchem_link = f"https://pubchem.ncbi.nlm.nih.gov/#query={quote(str(target['name']))}"
     top_candidate = candidate_scores[0] if candidate_scores else {}
     syn_col_count = 1 if public_mode else 3
@@ -2653,7 +2671,7 @@ def render_html(
         </p>
         <p>
           <span class="badge ok">top-1 candidate</span>
-          <span class="badge ok">Tanimoto {evidence['top10_best_tanimoto']:.3f}</span>
+          <span class="badge ok">{html.escape(top_similarity_badge)}</span>
           {pathway_badge_html}
         </p>
       </div>
@@ -2688,7 +2706,7 @@ def render_html(
         </div>
       </div>
       <div class="metrics">
-        <div class="metric-card"><div class="metric-label">Rank-1 candidate Tanimoto</div><div class="metric-value">{evidence['top10_best_tanimoto']:.3f}</div><div class="metric-note">Top reranked candidate vs target structure</div></div>
+        <div class="metric-card"><div class="metric-label">Top candidate structural similarity</div><div class="metric-value">{top_similarity:.2f}</div><div class="metric-note">{html.escape(top_similarity_note)}</div></div>
         <div class="metric-card"><div class="metric-label">Candidate Chemical Pathway</div><div class="metric-value">{html.escape(pathway_super or 'Not available')}</div><div class="metric-note">{html.escape(pathway_note or 'Metabolite DB super-pathway')}</div></div>
         <div class="metric-card"><div class="metric-label">Candidate Chemical SubPathway</div><div class="metric-value">{html.escape(pathway_sub or 'Not available')}</div><div class="metric-note">{html.escape(pathway_note or 'Metabolite DB sub-pathway')}</div></div>
         <div class="metric-card"><div class="metric-label">Library neighbors</div><div class="metric-value">{len(neighbors)}</div><div class="metric-note">DB structures above similarity floor</div></div>
@@ -3421,8 +3439,11 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
 
     parent_mz = float(pd.to_numeric(rank1.get("parent_mz"), errors="coerce") or 0.0)
     evidence = {
-        "top10_best_tanimoto": float(pd.to_numeric(rank1.get("score_rank"), errors="coerce") or 0.0),
-        "full_pool_oracle_best_tanimoto": float(
+        "nearest_reference_tanimoto": float(
+            pd.to_numeric(pathway_info.get("similarity"), errors="coerce") or 0.0
+        ),
+        "nearest_reference_source": str(pathway_info.get("source") or ""),
+        "rerank_pool_score": float(
             pd.to_numeric(rank1.get("unified_final_score"), errors="coerce") or 0.0
         ),
         "parent_mz": parent_mz,
