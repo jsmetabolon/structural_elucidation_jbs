@@ -46,6 +46,7 @@ import pandas as pd
 from structural_elucidation.utils.denovo import exact_mass_from_smiles, formula_from_smiles, inchikey_from_smiles
 from structural_elucidation.paths import REPO_ROOT, resolve
 import structural_elucidation.utils.wgcna as wgcna
+from structural_elucidation.reports import confidence as confmod
 
 try:
     from rdkit import Chem
@@ -2195,6 +2196,7 @@ def render_html(
     target: dict[str, Any],
     evidence: dict[str, Any],
     db_detail: dict[str, Any],
+    confidence: Any,
     pathway_info: dict[str, Any],
     synonyms: list[dict[str, Any]],
     neighbors: list[dict[str, Any]],
@@ -2671,6 +2673,7 @@ def render_html(
         </p>
         <p>
           <span class="badge ok">top-1 candidate</span>
+          {confmod.confidence_badge_html(confidence)}
           <span class="badge ok">{html.escape(top_similarity_badge)}</span>
           {pathway_badge_html}
         </p>
@@ -2706,6 +2709,7 @@ def render_html(
         </div>
       </div>
       <div class="metrics">
+        {confmod.confidence_metric_card_html(confidence)}
         <div class="metric-card"><div class="metric-label">Top candidate structural similarity</div><div class="metric-value">{top_similarity:.2f}</div><div class="metric-note">{html.escape(top_similarity_note)}</div></div>
         <div class="metric-card"><div class="metric-label">Candidate Chemical Pathway</div><div class="metric-value">{html.escape(pathway_super or 'Not available')}</div><div class="metric-note">{html.escape(pathway_note or 'Metabolite DB super-pathway')}</div></div>
         <div class="metric-card"><div class="metric-label">Candidate Chemical SubPathway</div><div class="metric-value">{html.escape(pathway_sub or 'Not available')}</div><div class="metric-note">{html.escape(pathway_note or 'Metabolite DB sub-pathway')}</div></div>
@@ -2725,13 +2729,7 @@ def render_html(
 
     <section class="section">
       {heading_with_info("h2", params_title)}
-      <ul>
-        <li>Target formula: <code>{html.escape(target['formula'])}</code></li>
-        <li>Candidate SMILES: <code>{html.escape(target['smiles'])}</code></li>
-        <li>Database row: chemical_id <code>{html.escape(str(db_detail.get('chemical_id', '')))}</code>, canonical name <strong>{html.escape(str(db_detail.get('canonical_name', '')))}</strong>.</li>
-        <li>Metabolon pathway: {html.escape(str(db_detail.get('metabolon_super', '')))} / {html.escape(str(db_detail.get('metabolon_sub', '')))}.</li>
-        <li>The DB row has no stored SMILES/InChIKey, so structure rendering and consensus use the de novo/rule candidate.</li>
-      </ul>
+      {confmod.scored_parameters_section_html(confidence, public=public_mode)}
     </section>
 
     {top10_section}
@@ -3484,11 +3482,47 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     known_render = extended.get("known_render", pd.DataFrame())
     x_render = extended.get("x_render", pd.DataFrame())
 
+    # Hybrid identification confidence (shared model; see reports/confidence.py).
+    _css_records = candidate_score_df.fillna("").to_dict(orient="records")
+
+    def _n(value: Any) -> float | None:
+        v = pd.to_numeric(value, errors="coerce")
+        return None if pd.isna(v) else float(v)
+
+    _ms2_candidates = [
+        _n(rank1.get("predicted_spectrum_score_v2")),
+        _n(rank1.get("forward_spectrum_score")),
+        _n(rank1.get("ms2_match_score")),
+    ]
+    _ms2_candidates = [c for c in _ms2_candidates if c is not None]
+    _ms2_score = max(_ms2_candidates) if _ms2_candidates else None
+    _observed_mz = _n(rank1.get("parent_mz"))
+    _conf_fields = confmod.fields_from_parts(
+        _css_records[0] if _css_records else {},
+        _css_records[1] if len(_css_records) > 1 else None,
+        {
+            "pathway_source": pathway_info.get("source", ""),
+            "pathway_best_reference_similarity": pathway_info.get("similarity"),
+            "pathway_vote_share": pathway_info.get("vote_share"),
+            "pathway_confidence_tier": pathway_info.get("tier", ""),
+        },
+        observed_mz_available=_observed_mz is not None and _observed_mz > 0,
+        ms2_spectrum_present=_ms2_score is not None and _ms2_score > 0,
+        ms2_score=_ms2_score,
+        library_neighbors_ge_050=sum(
+            1 for nb in neighbors if float(nb.get("similarity_to_target", 0.0) or 0.0) >= 0.50
+        ),
+        correlations_real=not correlation_blocker,
+    )
+    _conf_fields["observed_mz"] = _observed_mz
+    confidence_obj = confmod.compute_confidence(_conf_fields)
+
     render_kwargs = dict(
         out_dir=out_dir,
         target=target,
         evidence=evidence,
         db_detail=db_detail,
+        confidence=confidence_obj,
         pathway_info=pathway_info,
         synonyms=syn_df.fillna("").to_dict(orient="records"),
         neighbors=neighbors,
