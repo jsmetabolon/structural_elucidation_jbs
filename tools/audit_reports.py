@@ -185,8 +185,11 @@ def summarize(records: list[dict[str, Any]], crowd_threshold: float) -> dict[str
     worst_links = sorted(records, key=lambda r: r.get("n_broken_links", 0), reverse=True)[:25]
     return {
         "n_reports": n,
+        # The report whose control_id IS X-25003 legitimately contains X-25003
+        # literals (its own identity) - exclude it so this counts true leaks only.
         "reports_with_template_leak": count(
-            lambda r: any(r.get(f"n[{lbl}]", 0) > 0 for lbl in STALE_PATTERNS)
+            lambda r: str(r.get("control_id")) != "X-25003"
+            and any(r.get(f"n[{lbl}]", 0) > 0 for lbl in STALE_PATTERNS)
         ),
         "reports_with_wrong_h1": count(lambda r: not r.get("h1_ok", False)),
         "reports_with_wrong_title": count(lambda r: not r.get("title_ok", False)),
