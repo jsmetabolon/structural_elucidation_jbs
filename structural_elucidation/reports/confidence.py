@@ -300,7 +300,7 @@ def assign_msi_level(fields: dict, conf: "Confidence") -> tuple[int, str, str]:
         return 1, MSI_LABELS[1], "Metabolon Level-1 standard match and the top candidate matches it"
     if struct >= STRUCT_MODERATE and ms2_ok and mass_ok:
         return 2, MSI_LABELS[2], "Strong structure similarity with observed-MS2 and mass corroboration"
-    if (not mass_mismatch) and struct >= STRUCT_WEAK and (mass_ok or mass is None):
+    if (not mass_mismatch) and struct >= STRUCT_WEAK:
         return 3, MSI_LABELS[3], "Structure candidate consistent with mass but not spectrally confirmed - a hypothesis"
     if observed or mass_ok:
         note = (
