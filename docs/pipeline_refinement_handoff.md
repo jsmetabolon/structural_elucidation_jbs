@@ -41,22 +41,51 @@ Context you need:
 - Open question: correlation-strength -> confidence weight (needs truth-labeled
   validation before it can move the score).
 
-## 2. Hard mass/formula gate in reranking
+## 2. Hard mass/formula gate in reranking - highest-payoff, quantified
 - Goal: stop a candidate whose formula/mass disagrees with the observed feature
-  from taking rank 1 (currently 15% of reports; e.g. X-12811 - a glucuronide
-  176 Da heavier than the feature).
-- Current: the report demotes these to Tentative + shows a "mass-consistent
-  alternative candidate" callout, but cannot re-rank.
-- Plug-in: in the reranker, before final ordering, apply a hard gate: if
-  `abs_mass_error_da` to the observed neutral mass exceeds tolerance (e.g. > 0.02
-  Da / a few ppm) AND a lower-ranked candidate passes, the failing candidate
-  cannot hold rank 1.
+  from taking rank 1. This is the single largest recoverable-structure lever.
+- Evidence (audit of the 590 rank-1 mass-mismatch reports = the entire MSI Level-4
+  "mass rejected" group; `mass_match_score < 0.5`):
+  - **519 / 590 (88%) already have a mass-consistent candidate at a lower rank**
+    (`mass_match_score >= 0.90`). The reranker (`unified_rerank_v1`) is placing a
+    mass-inconsistent candidate at #1 while the right-mass one sits at #2..N.
+  - It is **not** a tolerance/strictness issue: rank-1 errors are large, not
+    borderline - 308 are >= 5 Da and the **median nonzero error is ~176 Da**
+    (glucuronide-scale). Deltas cluster on chemically real conjugates/adducts:
+    hexose 162.053, glucuronide 176.032, sulfate 79.957, H2O 18.011, NH3, CH2, ...
+    A looser mass tolerance cannot rescue a 162/176 Da gap.
+  - **248 / 590 have a *blank* formula on the rank-1 SMILES**, so no mass could be
+    computed at all (`mass_match = 0` by default) - a formula-assignment gap, not a
+    mismatch.
+  - Concrete: X-25984 rank-1 aglycone `C10H12N4O5` (err 162.05 = hexose) vs
+    **rank-2 `C16H22N4O10` fitting to 3.4e-5 Da**; X-21434 rank-1 mass_match 0.0 vs
+    rank-2 0.996; X-12811 a glucuronide 176 Da heavier than the feature.
+- Current (report layer): these are demoted (Tentative confidence, MSI Level 4) and
+  each such report now **names the specific recoverable alternative** - rank,
+  formula, mass match, delta-mass, and SMILES - via the upgraded "Mass-consistent
+  alternative (recoverable structure)" callout (`confidence.py` + the enriched
+  `mass_alt` in `tools/enrich_report_evidence.py`). The report layer cannot re-rank.
+- Plug-in (three ordered upstream fixes, by payoff):
+  1. **Mass-aware rerank / hard gate**: before final ordering, if rank-1's
+     `abs_mass_error_da` to the observed neutral mass exceeds tolerance (e.g. > 0.02
+     Da / few ppm) AND a lower-ranked candidate passes, the failing candidate cannot
+     hold rank 1. Recovers a structure for ~519 reports (~13% of all 3,897):
+     MSI L4 -> at least L3 (mass-consistent hypothesis), higher where structure/MS2
+     agree.
+  2. **Assign a formula to every predicted SMILES** (RDKit) so the 248 blank-formula
+     rank-1 cases become gate-able instead of defaulting to `mass_match = 0`.
+  3. **Conjugate-aware candidate generation** for the residual ~71 with no
+     right-mass candidate anywhere in the list: enumerate common conjugates
+     (glucuronide / sulfate / hexose / etc.) of the predicted aglycone, since the
+     observed feature is frequently a conjugate not in the current candidate set.
 - Steps: (a) ensure observed neutral mass/adduct is available at rerank time
-  (see item 4 / feature rows); (b) add the gate; (c) regenerate rerank CSVs.
-- Expected output: mass-mismatch rank-1 rate -> ~0. Verify:
-  `tools/audit_presentation.py` `mass_mismatch` -> near 0; the mass-alt callout
-  becomes rare.
-- Open question: exact tolerance + how to treat adduct ambiguity.
+  (see item 4 / feature rows); (b) add fix 1, then 2, then 3; (c) regenerate rerank
+  CSVs; (d) re-enrich + re-patch (or re-render).
+- Expected output: mass-mismatch rank-1 rate -> ~0; MSI L4 count drops by up to
+  ~519. Verify: `tools/audit_presentation.py` `mass_mismatch` -> near 0; the
+  mass-alt callout becomes rare; `msi_level_distribution` L4 falls, L2/L3 rise.
+- Open question: exact tolerance + how to treat adduct ambiguity (the same feature
+  may be explainable as multiple adducts/conjugates).
 
 ## 3. Broader MS2 capture + a better candidate-vs-spectrum scorer
 - Goal: raise MS2 coverage above 44% and make the spectral score more
