@@ -25,3 +25,10 @@ vendor/nce/elucidation/table_builders/HMDB_36_classyfire_21_annotations.csv
 vendor/nce/elucidation/table_builders/hmdb_minimal.csv
 vendor/nce/elucidation/table_builders/hmdb_spreadsheet.csv
 *.log
+# Report audit pulls and archives (large, regenerated data artifacts)
+_audit_pull/
+*.tgz
+*.tgz.sha256
+
+# Downloaded report data bundle (large, fetched from S3)
+_bundle/

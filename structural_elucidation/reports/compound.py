@@ -46,6 +46,7 @@ import pandas as pd
 from structural_elucidation.utils.denovo import exact_mass_from_smiles, formula_from_smiles, inchikey_from_smiles
 from structural_elucidation.paths import REPO_ROOT, resolve
 import structural_elucidation.utils.wgcna as wgcna
+from structural_elucidation.reports import confidence as confmod
 
 try:
     from rdkit import Chem
@@ -54,6 +55,12 @@ try:
 
     HAS_RDKIT = True
     MORGAN = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)
+    try:
+        # CoordGen gives far better 2D layouts for large/macrocyclic molecules and
+        # avoids the atom-position collapse that makes consensus images unreadable.
+        rdDepictor.SetPreferCoordGen(True)
+    except Exception:  # pragma: no cover - older RDKit without CoordGen toggle
+        pass
 except ImportError:  # pragma: no cover
     Chem = None
     Draw = None
@@ -102,19 +109,38 @@ def query_df(db_path: Path, sql: str, params: tuple[Any, ...] = ()) -> pd.DataFr
         return pd.read_sql_query(sql, conn, params=params)
 
 
+_MOL_FP_CACHE: dict[str, tuple[Any, Any]] = {}
+
+
 def mol_fp(smiles: str) -> tuple[Any, Any] | tuple[None, None]:
-    """Parse SMILES and return ``(mol, morgan_fp)`` or ``(None, None)``."""
+    """Parse SMILES and return ``(mol, morgan_fp)`` or ``(None, None)``.
+
+    Results are memoized by SMILES string: the extended similarity network does
+    O(N^2) pairwise comparisons and would otherwise re-parse and re-fingerprint
+    the same molecules tens of thousands of times per report. The fingerprint is
+    deterministic per SMILES, so caching is output-identical.
+    """
 
     if not HAS_RDKIT:
         return None, None
-    mol = Chem.MolFromSmiles(str(smiles or ""))
+    key = str(smiles or "")
+    cached = _MOL_FP_CACHE.get(key)
+    if cached is not None:
+        return cached
+    mol = Chem.MolFromSmiles(key)
     if mol is None:
-        return None, None
+        result: tuple[Any, Any] = (None, None)
+        _MOL_FP_CACHE[key] = result
+        return result
     try:
         Chem.SanitizeMol(mol)
     except Exception:
-        return None, None
-    return mol, MORGAN.GetFingerprint(mol)
+        result = (None, None)
+        _MOL_FP_CACHE[key] = result
+        return result
+    result = (mol, MORGAN.GetFingerprint(mol))
+    _MOL_FP_CACHE[key] = result
+    return result
 
 
 def similarity(smiles_a: str, smiles_b: str) -> float:
@@ -127,6 +153,46 @@ def similarity(smiles_a: str, smiles_b: str) -> float:
     return float(TanimotoSimilarity(fp_a, fp_b))
 
 
+def compute_2d_coords_robust(mol: Any) -> None:
+    """Lay out 2D coordinates, preferring CoordGen but falling back to the default
+    depictor when CoordGen collapses atoms onto each other (which makes structure
+    and consensus images unreadable). Picks whichever layout best separates atoms.
+    """
+
+    if not HAS_RDKIT:
+        return
+
+    def min_pair_dist() -> float:
+        conf = mol.GetConformer()
+        n = mol.GetNumAtoms()
+        if n < 2:
+            return 9.0
+        pts = [(conf.GetAtomPosition(i).x, conf.GetAtomPosition(i).y) for i in range(n)]
+        return min(
+            ((pts[i][0] - pts[j][0]) ** 2 + (pts[i][1] - pts[j][1]) ** 2) ** 0.5
+            for i in range(n)
+            for j in range(i + 1, n)
+        )
+
+    try:
+        rdDepictor.SetPreferCoordGen(True)
+        rdDepictor.Compute2DCoords(mol)
+        coordgen_dist = min_pair_dist()
+        if coordgen_dist < 0.30:
+            rdDepictor.SetPreferCoordGen(False)
+            rdDepictor.Compute2DCoords(mol)
+            if min_pair_dist() < coordgen_dist:
+                rdDepictor.SetPreferCoordGen(True)
+                rdDepictor.Compute2DCoords(mol)
+    except Exception:
+        try:
+            rdDepictor.Compute2DCoords(mol)
+        except Exception:
+            pass
+    finally:
+        rdDepictor.SetPreferCoordGen(True)
+
+
 def structure_image(smiles: str, path: Path, legend: str = "") -> None:
     """Render a 2D structure PNG via RDKit when available."""
 
@@ -136,7 +202,13 @@ def structure_image(smiles: str, path: Path, legend: str = "") -> None:
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         return
-    Draw.MolToFile(mol, str(path), size=(520, 360), legend=legend)
+    try:
+        compute_2d_coords_robust(mol)
+        Draw.MolToFile(mol, str(path), size=(520, 360), legend=legend)
+    except Exception:
+        # Some molecules trip RDKit's drawer (e.g. "zero length vector"); a single
+        # un-renderable structure image must not abort the whole report.
+        return
 
 
 # ── Structure rendering (Open Babel / SVG) ────────────────────────────────────
@@ -563,6 +635,32 @@ def compact_candidate_scores(candidates: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+_MCS_SMARTS_CACHE: dict[tuple[str, str], str] = {}
+
+
+def cached_mcs_smarts(smiles_a: str, mol_a: Any, smiles_b: str, mol_b: Any) -> str:
+    """Memoized ``rdFMCS`` smartsString for a SMILES pair (symmetric key).
+
+    The consensus heatmap compares every top-10 reference against every top-10
+    candidate, i.e. ~100 MCS calls per report over the same ~10 molecules. MCS is
+    symmetric, so caching by the unordered SMILES pair roughly halves the calls;
+    each avoided call also skips the expensive ``timeout`` budget when a pair
+    would otherwise re-hit the MCS time limit.
+    """
+
+    key = (smiles_a, smiles_b) if smiles_a <= smiles_b else (smiles_b, smiles_a)
+    cached = _MCS_SMARTS_CACHE.get(key)
+    if cached is not None:
+        return cached
+    try:
+        mcs = rdFMCS.FindMCS([mol_a, mol_b], timeout=2, matchValences=False, ringMatchesRingOnly=False)
+        smarts = mcs.smartsString
+    except Exception:
+        smarts = ""
+    _MCS_SMARTS_CACHE[key] = smarts
+    return smarts
+
+
 def consensus_atom_support(reference_smiles: str, candidates: pd.DataFrame) -> tuple[list[dict[str, Any]], str]:
     """MCS atom-support heatmap SVG and per-atom support CSV rows for one reference."""
 
@@ -575,7 +673,7 @@ def consensus_atom_support(reference_smiles: str, candidates: pd.DataFrame) -> t
             rows,
             "<p class='note'>Consensus structure unavailable because the reference SMILES could not be parsed.</p>",
         )
-    rdDepictor.Compute2DCoords(ref)
+    compute_2d_coords_robust(ref)
     n_atoms = ref.GetNumAtoms()
     support = [0.0] * n_atoms
     valid = 0
@@ -584,13 +682,10 @@ def consensus_atom_support(reference_smiles: str, candidates: pd.DataFrame) -> t
         cand = Chem.MolFromSmiles(smiles)
         if cand is None:
             continue
-        try:
-            mcs = rdFMCS.FindMCS([ref, cand], timeout=2, matchValences=False, ringMatchesRingOnly=False)
-        except Exception:
+        smarts = cached_mcs_smarts(reference_smiles, ref, smiles, cand)
+        if not smarts:
             continue
-        if not mcs.smartsString:
-            continue
-        patt = Chem.MolFromSmarts(mcs.smartsString)
+        patt = Chem.MolFromSmarts(smarts)
         if patt is None:
             continue
         match = ref.GetSubstructMatch(patt)
@@ -613,10 +708,30 @@ def consensus_atom_support(reference_smiles: str, candidates: pd.DataFrame) -> t
     max_x = max(x for x, _ in coords)
     min_y = min(y for _, y in coords)
     max_y = max(y for _, y in coords)
-    width = max(max_x - min_x, 1e-6)
-    height = max(max_y - min_y, 1e-6)
-    canvas_w, canvas_h, margin = 720.0, 430.0, 58.0
-    scale = min((canvas_w - 2 * margin) / width, (canvas_h - 2 * margin) / height)
+
+    # Render at a constant pixels-per-bond density so structures of any size read
+    # similarly: a small molecule gets a small canvas (scaled up inside its box,
+    # large glyphs) and a large molecule gets a proportionally larger canvas that
+    # the viewBox scales down, so atom circles never overlap. Because the density
+    # is fixed, glyph sizes are constant rather than fixed against a fixed canvas.
+    bond_lengths = []
+    for bond in ref.GetBonds():
+        ax, ay = coords[bond.GetBeginAtomIdx()]
+        bx, by = coords[bond.GetEndAtomIdx()]
+        dist = ((ax - bx) ** 2 + (ay - by) ** 2) ** 0.5
+        if dist > 1e-6:
+            bond_lengths.append(dist)
+    typical_bond = sorted(bond_lengths)[len(bond_lengths) // 2] if bond_lengths else 1.5
+    target_bond_px = 46.0
+    scale = target_bond_px / max(typical_bond, 1e-6)
+    radius = 16.0
+    symbol_font = 13.0
+    conf_font = 9.0
+    bond_stroke = 6.0
+    circle_stroke = 2.5
+    margin = radius + 22.0
+    canvas_w = max(max_x - min_x, 1e-6) * scale + 2 * margin
+    canvas_h = max(max_y - min_y, 1e-6) * scale + 2 * margin
 
     def xy(atom_idx: int) -> tuple[float, float]:
         """Map RDKit 2D conformer coordinates to SVG canvas space."""
@@ -625,26 +740,27 @@ def consensus_atom_support(reference_smiles: str, candidates: pd.DataFrame) -> t
 
     bond_parts = []
     for bond in ref.GetBonds():
-        a = bond.GetBeginAtomIdx()
-        b = bond.GetEndAtomIdx()
-        x1, y1 = xy(a)
-        x2, y2 = xy(b)
+        x1, y1 = xy(bond.GetBeginAtomIdx())
+        x2, y2 = xy(bond.GetEndAtomIdx())
         bond_parts.append(
-            f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" stroke="#24445F" stroke-opacity=".42" stroke-width="4" stroke-linecap="round" />'
+            f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" '
+            f'stroke="#24445F" stroke-opacity=".42" stroke-width="{bond_stroke:.1f}" stroke-linecap="round" />'
         )
 
     atom_parts = []
     for atom in ref.GetAtoms():
         idx = atom.GetIdx()
-        x, y = xy(idx)
         value = confidence[idx]
         color = heatmap_color(value)
         symbol = html.escape(atom.GetSymbol())
+        x, y = xy(idx)
         atom_parts.append(
             f'<g class="consensus-atom" data-confidence="{value:.3f}" transform="translate({x:.1f},{y:.1f})">'
-            f'<circle r="24" fill="{color}" stroke="white" stroke-width="3"><title>Atom {idx + 1} {symbol}: consensus {value:.2f}</title></circle>'
-            f'<text text-anchor="middle" y="5">{symbol}</text>'
-            f'<text class="atom-confidence" text-anchor="middle" y="39">{value:.2f}</text></g>'
+            f'<circle r="{radius:.1f}" fill="{color}" stroke="white" stroke-width="{circle_stroke:.1f}">'
+            f'<title>Atom {idx + 1} {symbol}: consensus {value:.2f}</title></circle>'
+            f'<text text-anchor="middle" y="{symbol_font * 0.35:.1f}" font-size="{symbol_font:.1f}">{symbol}</text>'
+            f'<text class="atom-confidence" text-anchor="middle" y="{radius + conf_font:.1f}" '
+            f'font-size="{conf_font:.1f}">{value:.2f}</text></g>'
         )
         rows.append(
             {
@@ -659,7 +775,9 @@ def consensus_atom_support(reference_smiles: str, candidates: pd.DataFrame) -> t
 
     svg = "\n".join(
         [
-            "<svg class='consensus-svg' viewBox='0 0 720 430' role='img' aria-label='Candidate consensus atom heatmap'>",
+            f"<svg class='consensus-svg' width='{canvas_w:.0f}' height='{canvas_h:.0f}' "
+            f"viewBox='0 0 {canvas_w:.0f} {canvas_h:.0f}' "
+            "role='img' aria-label='Candidate consensus atom heatmap'>",
             *bond_parts,
             *atom_parts,
             "</svg>",
@@ -1082,7 +1200,7 @@ def css() -> str:
     .network-stat strong { display: block; margin-top: 3px; font-size: 18px; color: var(--metro-navy); }
     .consensus-layout { display: grid; grid-template-columns: minmax(360px, .95fr) 1.05fr; gap: 18px; align-items: start; }
     .consensus-box { background: white; border: 1px solid var(--line); border-radius: 14px; padding: 12px; overflow: hidden; }
-    .consensus-svg { width: 100%; height: auto; display: block; }
+    .consensus-svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
     .consensus-scale { margin-top: 10px; }
     .consensus-scale-bar { height: 16px; border-radius: 999px; background: linear-gradient(90deg, #2C7BB6 0%, #FDAE61 50%, #D7191C 100%); border: 1px solid rgba(40,73,110,.16); }
     .consensus-scale-labels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; color: var(--metro-slate); font-size: 11px; font-weight: 800; }
@@ -1619,6 +1737,7 @@ def extended_network_svg(nodes: list[dict[str, Any]], edges: list[dict[str, Any]
     """Render the expanded known+X similarity network as large-format SVG."""
 
     by_id = {str(node["id"]): node for node in nodes}
+    target_id = next((str(node["id"]) for node in nodes if node.get("kind") == "target"), "target")
     edge_parts = []
     node_parts = []
     for edge in edges:
@@ -1658,7 +1777,7 @@ def extended_network_svg(nodes: list[dict[str, Any]], edges: list[dict[str, Any]
             f'data-pathway="{html.escape(str(node.get("pathway", "")))}" tabindex="0" '
             f'transform="translate({node["x"]:.1f},{node["y"]:.1f})">'
             f'<circle r="{node["radius"]:.1f}" fill="{html.escape(str(node["color"]))}" stroke="{stroke}" stroke-width="{stroke_width:.1f}">'
-            f'<title>{html.escape(str(node["label"]))}\\nType: {html.escape(str(node["kind"]))}\\nSimilarity to X-25003: {sim:.3f}\\n{html.escape(str(node.get("pathway", "")))}</title>'
+            f'<title>{html.escape(str(node["label"]))}\\nType: {html.escape(str(node["kind"]))}\\nSimilarity to {html.escape(target_id)}: {sim:.3f}\\n{html.escape(str(node.get("pathway", "")))}</title>'
             f"</circle>"
             f"{label_html}</g>"
         )
@@ -1921,10 +2040,18 @@ def build_extended_similarity_network(
         x_all["node_type"] = "unknown"
         x_all["confidence"] = x_all.apply(confidence_bucket, axis=1)
 
-    known_render = known_all[known_all["similarity_to_target"] >= known_min_similarity].head(max_known_render).copy()
-    x_render = x_all[x_all["similarity_to_target"] >= x_min_similarity].copy()
-    if not x_render.empty:
-        x_render = x_render[x_render["x_compound_id"].astype(str) != control_id].copy()
+    if known_all.empty:
+        known_render = known_all.copy()
+    else:
+        known_render = (
+            known_all[known_all["similarity_to_target"] >= known_min_similarity].head(max_known_render).copy()
+        )
+    if x_all.empty:
+        x_render = x_all.copy()
+    else:
+        x_render = x_all[x_all["similarity_to_target"] >= x_min_similarity].copy()
+        if not x_render.empty and "x_compound_id" in x_render.columns:
+            x_render = x_render[x_render["x_compound_id"].astype(str) != control_id].copy()
 
     nodes: list[dict[str, Any]] = [
         {
@@ -1997,12 +2124,80 @@ def build_extended_similarity_network(
     }
 
 
+def resolve_pathway_display(db_detail: dict[str, Any], rank1: Any) -> dict[str, Any]:
+    """Resolve super/sub pathway for the report.
+
+    Prefers an exact metabolite-DB record; otherwise falls back to the neighbor
+    consensus prediction carried on the rank-1 rerank row (``predicted_pathway`` /
+    ``predicted_subpathway`` + ``pathway_confidence_tier`` /
+    ``pathway_best_reference_similarity``, produced by the pathway enrichment).
+    Returns super/sub plus the provenance so the report can label predicted vs
+    exact honestly.
+    """
+
+    def clean(value: Any) -> str:
+        text = str("" if value is None else value).strip()
+        return "" if text.lower() in {"", "nan", "none", "null", "<na>"} else text
+
+    exact_super = clean(db_detail.get("super_pathway")) or clean(db_detail.get("metabolon_super"))
+    exact_sub = clean(db_detail.get("pathway")) or clean(db_detail.get("metabolon_sub"))
+    if exact_super or exact_sub:
+        return {
+            "super": exact_super,
+            "sub": exact_sub,
+            "source": "exact",
+            "tier": "high",
+            "similarity": 1.0,
+            "status": "exact_reference_match",
+            "note": "From reference DB record",
+        }
+
+    pred_super = clean(rank1.get("predicted_pathway"))
+    pred_sub = clean(rank1.get("predicted_subpathway"))
+    if pred_super or pred_sub:
+        tier = clean(rank1.get("pathway_confidence_tier")) or "low"
+        status = clean(rank1.get("pathway_assignment_status")) or "neighbor_prediction"
+        similarity = 0.0
+        sim_raw = rank1.get("pathway_best_reference_similarity")
+        if sim_raw is not None and not pd.isna(sim_raw):
+            try:
+                similarity = float(sim_raw)
+            except (TypeError, ValueError):
+                similarity = 0.0
+        sim_txt = (
+            f"nearest reference similarity {similarity:.2f}, {tier} confidence"
+            if similarity > 0
+            else f"{tier} confidence"
+        )
+        return {
+            "super": pred_super,
+            "sub": pred_sub,
+            "source": "predicted",
+            "tier": tier,
+            "similarity": similarity,
+            "status": status,
+            "note": f"Predicted ({sim_txt})",
+        }
+
+    return {
+        "super": "",
+        "sub": "",
+        "source": "none",
+        "tier": "",
+        "similarity": 0.0,
+        "status": clean(rank1.get("pathway_assignment_status")) or "no_reference_match",
+        "note": "No reference match above similarity threshold",
+    }
+
+
 def render_html(
     *,
     out_dir: Path,
     target: dict[str, Any],
     evidence: dict[str, Any],
     db_detail: dict[str, Any],
+    confidence: Any,
+    pathway_info: dict[str, Any],
     synonyms: list[dict[str, Any]],
     neighbors: list[dict[str, Any]],
     nodes: list[dict[str, Any]],
@@ -2028,6 +2223,30 @@ def render_html(
 
     public_mode = variant == "public"
     variant_label = "Public" if variant == "public" else "Internal"
+    control_id = str(target.get("control_id", "")).strip() or "compound"
+    slug = control_slug(control_id)
+    pathway_super = str(pathway_info.get("super") or "").strip()
+    pathway_sub = str(pathway_info.get("sub") or "").strip()
+    pathway_note = str(pathway_info.get("note") or "")
+    pathway_badge_html = f"<span class='badge'>{html.escape(pathway_super)}</span>" if pathway_super else ""
+    # Top-candidate structural similarity: Tanimoto of the rank-1 predicted structure
+    # to its nearest reference metabolite (1.0 when it is an exact reference match).
+    # This is the meaningful "how close is our call" number; the old header showed
+    # ``score_rank`` (an internal, mostly-empty pool field) mislabeled as Tanimoto.
+    try:
+        top_similarity = float(pathway_info.get("similarity") or 0.0)
+    except (TypeError, ValueError):
+        top_similarity = 0.0
+    pathway_source = str(pathway_info.get("source") or "").strip()
+    if pathway_source == "exact":
+        top_similarity_badge = "Exact reference match"
+        top_similarity_note = "Top candidate structure exactly matches a reference DB metabolite"
+    elif top_similarity > 0:
+        top_similarity_badge = f"Nearest-ref Tanimoto {top_similarity:.2f}"
+        top_similarity_note = "Max Tanimoto of top candidate to nearest reference metabolite"
+    else:
+        top_similarity_badge = "No reference match"
+        top_similarity_note = "No reference structure above the similarity floor"
     pubchem_link = f"https://pubchem.ncbi.nlm.nih.gov/#query={quote(str(target['name']))}"
     top_candidate = candidate_scores[0] if candidate_scores else {}
     syn_col_count = 1 if public_mode else 3
@@ -2218,7 +2437,7 @@ def render_html(
     header_metrics_html = ""
     if not public_mode:
         header_metrics_html = f"""
-        <div class="metric-card"><div class="metric-label">Final status</div><div class="metric-value">N-lactoylalanine</div><div class="metric-note">Best current interpretation</div></div>
+        <div class="metric-card"><div class="metric-label">Top candidate</div><div class="metric-value">{html.escape(target['name'])}</div><div class="metric-note">Rank-1 displayed candidate</div></div>
         <div class="metric-card"><div class="metric-label">Candidate rows</div><div class="metric-value">{len(candidate_scores)}</div><div class="metric-note">Displayed SMILES candidates</div></div>
         <div class="metric-card"><div class="metric-label">Known neighbors</div><div class="metric-value">{len(neighbors)}</div><div class="metric-note">Structured DB neighborhood</div></div>
         <div class="metric-card"><div class="metric-label">Mass error</div><div class="metric-value">{evidence['mass_error_da']:.6f}</div><div class="metric-note">Neutral mass Da</div></div>"""
@@ -2262,7 +2481,7 @@ def render_html(
         <div class="network-stat"><span>X rendered</span><strong>{int(extended_stats.get('n_x_render', 0))}</strong></div>
       </div>
       <div class="extended-network-wrap">{extended_network_svg_html}</div>
-      <p class="note">Sidecars: <a href="data/extended_similarity_network_nodes.csv">nodes CSV</a>, <a href="data/extended_similarity_network_edges.csv">edges CSV</a>, <a href="data/all_known_similarity_to_target.csv">all known similarities</a>, <a href="data/all_unknown_similarity_to_target.csv">all X similarities</a>.</p>
+      <p class="note">Sidecars: <a href="data/extended_similarity_network_nodes.csv">nodes CSV</a>, <a href="data/extended_similarity_network_edges.csv">edges CSV</a>, <a href="data/all_known_similarity_to_{slug}.csv">all known similarities</a>, <a href="data/all_unknown_similarity_to_{slug}.csv">all X similarities</a>.</p>
     </section>"""
     internal_sections = ""
     if variant == "internal":
@@ -2272,16 +2491,16 @@ def render_html(
       <h2>Structure Consensus Heat Map</h2>
       <p class="note">
         The final consensus atom-position confidence map is shown beside the most likely structure at the top of the report.
-        X-25003 currently has one candidate-consensus support map, so that same map is used as the final consensus-guided confidence visual.
+        This compound currently has one candidate-consensus support map, so that same map is used as the final consensus-guided confidence visual.
       </p>
-      <p class="note">Sidecars: <a href="data/x25003_consensus_atom_support.csv">x25003_consensus_atom_support.csv</a> and <a href="data/x25003_evidence_summary.csv">x25003_evidence_summary.csv</a>.</p>
+      <p class="note">Sidecars: <a href="data/{slug}_consensus_atom_support.csv">{slug}_consensus_atom_support.csv</a> and <a href="data/{slug}_evidence_summary.csv">{slug}_evidence_summary.csv</a>.</p>
     </section>
 
     <section class="section">
       <h2>Structural Possibility Decision Tree</h2>
       <p class="note">Expanded internal view showing the main structure classes retained after mass, fragment, and neighborhood gating.</p>
       <div class="decision-tree-box">{structural_possibility_tree_svg}</div>
-      <p class="note">Sidecar: <a href="data/x25003_structural_possibility_summary.csv">x25003_structural_possibility_summary.csv</a>.</p>
+      <p class="note">Sidecar: <a href="data/{slug}_structural_possibility_summary.csv">{slug}_structural_possibility_summary.csv</a>.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Class</th><th>Candidate Count</th><th>Top Candidate</th><th>Top Candidate SMILES</th><th>Interpretation</th><th>Dominant Gate</th></tr></thead>
@@ -2307,7 +2526,7 @@ def render_html(
         <div class="network-stat"><span>X rendered</span><strong>{int(extended_stats.get('n_x_render', 0))}</strong></div>
       </div>
       <div class="extended-network-wrap">{extended_network_svg_html}</div>
-      <p class="note">Sidecars: <a href="data/extended_similarity_network_nodes.csv">nodes CSV</a>, <a href="data/extended_similarity_network_edges.csv">edges CSV</a>, <a href="data/all_known_similarity_to_target.csv">all known similarities</a>, <a href="data/all_unknown_similarity_to_target.csv">all X similarities</a>.</p>
+      <p class="note">Sidecars: <a href="data/extended_similarity_network_nodes.csv">nodes CSV</a>, <a href="data/extended_similarity_network_edges.csv">edges CSV</a>, <a href="data/all_known_similarity_to_{slug}.csv">all known similarities</a>, <a href="data/all_unknown_similarity_to_{slug}.csv">all X similarities</a>.</p>
     </section>
 
     <section class="section">
@@ -2338,7 +2557,7 @@ def render_html(
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>X-25003 Structure Resolution ({variant_label})</title>
+  <title>{html.escape(control_id)} Structure Resolution ({variant_label})</title>
   <style>
     :root {{
       color-scheme: light;
@@ -2418,7 +2637,7 @@ def render_html(
     .node.hidden,.edge.hidden,tr.hidden,.ext-node.hidden,.ext-edge.hidden,tr.ext-hidden {{ display:none; }}
     .consensus-layout {{ display:grid; grid-template-columns:minmax(360px,.9fr) minmax(0,1.1fr); gap:18px; align-items:start; }}
     .consensus-box {{ background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px; overflow:hidden; }}
-    .consensus-svg {{ width:100%; height:auto; display:block; }}
+    .consensus-svg {{ max-width:100%; height:auto; display:block; margin:0 auto; }}
     .consensus-scale {{ margin-top:10px; }}
     .consensus-scale-bar {{ height:16px; border-radius:999px; background:linear-gradient(90deg,#2C7BB6 0%,#FDAE61 50%,#D7191C 100%); border:1px solid var(--line); }}
     .consensus-scale-labels {{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:5px; color:var(--muted); font-size:11px; font-weight:700; }}
@@ -2447,15 +2666,16 @@ def render_html(
     <div class="hero-grid">
       <div>
         <p class="eyebrow">X-Compound Elucidation Dashboard • {variant_label}</p>
-        <h1>X-25003</h1>
+        <h1>{html.escape(control_id)}</h1>
         <p class="subtitle">
-          lib_209_negative structure-resolution report for formula <code>{html.escape(target['formula'])}</code>.
-          Current best interpretation is <strong>N-lactoylalanine</strong>; the structure shown here comes from the control-blind N-lactoyl amino acid rule candidate.
+          Structure-resolution report for <strong>{html.escape(control_id)}</strong>, formula <code>{html.escape(target['formula'])}</code>.
+          The most likely candidate structure is shown below.
         </p>
         <p>
           <span class="badge ok">top-1 candidate</span>
-          <span class="badge ok">Tanimoto {evidence['top10_best_tanimoto']:.3f}</span>
-          <span class="badge">Amino Acid / Lactoyl Amino Acid</span>
+          {confmod.confidence_badge_html(confidence)}
+          <span class="badge ok">{html.escape(top_similarity_badge)}</span>
+          {pathway_badge_html}
         </p>
       </div>
       <div><div class="metrics">{header_metrics_html}</div></div>
@@ -2465,14 +2685,14 @@ def render_html(
     <section class="section">
       {heading_with_info("h2", "Top Candidate Compound")}
       <p class="note">
-        On average, 80% of compounds identified in Metabolon data sets meet Level 1 criteria through fingerprint matching to an authentic reference standard analyzed with the same experimental methods. The remaining compounds are identified through Metabolon’s structural elucidation workflow; the X-25003 evidence stack below follows that dashboard structure.
+        On average, 80% of compounds identified in Metabolon data sets meet Level 1 criteria through fingerprint matching to an authentic reference standard analyzed with the same experimental methods. The remaining compounds are identified through Metabolon’s structural elucidation workflow; the evidence stack below follows that dashboard structure.
       </p>
       <div class="call-grid">
         <div class="structure-card">
           {heading_with_info("h3", "Most Likely Structure", include_info=False)}
           {structure_panel_html}
           <p><strong>{html.escape(target['name'])}</strong></p>
-          <p class="note">Exact stereochemistry is not overclaimed here; the rule candidate matches the verified structure at fingerprint level.</p>
+          <p class="note">Exact stereochemistry is not overclaimed; this is the top-ranked candidate structure for this feature.</p>
         </div>
         <div class="structure-card">
           {heading_with_info("h3", "Final Consensus Atom-Position Confidence", include_info=False)}
@@ -2485,19 +2705,20 @@ def render_html(
               <span>1.0 high support</span>
             </div>
           </div>
-          <p class="note">Sidecar: <a href="data/x25003_consensus_atom_support.csv">x25003_consensus_atom_support.csv</a>.</p>
+          <p class="note">Sidecar: <a href="data/{slug}_consensus_atom_support.csv">{slug}_consensus_atom_support.csv</a>.</p>
         </div>
       </div>
       <div class="metrics">
-        <div class="metric-card"><div class="metric-label">Top Candidate Confidence Level</div><div class="metric-value">99.9%</div><div class="metric-note">Level 2C</div></div>
-        <div class="metric-card"><div class="metric-label">Candidate Chemical Pathway</div><div class="metric-value">Lactoyl Amino Acid</div><div class="metric-note">Most likely pathway from similar molecules</div></div>
-        <div class="metric-card"><div class="metric-label">Candidate Chemical SubPathway</div><div class="metric-value">{html.escape(str(db_detail.get('metabolon_sub', '') or 'Lactoyl Amino Acid'))}</div><div class="metric-note">Metabolon subpathway metadata</div></div>
-        <div class="metric-card"><div class="metric-label">Pathway Confidence Level</div><div class="metric-value">10/10 (high)</div><div class="metric-note">Pathway-supported top-candidate context</div></div>
+        {confmod.confidence_metric_card_html(confidence)}
+        <div class="metric-card"><div class="metric-label">Top candidate structural similarity</div><div class="metric-value">{top_similarity:.2f}</div><div class="metric-note">{html.escape(top_similarity_note)}</div></div>
+        <div class="metric-card"><div class="metric-label">Candidate Chemical Pathway</div><div class="metric-value">{html.escape(pathway_super or 'Not available')}</div><div class="metric-note">{html.escape(pathway_note or 'Metabolite DB super-pathway')}</div></div>
+        <div class="metric-card"><div class="metric-label">Candidate Chemical SubPathway</div><div class="metric-value">{html.escape(pathway_sub or 'Not available')}</div><div class="metric-note">{html.escape(pathway_note or 'Metabolite DB sub-pathway')}</div></div>
+        <div class="metric-card"><div class="metric-label">Library neighbors</div><div class="metric-value">{len(neighbors)}</div><div class="metric-note">DB structures above similarity floor</div></div>
       </div>
       <div class="structure-card" style="margin-top:18px;">
         {heading_with_info("h3", "Identification Evidence", include_info=False)}
         <div class="metrics">
-          <div class="metric-card copyable-card" tabindex="0" data-copy-value="{evidence['parent_mz']:.4f}"><span class="copy-hint">Click to copy</span><div class="metric-label">Observed parent m/z</div><div class="metric-value">{evidence['parent_mz']:.4f}</div><div class="metric-note">X-25003 feature</div></div>
+          <div class="metric-card copyable-card" tabindex="0" data-copy-value="{evidence['parent_mz']:.4f}"><span class="copy-hint">Click to copy</span><div class="metric-label">Observed parent m/z</div><div class="metric-value">{evidence['parent_mz']:.4f}</div><div class="metric-note">{html.escape(control_id)} feature</div></div>
           <div class="metric-card copyable-card" tabindex="0" data-copy-value="{target['exact_mass']:.6f}"><span class="copy-hint">Click to copy</span><div class="metric-label">Exact mass</div><div class="metric-value">{target['exact_mass']:.6f}</div><div class="metric-note">Candidate neutral mass</div></div>
           <div class="metric-card copyable-card" tabindex="0" data-copy-value="{html.escape(target['smiles'], quote=True)}"><span class="copy-hint">Click to copy</span><div class="metric-label">Top Candidate SMILES</div><div class="metric-value"><code>{html.escape(target['smiles'])}</code></div><div class="metric-note"><a href="{pubchem_link}">Other DB Links (PubChem of Top Candidate)</a></div></div>
           <div class="metric-card copyable-card" tabindex="0" data-copy-value="{html.escape(target['inchikey'], quote=True)}"><span class="copy-hint">Click to copy</span><div class="metric-label">InChIKey</div><div class="metric-value">{html.escape(target['inchikey'])}</div><div class="metric-note">From candidate SMILES</div></div>
@@ -2508,13 +2729,7 @@ def render_html(
 
     <section class="section">
       {heading_with_info("h2", params_title)}
-      <ul>
-        <li>Target formula: <code>{html.escape(target['formula'])}</code></li>
-        <li>Candidate SMILES: <code>{html.escape(target['smiles'])}</code></li>
-        <li>Database row: chemical_id <code>{html.escape(str(db_detail.get('chemical_id', '')))}</code>, canonical name <strong>{html.escape(str(db_detail.get('canonical_name', '')))}</strong>.</li>
-        <li>Metabolon pathway: {html.escape(str(db_detail.get('metabolon_super', '')))} / {html.escape(str(db_detail.get('metabolon_sub', '')))}.</li>
-        <li>The DB row has no stored SMILES/InChIKey, so structure rendering and consensus use the de novo/rule candidate.</li>
-      </ul>
+      {confmod.scored_parameters_section_html(confidence, public=public_mode)}
     </section>
 
     {top10_section}
@@ -2578,7 +2793,7 @@ def render_html(
 {internal_sections}
   </main>
   <footer>
-    Generated by build_x25003_bio_exploration_report.py from local Spec2Mol outputs plus the local metabolite synonym DB.
+    Generated by the structural elucidation report builder from Spec2Mol outputs plus the local metabolite synonym DB.
   </footer>
   <div id="hover-tooltip" class="hover-tooltip" aria-hidden="true"></div>
   <script>
@@ -2833,6 +3048,47 @@ def resolve_chemical_id(db_path: Path, known_x_row: dict[str, Any], target_name:
     return ""
 
 
+def is_real_chemical_id(db_path: Path, chemical_id: str) -> bool:
+    """True when ``chemical_id`` is an actual ``metabolites.chemical_id`` row."""
+
+    if not db_path.exists() or not chemical_id:
+        return False
+    try:
+        df = query_df(db_path, "SELECT 1 FROM metabolites WHERE chemical_id = ? LIMIT 1", (chemical_id,))
+    except Exception:
+        return False
+    return not df.empty
+
+
+def resolve_db_identity_by_inchikey(db_path: Path, inchikey: str) -> tuple[str, str] | None:
+    """Match a target InChIKey skeleton to a DB metabolite.
+
+    Returns ``(chemical_id, canonical_name)`` when the 2D structure (first
+    InChIKey block) matches a metabolite row, else ``None``. This lets reports
+    populate the library-match/synonyms sections and show a real display name
+    even when ``known_X`` only carries a free-text ``KNOWN`` label.
+    """
+
+    if not db_path.exists() or not inchikey:
+        return None
+    skeleton = inchikey.split("-")[0]
+    if len(skeleton) < 14:
+        return None
+    try:
+        df = query_df(
+            db_path,
+            "SELECT chemical_id, canonical_name FROM metabolites "
+            "WHERE inchikeys LIKE ? AND canonical_name IS NOT NULL AND trim(canonical_name) <> '' LIMIT 1",
+            (f"%{skeleton}%",),
+        )
+    except Exception:
+        return None
+    if df.empty:
+        return None
+    row = df.iloc[0]
+    return str(row["chemical_id"]), str(row["canonical_name"])
+
+
 def load_real_correlation_rows(
     control_id: str,
     chemical_id: str,
@@ -2979,13 +3235,23 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     kx_row = lookup_known_x_row(known_x, control_id)
     chemical_id = str(args.chemical_id or resolve_chemical_id(db_path, kx_row, target_name) or "").strip()
 
+    target_inchikey = inchikey_from_smiles(target_smiles)
+    if not args.chemical_id:
+        db_identity = resolve_db_identity_by_inchikey(db_path, target_inchikey)
+        if db_identity:
+            resolved_chem_id, resolved_name = db_identity
+            if not is_real_chemical_id(db_path, chemical_id):
+                chemical_id = resolved_chem_id
+            if target_name == control_id and resolved_name:
+                target_name = resolved_name
+
     target = {
         "control_id": control_id,
         "name": target_name,
         "smiles": target_smiles,
         "formula": formula_from_smiles(target_smiles),
         "exact_mass": exact_mass_from_smiles(target_smiles),
-        "inchikey": inchikey_from_smiles(target_smiles),
+        "inchikey": target_inchikey,
     }
     target_structure_svg = render_smiles_svg(target_smiles)
     asset_base = f"{slug}_structure"
@@ -3069,6 +3335,21 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             (chemical_id,),
         )
         syn_df.to_csv(data_dir / "metabolite_db_synonyms.csv", index=False)
+
+    pathway_info = resolve_pathway_display(db_detail, rank1)
+    pd.DataFrame(
+        [
+            {
+                "control_id": control_id,
+                "predicted_pathway": pathway_info["super"],
+                "predicted_subpathway": pathway_info["sub"],
+                "pathway_source": pathway_info["source"],
+                "pathway_confidence_tier": pathway_info["tier"],
+                "pathway_best_reference_similarity": pathway_info["similarity"],
+                "pathway_assignment_status": pathway_info["status"],
+            }
+        ]
+    ).to_csv(data_dir / f"{slug}_pathway_prediction.csv", index=False)
 
     correlation_rows, correlation_blocker = load_real_correlation_rows(control_id, chemical_id, target_name)
 
@@ -3156,8 +3437,11 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
 
     parent_mz = float(pd.to_numeric(rank1.get("parent_mz"), errors="coerce") or 0.0)
     evidence = {
-        "top10_best_tanimoto": float(pd.to_numeric(rank1.get("score_rank"), errors="coerce") or 0.0),
-        "full_pool_oracle_best_tanimoto": float(
+        "nearest_reference_tanimoto": float(
+            pd.to_numeric(pathway_info.get("similarity"), errors="coerce") or 0.0
+        ),
+        "nearest_reference_source": str(pathway_info.get("source") or ""),
+        "rerank_pool_score": float(
             pd.to_numeric(rank1.get("unified_final_score"), errors="coerce") or 0.0
         ),
         "parent_mz": parent_mz,
@@ -3198,11 +3482,48 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     known_render = extended.get("known_render", pd.DataFrame())
     x_render = extended.get("x_render", pd.DataFrame())
 
+    # Hybrid identification confidence (shared model; see reports/confidence.py).
+    _css_records = candidate_score_df.fillna("").to_dict(orient="records")
+
+    def _n(value: Any) -> float | None:
+        v = pd.to_numeric(value, errors="coerce")
+        return None if pd.isna(v) else float(v)
+
+    _ms2_candidates = [
+        _n(rank1.get("predicted_spectrum_score_v2")),
+        _n(rank1.get("forward_spectrum_score")),
+        _n(rank1.get("ms2_match_score")),
+    ]
+    _ms2_candidates = [c for c in _ms2_candidates if c is not None]
+    _ms2_score = max(_ms2_candidates) if _ms2_candidates else None
+    _observed_mz = _n(rank1.get("parent_mz"))
+    _conf_fields = confmod.fields_from_parts(
+        _css_records[0] if _css_records else {},
+        _css_records[1] if len(_css_records) > 1 else None,
+        {
+            "pathway_source": pathway_info.get("source", ""),
+            "pathway_best_reference_similarity": pathway_info.get("similarity"),
+            "pathway_vote_share": pathway_info.get("vote_share"),
+            "pathway_confidence_tier": pathway_info.get("tier", ""),
+        },
+        observed_mz_available=_observed_mz is not None and _observed_mz > 0,
+        ms2_spectrum_present=_ms2_score is not None and _ms2_score > 0,
+        ms2_score=_ms2_score,
+        library_neighbors_ge_050=sum(
+            1 for nb in neighbors if float(nb.get("similarity_to_target", 0.0) or 0.0) >= 0.50
+        ),
+        correlations_real=not correlation_blocker,
+    )
+    _conf_fields["observed_mz"] = _observed_mz
+    confidence_obj = confmod.compute_confidence(_conf_fields)
+
     render_kwargs = dict(
         out_dir=out_dir,
         target=target,
         evidence=evidence,
         db_detail=db_detail,
+        confidence=confidence_obj,
+        pathway_info=pathway_info,
         synonyms=syn_df.fillna("").to_dict(orient="records"),
         neighbors=neighbors,
         nodes=nodes,

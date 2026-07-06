@@ -341,12 +341,52 @@ output/reports/X-25003/
 
 ---
 
+## Batch: all X compounds at once
+
+`structural_elucidation.reports.batch` runs the single-compound builder once per
+`control_id` discovered in the rerank CSVs, then writes a master index.
+
+```mermaid
+flowchart LR
+    CSVS["rerank_lib*/unified_rerank_all_top10.csv"] --> ENUM["enumerate unique control_id (first lib wins on dup)"]
+    ENUM --> POOL["ThreadPool(jobs): subprocess per compound -> reports.compound"]
+    POOL --> BUNDLES["output/reports/control_id/ ..."]
+    BUNDLES --> IDX["read each manifest.json"]
+    IDX --> MASTER["index.html + reports_index.csv + batch_summary.json"]
+```
+
+- Discovery: `--equalization-root <root> --libs 209,305,400,402` (auto-builds `rerank_lib*/<name>`), or explicit `--predictions a.csv b.csv`.
+- Isolation: each compound is a separate subprocess, so a `SystemExit` (e.g. missing SMILES) or crash for one compound is caught and recorded, never aborting the batch.
+- Resume: compounds whose `index.html` already exists are skipped unless `--overwrite`.
+- Parallelism: `--jobs N`.
+- Master index: `--index-only` rebuilds `index.html`/`reports_index.csv`/`batch_summary.json` from existing `manifest.json` files without regenerating.
+
+Wrapper script `generate_all_reports.sh` exposes the common knobs via env vars
+(`OUT_ROOT`, `RUN_LIBS`, `REPORTS_OUT`, `JOBS`, `DRY_RUN`, `OVERWRITE`, `LIMIT`).
+
+### Split workflow (results on a restricted EC2 host)
+
+When the rerank CSVs live on a host this machine cannot SSH into, generation can
+be split: export the inputs on the host that *can* reach EC2, then generate here.
+
+1. On the EC2-reachable machine, stage the per-lib rerank CSVs (preserving the
+   `rerank_lib*` layout) plus, for full reports, `metabolite_synonyms.sqlite`,
+   and tar them up.
+2. Move the bundle to the generation machine (e.g. S3 presigned URL + `curl`).
+3. Unpack at the repo root so paths land at
+   `output/pipeline_equalization/rerank_lib*/unified_rerank_all_top10.csv` and
+   `vendor/metabolite_synonyms.sqlite`, then run `generate_all_reports.sh`.
+
 ## Related commands
 
 ```bash
 # Smoke test (includes report module import)
 pytest tests/test_smoke.py -m smoke
 
+# Batch driver smoke test (no RDKit needed)
+pytest tests/test_reports_batch.py -m smoke
+
 # Help
 python -m structural_elucidation.reports.compound --help
+python -m structural_elucidation.reports.batch --help
 ```
