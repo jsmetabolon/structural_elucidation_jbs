@@ -2674,6 +2674,7 @@ def render_html(
         <p>
           <span class="badge ok">top-1 candidate</span>
           {confmod.confidence_badge_html(confidence)}
+          {confmod.msi_badge_html(confidence)}
           <span class="badge ok">{html.escape(top_similarity_badge)}</span>
           {pathway_badge_html}
         </p>
@@ -2710,6 +2711,7 @@ def render_html(
       </div>
       <div class="metrics">
         {confmod.confidence_metric_card_html(confidence)}
+        {confmod.msi_metric_card_html(confidence)}
         <div class="metric-card"><div class="metric-label">Top candidate structural similarity</div><div class="metric-value">{top_similarity:.2f}</div><div class="metric-note">{html.escape(top_similarity_note)}</div></div>
         <div class="metric-card"><div class="metric-label">Candidate Chemical Pathway</div><div class="metric-value">{html.escape(pathway_super or 'Not available')}</div><div class="metric-note">{html.escape(pathway_note or 'Metabolite DB super-pathway')}</div></div>
         <div class="metric-card"><div class="metric-label">Candidate Chemical SubPathway</div><div class="metric-value">{html.escape(pathway_sub or 'Not available')}</div><div class="metric-note">{html.escape(pathway_note or 'Metabolite DB sub-pathway')}</div></div>

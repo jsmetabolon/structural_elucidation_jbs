@@ -237,6 +237,11 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna) -> str:
     fields["name_resolved"] = bool(dbn)
     # co-abundance neighbors (gap 1, placeholder)
     fields["correlations"] = wgcna.get(cid, [])
+    # derive + store the MSI identification level (also derivable at render time)
+    conf = C.compute_confidence(fields)
+    fields["msi_level"] = conf.msi_level
+    fields["msi_label"] = conf.msi_label
+    fields["msi_rationale"] = conf.msi_rationale
     (data / f"{slug}_confidence_inputs.json").write_text(json.dumps(fields, indent=2))
     return "enriched"
 

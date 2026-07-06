@@ -63,8 +63,14 @@ def _fmt(v, digits=4):
 
 def patch_html(text: str, conf: C.Confidence, fields: dict, control_id: str) -> str:
     public = "Dashboard \u2022 Internal" not in text
-    badge = f"<!--CONF_BADGE-->{C.confidence_badge_html(conf)}<!--/CONF_BADGE-->"
-    card = f"<!--CONF_CARD-->{C.confidence_metric_card_html(conf)}<!--/CONF_CARD-->"
+    badge = (
+        f"<!--CONF_BADGE-->{C.confidence_badge_html(conf)}\n          "
+        f"{C.msi_badge_html(conf)}<!--/CONF_BADGE-->"
+    )
+    card = (
+        f"<!--CONF_CARD-->{C.confidence_metric_card_html(conf)}\n        "
+        f"{C.msi_metric_card_html(conf)}<!--/CONF_CARD-->"
+    )
     params = f"<!--CONF_PARAMS-->{C.scored_parameters_section_html(conf, public=public)}<!--/CONF_PARAMS-->"
 
     # 1. header badge (idempotent)
