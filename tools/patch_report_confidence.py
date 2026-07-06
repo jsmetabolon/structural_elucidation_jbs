@@ -20,6 +20,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import html
 import re
 import sys
 from pathlib import Path
@@ -37,10 +38,16 @@ PARAMS_UL_RE = re.compile(
     r"(Parameters Contributing to Identification Confidence.*?</h2>)\s*<ul>.*?</ul>", re.S | re.I
 )
 MASS_ROW_RE = re.compile(
-    r"(<tr><td>[0-9.]+</td><td>)(nan)(</td><td>[^<]*</td><td>)(nan)(</td></tr>)"
+    r"(<tr><td>[0-9.]+</td><td>)[^<]*(</td><td>(?:Negative|Positive)[^<]*</td><td>)[^<]*(</td></tr>)"
 )
 PARENT_MZ_CARD_RE = re.compile(
     r'(Observed parent m/z</div><div class="metric-value">)([^<]*)(</div>)'
+)
+CORR_NOTE_RE = re.compile(
+    r'(Top Correlating Metabolites.*?</h2>\s*<p class="note">).*?(</p>)', re.S | re.I
+)
+CORR_TBODY_RE = re.compile(
+    r"(<th>Correlation \(R\)</th><th>)Pathway(</th></tr></thead>\s*<tbody>).*?(</tbody>)", re.S
 )
 
 
@@ -51,7 +58,7 @@ def _fmt(v, digits=4):
         return None
 
 
-def patch_html(text: str, conf: C.Confidence, fields: dict) -> str:
+def patch_html(text: str, conf: C.Confidence, fields: dict, control_id: str) -> str:
     public = "Dashboard \u2022 Internal" not in text
     badge = f"<!--CONF_BADGE-->{C.confidence_badge_html(conf)}<!--/CONF_BADGE-->"
     card = f"<!--CONF_CARD-->{C.confidence_metric_card_html(conf)}<!--/CONF_CARD-->"
@@ -80,11 +87,31 @@ def patch_html(text: str, conf: C.Confidence, fields: dict) -> str:
     err = _fmt(fields.get("abs_mass_error_da"))
     obs_disp = observed if observed is not None else "not recorded"
     err_disp = err if err is not None else "not recorded"
-    text = MASS_ROW_RE.sub(lambda m: m.group(1) + obs_disp + m.group(3) + err_disp + m.group(5), text)
-    text = PARENT_MZ_CARD_RE.sub(
-        lambda m: m.group(1) + (obs_disp if m.group(2).strip() in ("nan", "") else m.group(2)) + m.group(3),
-        text,
-    )
+    text = MASS_ROW_RE.sub(lambda m: m.group(1) + obs_disp + m.group(2) + err_disp + m.group(3), text)
+    text = PARENT_MZ_CARD_RE.sub(lambda m: m.group(1) + obs_disp + m.group(3), text)
+
+    # 5. co-abundance correlations (gap 1): replace proxy with WGCNA placeholders
+    corr = fields.get("correlations") or []
+    if corr:
+        note = ("Illustrative co-abundance neighbors from reference-cohort WGCNA modules "
+                "(placeholder; client-specific co-abundance correlations pending).")
+        text = CORR_TBODY_RE.sub(
+            lambda m: m.group(1) + "Co-abundance module" + m.group(2)
+            + C.correlations_table_html(corr) + m.group(3),
+            text,
+        )
+    else:
+        note = ("Co-abundance correlations pending (client-specific dataset); rows below are "
+                "structural-proxy neighbors, not measured co-abundance.")
+    text = CORR_NOTE_RE.sub(lambda m: m.group(1) + note + m.group(2), text)
+
+    # 6. display name (gap 2): replace the structure-card caption showing the control id
+    name = fields.get("display_name")
+    if name and control_id:
+        text = text.replace(
+            f"<p><strong>{control_id}</strong></p>",
+            f"<p><strong>{html.escape(name)}</strong></p>",
+        )
     return text
 
 
@@ -102,7 +129,7 @@ def patch_report(report_dir: Path, apply: bool) -> str:
         text = hf.read_text()
         if BADGE_ANCHOR not in text and "<!--CONF_BADGE-->" not in text:
             continue  # not a compound report page (e.g. guides.html)
-        new = patch_html(text, conf, fields)
+        new = patch_html(text, conf, fields, report_dir.name)
         if new != text:
             if apply:
                 hf.write_text(new)

@@ -44,19 +44,10 @@ def audit_report(d: Path) -> dict | None:
     conf = C.compute_confidence(fields)
     by = {a.key: a for a in conf.axes}
 
-    name_is_control = False
-    synonyms_empty = True
-    ev = data / f"{slug}_evidence_summary.json"
-    if ev.exists():
-        try:
-            target = json.loads(ev.read_text()).get("target", {})
-            name_is_control = str(target.get("name", "")).strip() == d.name
-        except (ValueError, OSError):
-            pass
-    syn = data / "metabolite_db_synonyms.csv"
-    if syn.exists():
-        with syn.open(newline="") as h:
-            synonyms_empty = sum(1 for _ in csv.DictReader(h)) == 0
+    name_resolved = bool(fields.get("name_resolved"))
+    synonyms_empty = not bool(fields.get("synonyms"))
+    has_correlations = bool(fields.get("correlations"))
+    has_level = bool(str(fields.get("metabolon_level", "")).strip())
 
     # presentation defects from the public page
     public_ms2_leak = 0
@@ -82,9 +73,10 @@ def audit_report(d: Path) -> dict | None:
         "pathway_available": int(by["pathway"].available),
         "observed_mz_available": int(bool(fields.get("observed_mz_available"))),
         "library_neighbors_ge_050": fields.get("library_neighbors_ge_050", 0),
-        "correlations_real": int(bool(fields.get("correlations_real"))),
-        "name_is_control_id": int(name_is_control),
+        "name_resolved": int(name_resolved),
         "synonyms_empty": int(synonyms_empty),
+        "has_correlations": int(has_correlations),
+        "has_metabolon_level": int(has_level),
         "public_ms2_leak": public_ms2_leak,
         "mass_nan_public": mass_nan_public,
         "n_flags": len(conf.flags),
@@ -126,11 +118,12 @@ def main() -> None:
             "ms2_spectrum_present": frac("ms2_present"),
             "mass_mismatch": frac("mass_mismatch"),
             "pathway_available": frac("pathway_available"),
-            "correlations_real": frac("correlations_real"),
         },
         "presentation_gaps": {
-            "name_is_control_id": frac("name_is_control_id"),
+            "name_resolved_from_db": frac("name_resolved"),
             "synonyms_empty": frac("synonyms_empty"),
+            "has_wgcna_correlations": frac("has_correlations"),
+            "has_metabolon_level": frac("has_metabolon_level"),
             "mass_nan_public": sum(r["mass_nan_public"] for r in rows),
         },
         "compliance": {"public_ms2_leaks": sum(r["public_ms2_leak"] for r in rows)},
