@@ -52,6 +52,28 @@ and `wgcna_bundle`; pipeline-only items are noted as recommendations.
   Tentative 1093).
 - Compliance maintained: `public_ms2_leaks = 0`.
 
+## MSI identification level assigned to 100% (2026-07-06)
+
+Every report now carries an evidence-derived **Schymanski/MSI identification level
+(1-5)**, computed from the same evidence axes in
+`structural_elucidation/reports/confidence.py` (`assign_msi_level`) and shown as a
+header badge + metric card + a lead line in the scored-parameters section (both
+variants; a level is not MS2-ion data, so it is public-safe). This encodes the
+"structure = hypothesis" framing: Levels 1-3 present a structure (Level 3
+explicitly as a hypothesis), Levels 4-5 hold back the specific structure and
+report formula/mass only.
+
+- Distribution (100% coverage): **L1 44 / L2 193 / L3 2,467 / L4 1,187 / L5 6.**
+- L1 = the 44 authentic-standard (Metabolon Level-1) confirmations; L2 = strong
+  structure with observed-MS2 + mass corroboration; L3 = mass-consistent candidate
+  as a hypothesis; L4 = formula/observed mass known but structure unsupported or
+  **mass-rejected** (the 15% mass-mismatch set lands here); L5 = only an exact mass.
+- MSI level (kind of identification) is complementary to the confidence tier (how
+  likely the L1-L3 structure is correct); the cross-tab is emitted by
+  `tools/audit_presentation.py` (`msi_by_tier`).
+- The externally-assigned **Metabolon Level** (present for 62%) is shown alongside
+  as a cross-reference, not as the derived level.
+
 ## Prioritized scientific gaps -> pipeline refinements
 
 ### 1. Co-abundance correlations are 100% placeholder (highest impact)
