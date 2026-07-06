@@ -98,6 +98,8 @@ class Confidence:
     observed_mz: float | None = None
     observed_neutral_mass: float | None = None
     ms2_n_pairs: int = 0
+    metabolon_level: str = ""
+    mass_alt: dict | None = None
 
     def as_dict(self) -> dict:
         return {
@@ -110,6 +112,8 @@ class Confidence:
             "observed_mz": self.observed_mz,
             "observed_neutral_mass": self.observed_neutral_mass,
             "ms2_n_pairs": self.ms2_n_pairs,
+            "metabolon_level": self.metabolon_level,
+            "mass_alt": self.mass_alt,
             "axes": [a.as_dict() for a in self.axes],
             "flags": self.flags,
         }
@@ -268,6 +272,12 @@ def compute_confidence(fields: dict) -> Confidence:
     raw, completeness = raw_score(axes)
     overall = _sigmoid(PLATT_A * raw + PLATT_B)
     tier, tier_note = _tier(overall, axes, source)
+    # Authentic-standard override (gap 6): a Metabolon Level-1 control whose top
+    # candidate matches the confirmed structure is genuinely confirmable -> High.
+    if str(fields.get("metabolon_level", "")).strip() == "1" and bool(fields.get("truth_match")):
+        tier = "Confirmed"
+        tier_note = "Authentic-standard confirmed (Metabolon Level 1); top candidate matches the confirmed structure"
+        overall = max(overall, 0.97)
     if source == "exact":
         descriptor = "Cataloged reference metabolite (exact structural match)"
     elif source == "predicted":
@@ -286,6 +296,8 @@ def compute_confidence(fields: dict) -> Confidence:
         observed_mz=_num(fields.get("observed_mz")),
         observed_neutral_mass=_num(fields.get("observed_neutral_mass")),
         ms2_n_pairs=int(_num(fields.get("ms2_n_pairs")) or 0),
+        metabolon_level=str(fields.get("metabolon_level", "") or ""),
+        mass_alt=fields.get("mass_alt") if isinstance(fields.get("mass_alt"), dict) else None,
     )
 
 
@@ -339,7 +351,10 @@ def fields_from_parts(
 # never itemize MS2 or show ion-level detail; the MS2 fit still contributes to the
 # single overall confidence value shown in both variants.
 
-_TIER_CLASS = {"High": "badge ok", "Moderate": "badge ok", "Low": "badge", "Tentative": "badge"}
+_TIER_CLASS = {
+    "Confirmed": "badge ok", "High": "badge ok", "Moderate": "badge ok",
+    "Low": "badge", "Tentative": "badge",
+}
 
 
 def _pct(x: float | None) -> str:
@@ -398,12 +413,45 @@ def scored_parameters_section_html(conf: Confidence, *, public: bool) -> str:
         if conf.ms2_n_pairs:
             tail += f" Observed MS2 spectrum: {int(conf.ms2_n_pairs)} fragment peaks."
         tail += "</p>"
+    extra = ""
+    if conf.metabolon_level:
+        extra += (
+            f'<p class="note"><strong>Metabolon identification Level:</strong> '
+            f"{html.escape(conf.metabolon_level)}"
+            + (" (authentic-standard confirmed)" if conf.metabolon_level == "1" else "")
+            + ".</p>"
+        )
+    if conf.mass_alt:
+        alt = conf.mass_alt
+        rank = alt.get("rank")
+        rank_txt = f"rank {int(rank)}" if isinstance(rank, (int, float)) else "a lower-ranked candidate"
+        extra += (
+            '<p class="note"><strong>Mass-consistent alternative:</strong> the top candidate\'s '
+            f"mass does not match the observed feature, but {rank_txt} "
+            f"(formula {html.escape(str(alt.get('formula', '')))}) matches the observed mass "
+            "- consider it a stronger mass-based hypothesis.</p>"
+        )
     flags = [f for f in conf.flags if not (public and "MS2" in f)]
     flag_html = ""
     if flags:
         items = "".join(f"<li>{html.escape(f)}</li>" for f in flags)
         flag_html = f'<p class="note"><strong>Caveats:</strong></p><ul>{items}</ul>'
-    return intro + table + tail + flag_html
+    return intro + table + tail + extra + flag_html
+
+
+def correlations_table_html(correlations: list[dict]) -> str:
+    """Table body (rows) for the 'Top Correlating Metabolites' section from WGCNA."""
+    rows = []
+    for c in correlations[:6]:
+        score = c.get("score")
+        score_txt = f"{float(score):.2f}" if isinstance(score, (int, float)) else ""
+        rows.append(
+            f"<tr><td>{html.escape(str(c.get('id', '')))}</td>"
+            f"<td>{html.escape(str(c.get('name', '')))}</td>"
+            f"<td>{score_txt}</td>"
+            f"<td>{html.escape(str(c.get('source', '')))}</td></tr>"
+        )
+    return "".join(rows)
 
 
 def _read_csv_rows(path: Path) -> list[dict]:
