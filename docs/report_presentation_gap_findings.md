@@ -63,7 +63,7 @@ variants; a level is not MS2-ion data, so it is public-safe). This encodes the
 explicitly as a hypothesis), Levels 4-5 hold back the specific structure and
 report formula/mass only.
 
-- Distribution (100% coverage): **L1 44 / L2 193 / L3 2,467 / L4 1,187 / L5 6.**
+- Distribution (100% coverage): **L1 44 / L2 193 / L3 2,489 / L4 1,165 / L5 6.**
 - L1 = the 44 authentic-standard (Metabolon Level-1) confirmations; L2 = strong
   structure with observed-MS2 + mass corroboration; L3 = mass-consistent candidate
   as a hypothesis; L4 = formula/observed mass known but structure unsupported or
