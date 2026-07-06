@@ -27,6 +27,31 @@ truth-verified controls, with a corroboration-aware, monotonic tier. Result:
   MS2 present for <=44%, nothing is confidently confirmable yet. This is honest
   by design and directly answers "the confidence looks too high / should be revised."
 
+## Gap remediation status (2026-07-06)
+
+All gaps below were addressed in the report layer using the `report_data_bundle`
+and `wgcna_bundle`; pipeline-only items are noted as recommendations.
+
+- Gap 1 (correlations): the "Top Correlating Metabolites" section now shows
+  reference-cohort WGCNA co-abundance neighbors for the 13% of controls covered
+  by the placeholder bundle (labeled illustrative/placeholder; NOT fed into
+  confidence); the rest are relabeled "client-specific co-abundance pending".
+- Gap 2 (names): 36.9% resolved to a reference-DB canonical name + synonyms; the
+  remaining novel structures now show a systematic descriptor ("De novo structure
+  (formula)") instead of the bare control id.
+- Gap 3 (MS2): used where available (44%); broader capture + a better scorer
+  remain pipeline work.
+- Gap 4 (observed m/z): coverage raised from 63% to **97.4%** via a known_X m/z
+  fallback; remaining ~3% render "not recorded".
+- Gap 5 (mass mismatch, 15%): demoted to Tentative + a "mass-consistent
+  alternative candidate" callout when a lower-ranked candidate fits the observed
+  mass. Hard mass gate in reranking remains pipeline work.
+- Gap 6 (authentic standard): Metabolon Level surfaced for 62% of controls;
+  **44 Level-1 controls whose top candidate matches the confirmed structure now
+  reach the "Confirmed" tier** (tiers: Confirmed 44 / Moderate 1416 / Low 1344 /
+  Tentative 1093).
+- Compliance maintained: `public_ms2_leaks = 0`.
+
 ## Prioritized scientific gaps -> pipeline refinements
 
 ### 1. Co-abundance correlations are 100% placeholder (highest impact)
