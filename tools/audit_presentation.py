@@ -63,6 +63,7 @@ def audit_report(d: Path) -> dict | None:
         "control_id": d.name,
         "source": conf.source,
         "tier": conf.tier,
+        "msi_level": conf.msi_level,
         "overall": conf.overall,
         "completeness": conf.completeness,
         "structure": by["structure"].score,
@@ -104,10 +105,15 @@ def main() -> None:
         return round(sum(r[key] for r in rows) / n, 4) if n else 0.0
 
     tiers = Counter(r["tier"] for r in rows)
+    msi = Counter(r["msi_level"] for r in rows)
+    msi_by_tier = Counter((r["msi_level"], r["tier"]) for r in rows)
     overalls = sorted(r["overall"] for r in rows)
     summary = {
         "n_reports": n,
         "tier_distribution": dict(tiers),
+        "msi_level_distribution": {str(k): msi[k] for k in sorted(msi)},
+        "msi_level_coverage": round(sum(1 for r in rows if r["msi_level"]) / n, 4) if n else 0.0,
+        "msi_by_tier": {f"L{k[0]}|{k[1]}": v for k, v in sorted(msi_by_tier.items())},
         "overall_confidence": {
             "median": overalls[n // 2] if n else 0.0,
             "p10": overalls[int(0.1 * n)] if n else 0.0,
