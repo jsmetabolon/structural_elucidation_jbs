@@ -150,14 +150,19 @@ def mass_consistent_alt(css: list[dict]) -> dict | None:
     r1 = _num(css[0].get("mass_match_score"))
     if r1 is None or r1 >= C.MASS_WEAK:
         return None
+    r1_err = _num(css[0].get("abs_mass_error_da"))
+    r1_formula = str(css[0].get("predicted_formula", "")).strip()
     for row in css[1:]:
         ms = _num(row.get("mass_match_score"))
         if ms is not None and ms >= C.MASS_STRONG:
             return {
                 "rank": _num(row.get("rank")),
                 "formula": str(row.get("predicted_formula", "")).strip(),
+                "smiles": str(row.get("predicted_smiles", "")).strip(),
                 "mass_match_score": ms,
                 "abs_mass_error_da": _num(row.get("abs_mass_error_da")),
+                "rank1_formula": r1_formula,
+                "rank1_abs_mass_error_da": r1_err,
             }
     return None
 

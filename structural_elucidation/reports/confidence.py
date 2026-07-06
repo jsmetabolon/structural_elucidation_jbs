@@ -493,11 +493,23 @@ def scored_parameters_section_html(conf: Confidence, *, public: bool) -> str:
         alt = conf.mass_alt
         rank = alt.get("rank")
         rank_txt = f"rank {int(rank)}" if isinstance(rank, (int, float)) else "a lower-ranked candidate"
+        formula = html.escape(str(alt.get("formula", "")).strip() or "n/a")
+        ms = alt.get("mass_match_score")
+        err = alt.get("abs_mass_error_da")
+        fit_bits = []
+        if isinstance(ms, (int, float)):
+            fit_bits.append(f"mass match {ms:.3f}")
+        if isinstance(err, (int, float)):
+            fit_bits.append(f"\u0394 {err:.4g} Da")
+        fit_txt = (" (" + ", ".join(fit_bits) + ")") if fit_bits else ""
+        smiles = str(alt.get("smiles", "")).strip()
+        smiles_txt = f" SMILES <code>{html.escape(smiles)}</code>." if smiles else ""
         extra += (
-            '<p class="note"><strong>Mass-consistent alternative:</strong> the top candidate\'s '
-            f"mass does not match the observed feature, but {rank_txt} "
-            f"(formula {html.escape(str(alt.get('formula', '')))}) matches the observed mass "
-            "- consider it a stronger mass-based hypothesis.</p>"
+            '<p class="note"><strong>Mass-consistent alternative (recoverable structure):</strong> '
+            "the top candidate's mass does not fit the observed feature, but "
+            f"{rank_txt} \u2014 formula <strong>{formula}</strong>{fit_txt} \u2014 fits the observed mass."
+            f"{smiles_txt} A mass-aware reranker would promote this candidate; treat it as the "
+            "stronger mass-based structure hypothesis for this feature.</p>"
         )
     flags = [f for f in conf.flags if not (public and "MS2" in f)]
     flag_html = ""
