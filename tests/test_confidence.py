@@ -94,6 +94,62 @@ def test_correlations_table_html():
     assert "foo" in rows and "wgcna_HELIOS_module_1" in rows
 
 
+def test_msi_level1_for_confirmed():
+    conf = C.compute_confidence(_fields(metabolon_level="1", truth_match=True))
+    assert conf.msi_level == 1
+    assert conf.tier == "Confirmed"
+
+
+def test_msi_level2_probable_structure():
+    conf = C.compute_confidence(_fields(
+        structure_similarity=0.8, ms2_spectrum_present=True, ms2_score=0.5,
+        mass_match_score=0.98, metabolon_level="", truth_match=False,
+    ))
+    assert conf.msi_level == 2
+
+
+def test_msi_level3_tentative_when_no_ms2():
+    conf = C.compute_confidence(_fields(
+        structure_similarity=0.6, ms2_spectrum_present=False, ms2_score=None,
+        mass_match_score=0.95,
+    ))
+    assert conf.msi_level == 3
+
+
+def test_msi_level4_for_mass_mismatch():
+    # observed mass known but candidate mass does not fit -> formula only (L4)
+    conf = C.compute_confidence(_fields(
+        structure_similarity=0.6, mass_match_score=0.0, abs_mass_error_da=176.0,
+        observed_mz_available=True,
+    ))
+    assert conf.msi_level == 4
+    assert "reject" in conf.msi_rationale.lower()
+
+
+def test_msi_level5_without_observed_mass():
+    conf = C.compute_confidence(_fields(
+        structure_similarity=0.2, mass_match_score=None, abs_mass_error_da=None,
+        observed_mz_available=False,
+    ))
+    assert conf.msi_level == 5
+
+
+def test_msi_level_always_in_range():
+    for over in ({}, {"source": "exact"}, {"structure_similarity": 0.0},
+                 {"mass_match_score": None, "observed_mz_available": False}):
+        conf = C.compute_confidence(_fields(**over))
+        assert conf.msi_level in {1, 2, 3, 4, 5}
+        assert conf.msi_label == C.MSI_LABELS[conf.msi_level]
+
+
+def test_msi_badge_and_card_render():
+    conf = C.compute_confidence(_fields())
+    assert "MSI Level" in C.msi_badge_html(conf)
+    assert "MSI identification level" in C.msi_metric_card_html(conf)
+    section = C.scored_parameters_section_html(conf, public=True)
+    assert "MSI identification level" in section
+
+
 def test_consensus_decrowder_reduces_overlap():
     import patch_consensus_crowding as PC
     # two atoms 6px apart, radius 16 -> overlap_ratio ~5.3
