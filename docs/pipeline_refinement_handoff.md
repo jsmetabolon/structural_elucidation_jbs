@@ -92,9 +92,22 @@ Context you need:
 - Open question: whether to also fit per-library or per-pathway calibration once
   the labeled set is large enough.
 
-## Cross-cutting: from-source regeneration
+## Cross-cutting: from-source regeneration + render_html parity task
 Once items 1-4 land upstream, prefer regenerating reports from source
 (`python -m structural_elucidation.reports.batch` with `--observed-lookup-dir`,
 `--db`, and the pathway-enriched rerank CSVs) rather than patching, so the
-delivered bundle is a single clean render. The shared builders in
-`confidence.py` guarantee the from-source output matches the patch output.
+delivered bundle is a single clean render.
+
+Parity status (important): the overall-confidence badge/card + scored-parameters
+table are already wired into `render_html` (via the shared `confidence.py`
+builders), so those match a from-source render. The remaining gap-fix DISPLAY
+elements are currently applied only by `tools/patch_report_confidence.py` and are
+NOT yet in `render_html`: the WGCNA correlations table, the MS Fit MS2-evidence
+panel, the resolved display name, the Metabolon Level line, and the
+mass-consistent-alternative callout. Before a from-source regen will match the
+delivered (patched) bundle, wire these into `compound.py::render_html` (build the
+same normalized fields in `build_report` from the bundle inputs, then call the
+existing `confidence.py` builders: `correlations_table_html`,
+`ms2_evidence_section_html`, etc.). Until then, the enrich -> patch flow
+(`tools/enrich_report_evidence.py` + `tools/patch_report_confidence.py` +
+`tools/patch_consensus_crowding.py`) is the source of truth for delivery.
