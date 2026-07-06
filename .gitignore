@@ -29,3 +29,6 @@ vendor/nce/elucidation/table_builders/hmdb_spreadsheet.csv
 _audit_pull/
 *.tgz
 *.tgz.sha256
+
+# Downloaded report data bundle (large, fetched from S3)
+_bundle/
