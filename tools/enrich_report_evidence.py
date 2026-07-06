@@ -73,6 +73,8 @@ def load_ms2(bundle: Path) -> dict[str, dict]:
             out[cid] = {
                 "present": str(row.get("ms2_present", "")).strip().lower() in ("true", "1"),
                 "n_pairs": _num(row.get("n_ms2_pairs")) or 0,
+                "n_ion_bins": _num(row.get("n_observed_ion_bins")) or 0,
+                "n_loss_bins": _num(row.get("n_observed_loss_bins")) or 0,
                 "parent_mz": _num(row.get("parent_mz")),
                 "neutral_mass": _num(row.get("neutral_mass")),
             }
@@ -203,6 +205,15 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna) -> str:
     fields["observed_mz"] = observed_mz
     fields["observed_neutral_mass"] = mz_rec.get("neutral_mass") or ms2_rec.get("neutral_mass")
     fields["ms2_n_pairs"] = ms2_rec.get("n_pairs") or 0
+    fields["ms2_detail"] = {
+        "present": ms2_present,
+        "n_pairs": ms2_rec.get("n_pairs") or 0,
+        "n_ion_bins": ms2_rec.get("n_ion_bins") or 0,
+        "n_loss_bins": ms2_rec.get("n_loss_bins") or 0,
+        "forward": _num(r1.get("forward_spectrum_score")),
+        "predicted_v2": _num(r1.get("predicted_spectrum_score_v2")),
+        "match": _num(r1.get("ms2_match_score")),
+    }
     fields["metabolon_level"] = levels.get(cid, "")
     fields["truth_match"] = truth_match
     fields["mass_alt"] = mass_consistent_alt(css)

@@ -439,6 +439,40 @@ def scored_parameters_section_html(conf: Confidence, *, public: bool) -> str:
     return intro + table + tail + extra + flag_html
 
 
+def ms2_evidence_section_html(fields: dict, *, public: bool) -> str:
+    """Body HTML for the MS Fit / Feature Match section.
+
+    Public: no per-fragment/ion detail (compliance) - only that MS2 is folded into
+    the overall confidence. Internal: pipeline spectral scores + observed peak
+    counts (aggregate; still not raw ion m/z, which are not decodably available)."""
+    d = fields.get("ms2_detail") or {}
+    present = bool(d.get("present"))
+    if public:
+        return (
+            '<p class="note">MS2 spectral fit is incorporated into the overall identification '
+            "confidence. Per-fragment spectral detail is provided in the internal report.</p>"
+        )
+    if not present:
+        return '<p class="note">No observed MS2 spectrum was available for this feature.</p>'
+
+    def s(v):
+        return f"{float(v):.3f}" if isinstance(v, (int, float)) else "n/a"
+
+    return (
+        '<p class="note">Observed MS2 spectral evidence for this feature (internal only). '
+        "Scores are the pipeline\'s spectral match for the top candidate; peak counts describe "
+        "the observed spectrum.</p>"
+        '<div class="table-wrap"><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>'
+        f"<tr><td>Forward spectral score</td><td>{s(d.get('forward'))}</td></tr>"
+        f"<tr><td>Predicted-spectrum score (v2)</td><td>{s(d.get('predicted_v2'))}</td></tr>"
+        f"<tr><td>MS2 match score</td><td>{s(d.get('match'))}</td></tr>"
+        f"<tr><td>Observed fragment peaks</td><td>{int(d.get('n_pairs') or 0)}</td></tr>"
+        f"<tr><td>Observed fragment-ion bins</td><td>{int(d.get('n_ion_bins') or 0)}</td></tr>"
+        f"<tr><td>Observed neutral-loss bins</td><td>{int(d.get('n_loss_bins') or 0)}</td></tr>"
+        "</tbody></table></div>"
+    )
+
+
 def correlations_table_html(correlations: list[dict]) -> str:
     """Table body (rows) for the 'Top Correlating Metabolites' section from WGCNA."""
     rows = []
