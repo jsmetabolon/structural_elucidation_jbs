@@ -167,6 +167,41 @@ def mass_consistent_alt(css: list[dict]) -> dict | None:
     return None
 
 
+def candidate_evidence_rows(css: list[dict], tc: list[dict]) -> list[dict]:
+    """Per-rank evidence for the top-10 widget.
+
+    Joins the pipeline's ``evidence_confidence`` + ``mass_match_score`` (from
+    ``top_candidates.csv``) onto the displayed candidate rows so the patcher can
+    surface them alongside the raw rerank score. Matches by SMILES, falling back
+    to row order (both files are rank-ordered).
+    """
+    ev_by_smiles: dict[str, dict] = {}
+    for row in tc:
+        s = str(row.get("predicted_smiles", "")).strip()
+        if s and s not in ev_by_smiles:
+            ev_by_smiles[s] = {
+                "evidence_confidence": _num(row.get("evidence_confidence")),
+                "mass_match_score": _num(row.get("mass_match_score")),
+            }
+    out = []
+    for i, row in enumerate(css[:10]):
+        s = str(row.get("predicted_smiles", "")).strip()
+        ev = ev_by_smiles.get(s)
+        if ev is None and i < len(tc):
+            ev = {
+                "evidence_confidence": _num(tc[i].get("evidence_confidence")),
+                "mass_match_score": _num(tc[i].get("mass_match_score")),
+            }
+        ev = ev or {}
+        rank = _num(row.get("rank"))
+        out.append({
+            "rank": int(rank) if rank is not None else i + 1,
+            "evidence_confidence": ev.get("evidence_confidence"),
+            "mass_match_score": ev.get("mass_match_score"),
+        })
+    return out
+
+
 def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna) -> str:
     data = report_dir / "data"
     if not data.is_dir():
@@ -222,6 +257,7 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna) -> str:
     fields["metabolon_level"] = levels.get(cid, "")
     fields["truth_match"] = truth_match
     fields["mass_alt"] = mass_consistent_alt(css)
+    fields["candidate_evidence"] = candidate_evidence_rows(css, tc)
     # display name / synonyms (gap 2)
     ev = data / f"{slug}_evidence_summary.json"
     target = {}
