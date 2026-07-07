@@ -155,21 +155,33 @@ Once items 1-4 land upstream, prefer regenerating reports from source
 `--db`, and the pathway-enriched rerank CSVs) rather than patching, so the
 delivered bundle is a single clean render.
 
-Parity status (important): the overall-confidence badge/card + scored-parameters
-table are already wired into `render_html` (via the shared `confidence.py`
-builders), so those match a from-source render. The top-10 candidate-widget
-evidence surfacing (`evidence_confidence` + `mass_match` + relabeled "Rank score
-(relative)") is also wired into `render_html`/`compound.py` and the master index
-MSI column + column sorting into `structural_elucidation/reports/index_render.py`
-(used by `batch.py`), so both match from-source. The remaining gap-fix DISPLAY
-elements are currently applied only by `tools/patch_report_confidence.py` and are
-NOT yet in `render_html`: the WGCNA correlations table, the MS Fit MS2-evidence
-panel, the resolved display name, the Metabolon Level line, and the
-mass-consistent-alternative callout. Before a from-source regen will match the
-delivered (patched) bundle, wire these into `compound.py::render_html` (build the
-same normalized fields in `build_report` from the bundle inputs, then call the
-existing `confidence.py` builders: `correlations_table_html`,
-`ms2_evidence_section_html`, etc.). Until then, the enrich -> patch flow
+Parity status (updated). The following now render identically from source
+(`compound.py::render_html`/`build_report`) and from the enrich->patch flow, verified
+on lib209 by `tools/diff_source_vs_patched.py` (public MS2-ion leaks = 0):
+the overall-confidence badge/card, scored-parameters table, MSI badge/card/line,
+the top-10 candidate-widget evidence (`evidence_confidence` + `mass_match` +
+relabeled "Rank score (relative)"), the Metabolon Level line, the
+mass-consistent-alternative callout, the internal MS2-evidence panel
+(`ms2_evidence_section_html`), and the master-index MSI column + column sorting
+(`index_render.py`). `mass_consistent_alt` is shared in `confidence.py`.
+
+Two DATA-SOURCE gaps remain before a from-source regen can replace the patch chain
+(the render code is ready; the inputs differ):
+1. Observed MS2: the from-source MS2 panel + the MS2 confidence axis must be fed the
+   observed spectrum (run `batch` with `--peak-csv` / the observed lookup). Without
+   it, `build_report` cannot know observed-MS2 presence, so the panel is
+   (correctly) omitted whereas the enrich flow shows it from
+   `observed_ms2_lookups`.
+2. `mass_match_score`: the current `_bundle/rerank/*.csv` lacks this column, so
+   `mass_consistent_alt` cannot fire from source (the enrich flow had it from the
+   originally-generated `candidate_score_summary.csv`). Either emit
+   `mass_match_score` in the rerank CSV or derive it from `abs_mass_error_da` + the
+   observed neutral mass in `compact_candidate_scores`.
+
+A single-compound and a 93-compound (lib209) from-source build both succeed in-VM
+(~1 s/compound; ~15-20 min for all 3,897 at `--jobs 8`). DECISION: do not switch
+delivery yet - close the two gaps above and re-run `tools/diff_source_vs_patched.py`
+to confirm full parity first. Until then, the enrich -> patch flow
 (`tools/enrich_report_evidence.py`, `tools/patch_report_confidence.py`,
 `tools/patch_candidate_scores.py`, `tools/patch_consensus_crowding.py`, and
-`tools/rebuild_master_index.py`) is the source of truth for delivery.
+`tools/rebuild_master_index.py`) remains the source of truth for delivery.
