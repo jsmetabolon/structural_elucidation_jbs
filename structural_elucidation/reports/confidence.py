@@ -100,6 +100,9 @@ class Confidence:
     ms2_n_pairs: int = 0
     metabolon_level: str = ""
     mass_alt: dict | None = None
+    msi_level: int = 5
+    msi_label: str = ""
+    msi_rationale: str = ""
 
     def as_dict(self) -> dict:
         return {
@@ -114,6 +117,9 @@ class Confidence:
             "ms2_n_pairs": self.ms2_n_pairs,
             "metabolon_level": self.metabolon_level,
             "mass_alt": self.mass_alt,
+            "msi_level": self.msi_level,
+            "msi_label": self.msi_label,
+            "msi_rationale": self.msi_rationale,
             "axes": [a.as_dict() for a in self.axes],
             "flags": self.flags,
         }
@@ -265,6 +271,47 @@ def _flags(axes: list[Axis], fields: dict) -> list[str]:
     return flags
 
 
+MSI_LABELS = {
+    1: "Confirmed (authentic standard)",
+    2: "Probable structure",
+    3: "Tentative candidate structure",
+    4: "Molecular formula",
+    5: "Exact mass of interest",
+}
+
+
+def assign_msi_level(fields: dict, conf: "Confidence") -> tuple[int, str, str]:
+    """Assign a Schymanski/MSI identification-confidence level (1-5) from evidence.
+
+    L1 confirmed (authentic standard) / L2 probable structure (strong structure +
+    observed MS2 + mass) / L3 tentative candidate structure (hypothesis) / L4
+    molecular formula only (structure not supported or mass-rejected) / L5 exact
+    mass only. Structures are only claimed at L1-L3; L4-L5 report formula/mass.
+    """
+    by = {a.key: a for a in conf.axes}
+    struct = by["structure"].score or 0.0
+    mass = by["mass"].score if by["mass"].available else None
+    ms2_ok = by["ms2"].available and (by["ms2"].score or 0.0) >= MS2_PRESENT
+    mass_ok = mass is not None and mass >= MASS_STRONG
+    mass_mismatch = mass is not None and mass < MASS_WEAK
+    observed = bool(fields.get("observed_mz_available"))
+
+    if conf.tier == "Confirmed":
+        return 1, MSI_LABELS[1], "Metabolon Level-1 standard match and the top candidate matches it"
+    if struct >= STRUCT_MODERATE and ms2_ok and mass_ok:
+        return 2, MSI_LABELS[2], "Strong structure similarity with observed-MS2 and mass corroboration"
+    if (not mass_mismatch) and struct >= STRUCT_WEAK:
+        return 3, MSI_LABELS[3], "Structure candidate consistent with mass but not spectrally confirmed - a hypothesis"
+    if observed or mass_ok:
+        note = (
+            "Observed mass is known but the top candidate mass does not fit - structure rejected"
+            if mass_mismatch
+            else "Observed mass/formula is supported but no structure is adequately supported"
+        )
+        return 4, MSI_LABELS[4], note
+    return 5, MSI_LABELS[5], "Only an exact mass is available; no confident formula or structure"
+
+
 def compute_confidence(fields: dict) -> Confidence:
     """Compute the hybrid identification confidence from normalized ``fields``."""
     source = str(fields.get("source", "")).strip()
@@ -284,7 +331,7 @@ def compute_confidence(fields: dict) -> Confidence:
         descriptor = "De novo / predicted structure"
     else:
         descriptor = "Structure proposal"
-    return Confidence(
+    result = Confidence(
         overall=round(overall, 4),
         tier=tier,
         tier_note=tier_note,
@@ -299,6 +346,8 @@ def compute_confidence(fields: dict) -> Confidence:
         metabolon_level=str(fields.get("metabolon_level", "") or ""),
         mass_alt=fields.get("mass_alt") if isinstance(fields.get("mass_alt"), dict) else None,
     )
+    result.msi_level, result.msi_label, result.msi_rationale = assign_msi_level(fields, result)
+    return result
 
 
 # --- shared input normalization (renderer + patcher + audit + calibration) ---
@@ -374,6 +423,19 @@ def confidence_metric_card_html(conf: Confidence) -> str:
     )
 
 
+def msi_badge_html(conf: Confidence) -> str:
+    cls = "badge ok" if conf.msi_level <= 2 else "badge"
+    return f'<span class="{cls}">MSI Level {conf.msi_level} \u00b7 {html.escape(conf.msi_label)}</span>'
+
+
+def msi_metric_card_html(conf: Confidence) -> str:
+    return (
+        '<div class="metric-card"><div class="metric-label">MSI identification level</div>'
+        f'<div class="metric-value">Level {conf.msi_level}</div>'
+        f'<div class="metric-note">{html.escape(conf.msi_label)}</div></div>'
+    )
+
+
 def scored_parameters_section_html(conf: Confidence, *, public: bool) -> str:
     """Body HTML for the 'Parameters Contributing to Identification Confidence' section."""
     rows = []
@@ -392,7 +454,13 @@ def scored_parameters_section_html(conf: Confidence, *, public: bool) -> str:
         "<th>Available</th><th>Interpretation</th></tr></thead>"
         f"<tbody>{''.join(rows)}</tbody></table></div>"
     )
-    intro = (
+    msi_line = (
+        f'<p class="note"><strong>MSI identification level: Level {conf.msi_level} - '
+        f"{html.escape(conf.msi_label)}.</strong> {html.escape(conf.msi_rationale)}. "
+        "Levels 1-3 present a structure (Level 3 as a hypothesis); Levels 4-5 report formula/mass "
+        "without a specific structure.</p>"
+    )
+    intro = msi_line + (
         '<p class="note">The overall identification confidence is a calibrated estimate of the '
         "probability that the top candidate structure is correct, combining structural similarity, "
         "mass/formula match, MS2 spectral fit, and pathway consensus (calibrated on "
@@ -425,11 +493,23 @@ def scored_parameters_section_html(conf: Confidence, *, public: bool) -> str:
         alt = conf.mass_alt
         rank = alt.get("rank")
         rank_txt = f"rank {int(rank)}" if isinstance(rank, (int, float)) else "a lower-ranked candidate"
+        formula = html.escape(str(alt.get("formula", "")).strip() or "n/a")
+        ms = alt.get("mass_match_score")
+        err = alt.get("abs_mass_error_da")
+        fit_bits = []
+        if isinstance(ms, (int, float)):
+            fit_bits.append(f"mass match {ms:.3f}")
+        if isinstance(err, (int, float)):
+            fit_bits.append(f"\u0394 {err:.4g} Da")
+        fit_txt = (" (" + ", ".join(fit_bits) + ")") if fit_bits else ""
+        smiles = str(alt.get("smiles", "")).strip()
+        smiles_txt = f" SMILES <code>{html.escape(smiles)}</code>." if smiles else ""
         extra += (
-            '<p class="note"><strong>Mass-consistent alternative:</strong> the top candidate\'s '
-            f"mass does not match the observed feature, but {rank_txt} "
-            f"(formula {html.escape(str(alt.get('formula', '')))}) matches the observed mass "
-            "- consider it a stronger mass-based hypothesis.</p>"
+            '<p class="note"><strong>Mass-consistent alternative (recoverable structure):</strong> '
+            "the top candidate's mass does not fit the observed feature, but "
+            f"{rank_txt} \u2014 formula <strong>{formula}</strong>{fit_txt} \u2014 fits the observed mass."
+            f"{smiles_txt} A mass-aware reranker would promote this candidate; treat it as the "
+            "stronger mass-based structure hypothesis for this feature.</p>"
         )
     flags = [f for f in conf.flags if not (public and "MS2" in f)]
     flag_html = ""
@@ -437,6 +517,40 @@ def scored_parameters_section_html(conf: Confidence, *, public: bool) -> str:
         items = "".join(f"<li>{html.escape(f)}</li>" for f in flags)
         flag_html = f'<p class="note"><strong>Caveats:</strong></p><ul>{items}</ul>'
     return intro + table + tail + extra + flag_html
+
+
+def ms2_evidence_section_html(fields: dict, *, public: bool) -> str:
+    """Body HTML for the MS Fit / Feature Match section.
+
+    Public: no per-fragment/ion detail (compliance) - only that MS2 is folded into
+    the overall confidence. Internal: pipeline spectral scores + observed peak
+    counts (aggregate; still not raw ion m/z, which are not decodably available)."""
+    d = fields.get("ms2_detail") or {}
+    present = bool(d.get("present"))
+    if public:
+        return (
+            '<p class="note">MS2 spectral fit is incorporated into the overall identification '
+            "confidence. Per-fragment spectral detail is provided in the internal report.</p>"
+        )
+    if not present:
+        return '<p class="note">No observed MS2 spectrum was available for this feature.</p>'
+
+    def s(v):
+        return f"{float(v):.3f}" if isinstance(v, (int, float)) else "n/a"
+
+    return (
+        '<p class="note">Observed MS2 spectral evidence for this feature (internal only). '
+        "Scores are the pipeline\'s spectral match for the top candidate; peak counts describe "
+        "the observed spectrum.</p>"
+        '<div class="table-wrap"><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>'
+        f"<tr><td>Forward spectral score</td><td>{s(d.get('forward'))}</td></tr>"
+        f"<tr><td>Predicted-spectrum score (v2)</td><td>{s(d.get('predicted_v2'))}</td></tr>"
+        f"<tr><td>MS2 match score</td><td>{s(d.get('match'))}</td></tr>"
+        f"<tr><td>Observed fragment peaks</td><td>{int(d.get('n_pairs') or 0)}</td></tr>"
+        f"<tr><td>Observed fragment-ion bins</td><td>{int(d.get('n_ion_bins') or 0)}</td></tr>"
+        f"<tr><td>Observed neutral-loss bins</td><td>{int(d.get('n_loss_bins') or 0)}</td></tr>"
+        "</tbody></table></div>"
+    )
 
 
 def correlations_table_html(correlations: list[dict]) -> str:

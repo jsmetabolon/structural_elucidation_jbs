@@ -49,6 +49,9 @@ CORR_NOTE_RE = re.compile(
 CORR_TBODY_RE = re.compile(
     r"(<th>Correlation \(R\)</th><th>)Pathway(</th></tr></thead>\s*<tbody>).*?(</tbody>)", re.S
 )
+MS_FIT_RE = re.compile(
+    r"(<h2>(?:MS Fit Scores|Feature Match Scores)\b.*?</h2>)(.*?)(</section>)", re.S
+)
 
 
 def _fmt(v, digits=4):
@@ -60,8 +63,14 @@ def _fmt(v, digits=4):
 
 def patch_html(text: str, conf: C.Confidence, fields: dict, control_id: str) -> str:
     public = "Dashboard \u2022 Internal" not in text
-    badge = f"<!--CONF_BADGE-->{C.confidence_badge_html(conf)}<!--/CONF_BADGE-->"
-    card = f"<!--CONF_CARD-->{C.confidence_metric_card_html(conf)}<!--/CONF_CARD-->"
+    badge = (
+        f"<!--CONF_BADGE-->{C.confidence_badge_html(conf)}\n          "
+        f"{C.msi_badge_html(conf)}<!--/CONF_BADGE-->"
+    )
+    card = (
+        f"<!--CONF_CARD-->{C.confidence_metric_card_html(conf)}\n        "
+        f"{C.msi_metric_card_html(conf)}<!--/CONF_CARD-->"
+    )
     params = f"<!--CONF_PARAMS-->{C.scored_parameters_section_html(conf, public=public)}<!--/CONF_PARAMS-->"
 
     # 1. header badge (idempotent)
@@ -104,6 +113,12 @@ def patch_html(text: str, conf: C.Confidence, fields: dict, control_id: str) -> 
         note = ("Co-abundance correlations pending (client-specific dataset); rows below are "
                 "structural-proxy neighbors, not measured co-abundance.")
     text = CORR_NOTE_RE.sub(lambda m: m.group(1) + note + m.group(2), text)
+
+    # 5b. MS Fit / Feature Match section: pipeline MS2 evidence (internal) or note (public)
+    text = MS_FIT_RE.sub(
+        lambda m: m.group(1) + "\n      " + C.ms2_evidence_section_html(fields, public=public) + "\n    " + m.group(3),
+        text,
+    )
 
     # 6. display name (gap 2): replace the structure-card caption showing the control id
     name = fields.get("display_name")

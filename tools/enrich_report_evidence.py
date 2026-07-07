@@ -73,6 +73,8 @@ def load_ms2(bundle: Path) -> dict[str, dict]:
             out[cid] = {
                 "present": str(row.get("ms2_present", "")).strip().lower() in ("true", "1"),
                 "n_pairs": _num(row.get("n_ms2_pairs")) or 0,
+                "n_ion_bins": _num(row.get("n_observed_ion_bins")) or 0,
+                "n_loss_bins": _num(row.get("n_observed_loss_bins")) or 0,
                 "parent_mz": _num(row.get("parent_mz")),
                 "neutral_mass": _num(row.get("neutral_mass")),
             }
@@ -148,14 +150,19 @@ def mass_consistent_alt(css: list[dict]) -> dict | None:
     r1 = _num(css[0].get("mass_match_score"))
     if r1 is None or r1 >= C.MASS_WEAK:
         return None
+    r1_err = _num(css[0].get("abs_mass_error_da"))
+    r1_formula = str(css[0].get("predicted_formula", "")).strip()
     for row in css[1:]:
         ms = _num(row.get("mass_match_score"))
         if ms is not None and ms >= C.MASS_STRONG:
             return {
                 "rank": _num(row.get("rank")),
                 "formula": str(row.get("predicted_formula", "")).strip(),
+                "smiles": str(row.get("predicted_smiles", "")).strip(),
                 "mass_match_score": ms,
                 "abs_mass_error_da": _num(row.get("abs_mass_error_da")),
+                "rank1_formula": r1_formula,
+                "rank1_abs_mass_error_da": r1_err,
             }
     return None
 
@@ -203,6 +210,15 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna) -> str:
     fields["observed_mz"] = observed_mz
     fields["observed_neutral_mass"] = mz_rec.get("neutral_mass") or ms2_rec.get("neutral_mass")
     fields["ms2_n_pairs"] = ms2_rec.get("n_pairs") or 0
+    fields["ms2_detail"] = {
+        "present": ms2_present,
+        "n_pairs": ms2_rec.get("n_pairs") or 0,
+        "n_ion_bins": ms2_rec.get("n_ion_bins") or 0,
+        "n_loss_bins": ms2_rec.get("n_loss_bins") or 0,
+        "forward": _num(r1.get("forward_spectrum_score")),
+        "predicted_v2": _num(r1.get("predicted_spectrum_score_v2")),
+        "match": _num(r1.get("ms2_match_score")),
+    }
     fields["metabolon_level"] = levels.get(cid, "")
     fields["truth_match"] = truth_match
     fields["mass_alt"] = mass_consistent_alt(css)
@@ -226,6 +242,11 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna) -> str:
     fields["name_resolved"] = bool(dbn)
     # co-abundance neighbors (gap 1, placeholder)
     fields["correlations"] = wgcna.get(cid, [])
+    # derive + store the MSI identification level (also derivable at render time)
+    conf = C.compute_confidence(fields)
+    fields["msi_level"] = conf.msi_level
+    fields["msi_label"] = conf.msi_label
+    fields["msi_rationale"] = conf.msi_rationale
     (data / f"{slug}_confidence_inputs.json").write_text(json.dumps(fields, indent=2))
     return "enriched"
 
