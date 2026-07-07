@@ -121,6 +121,34 @@ Context you need:
 - Open question: whether to also fit per-library or per-pathway calibration once
   the labeled set is large enough.
 
+## 5. Evidence-aware headline candidate score (fold evidence_confidence into rerank)
+- Goal: make the number the reranker emits as the candidate's headline score reflect
+  the actual identification evidence, not just generative likelihood.
+- Evidence: `candidate_report_score` (= `unified_final_score` = `rerank_score`) is a
+  raw, uncalibrated generative-rerank value. Across all 3,897 rank-1 candidates its
+  median is **0.035** while the pipeline's own `evidence_confidence` median is
+  **0.996**; 57% of reports have `evidence_confidence >= 0.90` but a headline score
+  < 0.10, and 91% of library-hit + mass-perfect rank-1s show a headline score < 0.10
+  (e.g. X-02269 phenyl glucopyranoside: `evidence_confidence 0.999`, `mass_match
+  0.9998`, headline score 0.036). The score is small partly because it spreads over
+  many mass-consistent isomers.
+- Current (report layer, stopgap): reports now surface `evidence_confidence` +
+  `mass_match` in the top-10 widget and relabel the raw value "Rank score (relative)"
+  (see `tools/patch_candidate_scores.py` + `compound.py`), so readers stop reading
+  the 0.036 as a match quality. This does not change ranking.
+- Plug-in: in the reranker, combine `evidence_confidence` (library + mass + spectral)
+  with the generative score into the final ordering/score, or expose a calibrated
+  0-1 `candidate_confidence` column and use it as the headline. Keep the raw
+  generative score available as a secondary isomer tie-breaker.
+- Caveat (do not overclaim): `evidence_confidence` is shared across mass-consistent
+  isomers (all five C12H16O6 isomers of X-02269 score 0.9986), so it certifies the
+  formula/library class, not the specific isomer. Retain an isomer-margin term (the
+  small generative-score gap) so a confident class does not become a false-confident
+  single structure - this mirrors why the report's overall confidence stays Moderate
+  / MSI Level 3 for such cases.
+- Verify: headline candidate score median rises and tracks correctness on the truth
+  set; the report note about "relative" rank score can then be removed.
+
 ## Cross-cutting: from-source regeneration + render_html parity task
 Once items 1-4 land upstream, prefer regenerating reports from source
 (`python -m structural_elucidation.reports.batch` with `--observed-lookup-dir`,
@@ -129,7 +157,11 @@ delivered bundle is a single clean render.
 
 Parity status (important): the overall-confidence badge/card + scored-parameters
 table are already wired into `render_html` (via the shared `confidence.py`
-builders), so those match a from-source render. The remaining gap-fix DISPLAY
+builders), so those match a from-source render. The top-10 candidate-widget
+evidence surfacing (`evidence_confidence` + `mass_match` + relabeled "Rank score
+(relative)") is also wired into `render_html`/`compound.py` and the master index
+MSI column + column sorting into `structural_elucidation/reports/index_render.py`
+(used by `batch.py`), so both match from-source. The remaining gap-fix DISPLAY
 elements are currently applied only by `tools/patch_report_confidence.py` and are
 NOT yet in `render_html`: the WGCNA correlations table, the MS Fit MS2-evidence
 panel, the resolved display name, the Metabolon Level line, and the
@@ -138,5 +170,6 @@ delivered (patched) bundle, wire these into `compound.py::render_html` (build th
 same normalized fields in `build_report` from the bundle inputs, then call the
 existing `confidence.py` builders: `correlations_table_html`,
 `ms2_evidence_section_html`, etc.). Until then, the enrich -> patch flow
-(`tools/enrich_report_evidence.py` + `tools/patch_report_confidence.py` +
-`tools/patch_consensus_crowding.py`) is the source of truth for delivery.
+(`tools/enrich_report_evidence.py`, `tools/patch_report_confidence.py`,
+`tools/patch_candidate_scores.py`, `tools/patch_consensus_crowding.py`, and
+`tools/rebuild_master_index.py`) is the source of truth for delivery.
