@@ -86,6 +86,11 @@ Context you need:
   mass-alt callout becomes rare; `msi_level_distribution` L4 falls, L2/L3 rise.
 - Open question: exact tolerance + how to treat adduct ambiguity (the same feature
   may be explainable as multiple adducts/conjugates).
+- Reference prototype: `tools/prototype_mass_gate_rerank.py` (read-only) applies this
+  gate to the delivered `top_candidates.csv` and confirms the projected impact:
+  598 rank-1 mass-rejected today, **523 (87%) recoverable** by promoting an in-list
+  mass-consistent candidate (~523 MSI L4 -> L3+), 75 with no in-list alt (need
+  conjugate enumeration). Use it as the spec for the reranker change.
 
 ## 3. Broader MS2 capture + a better candidate-vs-spectrum scorer
 - Goal: raise MS2 coverage above 44% and make the spectral score more
@@ -148,6 +153,9 @@ Context you need:
   / MSI Level 3 for such cases.
 - Verify: headline candidate score median rises and tracks correctness on the truth
   set; the report note about "relative" rank score can then be removed.
+- Reference prototype: `tools/prototype_mass_gate_rerank.py` shows the headline shift
+  on the delivered data (median raw `candidate_report_score` 0.035 ->
+  `evidence_confidence` 0.997).
 
 ## Cross-cutting: from-source regeneration + render_html parity task
 Once items 1-4 land upstream, prefer regenerating reports from source
