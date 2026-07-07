@@ -175,11 +175,14 @@ mass-consistent-alternative callout, the internal MS2-evidence panel
 
 Two DATA-SOURCE gaps remain before a from-source regen can replace the patch chain
 (the render code is ready; the inputs differ):
-1. Observed MS2: the from-source MS2 panel + the MS2 confidence axis must be fed the
-   observed spectrum (run `batch` with `--peak-csv` / the observed lookup). Without
-   it, `build_report` cannot know observed-MS2 presence, so the panel is
-   (correctly) omitted whereas the enrich flow shows it from
-   `observed_ms2_lookups`.
+1. Observed-MS2 source mismatch: the two paths key MS2 presence off *different*
+   observed files. `build_report` (via `--peak-csv`, auto-derived from
+   `--observed-lookup-dir`) uses the per-lib `*_observed_ms2_lookup.csv`, while the
+   enrich flow uses `per_control_all_x.csv`. They disagree for ~47% of lib209
+   controls (e.g. X-11640 is in the per-lib lookup but not in `per_control_all_x`,
+   so from-source shows the MS2 panel while the patched report does not). Fix: pick
+   one canonical observed-MS2 source + presence criterion and use it for both the
+   MS2 panel and the MS2 confidence axis in both paths.
 2. `mass_match_score`: the current `_bundle/rerank/*.csv` lacks this column, so
    `mass_consistent_alt` cannot fire from source (the enrich flow had it from the
    originally-generated `candidate_score_summary.csv`). Either emit
