@@ -1,0 +1,35 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='900' height='300' viewBox='0 0 900 300' font-family='Helvetica, Arial, sans-serif'>
+<defs><marker id='a' markerWidth='8' markerHeight='8' refX='6' refY='3' orient='auto'><path d='M0,0 L6,3 L0,6 Z' fill='#5b6570'/></marker></defs>
+<rect width='900' height='300' fill='white'/>
+<text x='20' y='34' font-size='18' font-weight='bold' fill='#1b1f24'>Structural-elucidation workflow</text>
+<rect x='20.0' y='120' width='118' height='76' rx='8' fill='#eef2f6' stroke='#3b6ea5' stroke-width='1.5'/>
+<text x='79.0' y='142' font-size='12.5' font-weight='bold' fill='#1b1f24' text-anchor='middle'>Raw LC-MS/MS</text>
+<text x='79.0' y='159' font-size='10.5' fill='#5b6570' text-anchor='middle'>features</text>
+<line x1='138.0' y1='158.0' x2='168.4' y2='158.0' stroke='#5b6570' stroke-width='1.5' marker-end='url(#a)'/>
+<rect x='168.4' y='120' width='118' height='76' rx='8' fill='#eef2f6' stroke='#3b6ea5' stroke-width='1.5'/>
+<text x='227.4' y='142' font-size='12.5' font-weight='bold' fill='#1b1f24' text-anchor='middle'>Discovery</text>
+<text x='227.4' y='159' font-size='10.5' fill='#5b6570' text-anchor='middle'>MS2 feature</text>
+<text x='227.4' y='172' font-size='10.5' fill='#5b6570' text-anchor='middle'>detection</text>
+<line x1='286.4' y1='158.0' x2='316.8' y2='158.0' stroke='#5b6570' stroke-width='1.5' marker-end='url(#a)'/>
+<rect x='316.8' y='120' width='118' height='76' rx='8' fill='#eef2f6' stroke='#3b6ea5' stroke-width='1.5'/>
+<text x='375.8' y='142' font-size='12.5' font-weight='bold' fill='#1b1f24' text-anchor='middle'>De novo</text>
+<text x='375.8' y='157' font-size='12.5' font-weight='bold' fill='#1b1f24' text-anchor='middle'>structure prediction</text>
+<text x='375.8' y='174' font-size='10.5' fill='#5b6570' text-anchor='middle'>MS2-&gt;SMILES</text>
+<text x='375.8' y='187' font-size='10.5' fill='#5b6570' text-anchor='middle'>generative</text>
+<line x1='434.8' y1='158.0' x2='465.2' y2='158.0' stroke='#5b6570' stroke-width='1.5' marker-end='url(#a)'/>
+<rect x='465.2' y='120' width='118' height='76' rx='8' fill='#eef2f6' stroke='#3b6ea5' stroke-width='1.5'/>
+<text x='524.2' y='142' font-size='12.5' font-weight='bold' fill='#1b1f24' text-anchor='middle'>Candidate rerank</text>
+<text x='524.2' y='159' font-size='10.5' fill='#5b6570' text-anchor='middle'>library + mass +</text>
+<text x='524.2' y='172' font-size='10.5' fill='#5b6570' text-anchor='middle'>spectral evidence</text>
+<line x1='583.2' y1='158.0' x2='613.6' y2='158.0' stroke='#5b6570' stroke-width='1.5' marker-end='url(#a)'/>
+<rect x='613.6' y='120' width='118' height='76' rx='8' fill='#eef2f6' stroke='#3b6ea5' stroke-width='1.5'/>
+<text x='672.6' y='142' font-size='12.5' font-weight='bold' fill='#1b1f24' text-anchor='middle'>Pathway consensus</text>
+<text x='672.6' y='159' font-size='10.5' fill='#5b6570' text-anchor='middle'>neighbor vote of</text>
+<text x='672.6' y='172' font-size='10.5' fill='#5b6570' text-anchor='middle'>Metabolon taxonomy</text>
+<line x1='731.6' y1='158.0' x2='762.0' y2='158.0' stroke='#5b6570' stroke-width='1.5' marker-end='url(#a)'/>
+<rect x='762.0' y='120' width='118' height='76' rx='8' fill='#eef2f6' stroke='#3b6ea5' stroke-width='1.5'/>
+<text x='821.0' y='142' font-size='12.5' font-weight='bold' fill='#1b1f24' text-anchor='middle'>Report</text>
+<text x='821.0' y='159' font-size='10.5' fill='#5b6570' text-anchor='middle'>confidence + MSI</text>
+<text x='821.0' y='172' font-size='10.5' fill='#5b6570' text-anchor='middle'>level + index</text>
+<text x='20' y='280' font-size='11' fill='#5b6570'>3,897 X-compound features across 4 chromatographic libraries (2 positive, 2 negative mode).</text>
+</svg>

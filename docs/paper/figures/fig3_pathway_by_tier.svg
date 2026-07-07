@@ -1,0 +1,31 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='720' height='440' viewBox='0 0 720 440' font-family='Helvetica, Arial, sans-serif'>
+<rect width='720' height='440' fill='white'/>
+<text x='70' y='30' font-size='18' font-weight='bold' fill='#1b1f24'>Pathway (super) accuracy by confidence tier</text>
+<text x='70' y='50' font-size='12' fill='#5b6570'>known_X evaluation; accuracy is monotonic in the reported tier</text>
+<line x1='70' y1='344.0' x2='696' y2='344.0' stroke='#d7dce1' stroke-width='1'/>
+<text x='62' y='348.0' font-size='11' fill='#5b6570' text-anchor='end'>0</text>
+<line x1='70' y1='290.0' x2='696' y2='290.0' stroke='#d7dce1' stroke-width='1'/>
+<text x='62' y='294.0' font-size='11' fill='#5b6570' text-anchor='end'>20</text>
+<line x1='70' y1='236.0' x2='696' y2='236.0' stroke='#d7dce1' stroke-width='1'/>
+<text x='62' y='240.0' font-size='11' fill='#5b6570' text-anchor='end'>40</text>
+<line x1='70' y1='182.0' x2='696' y2='182.0' stroke='#d7dce1' stroke-width='1'/>
+<text x='62' y='186.0' font-size='11' fill='#5b6570' text-anchor='end'>60</text>
+<line x1='70' y1='128.0' x2='696' y2='128.0' stroke='#d7dce1' stroke-width='1'/>
+<text x='62' y='132.0' font-size='11' fill='#5b6570' text-anchor='end'>80</text>
+<line x1='70' y1='74.0' x2='696' y2='74.0' stroke='#d7dce1' stroke-width='1'/>
+<text x='62' y='78.0' font-size='11' fill='#5b6570' text-anchor='end'>100</text>
+<text x='16' y='209.0' font-size='12' fill='#5b6570' text-anchor='middle' transform='rotate(-90 16 209.0)'>Super-pathway accuracy (%)</text>
+<rect x='111.7' y='150.2' width='125.2' height='193.8' fill='#3b6ea5' rx='2'/>
+<text x='174.3' y='144.2' font-size='12' font-weight='bold' fill='#1b1f24' text-anchor='middle'>72</text>
+<text x='174.3' y='362.0' font-size='11' fill='#1b1f24' text-anchor='middle'>high</text>
+<text x='174.3' y='375.0' font-size='10' fill='#5b6570' text-anchor='middle'>n=365</text>
+<rect x='320.4' y='174.3' width='125.2' height='169.7' fill='#4a8f6d' rx='2'/>
+<text x='383.0' y='168.3' font-size='12' font-weight='bold' fill='#1b1f24' text-anchor='middle'>63</text>
+<text x='383.0' y='362.0' font-size='11' fill='#1b1f24' text-anchor='middle'>medium</text>
+<text x='383.0' y='375.0' font-size='10' fill='#5b6570' text-anchor='middle'>n=175</text>
+<rect x='529.1' y='242.3' width='125.2' height='101.7' fill='#b06a3b' rx='2'/>
+<text x='591.7' y='236.3' font-size='12' font-weight='bold' fill='#1b1f24' text-anchor='middle'>38</text>
+<text x='591.7' y='362.0' font-size='11' fill='#1b1f24' text-anchor='middle'>low</text>
+<text x='591.7' y='375.0' font-size='10' fill='#5b6570' text-anchor='middle'>n=369</text>
+<line x1='70' y1='344' x2='696' y2='344' stroke='#1b1f24' stroke-width='1.2'/>
+</svg>
