@@ -585,6 +585,34 @@ def _rank1_row(rows: list[dict]) -> dict:
     return best
 
 
+def mass_consistent_alt(css: list[dict]) -> dict | None:
+    """If the rank-1 candidate mass mismatches but a lower rank fits, return that alt.
+
+    Shared by ``tools/enrich_report_evidence.py`` (post-hoc) and
+    ``compound.build_report`` (from source) so both surface the same callout.
+    """
+    if not css:
+        return None
+    r1 = _num(css[0].get("mass_match_score"))
+    if r1 is None or r1 >= MASS_WEAK:
+        return None
+    r1_err = _num(css[0].get("abs_mass_error_da"))
+    r1_formula = str(css[0].get("predicted_formula", "") or "").strip()
+    for row in css[1:]:
+        ms = _num(row.get("mass_match_score"))
+        if ms is not None and ms >= MASS_STRONG:
+            return {
+                "rank": _num(row.get("rank")),
+                "formula": str(row.get("predicted_formula", "") or "").strip(),
+                "smiles": str(row.get("predicted_smiles", "") or "").strip(),
+                "mass_match_score": ms,
+                "abs_mass_error_da": _num(row.get("abs_mass_error_da")),
+                "rank1_formula": r1_formula,
+                "rank1_abs_mass_error_da": r1_err,
+            }
+    return None
+
+
 def read_fields_from_sidecars(data_dir: Path, slug: str) -> dict | None:
     """Build confidence ``fields`` from a report's on-disk sidecars.
 

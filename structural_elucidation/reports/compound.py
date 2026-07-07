@@ -2217,6 +2217,7 @@ def render_html(
     evidence: dict[str, Any],
     db_detail: dict[str, Any],
     confidence: Any,
+    conf_fields: dict[str, Any],
     pathway_info: dict[str, Any],
     synonyms: list[dict[str, Any]],
     neighbors: list[dict[str, Any]],
@@ -2799,6 +2800,7 @@ def render_html(
           <tbody>{feature_rows}</tbody>
         </table>
       </div>
+      {confmod.ms2_evidence_section_html(conf_fields, public=public_mode)}
     </section>
 
     <section class="section">
@@ -3543,6 +3545,24 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         correlations_real=not correlation_blocker,
     )
     _conf_fields["observed_mz"] = _observed_mz
+    # Parity with the enrich -> patch flow: Metabolon Level, mass-consistent
+    # alternative, and observed-MS2 detail so the from-source render matches.
+    _level = str(kx_row.get("Level", "") or "").strip()
+    _conf_fields["metabolon_level"] = "" if _level.lower() in {"nan", "artifact", "exclude", "4?"} else _level
+    _conf_fields["mass_alt"] = confmod.mass_consistent_alt(_css_records)
+    _n_peaks = int(len(peaks)) if hasattr(peaks, "empty") and not peaks.empty else 0
+    _conf_fields["ms2_detail"] = {
+        # The observed-MS2 panel must reflect an *observed* spectrum (from --peak-csv /
+        # the observed lookup), not the pipeline's predicted spectral score.
+        "present": _n_peaks > 0,
+        "n_pairs": _n_peaks,
+        "n_ion_bins": 0,
+        "n_loss_bins": 0,
+        "forward": _n(rank1.get("forward_spectrum_score")),
+        "predicted_v2": _n(rank1.get("predicted_spectrum_score_v2")),
+        "match": _n(rank1.get("ms2_match_score")),
+    }
+    _conf_fields["ms2_n_pairs"] = _n_peaks
     confidence_obj = confmod.compute_confidence(_conf_fields)
 
     render_kwargs = dict(
@@ -3551,6 +3571,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         evidence=evidence,
         db_detail=db_detail,
         confidence=confidence_obj,
+        conf_fields=_conf_fields,
         pathway_info=pathway_info,
         synonyms=syn_df.fillna("").to_dict(orient="records"),
         neighbors=neighbors,
