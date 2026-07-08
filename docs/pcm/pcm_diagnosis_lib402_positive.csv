@@ -1,0 +1,3 @@
+control_id,primary_stage,conjugate_hints,core_formula,core_monoisotopic_mass,isomer_index,canonical_name,comp_id,lib_id,ion_mode,parent_mz,observed_neutral_mass
+100020003,pcm_unresolved,n-acetylglucosamine,C24H40O4,392.29266,,N-acetylglucosamine conjugate of C24H40O4 bile acid**,61869,402,positive,596.37931,595.372034
+100020255,pcm_unresolved,glycine,C8H16O2,144.11503,,glycine conjugate of C8H16O2*,62118,402,positive,202.14377,201.136494

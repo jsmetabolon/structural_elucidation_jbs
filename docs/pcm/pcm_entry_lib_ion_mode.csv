@@ -1,0 +1,107 @@
+chemical_id,canonical_name,comp_id,lib_id,ion_mode,rt,ri,status,parent_mz,neutral_mass,n_ref_peaks,n_ion_bins,n_loss_bins,has_ms2,targeted,conjugate_hint
+100019984,glucuronide of C12H22O4 (1)*,61874,209,negative,2.44,2590.0,silver,405.17662,406.183896,81,71,71,True,True,glucuronide
+100019985,glucuronide of C12H22O4 (2)*,61875,209,negative,2.57,2700.0,silver,405.17662,406.183896,61,49,46,True,True,glucuronide
+100019986,glucuronide of C14H26O4 (1)*,61876,209,negative,3.04,3200.0,silver,433.20793,434.215206,75,68,64,True,True,glucuronide
+100019987,glucuronide of C19H28O4 (1)*,61879,209,negative,3.24,3400.0,Silver,495.22356,496.230836,31,31,31,True,True,glucuronide
+100019988,glucuronide of C19H28O4 (2)*,61878,209,negative,3.41,3600.0,silver,495.22356,496.230836,34,34,34,True,True,glucuronide
+100019989,glucuronide of C16H30O4 (1)*,61880,209,negative,3.99,4215.0,Silver,461.23921,462.246486,17,17,17,True,True,glucuronide
+100019990,glucuronide of C10H18O2 (1)*,61881,209,negative,2.58,2728.0,silver,345.1555,346.162776,59,41,35,True,True,glucuronide
+100019991,glucuronide of C10H18O2 (2)*,61882,209,negative,2.72,2885.0,silver,345.1555,346.162776,23,23,23,True,True,glucuronide
+100019992,glucuronide of C10H18O2 (3)*,61883,209,negative,2.86,2990.0,Silver,345.1555,346.162776,23,23,23,True,True,glucuronide
+100019993,glucuronide of C8H18O2 (1)*,61900,209,negative,3.07,3218.0,silver,321.1555,322.162776,11,11,11,True,True,glucuronide
+100019994,glucuronide of C10H14O2 (1)*,61893,209,negative,3.06,3194.0,Silver,341.12419,342.131466,35,35,35,True,True,glucuronide
+100019995,glucuronide of C12H22O3 (1)*,61902,209,negative,3.2,3350.0,silver,389.18172,390.188996,25,25,25,True,True,glucuronide
+100019996,glucuronide of C8H14O2 (1)*,61903,209,negative,3.5,3679.0,silver,317.12419,318.131466,13,13,13,True,True,glucuronide
+100019997,glucuronide of C12H20O3 (1)*,61964,209,negative,3.53,3728.0,silver,387.16606,388.173336,27,27,27,True,True,glucuronide
+100019998,glucuronide of C14H22O4 (1)*,61969,209,negative,3.72,3891.0,Silver,429.17662,430.183896,20,20,20,True,True,glucuronide
+100020001,glucuronide of C9H10O4 (1)*,61972,209,negative,2.06,2175.0,silver,357.08272,358.089996,27,27,27,True,True,glucuronide
+100020003,N-acetylglucosamine conjugate of C24H40O4 bile acid**,61869,209,negative,4.44,4637.0,silver,594.36475,595.372026,37,37,36,True,True,n-acetylglucosamine
+100020008,N-acetylglucosamine conjugate of C24H38O4 bile acid**,61870,209,negative,4.44,4637.0,Silver,592.3491,593.356376,23,23,23,True,True,n-acetylglucosamine
+100020009,glucuronide of C14H26O4 (2)*,61877,209,negative,3.14,3300.0,Silver,433.20793,434.215206,82,63,57,True,True,glucuronide
+100020011,glucuronide of C10H18O2 (4)*,61884,209,negative,3.3,3460.0,Silver,345.1555,346.162776,15,15,15,True,True,glucuronide
+100020012,glucuronide of C10H18O2 (5)*,61885,209,negative,3.4,3582.0,silver,345.1555,346.162776,14,14,14,True,True,glucuronide
+100020013,glucuronide of C10H18O2 (6)*,61886,209,negative,3.55,3750.0,Silver,345.1555,346.162776,29,29,29,True,True,glucuronide
+100020014,glucuronide of C10H18O2 (7)*,61887,209,negative,3.59,3790.0,silver,345.1555,346.162776,63,51,44,True,True,glucuronide
+100020015,glucuronide of C10H18O2 (8)*,61888,209,negative,3.66,3865.0,silver,345.1555,346.162776,24,24,24,True,True,glucuronide
+100020016,glucuronide of C10H18O2 (9)*,61889,209,negative,3.79,4010.0,silver,345.1555,346.162776,16,16,16,True,True,glucuronide
+100020017,glucuronide of C10H18O2 (10)*,61890,209,negative,4.42,4622.0,silver,345.1555,346.162776,10,10,10,True,True,glucuronide
+100020018,glucuronide of C10H18O2 (11)*,61891,209,negative,4.48,4680.0,Silver,345.1555,346.162776,16,16,16,True,True,glucuronide
+100020019,glucuronide of C10H18O2 (12)*,61892,209,negative,4.57,4760.0,Silver,345.1555,346.162776,24,24,24,True,True,glucuronide
+100020020,glucuronide of C10H14O2 (2)*,61894,209,negative,2.98,3154.0,Silver,341.12419,342.131466,16,16,16,True,True,glucuronide
+100020021,glucuronide of C10H14O2 (3)*,61895,209,negative,3.75,3940.0,Silver,341.12419,342.131466,17,17,17,True,True,glucuronide
+100020022,glucuronide of C10H14O2 (4)*,61896,209,negative,3.83,4030.0,Silver,341.12419,342.131466,103,52,38,True,True,glucuronide
+100020023,glucuronide of C10H14O2 (5)*,61897,209,negative,3.89,4084.0,Silver,341.12419,342.131466,21,21,21,True,True,glucuronide
+100020024,glucuronide of C10H14O2 (6)*,61898,209,negative,3.91,4115.0,Silver,341.12419,342.131466,57,46,42,True,True,glucuronide
+100020025,glucuronide of C10H14O2 (7)*,61899,209,negative,4.01,4227.0,Silver,341.12419,342.131466,110,47,39,True,True,glucuronide
+100020027,glucuronide of C8H18O2 (2)*,61901,209,negative,3.12,3300.0,Silver,321.1555,322.162776,18,18,18,True,True,glucuronide
+100020028,glucuronide of C8H14O2 (2)*,61904,209,negative,3.54,3730.0,silver,317.12419,318.131466,25,25,25,True,True,glucuronide
+100020029,glucuronide of C8H14O2 (3)*,61905,209,negative,3.6,3791.0,Silver,317.12419,318.131466,32,32,32,True,True,glucuronide
+100020030,glucuronide of C8H14O2 (4)*,61906,209,negative,3.69,3892.0,Silver,317.12419,318.131466,30,30,30,True,True,glucuronide
+100020031,glucuronide of C8H14O2 (5)*,61963,209,negative,3.76,3943.0,silver,317.12419,318.131466,18,18,18,True,True,glucuronide
+100020032,glucuronide of C8H14O2 (6)*,61961,209,negative,3.82,4027.0,silver,317.12419,318.131466,10,10,10,True,True,glucuronide
+100020033,glucuronide of C8H14O2 (7)*,61962,209,negative,3.89,4094.0,silver,317.12419,318.131466,1,1,1,True,True,glucuronide
+100020092,glucuronide of C12H20O3 (2)*,61965,209,negative,3.61,3815.0,silver,387.16606,388.173336,27,27,27,True,True,glucuronide
+100020093,glucuronide of C12H20O3 (3)*,61968,209,negative,3.69,3900.0,silver,387.16606,388.173336,15,15,15,True,True,glucuronide
+100020094,glucuronide of C12H20O3 (4)*,61966,209,negative,3.77,3992.0,Silver,387.16606,388.173336,20,20,20,True,True,glucuronide
+100020095,glucuronide of C12H20O3 (5)*,61967,209,negative,3.87,4102.0,silver,387.16606,388.173336,33,33,33,True,True,glucuronide
+100020096,glucuronide of C14H22O4 (2)*,61970,209,negative,3.72,3932.0,Silver,429.17662,430.183896,23,23,23,True,True,glucuronide
+100020097,glucuronide of C14H22O4 (3)*,61971,209,negative,4.26,4485.0,Silver,429.17662,430.183896,35,35,35,True,True,glucuronide
+100020099,glucuronide of C8H16O2 (2)*,61973,209,negative,4.16,4380.0,Silver,319.13985,320.147126,23,23,22,True,True,glucuronide
+100020253,glycine conjugate of C10H12O2*,62145,209,negative,3.8,4005.0,silver,220.09791,221.105186,3,3,3,True,True,glycine
+100020254,glycine conjugate of C10H14O2 (1)*,62146,209,negative,4.12,4335.0,silver,222.11356,223.120836,3,3,3,True,True,glycine
+100020255,glycine conjugate of C8H16O2*,62118,209,negative,3.72,3929.0,silver,200.12921,201.136486,22,17,16,True,True,glycine
+100020256,glycine conjugate of C9H16O2*,62119,209,negative,3.89,4120.0,silver,212.12921,213.136486,19,16,16,True,True,glycine
+100020257,glutamine conjugate of C8H12O2 (1)*,62142,209,negative,2.94,3105.0,silver,267.13502,268.142296,11,11,11,True,True,glutamine
+100020258,glutamine conjugate of C8H12O2 (2)*,62143,209,negative,3.03,3239.0,Silver,267.13502,268.142296,14,14,13,True,True,glutamine
+100020259,glutamine conjugate of C7H12O2*,63658,209,negative,2.95,3053.0,Silver,255.13502,256.142296,41,40,36,True,True,glutamine
+100020261,glutamine conjugate of C6H10O2 (1)*,63657,209,negative,2.31,2404.0,Silver,241.11938,242.126656,34,34,33,True,True,glutamine
+100020262,glutamine conjugate of C6H10O2 (2)*,63660,209,negative,2.44,2526.0,Silver,241.11938,242.126656,142,83,77,True,True,glutamine
+100020265,glutamine conjugate of C8H12O4 (1)*,62140,209,negative,0.92,940.0,Silver,299.12486,300.132136,21,21,21,True,True,glutamine
+100020266,glycine conjugate of C10H14O2 (2)*,62147,209,negative,4.17,4398.0,silver,222.11356,223.120836,3,3,3,True,True,glycine
+100020267,glutamine conjugate of C8H12O2 (3)*,62144,209,negative,3.15,3366.0,Silver,267.13502,268.142296,12,12,12,True,True,glutamine
+100020268,glutamine conjugate of C8H12O4 (2)*,62141,209,negative,1.05,1143.0,Silver,299.12486,300.132136,41,41,41,True,True,glutamine
+100021674,carnitine of C10H14O2 (1)*,63647,209,negative,4.18,4320.0,silver,308.18688,309.194156,95,90,83,True,True,carnitine
+100021675,carnitine of C10H14O2 (2)*,63648,209,negative,4.22,4363.0,silver,308.18686,309.194136,77,71,67,True,True,carnitine
+100021676,carnitine of C10H14O2 (3)*,63649,209,negative,4.29,4438.0,Silver,308.18686,309.194136,77,71,67,True,True,carnitine
+100021677,carnitine of C10H14O2 (4)*,63651,209,negative,4.35,4480.0,silver,308.1869,309.194176,79,65,59,True,True,carnitine
+100021678,carnitine of C10H14O2 (5)*,63650,209,negative,4.4,4521.0,silver,308.1869,309.194176,79,67,61,True,True,carnitine
+100021679,glycine conjugate of C6H10O2 (1)*,63652,209,negative,2.29,2335.0,silver,170.08226,171.089536,6,6,6,True,True,glycine
+100021680,glycine conjugate of C6H10O2 (2)*,63653,209,negative,2.2,2432.0,silver,170.08226,171.089536,24,23,22,True,True,glycine
+100021681,glycine conjugate of C6H10O2 (3)*,63654,209,negative,2.25,2476.0,silver,170.08226,171.089536,37,37,34,True,True,glycine
+100021682,glycine conjugate of C6H10O2 (4)*,63655,209,negative,2.3,2537.0,silver,170.08226,171.089536,3,3,3,True,True,glycine
+100021683,glycine conjugate of C6H10O2 (5)*,63656,209,negative,2.35,2585.0,Silver,170.08226,171.089536,70,47,46,True,True,glycine
+100021684,glutamine conjugate of C9H16O2 (1)*,63659,209,negative,4.07,4243.0,silver,283.16633,284.173606,27,27,27,True,True,glutamine
+100021689,glutamine conjugate of C10H16O2 (1)*,63680,209,negative,4.1,4344.0,Silver,295.16634,296.173616,45,45,45,True,True,glutamine
+100021701,glutamine conjugate of C10H16O2 (2)*,63679,209,negative,4.17,4403.0,Silver,295.16634,296.173616,43,43,43,True,True,glutamine
+100021726,GlcNAc sulfate conjugate of C21H34O2 steroid**,63699,209,negative,4.07,4336.7001953125,Silver,600.2851,601.292376,42,42,42,True,True,sulfate
+100021924,flavone derivative C26H28O14 (1)*,64285,209,negative,2.03,2186.0,silver,563.14063,564.147906,92,92,92,True,True,
+100021925,flavone derivative C26H28O14 (2)*,64286,209,negative,2.09,2234.0,Silver,563.14063,564.147906,94,94,94,True,True,
+100021926,flavone derivative C26H28O14 (3)*,64287,209,negative,2.13,2289.0,silver,563.14063,564.147906,114,98,97,True,True,
+100021927,flavone derivative C26H28O14 (4)*,64289,209,negative,2.29,2457.0,silver,563.14063,564.147906,37,37,36,True,True,
+100021928,flavone derivative C26H28O14 (5)*,64292,209,negative,2.29,2457.0,Silver,563.14063,564.147906,37,37,36,True,True,
+100021929,flavone derivative C26H28O14 (6)*,64290,209,negative,2.34,2510.0,Silver,563.14063,564.147906,53,53,53,True,True,
+100021930,flavone derivative C26H28O14 (7)*,64291,209,negative,2.39,2567.0,Silver,563.14063,564.147906,65,65,62,True,True,
+100022003,"bilirubin degradation product, C16H18N2O5 (1)**",64403,209,negative,2.93,3098.0,silver,317.11429,318.121566,43,35,35,True,True,
+100022004,"bilirubin degradation product, C16H18N2O5 (2)**",64404,209,negative,3.06,3204.0,silver,317.11429,318.121566,44,44,44,True,True,
+100022005,"bilirubin degradation product, C17H18N2O4 (1)**",64409,209,negative,4.42,4633.0,silver,313.11938,314.126656,77,76,75,True,True,
+100022006,"bilirubin degradation product, C17H18N2O4 (2)**",64407,209,negative,4.65,4793.0,silver,313.11938,314.126656,94,94,94,True,True,
+100022007,"bilirubin degradation product, C17H18N2O4 (3)**",64408,209,negative,2.16,4906.0,silver,313.11938,314.126656,59,59,59,True,True,
+100022008,"bilirubin degradation product, C17H20N2O5 (1)**",64405,209,negative,3.54,3756.0,silver,331.12994,332.137216,81,81,81,True,True,
+100022009,"bilirubin degradation product, C17H20N2O5 (2)**",64406,209,negative,3.67,3890.0,silver,331.12994,332.137216,105,89,86,True,True,
+100022014,"bilirubin degradation product, C16H18N2O5 (3)**",64414,209,negative,3.18,3354.0,silver,317.1143,318.121576,228,175,172,True,True,
+100022015,"bilirubin degradation product, C16H18N2O5 (4)**",64415,209,negative,3.24,3428.0,silver,317.1143,318.121576,72,72,71,True,True,
+100021467,pentose acid*,63264,305,negative,2.06,2180.0,silver,165.04046,166.047736,57,49,45,True,True,
+100020014,glucuronide of C10H18O2 (7)*,61887,400,positive,3.26,3344.0,Silver,347.16973,346.162454,699,248,206,True,True,glucuronide
+100020015,glucuronide of C10H18O2 (8)*,61888,400,positive,3.35,3396.0,Silver,347.16978,346.162504,155,103,92,True,True,glucuronide
+100020259,glutamine conjugate of C7H12O2*,63658,400,positive,2.7,2780.0,Silver,257.14958,256.142304,105,88,80,True,True,glutamine
+100020261,glutamine conjugate of C6H10O2 (1)*,63657,400,positive,2.26,2262.0,Silver,243.13394,242.126664,25,25,23,True,True,glutamine
+100020262,glutamine conjugate of C6H10O2 (2)*,63660,400,positive,2.35,2383.0,Silver,243.13394,242.126664,46,40,34,True,True,glutamine
+100020003,N-acetylglucosamine conjugate of C24H40O4 bile acid**,61869,402,positive,1.03,1027.0,silver,596.37931,595.372034,4,4,3,True,True,n-acetylglucosamine
+100020255,glycine conjugate of C8H16O2*,62118,402,positive,0.83,838.0,silver,202.14377,201.136494,51,43,42,True,True,glycine
+100021331,metabolonic lactone sulfate,63153,209,negative,4.67,4802.0,silver,427.21598,428.223256,16,14,11,True,False,
+100021527,"branched-chain, straight-chain, or cyclo-propyl 19:1 fatty acid",63551,209,negative,5.53,5755.0,silver,295.26425,296.271526,6,5,6,True,False,
+100021666,"branched-chain, straight-chain, or cyclopropyl 10:1 fatty acid (1)",63615,209,negative,4.57,4805.0,silver,169.1234,170.130676,33,32,33,True,False,
+100021667,"branched-chain, straight-chain, or cyclopropyl 10:1 fatty acid (2)",63616,209,negative,4.62,4853.0,silver,169.1234,170.130676,47,45,47,True,False,
+100021668,"branched-chain, straight-chain, or cyclopropyl 10:1 fatty acid (3)",63617,209,negative,4.71,4931.0,silver,169.1234,170.130676,2,2,2,True,False,
+100021708,"branched-chain, straight-chain, or cyclopropyl 9:1 fatty acid",63682,209,negative,4.38,4537.0,Silver,155.10776,156.115036,10,10,10,True,False,
+100021709,"branched-chain, straight-chain, or cyclopropyl 12:1 fatty acid",63683,209,negative,5.1,5261.0,silver,197.15457,198.161846,8,8,8,True,False,

@@ -1,0 +1,6 @@
+feature_key,comp_id,lib_id,ion_mode,parent_mz,adduct_label,charge,multiplier,offset_mass,neutral_mass,recomputed_mz,adduct_score,prevalence,prevalence_tier,source_reference,neutral_loss_possible,note,adduct_rank,control_id
+pcm_400_100020014,61887,400,positive,347.16973,m+H,1,1,-1.007276,346.162454,347.16973,1.0,,chro_lib_precursor,chro_lib_masses,False,pcm_reference_precursor,1,100020014
+pcm_400_100020015,61888,400,positive,347.16978,m+H,1,1,-1.007276,346.162504,347.16978,1.0,,chro_lib_precursor,chro_lib_masses,False,pcm_reference_precursor,1,100020015
+pcm_400_100020259,63658,400,positive,257.14958,m+H,1,1,-1.007276,256.142304,257.14958,1.0,,chro_lib_precursor,chro_lib_masses,False,pcm_reference_precursor,1,100020259
+pcm_400_100020261,63657,400,positive,243.13394,m+H,1,1,-1.007276,242.126664,243.13394,1.0,,chro_lib_precursor,chro_lib_masses,False,pcm_reference_precursor,1,100020261
+pcm_400_100020262,63660,400,positive,243.13394,m+H,1,1,-1.007276,242.126664,243.13394,1.0,,chro_lib_precursor,chro_lib_masses,False,pcm_reference_precursor,1,100020262

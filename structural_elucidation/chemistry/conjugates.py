@@ -70,6 +70,8 @@ CONJUGATE_REACTIONS: dict[str, tuple[str, ...]] = {
     "taurine": ("carboxyl_taurine_amide",),
     "carnitine": ("carboxyl_carnitine_ester",),
     "methyl": ("carboxyl_methylation",),
+    "glutamine": ("carboxyl_glutamine_amide", "amine_glutamine_like_conjugation"),
+    "n-acetylglucosamine": ("glcnac_hydroxyl_conjugation", "glcnac_amine_conjugation"),
 }
 
 

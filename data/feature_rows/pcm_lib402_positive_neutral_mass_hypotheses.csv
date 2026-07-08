@@ -1,0 +1,3 @@
+feature_key,comp_id,lib_id,ion_mode,parent_mz,adduct_label,charge,multiplier,offset_mass,neutral_mass,recomputed_mz,adduct_score,prevalence,prevalence_tier,source_reference,neutral_loss_possible,note,adduct_rank,control_id
+pcm_402_100020003,61869,402,positive,596.37931,m+H,1,1,-1.007276,595.372034,596.37931,1.0,,chro_lib_precursor,chro_lib_masses,False,pcm_reference_precursor,1,100020003
+pcm_402_100020255,62118,402,positive,202.14377,m+H,1,1,-1.007276,201.136494,202.14377,1.0,,chro_lib_precursor,chro_lib_masses,False,pcm_reference_precursor,1,100020255

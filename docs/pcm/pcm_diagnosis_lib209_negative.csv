@@ -1,0 +1,92 @@
+control_id,primary_stage,conjugate_hints,core_formula,core_monoisotopic_mass,isomer_index,canonical_name,comp_id,lib_id,ion_mode,parent_mz,observed_neutral_mass
+100019984,pcm_unresolved,glucuronide,C12H22O4,230.15181,1.0,glucuronide of C12H22O4 (1)*,61874,209,negative,405.17662,406.183896
+100019985,pcm_unresolved,glucuronide,C12H22O4,230.15181,2.0,glucuronide of C12H22O4 (2)*,61875,209,negative,405.17662,406.183896
+100019986,pcm_unresolved,glucuronide,C14H26O4,258.18311,1.0,glucuronide of C14H26O4 (1)*,61876,209,negative,433.20793,434.215206
+100019987,pcm_unresolved,glucuronide,C19H28O4,320.19876,1.0,glucuronide of C19H28O4 (1)*,61879,209,negative,495.22356,496.230836
+100019988,pcm_unresolved,glucuronide,C19H28O4,320.19876,2.0,glucuronide of C19H28O4 (2)*,61878,209,negative,495.22356,496.230836
+100019989,pcm_unresolved,glucuronide,C16H30O4,286.21441,1.0,glucuronide of C16H30O4 (1)*,61880,209,negative,461.23921,462.246486
+100019990,pcm_unresolved,glucuronide,C10H18O2,170.13068,1.0,glucuronide of C10H18O2 (1)*,61881,209,negative,345.1555,346.162776
+100019991,pcm_unresolved,glucuronide,C10H18O2,170.13068,2.0,glucuronide of C10H18O2 (2)*,61882,209,negative,345.1555,346.162776
+100019992,pcm_unresolved,glucuronide,C10H18O2,170.13068,3.0,glucuronide of C10H18O2 (3)*,61883,209,negative,345.1555,346.162776
+100019993,pcm_unresolved,glucuronide,C8H18O2,146.13068,1.0,glucuronide of C8H18O2 (1)*,61900,209,negative,321.1555,322.162776
+100019994,pcm_unresolved,glucuronide,C10H14O2,166.09938,1.0,glucuronide of C10H14O2 (1)*,61893,209,negative,341.12419,342.131466
+100019995,pcm_unresolved,glucuronide,C12H22O3,214.15689,1.0,glucuronide of C12H22O3 (1)*,61902,209,negative,389.18172,390.188996
+100019996,pcm_unresolved,glucuronide,C8H14O2,142.09938,1.0,glucuronide of C8H14O2 (1)*,61903,209,negative,317.12419,318.131466
+100019997,pcm_unresolved,glucuronide,C12H20O3,212.14124,1.0,glucuronide of C12H20O3 (1)*,61964,209,negative,387.16606,388.173336
+100019998,pcm_unresolved,glucuronide,C14H22O4,254.15181,1.0,glucuronide of C14H22O4 (1)*,61969,209,negative,429.17662,430.183896
+100020001,pcm_unresolved,glucuronide,C9H10O4,182.05791,1.0,glucuronide of C9H10O4 (1)*,61972,209,negative,357.08272,358.089996
+100020003,pcm_unresolved,n-acetylglucosamine,C24H40O4,392.29266,,N-acetylglucosamine conjugate of C24H40O4 bile acid**,61869,209,negative,594.36475,595.372026
+100020008,pcm_unresolved,n-acetylglucosamine,C24H38O4,390.27701,,N-acetylglucosamine conjugate of C24H38O4 bile acid**,61870,209,negative,592.3491,593.356376
+100020009,pcm_unresolved,glucuronide,C14H26O4,258.18311,2.0,glucuronide of C14H26O4 (2)*,61877,209,negative,433.20793,434.215206
+100020011,pcm_unresolved,glucuronide,C10H18O2,170.13068,4.0,glucuronide of C10H18O2 (4)*,61884,209,negative,345.1555,346.162776
+100020012,pcm_unresolved,glucuronide,C10H18O2,170.13068,5.0,glucuronide of C10H18O2 (5)*,61885,209,negative,345.1555,346.162776
+100020013,pcm_unresolved,glucuronide,C10H18O2,170.13068,6.0,glucuronide of C10H18O2 (6)*,61886,209,negative,345.1555,346.162776
+100020014,pcm_unresolved,glucuronide,C10H18O2,170.13068,7.0,glucuronide of C10H18O2 (7)*,61887,209,negative,345.1555,346.162776
+100020015,pcm_unresolved,glucuronide,C10H18O2,170.13068,8.0,glucuronide of C10H18O2 (8)*,61888,209,negative,345.1555,346.162776
+100020016,pcm_unresolved,glucuronide,C10H18O2,170.13068,9.0,glucuronide of C10H18O2 (9)*,61889,209,negative,345.1555,346.162776
+100020017,pcm_unresolved,glucuronide,C10H18O2,170.13068,10.0,glucuronide of C10H18O2 (10)*,61890,209,negative,345.1555,346.162776
+100020018,pcm_unresolved,glucuronide,C10H18O2,170.13068,11.0,glucuronide of C10H18O2 (11)*,61891,209,negative,345.1555,346.162776
+100020019,pcm_unresolved,glucuronide,C10H18O2,170.13068,12.0,glucuronide of C10H18O2 (12)*,61892,209,negative,345.1555,346.162776
+100020020,pcm_unresolved,glucuronide,C10H14O2,166.09938,2.0,glucuronide of C10H14O2 (2)*,61894,209,negative,341.12419,342.131466
+100020021,pcm_unresolved,glucuronide,C10H14O2,166.09938,3.0,glucuronide of C10H14O2 (3)*,61895,209,negative,341.12419,342.131466
+100020022,pcm_unresolved,glucuronide,C10H14O2,166.09938,4.0,glucuronide of C10H14O2 (4)*,61896,209,negative,341.12419,342.131466
+100020023,pcm_unresolved,glucuronide,C10H14O2,166.09938,5.0,glucuronide of C10H14O2 (5)*,61897,209,negative,341.12419,342.131466
+100020024,pcm_unresolved,glucuronide,C10H14O2,166.09938,6.0,glucuronide of C10H14O2 (6)*,61898,209,negative,341.12419,342.131466
+100020025,pcm_unresolved,glucuronide,C10H14O2,166.09938,7.0,glucuronide of C10H14O2 (7)*,61899,209,negative,341.12419,342.131466
+100020027,pcm_unresolved,glucuronide,C8H18O2,146.13068,2.0,glucuronide of C8H18O2 (2)*,61901,209,negative,321.1555,322.162776
+100020028,pcm_unresolved,glucuronide,C8H14O2,142.09938,2.0,glucuronide of C8H14O2 (2)*,61904,209,negative,317.12419,318.131466
+100020029,pcm_unresolved,glucuronide,C8H14O2,142.09938,3.0,glucuronide of C8H14O2 (3)*,61905,209,negative,317.12419,318.131466
+100020030,pcm_unresolved,glucuronide,C8H14O2,142.09938,4.0,glucuronide of C8H14O2 (4)*,61906,209,negative,317.12419,318.131466
+100020031,pcm_unresolved,glucuronide,C8H14O2,142.09938,5.0,glucuronide of C8H14O2 (5)*,61963,209,negative,317.12419,318.131466
+100020032,pcm_unresolved,glucuronide,C8H14O2,142.09938,6.0,glucuronide of C8H14O2 (6)*,61961,209,negative,317.12419,318.131466
+100020033,pcm_unresolved,glucuronide,C8H14O2,142.09938,7.0,glucuronide of C8H14O2 (7)*,61962,209,negative,317.12419,318.131466
+100020092,pcm_unresolved,glucuronide,C12H20O3,212.14124,2.0,glucuronide of C12H20O3 (2)*,61965,209,negative,387.16606,388.173336
+100020093,pcm_unresolved,glucuronide,C12H20O3,212.14124,3.0,glucuronide of C12H20O3 (3)*,61968,209,negative,387.16606,388.173336
+100020094,pcm_unresolved,glucuronide,C12H20O3,212.14124,4.0,glucuronide of C12H20O3 (4)*,61966,209,negative,387.16606,388.173336
+100020095,pcm_unresolved,glucuronide,C12H20O3,212.14124,5.0,glucuronide of C12H20O3 (5)*,61967,209,negative,387.16606,388.173336
+100020096,pcm_unresolved,glucuronide,C14H22O4,254.15181,2.0,glucuronide of C14H22O4 (2)*,61970,209,negative,429.17662,430.183896
+100020097,pcm_unresolved,glucuronide,C14H22O4,254.15181,3.0,glucuronide of C14H22O4 (3)*,61971,209,negative,429.17662,430.183896
+100020099,pcm_unresolved,glucuronide,C8H16O2,144.11503,2.0,glucuronide of C8H16O2 (2)*,61973,209,negative,319.13985,320.147126
+100020253,pcm_unresolved,glycine,C10H12O2,164.08373,,glycine conjugate of C10H12O2*,62145,209,negative,220.09791,221.105186
+100020254,pcm_unresolved,glycine,C10H14O2,166.09938,1.0,glycine conjugate of C10H14O2 (1)*,62146,209,negative,222.11356,223.120836
+100020255,pcm_unresolved,glycine,C8H16O2,144.11503,,glycine conjugate of C8H16O2*,62118,209,negative,200.12921,201.136486
+100020256,pcm_unresolved,glycine,C9H16O2,156.11503,,glycine conjugate of C9H16O2*,62119,209,negative,212.12921,213.136486
+100020257,pcm_unresolved,glutamine,C8H12O2,140.08373,1.0,glutamine conjugate of C8H12O2 (1)*,62142,209,negative,267.13502,268.142296
+100020258,pcm_unresolved,glutamine,C8H12O2,140.08373,2.0,glutamine conjugate of C8H12O2 (2)*,62143,209,negative,267.13502,268.142296
+100020259,pcm_unresolved,glutamine,C7H12O2,128.08373,,glutamine conjugate of C7H12O2*,63658,209,negative,255.13502,256.142296
+100020261,pcm_unresolved,glutamine,C6H10O2,114.06808,1.0,glutamine conjugate of C6H10O2 (1)*,63657,209,negative,241.11938,242.126656
+100020262,pcm_unresolved,glutamine,C6H10O2,114.06808,2.0,glutamine conjugate of C6H10O2 (2)*,63660,209,negative,241.11938,242.126656
+100020265,pcm_unresolved,glutamine,C8H12O4,172.07356,1.0,glutamine conjugate of C8H12O4 (1)*,62140,209,negative,299.12486,300.132136
+100020266,pcm_unresolved,glycine,C10H14O2,166.09938,2.0,glycine conjugate of C10H14O2 (2)*,62147,209,negative,222.11356,223.120836
+100020267,pcm_unresolved,glutamine,C8H12O2,140.08373,3.0,glutamine conjugate of C8H12O2 (3)*,62144,209,negative,267.13502,268.142296
+100020268,pcm_unresolved,glutamine,C8H12O4,172.07356,2.0,glutamine conjugate of C8H12O4 (2)*,62141,209,negative,299.12486,300.132136
+100021674,pcm_unresolved,carnitine,C10H14O2,166.09938,1.0,carnitine of C10H14O2 (1)*,63647,209,negative,308.18688,309.194156
+100021675,pcm_unresolved,carnitine,C10H14O2,166.09938,2.0,carnitine of C10H14O2 (2)*,63648,209,negative,308.18686,309.194136
+100021676,pcm_unresolved,carnitine,C10H14O2,166.09938,3.0,carnitine of C10H14O2 (3)*,63649,209,negative,308.18686,309.194136
+100021677,pcm_unresolved,carnitine,C10H14O2,166.09938,4.0,carnitine of C10H14O2 (4)*,63651,209,negative,308.1869,309.194176
+100021678,pcm_unresolved,carnitine,C10H14O2,166.09938,5.0,carnitine of C10H14O2 (5)*,63650,209,negative,308.1869,309.194176
+100021679,pcm_unresolved,glycine,C6H10O2,114.06808,1.0,glycine conjugate of C6H10O2 (1)*,63652,209,negative,170.08226,171.089536
+100021680,pcm_unresolved,glycine,C6H10O2,114.06808,2.0,glycine conjugate of C6H10O2 (2)*,63653,209,negative,170.08226,171.089536
+100021681,pcm_unresolved,glycine,C6H10O2,114.06808,3.0,glycine conjugate of C6H10O2 (3)*,63654,209,negative,170.08226,171.089536
+100021682,pcm_unresolved,glycine,C6H10O2,114.06808,4.0,glycine conjugate of C6H10O2 (4)*,63655,209,negative,170.08226,171.089536
+100021683,pcm_unresolved,glycine,C6H10O2,114.06808,5.0,glycine conjugate of C6H10O2 (5)*,63656,209,negative,170.08226,171.089536
+100021684,pcm_unresolved,glutamine,C9H16O2,156.11503,1.0,glutamine conjugate of C9H16O2 (1)*,63659,209,negative,283.16633,284.173606
+100021689,pcm_unresolved,glutamine,C10H16O2,168.11503,1.0,glutamine conjugate of C10H16O2 (1)*,63680,209,negative,295.16634,296.173616
+100021701,pcm_unresolved,glutamine,C10H16O2,168.11503,2.0,glutamine conjugate of C10H16O2 (2)*,63679,209,negative,295.16634,296.173616
+100021726,pcm_unresolved,sulfate,C21H34O2,318.25588,,GlcNAc sulfate conjugate of C21H34O2 steroid**,63699,209,negative,600.2851,601.292376
+100021924,pcm_unresolved,,C26H28O14,564.14791,1.0,flavone derivative C26H28O14 (1)*,64285,209,negative,563.14063,564.147906
+100021925,pcm_unresolved,,C26H28O14,564.14791,2.0,flavone derivative C26H28O14 (2)*,64286,209,negative,563.14063,564.147906
+100021926,pcm_unresolved,,C26H28O14,564.14791,3.0,flavone derivative C26H28O14 (3)*,64287,209,negative,563.14063,564.147906
+100021927,pcm_unresolved,,C26H28O14,564.14791,4.0,flavone derivative C26H28O14 (4)*,64289,209,negative,563.14063,564.147906
+100021928,pcm_unresolved,,C26H28O14,564.14791,5.0,flavone derivative C26H28O14 (5)*,64292,209,negative,563.14063,564.147906
+100021929,pcm_unresolved,,C26H28O14,564.14791,6.0,flavone derivative C26H28O14 (6)*,64290,209,negative,563.14063,564.147906
+100021930,pcm_unresolved,,C26H28O14,564.14791,7.0,flavone derivative C26H28O14 (7)*,64291,209,negative,563.14063,564.147906
+100022003,pcm_unresolved,,C16H18N2O5,318.12157,1.0,"bilirubin degradation product, C16H18N2O5 (1)**",64403,209,negative,317.11429,318.121566
+100022004,pcm_unresolved,,C16H18N2O5,318.12157,2.0,"bilirubin degradation product, C16H18N2O5 (2)**",64404,209,negative,317.11429,318.121566
+100022005,pcm_unresolved,,C17H18N2O4,314.12666,1.0,"bilirubin degradation product, C17H18N2O4 (1)**",64409,209,negative,313.11938,314.126656
+100022006,pcm_unresolved,,C17H18N2O4,314.12666,2.0,"bilirubin degradation product, C17H18N2O4 (2)**",64407,209,negative,313.11938,314.126656
+100022007,pcm_unresolved,,C17H18N2O4,314.12666,3.0,"bilirubin degradation product, C17H18N2O4 (3)**",64408,209,negative,313.11938,314.126656
+100022008,pcm_unresolved,,C17H20N2O5,332.13722,1.0,"bilirubin degradation product, C17H20N2O5 (1)**",64405,209,negative,331.12994,332.137216
+100022009,pcm_unresolved,,C17H20N2O5,332.13722,2.0,"bilirubin degradation product, C17H20N2O5 (2)**",64406,209,negative,331.12994,332.137216
+100022014,pcm_unresolved,,C16H18N2O5,318.12157,3.0,"bilirubin degradation product, C16H18N2O5 (3)**",64414,209,negative,317.1143,318.121576
+100022015,pcm_unresolved,,C16H18N2O5,318.12157,4.0,"bilirubin degradation product, C16H18N2O5 (4)**",64415,209,negative,317.1143,318.121576

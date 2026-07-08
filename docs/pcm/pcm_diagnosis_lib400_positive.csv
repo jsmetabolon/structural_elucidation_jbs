@@ -1,0 +1,6 @@
+control_id,primary_stage,conjugate_hints,core_formula,core_monoisotopic_mass,isomer_index,canonical_name,comp_id,lib_id,ion_mode,parent_mz,observed_neutral_mass
+100020014,pcm_unresolved,glucuronide,C10H18O2,170.13068,7.0,glucuronide of C10H18O2 (7)*,61887,400,positive,347.16973,346.162454
+100020015,pcm_unresolved,glucuronide,C10H18O2,170.13068,8.0,glucuronide of C10H18O2 (8)*,61888,400,positive,347.16978,346.162504
+100020259,pcm_unresolved,glutamine,C7H12O2,128.08373,,glutamine conjugate of C7H12O2*,63658,400,positive,257.14958,256.142304
+100020261,pcm_unresolved,glutamine,C6H10O2,114.06808,1.0,glutamine conjugate of C6H10O2 (1)*,63657,400,positive,243.13394,242.126664
+100020262,pcm_unresolved,glutamine,C6H10O2,114.06808,2.0,glutamine conjugate of C6H10O2 (2)*,63660,400,positive,243.13394,242.126664

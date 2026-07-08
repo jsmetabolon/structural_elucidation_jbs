@@ -30,7 +30,7 @@ CONJUGATE_KEYWORDS = [
     "glutamate", "glycine", "carnitine", "taurine", "cysteine", "sulfate",
 ]
 # Reactions already implemented in chemistry/conjugates.py::CONJUGATE_REACTIONS.
-KNOWN_REACTIONS = {"glucuronide", "sulfate", "glycine", "carnitine", "taurine"}
+KNOWN_REACTIONS = {"glucuronide", "sulfate", "glycine", "carnitine", "taurine", "glutamine", "n-acetylglucosamine"}
 
 # monoisotopic masses for a quick core-mass sanity value (not authoritative)
 _MONO = {"C": 12.0, "H": 1.0078250319, "N": 14.0030740052, "O": 15.9949146221,
