@@ -75,10 +75,9 @@ then the report layer (`python -m structural_elucidation.reports.batch`).
   `tools/prototype_mass_gate_rerank.py`.
 - **Frame as hypotheses.** Cap at MSI Level 3 and order the `(n)` isomers by RT;
   do not claim a single regioisomer. Keep the Metabolon partial name as the anchor.
-- **Enhanced reports (confidence/MSI/candidate-widget/mass-alt callout)** live on
-  branch `cursor/batch-x-compound-html-reports-f8a2` (PR #2), not yet on `main`.
-  Merge/rebase that first if you want the calibrated confidence + MSI badges in the
-  PCM reports; otherwise you get the base report layer.
+- **Enhanced reports are already available.** The calibrated confidence, MSI
+  badges, candidate-widget evidence surfacing, and mass-alt callout (PR #2) are
+  merged into `main`, so this branch includes them - no extra merge needed.
 
 ## Ordered steps (on EC2)
 
@@ -119,7 +118,7 @@ then the report layer (`python -m structural_elucidation.reports.batch`).
    ```
 6. **Generate reports:**
    `python -m structural_elucidation.reports.batch --predictions OUT/rerank_pcm_lib*/unified_rerank_all_top10.csv --observed-lookup-dir <PCM lookups> --out-dir output/pcm_reports --jobs 8`
-7. **(Optional) enhanced confidence/MSI** (if on the PR #2 branch): run
+7. **(Optional) enhanced confidence/MSI** (available on this branch): run
    `tools/enrich_report_evidence.py` -> `tools/patch_report_confidence.py` ->
    `tools/patch_candidate_scores.py` -> `tools/rebuild_master_index.py` over
    `output/pcm_reports`.
