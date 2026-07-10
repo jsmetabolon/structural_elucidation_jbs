@@ -1,0 +1,209 @@
+{
+  "sources": {
+    "docs/paper/data/pathway/audit_pathway_summary.json": "2b1e94c689d941a0439d88f2e5696ba67135aabb8dddd21b8588ce7872425e3c",
+    "docs/paper/data/presentation/audit_presentation_summary.json": "9868e3ca31ada8c50d8b1427fbd7fec68f80a863c05e062ff954e85ee15c6604",
+    "docs/paper/data/pathway/audit_pathway_loo.json": "7d54276b79d45bc452b62f2f33e229116563fb97a7b31ee80a5c193270bb8e34"
+  },
+  "claims": [
+    {
+      "claim_id": "reports_total",
+      "value": 3897,
+      "cohort": "delivered unique X-compounds; first-library-wins",
+      "n": 3897,
+      "metric": "report coverage",
+      "source": "docs/paper/data/presentation/audit_presentation_summary.json",
+      "interpretation": "Total report set; not an accuracy denominator."
+    },
+    {
+      "claim_id": "structure_rank1_tanimoto_ge_0p70",
+      "value": 0.4783,
+      "cohort": "truth-verified controls",
+      "n": 92,
+      "metric": "44/92 with rank-1 Tanimoto >= 0.70",
+      "source": "per-report *_top_candidates.csv",
+      "interpretation": "In-sample structural recovery on the available truth set."
+    },
+    {
+      "claim_id": "structure_top3_tanimoto_ge_0p70",
+      "value": 0.6413,
+      "cohort": "truth-verified controls",
+      "n": 92,
+      "metric": "59/92 with a hit in ranks 1-3",
+      "source": "per-report *_top_candidates.csv",
+      "interpretation": "CASMI-style cumulative top-3 recovery."
+    },
+    {
+      "claim_id": "structure_top10_tanimoto_ge_0p70",
+      "value": 0.7391,
+      "cohort": "truth-verified controls",
+      "n": 92,
+      "metric": "68/92 with a hit in ranks 1-10",
+      "source": "per-report *_top_candidates.csv",
+      "interpretation": "CASMI-style cumulative top-10 recovery."
+    },
+    {
+      "claim_id": "structure_rank1_exact_source",
+      "value": 0.381,
+      "cohort": "truth-verified controls whose top call source is exact",
+      "n": 42,
+      "metric": "16/42 with rank-1 Tanimoto >= 0.70",
+      "source": "confidence_inputs.json + *_top_candidates.csv",
+      "interpretation": "Catalog provenance is not independent confirmation."
+    },
+    {
+      "claim_id": "structure_rank1_predicted_source",
+      "value": 0.56,
+      "cohort": "truth-verified controls whose top call source is predicted",
+      "n": 50,
+      "metric": "28/50 with rank-1 Tanimoto >= 0.70",
+      "source": "confidence_inputs.json + *_top_candidates.csv",
+      "interpretation": "De novo/predicted-source rank-1 recovery."
+    },
+    {
+      "claim_id": "pathway_reference_taxonomy_consistency_super",
+      "value": 1.0,
+      "cohort": "direct exact-structure reference-taxonomy lookups",
+      "n": 1459,
+      "metric": "predicted super-pathway equals reference-database label",
+      "source": "docs/paper/data/pathway/audit_pathway_summary.json",
+      "interpretation": "Reference-taxonomy consistency by construction; not prediction accuracy."
+    },
+    {
+      "claim_id": "pathway_reference_taxonomy_consistency_sub",
+      "value": 1.0,
+      "cohort": "direct exact-structure reference-taxonomy lookups",
+      "n": 1459,
+      "metric": "predicted subpathway equals reference-database label",
+      "source": "docs/paper/data/pathway/audit_pathway_summary.json",
+      "interpretation": "Reference-taxonomy consistency; includes direct lookups."
+    },
+    {
+      "claim_id": "pathway_neighbor_known_x_agreement_super",
+      "value": 0.5217,
+      "cohort": "neighbor-consensus controls with independent known_X labels",
+      "n": 644,
+      "metric": "neighbor-consensus super-pathway equals known_X label",
+      "source": "docs/paper/data/pathway/audit_pathway_summary.json",
+      "interpretation": "Independent-label agreement; affected by taxonomy disagreement."
+    },
+    {
+      "claim_id": "pathway_neighbor_known_x_agreement_sub",
+      "value": 0.1879,
+      "cohort": "neighbor-consensus controls with independent known_X labels",
+      "n": 644,
+      "metric": "neighbor-consensus subpathway equals known_X label",
+      "source": "docs/paper/data/pathway/audit_pathway_summary.json",
+      "interpretation": "Independent-label agreement; subpathway recovery is low."
+    },
+    {
+      "claim_id": "pathway_known_x_agreement_super",
+      "value": 0.5534,
+      "cohort": "controls with independent known_X super-pathway labels",
+      "n": 909,
+      "metric": "predicted super-pathway equals known_X label",
+      "source": "docs/paper/data/pathway/audit_pathway_summary.json",
+      "interpretation": "Independent-label agreement; affected by taxonomy disagreement."
+    },
+    {
+      "claim_id": "pathway_known_x_agreement_sub",
+      "value": 0.2354,
+      "cohort": "controls with independent known_X subpathway labels",
+      "n": 909,
+      "metric": "predicted subpathway equals known_X label",
+      "source": "docs/paper/data/pathway/audit_pathway_summary.json",
+      "interpretation": "Independent-label agreement; subpathway is substantially harder."
+    },
+    {
+      "claim_id": "reference_db_vs_known_x_agreement",
+      "value": 0.6255,
+      "cohort": "identical structures with both taxonomy labels",
+      "n": 267,
+      "metric": "reference-DB super-pathway equals known_X label",
+      "source": "docs/paper/data/pathway/audit_pathway_summary.json",
+      "interpretation": "Annotation harmonization ceiling for known_X comparisons."
+    },
+    {
+      "claim_id": "pathway_neighbor_vote_loo_super",
+      "value": 0.8669,
+      "cohort": "reference metabolites under leave-one-out neighbor voting",
+      "n": 5095,
+      "metric": "LOO super-pathway accuracy",
+      "source": "docs/paper/data/pathway/audit_pathway_loo.json",
+      "interpretation": "Intrinsic neighbor-vote mechanism; not the full production predictor."
+    },
+    {
+      "claim_id": "pathway_neighbor_vote_loo_sub",
+      "value": 0.7111,
+      "cohort": "reference metabolites under leave-one-out neighbor voting",
+      "n": 5095,
+      "metric": "LOO subpathway accuracy",
+      "source": "docs/paper/data/pathway/audit_pathway_loo.json",
+      "interpretation": "Intrinsic neighbor-vote mechanism; not the full production predictor."
+    },
+    {
+      "claim_id": "rank1_mass_mismatch_all",
+      "value": 598,
+      "cohort": "all delivered reports",
+      "n": 3897,
+      "metric": "rank-1 mass_match_score < 0.50",
+      "source": "per-report confidence_inputs.json",
+      "interpretation": "598-case full mismatch cohort used for coverage."
+    },
+    {
+      "claim_id": "rank1_mass_mismatch_msi_l4_deep_audit",
+      "value": 590,
+      "cohort": "mass-mismatched reports assigned MSI L4",
+      "n": 598,
+      "metric": "mass mismatch AND msi_level == 4",
+      "source": "per-report confidence_inputs.json",
+      "interpretation": "590-case historical deep-audit subset; excludes eight mismatches outside L4."
+    },
+    {
+      "claim_id": "rank1_mass_mismatch_recoverable_all",
+      "value": 523,
+      "cohort": "all rank-1 mass mismatches",
+      "n": 598,
+      "metric": "lower-ranked candidate with strong mass match",
+      "source": "per-report confidence_inputs.json mass_alt",
+      "interpretation": "Projected rerank opportunity, not achieved structural correctness."
+    },
+    {
+      "claim_id": "rank1_mass_mismatch_recoverable_l4",
+      "value": 519,
+      "cohort": "MSI-L4 mass-mismatch deep-audit subset",
+      "n": 590,
+      "metric": "lower-ranked candidate with strong mass match",
+      "source": "per-report confidence_inputs.json mass_alt",
+      "interpretation": "Historical 519/590 projection; not a demonstrated post-rerank result."
+    },
+    {
+      "claim_id": "msi_distribution",
+      "value": {
+        "1": 44,
+        "2": 193,
+        "3": 2489,
+        "4": 1165,
+        "5": 6
+      },
+      "cohort": "all delivered reports",
+      "n": 3897,
+      "metric": "derived MSI/Schymanski rubric",
+      "source": "docs/paper/data/presentation/audit_presentation_summary.json",
+      "interpretation": "Custom evidence-derived levels; thresholds require external validation."
+    },
+    {
+      "claim_id": "identification_confidence_tier_distribution",
+      "value": {
+        "Low": 1344,
+        "Tentative": 1093,
+        "Moderate": 1416,
+        "Confirmed": 44
+      },
+      "cohort": "all delivered reports",
+      "n": 3897,
+      "metric": "calibrated structure-identification tier",
+      "source": "docs/paper/data/presentation/audit_presentation_summary.json",
+      "interpretation": "Not the pathway-confidence tier."
+    }
+  ]
+}

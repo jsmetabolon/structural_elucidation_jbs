@@ -1,0 +1,67 @@
+# Manuscript: Evidence-Aware Reporting of Metabolite Structure Hypotheses
+
+This folder holds the manuscript, committed aggregate audit artifacts, vector
+figures, and Supplementary Information.
+
+- `manuscript.md` — main manuscript.
+- `supplement/supplementary_information.md` — cohort glossary, extended tables,
+  calibration, pathway, and mass-mismatch details.
+- `supplement/claim_evidence.csv` / `baseline_claims.json` — claim-to-source ledger.
+- `data/` — compact pathway, structure, presentation, and LOO audit artifacts.
+- `figures/` — main and supplementary SVG figures generated from `data/`.
+
+## Verify from a clean checkout
+
+```bash
+python3 tools/rebuild_paper_artifacts.py --verify-only
+```
+
+This validates the abstract word count, required files, audited counts, stale
+claims, citations, figure links/order, and SVG syntax. Human-supplied submission
+fields (authors, email, funding, disclosures, ethics, repository DOI) are reported
+as warnings unless `tools/verify_paper_package.py --strict-human-inputs` is used.
+
+## Fully regenerate with controlled inputs
+
+```bash
+python3 tools/rebuild_paper_artifacts.py \
+  --reports-root _audit_pull/reports \
+  --db _bundle/metabolite_synonyms.sqlite \
+  --known-x data/known_X.csv
+```
+
+This one command regenerates the presentation summary, stratified pathway audit,
+neighbor-vote LOO artifact, structural rank-k/calibration audit, claim ledger,
+all SVGs, Supplementary Information, and then verifies the package. The report
+bundle and reference database are proprietary/controlled inputs and are not
+stored in Git.
+
+Authoritative P0/P1 results are intentionally absent until
+`v20_all_libraries_top10_predictions_with_p0_flags.csv` and
+`models/p1_reference_v1/` are supplied; the 92-control calibration set is not
+substituted for those cohorts.
+
+## Build a PDF / Word document
+
+The manuscript is Markdown and renders directly on GitHub. PDF requires
+`pandoc` plus a TeX engine; DOCX requires `pandoc`.
+
+```bash
+pandoc docs/paper/manuscript.md -o manuscript.pdf --pdf-engine=tectonic --resource-path=docs/paper
+pandoc docs/paper/manuscript.md -o manuscript.docx --resource-path=docs/paper
+```
+
+For engines without SVG support, convert figures first (for example with
+`rsvg-convert -f pdf`).
+
+## Current audited results
+
+- 3,897 delivered reports; 2,726 show a structure (L1–L3), 1,171 withhold it.
+- Structure truth set (n=92): rank 1 47.8%, top 3 64.1%, top 10 73.9%.
+- Direct pathway lookups (n=1,459): 100% reference consistency by construction,
+  not independent prediction accuracy.
+- Neighbor consensus vs independent labels (n=644): super-pathway 52.2%,
+  subpathway 18.8%.
+- Neighbor-vote mechanism LOO (n=5,095): super-pathway 86.7%, subpathway 71.1%.
+- Leave-one-out identification-confidence Brier score 0.255; the aggregate score
+  is exploratory rather than externally calibrated.
