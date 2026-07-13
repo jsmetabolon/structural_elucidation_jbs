@@ -1,0 +1,910 @@
+control_id,lib,predicted_pathway,true_super,correct_super,predicted_subpathway,true_sub,correct_sub,source,tier,status,best_similarity,in_reference_db
+X-11478,209,Xenobiotics,Lipid,False,Food Component/Plant,Medium Chain Fatty Acid,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-12111,,Lipid,Amino Acid,False,Fatty Acid Metabolism (Acyl Glycine),Glutathione Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-12122,400,Amino Acid,Lipid,False,Lysine Metabolism,Fatty Acid Metabolism (also BCAA Metabolism),False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-12216,209,Xenobiotics,Amino Acid,False,Food Component/Plant,Tryptophan Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-12283,400,Amino Acid,Xenobiotics,False,Tryptophan Metabolism,Food Component/Plant,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-12456,209,Partially Characterized Molecules,Lipid,False,Partially Characterized Molecules,Ask Annie/Matt/Brian I,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-12462,209,Xenobiotics,Amino Acid,False,Chemical,"Methionine, Cysteine, SAM and Taurine Metabolism",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-12680,209,Nucleotide,Carbohydrate,False,"Pyrimidine Metabolism, Uracil containing",Advanced Glycation End-product,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-12689,400,Carbohydrate,Amino Acid,False,Aminosugar Metabolism,Unknown,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-12729,209,Xenobiotics,Amino Acid,False,Food Component/Plant,Tryptophan Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-12812,209,Peptide,Xenobiotics,False,Acetylated Peptides,Benzoate Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-13504,400,Nucleotide,Amino Acid,False,"Pyrimidine Metabolism, Cytidine containing",Lactoyl Amino Acid,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-14277,400,Xenobiotics,Peptide,False,Drug - Psychoactive,Dipeptide,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-14393,209,Amino Acid,Peptide,False,"Leucine, Isoleucine and Valine Metabolism",Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-14416,209,Amino Acid,Peptide,False,"Leucine, Isoleucine and Valine Metabolism",Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-14939,209,Xenobiotics,Lipid,False,Food Component/Plant,Ask Annie/Matt/Brian I,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-15136,209,Amino Acid,Cofactors and Vitamins,False,Creatine Metabolism,Riboflavin Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-16071,209,Xenobiotics,Amino Acid,False,Food Component/Plant,Tryptophan Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-16087,209,Xenobiotics,Lipid,False,"Drug - Analgesics, Anesthetics","Fatty Acid, Dicarboxylate",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-16124,209,Amino Acid,Xenobiotics,False,Tyrosine Metabolism,Benzoate Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-16938,209,Lipid,Carbohydrate,False,"Fatty Acid, Dicarboxylate",Pentose Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-17306,400,Amino Acid,Lipid,False,"Leucine, Isoleucine and Valine Metabolism",Fatty Acid Metabolism (also BCAA Metabolism),False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-17328,400,Peptide,Lipid,False,Dipeptide,Unknown Carnitine Conjugate,False,neighbor_consensus,high,strong_similarity_vote,0.885714,False
+X-17682,209,Lipid,Cofactors and Vitamins,False,Pregnenolone Steroids,Tocopherol Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-17689,209,Amino Acid,Xenobiotics,False,Tyrosine Metabolism,Food Component/Plant,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-17963,209,Nucleotide,Peptide,False,"Pyrimidine Metabolism, Thymine containing",Polypeptide,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-18059,209,Xenobiotics,Lipid,False,Chemical,"Fatty Acid, Monohydroxy",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-18410,209,Lipid,Xenobiotics,False,"Fatty Acid, Monohydroxy",Food Component/Plant,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-18921,209,Xenobiotics,Lipid,False,Food Component/Plant,Ask Annie/Matt/Brian I,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-19918,209,Amino Acid,Peptide,False,Glutathione Metabolism,Modified Peptides,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-19922,209,Nucleotide,Peptide,False,"Pyrimidine Metabolism, Thymine containing",Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-21286,209,Xenobiotics,Nucleotide,False,Chemical,Unknown,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-21310,209,Amino Acid,Xenobiotics,False,Tryptophan Metabolism,Unknown Aromatic Molecule,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-21319,209,Xenobiotics,Lipid,False,Food Component/Plant,Ask Annie/Matt/Brian I,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-21355,209,Amino Acid,Xenobiotics,False,Phenylalanine Metabolism,Benzoate Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-21360,209,Amino Acid,Xenobiotics,False,Phenylalanine Metabolism,Benzoate Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-21922,305,Xenobiotics,Lipid,False,Food Component/Plant,"Fatty Acid, Dihydroxy",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-22156,400,Peptide,Lipid,False,Dipeptide,"Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)",False,neighbor_consensus,high,strong_similarity_vote,0.866667,False
+X-22158,400,Lipid,Amino Acid,False,"Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)","Leucine, Isoleucine and Valine Metabolism",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-22767,209,Nucleotide,Carbohydrate,False,"Purine Metabolism, Guanine containing",Nucleotide Sugar,False,neighbor_consensus,high,strong_similarity_vote,0.779412,False
+X-22921,305,Nucleotide,Amino Acid,False,"Purine Metabolism, Adenine containing","Glycine, Serine and Threonine Metabolism",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-22967,305,Xenobiotics,Carbohydrate,False,Benzoate Metabolism,"Fructose, Mannose and Galactose Metabolism",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23262,209,Lipid,Xenobiotics,False,Ketone Bodies,Food Component/Plant,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23454,209,Peptide,Amino Acid,False,Dipeptide,Tryptophan Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23456,209,Xenobiotics,Amino Acid,False,Food Component/Plant,Tryptophan Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23593,400,Peptide,Amino Acid,False,Dipeptide,Ask DTS,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23636,400,Peptide,Amino Acid,False,Dipeptide,Unknown,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23639,400,Xenobiotics,Amino Acid,False,Food Component/Plant,"Glycine, Serine and Threonine Metabolism",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23645,400,Xenobiotics,Amino Acid,False,Chemical,"Methionine, Cysteine, SAM and Taurine Metabolism",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23657,400,Xenobiotics,Amino Acid,False,Chemical,Ask DTS,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23745,400,Xenobiotics,Amino Acid,False,Drug - Neurological,histidine metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23753,402,Lipid,Xenobiotics,False,Sterol,Food Component/Plant,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23775,400,Peptide,Amino Acid,False,Modified Peptides,Unknown,False,neighbor_consensus,high,strong_similarity_vote,0.763158,False
+X-23786,209,Lipid,Xenobiotics,False,"Fatty Acid, Dicarboxylate",Chemical,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23997,400,Amino Acid,Xenobiotics,False,Tryptophan Metabolism,Unknown Sulfated Molecule,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24160,209,Amino Acid,Peptide,False,"Leucine, Isoleucine and Valine Metabolism",Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24183,209,Amino Acid,Peptide,False,"Leucine, Isoleucine and Valine Metabolism",Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24334,209,Amino Acid,Peptide,False,Histidine Metabolism,Dipeptide,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24431,400,Energy,Cofactors and Vitamins,False,TCA Cycle,Ascorbate and Aldarate Metabolism,False,neighbor_consensus,high,strong_similarity_vote,1.0,True
+X-24432,400,Energy,Cofactors and Vitamins,False,TCA Cycle,Ascorbate and Aldarate Metabolism,False,neighbor_consensus,high,strong_similarity_vote,1.0,True
+X-24515,209,Lipid,Amino Acid,False,Fatty Acid Metabolism (Acyl Glycine),"Leucine, Isoleucine and Valine Metabolism",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24518,400,Peptide,Amino Acid,False,Dipeptide,Unknown,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24576,209,Cofactors and Vitamins,Xenobiotics,False,Vitamin B6 Metabolism,"Drug - Analgesics, Anesthetics",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24591,209,Xenobiotics,Cofactors and Vitamins,False,Chemical,Vitamin B6 Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24642,209,Xenobiotics,Lipid,False,Drug - Neurological,Unknown Glucuronidated Molecule,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24658,209,Peptide,Lipid,False,Dipeptide,Primary Bile Acid Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24667,209,Carbohydrate,Lipid,False,"Fructose, Mannose and Galactose Metabolism",Primary Bile Acid Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24828,209,Amino Acid,Peptide,False,Urea cycle; Arginine and Proline Metabolism,Polypeptide,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24838,209,Xenobiotics,Carbohydrate,False,Food Component/Plant,Disaccharides and Oligosaccharides,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24945,209,Carbohydrate,Lipid,False,Disaccharides and Oligosaccharides,Corticosteroids,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24950,209,Cofactors and Vitamins,Xenobiotics,False,Tocopherol Metabolism,Chemical,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25050,209,Amino Acid,Peptide,False,Urea cycle; Arginine and Proline Metabolism,Dipeptide,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25057,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Dicarboxylate)",Cyclic Dipeptide,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25104,209,Amino Acid,Peptide,False,Glutathione Metabolism,Modified Peptides,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25105,209,Energy,Amino Acid,False,TCA Cycle,"Methionine, Cysteine, SAM and Taurine Metabolism",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25196,400,Peptide,Xenobiotics,False,Dipeptide,Food Component/Plant,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25206,209,Xenobiotics,Lipid,False,Food Component/Plant,Long Chain Polyunsaturated Fatty Acid (n3 and n6),False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25244,400,Xenobiotics,Peptide,False,Drug - Other,Dipeptide,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25267,400,Peptide,Amino Acid,False,Dipeptide,Unknown,False,neighbor_consensus,high,strong_similarity_vote,0.8125,False
+X-25323,209,Xenobiotics,Nucleotide,False,Drug - Metabolic,Ask DTS,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25389,209,Peptide,Xenobiotics,False,Dipeptide,Chemical,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25429,400,Peptide,Xenobiotics,False,Dipeptide,Chemical,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25480,209,Amino Acid,Peptide,False,Urea cycle; Arginine and Proline Metabolism,Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25656,400,Lipid,Xenobiotics,False,Sterol,Chemical,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25691,209,Amino Acid,Peptide,False,"Glycine, Serine and Threonine Metabolism",Polypeptide,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25692,209,Nucleotide,Peptide,False,"Pyrimidine Metabolism, Thymine containing",Polypeptide,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25693,209,Nucleotide,Peptide,False,"Pyrimidine Metabolism, Thymine containing",Polypeptide,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25694,209,Nucleotide,Peptide,False,"Pyrimidine Metabolism, Thymine containing",Polypeptide,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25695,209,Amino Acid,Peptide,False,"Leucine, Isoleucine and Valine Metabolism",Polypeptide,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25697,209,Amino Acid,Peptide,False,Urea cycle; Arginine and Proline Metabolism,Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25698,209,Amino Acid,Peptide,False,"Leucine, Isoleucine and Valine Metabolism",Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25731,209,Nucleotide,Peptide,False,"Pyrimidine Metabolism, Thymine containing",Polypeptide,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25745,209,Amino Acid,Peptide,False,Urea cycle; Arginine and Proline Metabolism,Dipeptide,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25780,209,Amino Acid,Peptide,False,Urea cycle; Arginine and Proline Metabolism,Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25781,209,Amino Acid,Peptide,False,Urea cycle; Arginine and Proline Metabolism,Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25810,400,Lipid,Amino Acid,False,Carnitine Metabolism,Unknown,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25855,400,Xenobiotics,Amino Acid,False,Chemical,Unknown,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25936,400,Peptide,Amino Acid,False,Dipeptide,Lactoyl Amino Acid,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25984,209,Xenobiotics,Nucleotide,False,Drug - Metabolic,Nucleotide Sugar,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26064,209,Peptide,Amino Acid,False,Acetylated Peptides,Tyrosine Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26074,400,Peptide,Amino Acid,False,Dipeptide,Urea cycle; Arginine and Proline Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26087,209,Lipid,Amino Acid,False,Fatty Acid Metabolism (Acyl Glycine),"Leucine, Isoleucine and Valine Metabolism",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26109,209,Partially Characterized Molecules,Lipid,False,Partially Characterized Molecules,Ask Annie/Brian I/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26298,400,Xenobiotics,Lipid,False,Chemical,Sphingolipid Synthesis,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26299,402,Peptide,Lipid,False,Dipeptide,Lysophospholipid,False,neighbor_consensus,high,strong_similarity_vote,0.821429,False
+X-26650,402,Peptide,Lipid,False,Dipeptide,Lysophospholipid,False,neighbor_consensus,high,strong_similarity_vote,0.75,False
+X-26672,209,Peptide,Lipid,False,Dipeptide,Fatty Acid Metabolism (Acyl Amino Acid),False,neighbor_consensus,high,strong_similarity_vote,0.866667,False
+X-26678,209,Peptide,Lipid,False,Dipeptide,Lysophospholipid,False,neighbor_consensus,high,strong_similarity_vote,0.763636,False
+X-26679,209,Peptide,Lipid,False,Dipeptide,Lysophospholipid,False,neighbor_consensus,high,strong_similarity_vote,0.763636,False
+X-26691,402,Peptide,Lipid,False,Dipeptide,Lysophospholipid,False,neighbor_consensus,high,strong_similarity_vote,0.763636,False
+X-26692,402,Peptide,Lipid,False,Dipeptide,Lysophospholipid,False,neighbor_consensus,high,strong_similarity_vote,0.763636,False
+X-26700,402,Peptide,Lipid,False,Dipeptide,Fatty Acid Metabolism (Acyl Amino Acid),False,neighbor_consensus,high,strong_similarity_vote,0.806452,False
+X-26712,402,Lipid,Xenobiotics,False,Phosphatidylcholine (PC),Chemical,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-10445,209,Lipid,Nucleotide,False,"Fatty Acid, Amide","Purine Metabolism, Adenine containing",False,neighbor_consensus,low,weak_similarity_backfill,0.352941,False
+X-11381,209,Lipid,Xenobiotics,False,Fatty Acid Metabolism (Acyl Glycine),"Drug - Analgesics, Anesthetics",False,neighbor_consensus,low,strong_similarity_vote,0.5,False
+X-12013,209,Xenobiotics,Amino Acid,False,Benzoate Metabolism,Tryptophan Metabolism,False,neighbor_consensus,low,weak_similarity_backfill,0.325,False
+X-12026,209,Xenobiotics,Nucleotide,False,Xanthine Metabolism,"Purine Metabolism, Guanine containing",False,neighbor_consensus,low,strong_similarity_vote,0.516129,False
+X-12096,209,Peptide,Amino Acid,False,Dipeptide,Urea cycle; Arginine and Proline Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.459459,False
+X-12097,209,Peptide,Amino Acid,False,Dipeptide,Urea cycle; Arginine and Proline Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.459459,False
+X-12104,209,Nucleotide,Cofactors and Vitamins,False,"Pyrimidine Metabolism, Uracil containing",Nicotinate and Nicotinamide Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.480769,False
+X-12126,209,Xenobiotics,Amino Acid,False,Food Component/Plant,Tryptophan Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.528302,False
+X-12410,209,Xenobiotics,Amino Acid,False,Benzoate Metabolism,Tyrosine Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.444444,False
+X-12706,209,Amino Acid,Xenobiotics,False,"Leucine, Isoleucine and Valine Metabolism",Chemical,False,neighbor_consensus,low,strong_similarity_vote,0.517241,False
+X-12708,209,Lipid,Xenobiotics,False,"Fatty Acid, Dicarboxylate",Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.566667,False
+X-12718,209,Xenobiotics,Amino Acid,False,Food Component/Plant,Tryptophan Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.528302,False
+X-12726,209,Xenobiotics,Amino Acid,False,Food Component/Plant,Tyrosine Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.571429,False
+X-12839,209,Amino Acid,Lipid,False,Glutamate Metabolism,Fatty Acid Metabolism (Acyl Glutamine),False,neighbor_consensus,low,strong_similarity_vote,0.547619,False
+X-12847,209,Xenobiotics,Lipid,False,Food Component/Plant,Fatty Acid Metabolism (Acyl Glutamine),False,neighbor_consensus,low,strong_similarity_vote,0.5,False
+X-13684,400,Xenobiotics,Amino Acid,False,Chemical,Unknown,False,neighbor_consensus,low,weak_similarity_backfill,0.214286,False
+X-13866,209,Xenobiotics,Lipid,False,Food Component/Plant,"Fatty Acid, Dicarboxylate",False,neighbor_consensus,low,strong_similarity_vote,0.47619,False
+X-14098,209,Amino Acid,Peptide,False,Lysine Metabolism,Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.560976,False
+X-14254,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.521739,False
+X-14383,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.568182,False
+X-14392,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.568182,False
+X-14454,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.543478,False
+X-14502,209,Xenobiotics,Peptide,False,Food Component/Plant,Modified Peptides,False,neighbor_consensus,low,strong_similarity_vote,0.474576,False
+X-14774,209,Carbohydrate,Xenobiotics,False,Pentose Metabolism,Food Component/Plant,False,neighbor_consensus,low,weak_similarity_backfill,0.35,False
+X-15011,400,Xenobiotics,Amino Acid,False,Food Component/Plant,"Leucine, Isoleucine and Valine Metabolism",False,neighbor_consensus,low,strong_similarity_vote,0.53125,False
+X-15461,209,Lipid,Amino Acid,False,"Fatty Acid, Dicarboxylate",Unknown,False,neighbor_consensus,low,strong_similarity_vote,0.454545,False
+X-15486,209,Amino Acid,Lipid,False,Glutamate Metabolism,Fatty Acid Metabolism (Acyl Glutamine),False,neighbor_consensus,low,strong_similarity_vote,0.547619,False
+X-15608,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.543478,False
+X-15674,209,Energy,Cofactors and Vitamins,False,TCA Cycle,Ascorbate and Aldarate Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.458333,False
+X-15806,209,Amino Acid,Peptide,False,"Methionine, Cysteine, SAM and Taurine Metabolism",Acetylated Peptides,False,neighbor_consensus,low,strong_similarity_vote,0.533333,False
+X-15904,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Dicarboxylate)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.5,False
+X-17162,400,Peptide,Cofactors and Vitamins,False,Dipeptide,Hemoglobin and Porphyrin Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.576271,False
+X-17325,209,Lipid,Xenobiotics,False,Fatty Acid Metabolism (Acyl Glycine),Benzoate Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.5,False
+X-17335,402,Amino Acid,Xenobiotics,False,"Methionine, Cysteine, SAM and Taurine Metabolism",Chemical,False,neighbor_consensus,low,strong_similarity_vote,0.487805,False
+X-17351,209,Peptide,Amino Acid,False,Dipeptide,Tryptophan Metabolism,False,neighbor_consensus,low,weak_similarity_backfill,0.245283,False
+X-17808,209,Amino Acid,Peptide,False,Glutamate Metabolism,Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.75,False
+X-17825,209,Lipid,Peptide,False,Fatty Acid Metabolism (also BCAA Metabolism),Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.5,False
+X-17876,209,Lipid,Peptide,False,Fatty Acid Metabolism (Acyl Glutamine),Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.604651,False
+X-17969,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.543478,False
+X-18278,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.568182,False
+X-18347,209,Amino Acid,Peptide,False,Lysine Metabolism,Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.736842,False
+X-18349,209,Carbohydrate,Peptide,False,Pentose Metabolism,Dipeptide,False,neighbor_consensus,low,weak_similarity_backfill,0.372093,False
+X-18913,209,Xenobiotics,Lipid,False,Drug - Neurological,"Fatty Acid, Monohydroxy",False,neighbor_consensus,low,strong_similarity_vote,0.48,False
+X-19197,209,Amino Acid,Peptide,False,Glutamate Metabolism,Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.534884,False
+X-19369,209,Lipid,Peptide,False,Fatty Acid Metabolism (also BCAA Metabolism),Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.571429,False
+X-19746,209,Carbohydrate,Peptide,False,Pentose Metabolism,Dipeptide,False,neighbor_consensus,low,weak_similarity_backfill,0.372093,False
+X-19915,209,Amino Acid,Peptide,False,Tryptophan Metabolism,Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.785714,False
+X-19917,209,Xenobiotics,Peptide,False,"Drug - Analgesics, Anesthetics",Dipeptide,False,neighbor_consensus,low,strong_similarity_vote,0.459016,False
+X-20100,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.568182,False
+X-20747,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.543478,False
+X-21282,400,Amino Acid,Lipid,False,"Leucine, Isoleucine and Valine Metabolism","Fatty Acid, Monohydroxy",False,neighbor_consensus,low,strong_similarity_vote,0.478261,False
+X-21441,209,Peptide,Lipid,False,Polypeptide,Pregnenolone Steroids,False,neighbor_consensus,low,strong_similarity_vote,0.481481,False
+X-21467,209,Peptide,Lipid,False,Dipeptide,Secondary Bile Acid Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.52381,False
+X-21471,209,Peptide,Lipid,False,Polypeptide,Sterol,False,neighbor_consensus,low,strong_similarity_vote,0.426829,False
+X-21733,209,Xenobiotics,Amino Acid,False,Food Component/Plant,Tryptophan Metabolism,False,neighbor_consensus,low,weak_similarity_backfill,0.245902,False
+X-21796,209,Xenobiotics,Nucleotide,False,Chemical,Unknown,False,neighbor_consensus,low,weak_similarity_backfill,0.30303,False
+X-21829,209,Lipid,Xenobiotics,False,Diacylglycerol,Chemical,False,neighbor_consensus,low,weak_similarity_backfill,0.388889,False
+X-21893,400,Amino Acid,Lipid,False,"Leucine, Isoleucine and Valine Metabolism",Ask Annie/Matt/Brian I,False,neighbor_consensus,low,strong_similarity_vote,0.478261,False
+X-22099,209,Carbohydrate,Peptide,False,Pentose Metabolism,Dipeptide,False,neighbor_consensus,low,weak_similarity_backfill,0.372093,False
+X-22166,400,Xenobiotics,Amino Acid,False,Food Component/Plant,Tryptophan Metabolism,False,neighbor_consensus,low,weak_similarity_backfill,0.205882,False
+X-22235,209,Xenobiotics,Peptide,False,Food Component/Plant,Cyclic Dipeptide,False,neighbor_consensus,low,weak_similarity_backfill,0.162162,False
+X-22508,209,Xenobiotics,Amino Acid,False,Food Component/Plant,Tryptophan Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.528302,False
+X-22587,400,Peptide,Xenobiotics,False,Acetylated Peptides,Tobacco Metabolite,False,neighbor_consensus,low,strong_similarity_vote,0.485714,False
+X-22851,209,Peptide,Lipid,False,Polypeptide,Galactosyl Glycerolipids,False,neighbor_consensus,low,strong_similarity_vote,0.538462,False
+X-23131,305,Xenobiotics,Cofactors and Vitamins,False,Food Component/Plant,Vitamin B6 Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.555556,False
+X-23138,209,Xenobiotics,Lipid,False,"Drug - Analgesics, Anesthetics",Endocannabinoid,False,neighbor_consensus,low,strong_similarity_vote,0.537313,False
+X-23437,209,Xenobiotics,Amino Acid,False,Chemical,Phenylalanine Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.594595,False
+X-23525,209,Xenobiotics,Cofactors and Vitamins,False,Food Component/Plant,Hemoglobin and Porphyrin Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.510638,False
+X-23654,400,Lipid,Amino Acid,False,Endocannabinoid,Unknown,False,neighbor_consensus,low,weak_similarity_backfill,0.25641,False
+X-23767,402,Peptide,Cofactors and Vitamins,False,Dipeptide,Hemoglobin and Porphyrin Metabolism,False,neighbor_consensus,low,weak_similarity_backfill,0.259259,False
+X-23868,209,Xenobiotics,Cofactors and Vitamins,False,Food Component/Plant,Hemoglobin and Porphyrin Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.510638,False
+X-23957,209,Carbohydrate,Xenobiotics,False,Disaccharides and Oligosaccharides,Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.408163,False
+X-24028,402,Xenobiotics,Lipid,False,Phthalate,Unknown Steroid,False,neighbor_consensus,low,weak_similarity_backfill,0.25,False
+X-24082,209,Amino Acid,Peptide,False,Lysine Metabolism,Modified Peptides,False,neighbor_consensus,low,weak_similarity_backfill,0.3,False
+X-24208,402,Nucleotide,Lipid,False,"Purine Metabolism, Adenine containing",Hexosylceramides (HCER),False,neighbor_consensus,low,weak_similarity_backfill,0.364583,False
+X-24211,402,Lipid,Xenobiotics,False,"Fatty Acid, Monohydroxy",Food Component/Plant,False,neighbor_consensus,low,weak_similarity_backfill,0.264706,False
+X-24231,400,Carbohydrate,Amino Acid,False,Aminosugar Metabolism,Unknown,False,neighbor_consensus,low,strong_similarity_vote,0.52381,False
+X-24253,402,Partially Characterized Molecules,Lipid,False,Partially Characterized Molecules,Ask Annie/Matt/Brian I,False,neighbor_consensus,low,weak_similarity_backfill,0.3125,False
+X-24344,209,Amino Acid,Xenobiotics,False,Tyrosine Metabolism,Benzoate Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.448276,False
+X-24345,209,Amino Acid,Lipid,False,"Methionine, Cysteine, SAM and Taurine Metabolism",Ask DTS,False,neighbor_consensus,low,strong_similarity_vote,0.452381,False
+X-24422,209,Nucleotide,Cofactors and Vitamins,False,"Pyrimidine Metabolism, Uracil containing",Nicotinate and Nicotinamide Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.480769,False
+X-24425,400,Xenobiotics,Amino Acid,False,Food Component/Plant,Urea cycle; Arginine and Proline Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.419355,False
+X-24456,400,Peptide,Amino Acid,False,Dipeptide,Tryptophan Metabolism,False,neighbor_consensus,low,weak_similarity_backfill,0.333333,False
+X-24468,400,Cofactors and Vitamins,Lipid,False,Pantothenate and CoA Metabolism,"Fatty Acid Metabolism (Acyl Carnitine, Dicarboxylate)",False,neighbor_consensus,low,weak_similarity_backfill,0.375,False
+X-24469,400,Cofactors and Vitamins,Lipid,False,Pantothenate and CoA Metabolism,"Fatty Acid Metabolism (Acyl Carnitine, Dicarboxylate)",False,neighbor_consensus,low,weak_similarity_backfill,0.375,False
+X-24473,400,Peptide,Amino Acid,False,Dipeptide,Unknown,False,neighbor_consensus,low,strong_similarity_vote,0.483871,False
+X-24475,400,Carbohydrate,Amino Acid,False,Disaccharides and Oligosaccharides,Unknown,False,neighbor_consensus,low,weak_similarity_backfill,0.25641,False
+X-24565,209,Xenobiotics,Lipid,False,Food Component/Plant,Ask DTS,False,neighbor_consensus,low,weak_similarity_backfill,0.245283,False
+X-24585,400,Xenobiotics,Amino Acid,False,Benzoate Metabolism,Lysine Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.447368,False
+X-24616,209,Lipid,Xenobiotics,False,Eicosanoid,Drug - Antibiotic,False,neighbor_consensus,low,weak_similarity_backfill,0.253012,False
+X-24617,209,Peptide,Xenobiotics,False,Polypeptide,Drug - Antibiotic,False,neighbor_consensus,low,strong_similarity_vote,0.555556,False
+X-24618,209,Lipid,Xenobiotics,False,Long Chain Polyunsaturated Fatty Acid (n3 and n6),Drug - Antibiotic,False,neighbor_consensus,low,strong_similarity_vote,0.5,False
+X-24619,209,Lipid,Xenobiotics,False,"Fatty Acid, Monohydroxy",Drug - Antibiotic,False,neighbor_consensus,low,strong_similarity_vote,0.576271,False
+X-24660,209,Peptide,Lipid,False,Polypeptide,Unknown Bile Acid,False,neighbor_consensus,low,strong_similarity_vote,0.594937,False
+X-24669,209,Peptide,Lipid,False,Polypeptide,Unknown Bile Acid,False,neighbor_consensus,low,strong_similarity_vote,0.594937,False
+X-24721,400,Lipid,Amino Acid,False,Endocannabinoid,Urea cycle; Arginine and Proline Metabolism,False,neighbor_consensus,low,weak_similarity_backfill,0.391304,False
+X-24811,400,Xenobiotics,Nucleotide,False,Benzoate Metabolism,Unknown,False,neighbor_consensus,low,strong_similarity_vote,0.405405,False
+X-24839,209,Carbohydrate,Xenobiotics,False,Disaccharides and Oligosaccharides,Food Component/Plant,False,neighbor_consensus,low,weak_similarity_backfill,0.384615,False
+X-24928,209,Carbohydrate,Xenobiotics,False,Disaccharides and Oligosaccharides,Chemical,False,neighbor_consensus,low,strong_similarity_vote,0.408163,False
+X-25033,209,Carbohydrate,Peptide,False,Pentose Metabolism,Dipeptide,False,neighbor_consensus,low,weak_similarity_backfill,0.372093,False
+X-25197,209,Amino Acid,Xenobiotics,False,Tyrosine Metabolism,Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.515152,False
+X-25271,400,Nucleotide,Amino Acid,False,"Pyrimidine Metabolism, Cytidine containing",Unknown,False,neighbor_consensus,low,weak_similarity_backfill,0.232558,False
+X-25273,400,Amino Acid,Xenobiotics,False,"Glycine, Serine and Threonine Metabolism",Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.5,False
+X-25303,400,Amino Acid,Xenobiotics,False,Tryptophan Metabolism,Chemical,False,neighbor_consensus,low,strong_similarity_vote,0.461538,False
+X-25341,400,Amino Acid,Xenobiotics,False,Urea cycle; Arginine and Proline Metabolism,Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.518519,False
+X-25377,209,Peptide,Amino Acid,False,Dipeptide,Histidine Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.538462,False
+X-25378,209,Lipid,Xenobiotics,False,"Fatty Acid, Dicarboxylate",Chemical,False,neighbor_consensus,low,strong_similarity_vote,0.545455,False
+X-25382,209,Lipid,Xenobiotics,False,"Fatty Acid, Dicarboxylate",Chemical,False,neighbor_consensus,low,strong_similarity_vote,0.545455,False
+X-25395,209,Lipid,Xenobiotics,False,"Fatty Acid, Monohydroxy",Chemical,False,neighbor_consensus,low,strong_similarity_vote,0.441176,False
+X-25396,209,Lipid,Xenobiotics,False,"Fatty Acid, Branched",Chemical,False,neighbor_consensus,low,strong_similarity_vote,0.518519,False
+X-25406,209,Lipid,Xenobiotics,False,"Fatty Acid, Branched",Chemical,False,neighbor_consensus,low,weak_similarity_backfill,0.393939,False
+X-25411,209,Lipid,Xenobiotics,False,Long Chain Monounsaturated Fatty Acid,Chemical,False,neighbor_consensus,low,strong_similarity_vote,0.465116,False
+X-25417,400,Peptide,Amino Acid,False,Dipeptide,"Glycine, Serine and Threonine Metabolism",False,neighbor_consensus,low,strong_similarity_vote,0.4375,False
+X-25422,400,Peptide,Amino Acid,False,Dipeptide,Alanine and Aspartate Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.484848,False
+X-25433,209,Peptide,Lipid,False,Polypeptide,Secondary Bile Acid Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.594937,False
+X-25435,209,Peptide,Lipid,False,Polypeptide,Unknown Bile Acid,False,neighbor_consensus,low,strong_similarity_vote,0.594937,False
+X-25442,209,Amino Acid,Lipid,False,"Methionine, Cysteine, SAM and Taurine Metabolism","Fatty Acid Metabolism (Acyl Carnitine, Monounsaturated)",False,neighbor_consensus,low,strong_similarity_vote,0.452381,False
+X-25451,209,Lipid,Xenobiotics,False,"Fatty Acid, Monohydroxy",Chemical,False,neighbor_consensus,low,strong_similarity_vote,0.441176,False
+X-25452,209,Lipid,Xenobiotics,False,Long Chain Monounsaturated Fatty Acid,Chemical,False,neighbor_consensus,low,strong_similarity_vote,0.465116,False
+X-25477,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.482143,False
+X-25503,209,Lipid,Xenobiotics,False,Galactosyl Glycerolipids,Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.52381,False
+X-25510,209,Lipid,Xenobiotics,False,Galactosyl Glycerolipids,Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.52381,False
+X-25520,400,Amino Acid,Xenobiotics,False,Alanine and Aspartate Metabolism,Food Component/Plant,False,neighbor_consensus,low,weak_similarity_backfill,0.3,False
+X-25658,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.519231,False
+X-25661,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.519231,False
+X-25662,209,Amino Acid,Peptide,False,"Leucine, Isoleucine and Valine Metabolism",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.436364,False
+X-25669,209,Amino Acid,Peptide,False,Lysine Metabolism,Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.560976,False
+X-25671,209,Amino Acid,Peptide,False,Lysine Metabolism,Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.560976,False
+X-25672,209,Amino Acid,Peptide,False,Lysine Metabolism,Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.560976,False
+X-25673,209,Amino Acid,Peptide,False,Lysine Metabolism,Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.560976,False
+X-25674,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.521739,False
+X-25675,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.521739,False
+X-25676,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.521739,False
+X-25677,209,Amino Acid,Peptide,False,"Leucine, Isoleucine and Valine Metabolism",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.581395,False
+X-25678,209,Amino Acid,Peptide,False,"Leucine, Isoleucine and Valine Metabolism",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.581395,False
+X-25679,209,Amino Acid,Peptide,False,"Leucine, Isoleucine and Valine Metabolism",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.581395,False
+X-25685,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.509804,False
+X-25688,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.568182,False
+X-25689,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.568182,False
+X-25690,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.568182,False
+X-25701,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.543478,False
+X-25702,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.543478,False
+X-25703,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.543478,False
+X-25704,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.543478,False
+X-25705,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.543478,False
+X-25706,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.543478,False
+X-25707,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.543478,False
+X-25718,209,Xenobiotics,Peptide,False,Food Component/Plant,Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.482759,False
+X-25722,209,Lipid,Peptide,False,Fatty Acid Metabolism (Acyl Glutamine),Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.702703,False
+X-25723,209,Amino Acid,Peptide,False,Glutamate Metabolism,Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.75,False
+X-25724,209,Amino Acid,Peptide,False,Glutamate Metabolism,Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.75,False
+X-25725,209,Lipid,Peptide,False,Fatty Acid Metabolism (Acyl Glutamine),Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.702703,False
+X-25726,209,Amino Acid,Peptide,False,Glutamate Metabolism,Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.75,False
+X-25746,209,Lipid,Peptide,False,Fatty Acid Metabolism (Acyl Glutamine),Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.604651,False
+X-25747,209,Lipid,Peptide,False,Fatty Acid Metabolism (Acyl Glutamine),Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.604651,False
+X-25748,209,Lipid,Peptide,False,Fatty Acid Metabolism (Acyl Glutamine),Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.604651,False
+X-25765,209,Amino Acid,Peptide,False,Lysine Metabolism,Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.736842,False
+X-25766,209,Amino Acid,Peptide,False,Lysine Metabolism,Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.736842,False
+X-25767,209,Amino Acid,Peptide,False,Lysine Metabolism,Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.736842,False
+X-25768,209,Amino Acid,Peptide,False,Glutamate Metabolism,Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.534884,False
+X-25769,209,Amino Acid,Peptide,False,Glutamate Metabolism,Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.534884,False
+X-25771,209,Amino Acid,Peptide,False,Glutamate Metabolism,Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.534884,False
+X-25773,209,Lipid,Peptide,False,Fatty Acid Metabolism (also BCAA Metabolism),Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.571429,False
+X-25774,209,Lipid,Peptide,False,Fatty Acid Metabolism (also BCAA Metabolism),Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.571429,False
+X-25777,209,Lipid,Peptide,False,Fatty Acid Metabolism (also BCAA Metabolism),Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.571429,False
+X-25779,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.482143,False
+X-25832,400,Cofactors and Vitamins,Peptide,False,Biotin Metabolism,Cyclic Dipeptide,False,neighbor_consensus,low,weak_similarity_backfill,0.349206,False
+X-25877,400,Lipid,Peptide,False,Fatty Acid Metabolism (Acyl Glycine),Polypeptide,False,neighbor_consensus,low,weak_similarity_backfill,0.276596,False
+X-25881,400,Lipid,Carbohydrate,False,Mevalonate Metabolism,Aminosugar Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.447368,False
+X-25944,209,Xenobiotics,Amino Acid,False,Benzoate Metabolism,Alanine and Aspartate Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.529412,False
+X-25948,400,Lipid,Carbohydrate,False,"Fatty Acid, Monohydroxy","Glycolysis, Gluconeogenesis, and Pyruvate Metabolism",False,neighbor_consensus,low,strong_similarity_vote,0.4,False
+X-25951,400,Carbohydrate,Nucleotide,False,"Fructose, Mannose and Galactose Metabolism",Unknown,False,neighbor_consensus,low,weak_similarity_backfill,0.261905,False
+X-25983,400,Lipid,Amino Acid,False,Endocannabinoid,Unknown,False,neighbor_consensus,low,strong_similarity_vote,0.583333,False
+X-26008,209,Amino Acid,Xenobiotics,False,Urea cycle; Arginine and Proline Metabolism,Bacterial/Fungal,False,neighbor_consensus,low,strong_similarity_vote,0.483871,False
+X-26009,209,Amino Acid,Xenobiotics,False,Urea cycle; Arginine and Proline Metabolism,Bacterial/Fungal,False,neighbor_consensus,low,strong_similarity_vote,0.483871,False
+X-26020,209,Peptide,Xenobiotics,False,Dipeptide,Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.428571,False
+X-26080,305,Peptide,Amino Acid,False,Dipeptide,Glutamate Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.533333,False
+X-26086,400,Peptide,Amino Acid,False,Dipeptide,Urea cycle; Arginine and Proline Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.576923,False
+X-26093,209,Xenobiotics,Amino Acid,False,Benzoate Metabolism,Tyrosine Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.583333,False
+X-26094,209,Peptide,Amino Acid,False,Dipeptide,Phenylalanine Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.409091,False
+X-26106,402,Cofactors and Vitamins,Lipid,False,Pantothenate and CoA Metabolism,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",False,neighbor_consensus,low,strong_similarity_vote,0.521739,False
+X-26108,402,Amino Acid,Lipid,False,Phenylalanine Metabolism,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",False,neighbor_consensus,low,weak_similarity_backfill,0.274194,False
+X-26157,209,Carbohydrate,Lipid,False,Aminosugar Metabolism,Corticosteroids,False,neighbor_consensus,low,strong_similarity_vote,0.4,False
+X-26158,209,Peptide,Lipid,False,Dipeptide,Corticosteroids,False,neighbor_consensus,low,strong_similarity_vote,0.511628,False
+X-26224,402,Xenobiotics,Lipid,False,Food Component/Plant,Ceramides,False,neighbor_consensus,low,weak_similarity_backfill,0.157895,False
+X-26225,402,Xenobiotics,Lipid,False,Food Component/Plant,Ceramides,False,neighbor_consensus,low,weak_similarity_backfill,0.252874,False
+X-26273,402,Lipid,Cofactors and Vitamins,False,Sterol,Vitamin A Metabolism,False,neighbor_consensus,low,weak_similarity_backfill,0.191011,False
+X-26282,402,Xenobiotics,Lipid,False,Bacterial/Fungal,Ceramides,False,neighbor_consensus,low,weak_similarity_backfill,0.172414,False
+X-26287,402,Xenobiotics,Lipid,False,Bacterial/Fungal,Ceramides,False,neighbor_consensus,low,weak_similarity_backfill,0.253968,False
+X-26289,402,Xenobiotics,Lipid,False,Bacterial/Fungal,Sphingolipid Synthesis,False,neighbor_consensus,low,weak_similarity_backfill,0.210526,False
+X-26291,402,Xenobiotics,Lipid,False,Food Component/Plant,Ask DTS,False,neighbor_consensus,low,weak_similarity_backfill,0.36,False
+X-26292,402,Xenobiotics,Lipid,False,Food Component/Plant,Sphingolipid Synthesis,False,neighbor_consensus,low,weak_similarity_backfill,0.261905,False
+X-26293,402,Xenobiotics,Lipid,False,Benzoate Metabolism,Sphingolipid Synthesis,False,neighbor_consensus,low,weak_similarity_backfill,0.30303,False
+X-26301,402,Xenobiotics,Lipid,False,Drug - Psychoactive,Lysoplasmalogen,False,neighbor_consensus,low,weak_similarity_backfill,0.195122,False
+X-26306,402,Xenobiotics,Lipid,False,Food Component/Plant,Lysoplasmalogen,False,neighbor_consensus,low,weak_similarity_backfill,0.191781,False
+X-26315,402,Xenobiotics,Lipid,False,Bacterial/Fungal,Sphingomyelins,False,neighbor_consensus,low,weak_similarity_backfill,0.225352,False
+X-26320,402,Xenobiotics,Lipid,False,Drug - Contraceptive,"Fatty Acid Metabolism (Acyl Carnitine, Polyunsaturated)",False,neighbor_consensus,low,weak_similarity_backfill,0.323944,False
+X-26330,402,Xenobiotics,Lipid,False,Food Component/Plant,Ceramides,False,neighbor_consensus,low,weak_similarity_backfill,0.225806,False
+X-26348,209,Peptide,Amino Acid,False,Dipeptide,Urea cycle; Arginine and Proline Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.575758,False
+X-26640,402,Xenobiotics,Lipid,False,Phthalate,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.46,False
+X-26641,402,Xenobiotics,Lipid,False,Food Component/Plant,Lysophospholipid,False,neighbor_consensus,low,weak_similarity_backfill,0.238806,False
+X-26643,209,Peptide,Lipid,False,Dipeptide,Lysophospholipid,False,neighbor_consensus,low,weak_similarity_backfill,0.22973,False
+X-26644,209,Peptide,Lipid,False,Polypeptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.573529,False
+X-26646,402,Peptide,Lipid,False,Polypeptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.576087,False
+X-26648,402,Peptide,Lipid,False,Dipeptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.434783,False
+X-26649,402,Peptide,Lipid,False,Dipeptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.507937,False
+X-26651,402,Peptide,Lipid,False,Fibrinogen Cleavage Peptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.5,False
+X-26658,209,Peptide,Lipid,False,Dipeptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.532468,False
+X-26661,209,Peptide,Lipid,False,Dipeptide,Lysoplasmalogen,False,neighbor_consensus,low,strong_similarity_vote,0.531646,False
+X-26662,209,Peptide,Lipid,False,Polypeptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.485437,False
+X-26663,209,Peptide,Lipid,False,Polypeptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.485437,False
+X-26664,209,Peptide,Lipid,False,Dipeptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.566038,False
+X-26665,209,Peptide,Lipid,False,Dipeptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.566038,False
+X-26667,209,Peptide,Lipid,False,Polypeptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.536082,False
+X-26677,209,Peptide,Lipid,False,Dipeptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.586207,False
+X-26680,209,Peptide,Lipid,False,Fibrinogen Cleavage Peptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.541176,False
+X-26681,209,Peptide,Lipid,False,Fibrinogen Cleavage Peptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.541176,False
+X-26682,209,Peptide,Lipid,False,Polypeptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.414894,False
+X-26683,209,Peptide,Lipid,False,Polypeptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.414894,False
+X-26684,209,Peptide,Lipid,False,Polypeptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.414894,False
+X-26685,209,Peptide,Lipid,False,Polypeptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.414894,False
+X-26686,402,Peptide,Lipid,False,Polypeptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.414894,False
+X-26687,402,Peptide,Lipid,False,Polypeptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.414894,False
+X-26689,402,Peptide,Lipid,False,Fibrinogen Cleavage Peptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.541176,False
+X-26690,402,Peptide,Lipid,False,Fibrinogen Cleavage Peptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.541176,False
+X-26693,402,Peptide,Lipid,False,Fibrinogen Cleavage Peptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.517241,False
+X-26694,402,Peptide,Lipid,False,Fibrinogen Cleavage Peptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.517241,False
+X-26704,209,Peptide,Lipid,False,Dipeptide,Lysophospholipid,False,neighbor_consensus,low,strong_similarity_vote,0.465517,False
+X-26720,400,Carbohydrate,Amino Acid,False,Aminosugar Metabolism,Creatine Metabolism,False,neighbor_consensus,low,weak_similarity_backfill,0.391304,False
+X-10457,400,Peptide,Amino Acid,False,Dipeptide,Unknown,False,neighbor_consensus,medium,strong_similarity_vote,0.705882,False
+X-11299,209,Xenobiotics,Lipid,False,Food Component/Plant,Unknown Steroid,False,neighbor_consensus,medium,strong_similarity_vote,0.666667,False
+X-12379,209,Xenobiotics,Amino Acid,False,Food Component/Plant,Advanced Glycation End-product,False,neighbor_consensus,medium,strong_similarity_vote,0.708333,False
+X-12906,209,Lipid,Amino Acid,False,Fatty Acid Metabolism (also BCAA Metabolism),Unknown,False,neighbor_consensus,medium,strong_similarity_vote,0.608696,False
+X-13553,209,Amino Acid,Xenobiotics,False,Tyrosine Metabolism,Unknown Sulfated Molecule,False,neighbor_consensus,medium,strong_similarity_vote,0.615385,False
+X-13698,209,Xenobiotics,Amino Acid,False,Drug - Antibiotic,"Methionine, Cysteine, SAM and Taurine Metabolism",False,neighbor_consensus,medium,strong_similarity_vote,0.711538,False
+X-13723,209,Amino Acid,Xenobiotics,False,Tyrosine Metabolism,Benzoate Metabolism,False,neighbor_consensus,medium,strong_similarity_vote,0.666667,False
+X-13837,209,Peptide,Lipid,False,Dipeptide,"Fatty Acid, Dicarboxylate",False,neighbor_consensus,medium,strong_similarity_vote,0.666667,False
+X-14422,209,Xenobiotics,Peptide,False,Drug - Neurological,Cyclic Dipeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.666667,False
+X-16391,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)",Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.622222,False
+X-17799,209,Peptide,Amino Acid,False,Dipeptide,Unknown,False,neighbor_consensus,medium,strong_similarity_vote,0.621622,False
+X-17802,209,Amino Acid,Peptide,False,Histidine Metabolism,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.702128,False
+X-17866,209,Lipid,Peptide,False,Fatty Acid Metabolism (Acyl Glutamine),Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.894737,False
+X-17935,209,Lipid,Peptide,False,Galactosyl Glycerolipids,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.7,False
+X-17978,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)",Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.622222,False
+X-17984,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)",Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.622222,False
+X-19232,209,Xenobiotics,Cofactors and Vitamins,False,"Drug - Analgesics, Anesthetics",Nicotinate and Nicotinamide Metabolism,False,neighbor_consensus,medium,strong_similarity_vote,0.631579,False
+X-19913,209,Amino Acid,Peptide,False,Glutamate Metabolism,Modified Peptides,False,neighbor_consensus,medium,strong_similarity_vote,0.676471,False
+X-19914,209,Amino Acid,Peptide,False,Histidine Metabolism,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.702128,False
+X-19929,209,Amino Acid,Peptide,False,Glutamate Metabolism,Modified Peptides,False,neighbor_consensus,medium,strong_similarity_vote,0.615385,False
+X-20710,209,Lipid,Peptide,False,Fatty Acid Metabolism (Acyl Glutamine),Modified Peptides,False,neighbor_consensus,medium,strong_similarity_vote,0.727273,False
+X-21815,209,Peptide,Xenobiotics,False,Dipeptide,Chemical,False,neighbor_consensus,medium,strong_similarity_vote,0.658537,False
+X-21831,209,Peptide,Xenobiotics,False,Dipeptide,Food Component/Plant,False,neighbor_consensus,medium,strong_similarity_vote,0.731707,False
+X-22030,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)",Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.622222,False
+X-22162,400,Amino Acid,Xenobiotics,False,"Leucine, Isoleucine and Valine Metabolism","Drug - Antiinflammatory, Immunosuppressant",False,neighbor_consensus,medium,strong_similarity_vote,0.652174,False
+X-22520,209,Xenobiotics,Lipid,False,Drug - Metabolic,Secondary Bile Acid Metabolism,False,neighbor_consensus,medium,strong_similarity_vote,0.736111,False
+X-22757,209,Peptide,Lipid,False,Dipeptide,"Fatty Acid, Monohydroxy",False,neighbor_consensus,medium,strong_similarity_vote,0.738095,False
+X-23127,305,Carbohydrate,Lipid,False,Pentose Metabolism,Inositol Metabolism,False,neighbor_consensus,medium,strong_similarity_vote,0.608696,False
+X-23128,305,Carbohydrate,Lipid,False,Pentose Metabolism,Inositol Metabolism,False,neighbor_consensus,medium,strong_similarity_vote,0.608696,False
+X-23268,209,Amino Acid,Xenobiotics,False,"Methionine, Cysteine, SAM and Taurine Metabolism",Chemical,False,neighbor_consensus,medium,strong_similarity_vote,0.690476,False
+X-24408,400,Peptide,Amino Acid,False,Dipeptide,Glutamate Metabolism,False,neighbor_consensus,medium,strong_similarity_vote,0.62069,False
+X-24470,400,Amino Acid,Lipid,False,"Leucine, Isoleucine and Valine Metabolism","Fatty Acid Metabolism (Acyl Carnitine, Dicarboxylate)",False,neighbor_consensus,medium,strong_similarity_vote,0.74359,False
+X-24522,400,Amino Acid,Lipid,False,"Leucine, Isoleucine and Valine Metabolism",Unknown Carnitine Conjugate,False,neighbor_consensus,medium,strong_similarity_vote,0.617647,False
+X-24590,209,Xenobiotics,Amino Acid,False,Food Component/Plant,Tyrosine Metabolism,False,neighbor_consensus,medium,strong_similarity_vote,0.627907,False
+X-24818,209,Xenobiotics,Carbohydrate,False,Chemical,Disaccharides and Oligosaccharides,False,neighbor_consensus,medium,strong_similarity_vote,0.648649,False
+X-24830,209,Amino Acid,Xenobiotics,False,Phenylalanine Metabolism,Food Component/Plant,False,neighbor_consensus,medium,strong_similarity_vote,0.628571,False
+X-25007,209,Amino Acid,Peptide,False,Urea cycle; Arginine and Proline Metabolism,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.648649,False
+X-25374,209,Lipid,Xenobiotics,False,"Fatty Acid, Dicarboxylate",Chemical,False,neighbor_consensus,medium,strong_similarity_vote,0.607143,False
+X-25383,209,Xenobiotics,Lipid,False,Chemical,"Fatty Acid, Dicarboxylate",False,neighbor_consensus,medium,strong_similarity_vote,0.682927,False
+X-25384,209,Lipid,Xenobiotics,False,"Fatty Acid, Dicarboxylate",Chemical,False,neighbor_consensus,medium,strong_similarity_vote,0.607143,False
+X-25405,209,Amino Acid,Xenobiotics,False,Tryptophan Metabolism,Chemical,False,neighbor_consensus,medium,strong_similarity_vote,0.629032,False
+X-25508,209,Peptide,Xenobiotics,False,Dipeptide,Bacterial/Fungal,False,neighbor_consensus,medium,strong_similarity_vote,0.744186,False
+X-25711,209,Lipid,Peptide,False,Fatty Acid Metabolism (Acyl Glutamine),Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.659091,False
+X-25712,209,Lipid,Peptide,False,Fatty Acid Metabolism (Acyl Glutamine),Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.7,False
+X-25716,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)",Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.622222,False
+X-25717,209,Lipid,Peptide,False,"Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)",Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.622222,False
+X-25721,209,Amino Acid,Peptide,False,Histidine Metabolism,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.702128,False
+X-25741,209,Lipid,Peptide,False,Fatty Acid Metabolism (Acyl Glutamine),Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.894737,False
+X-25742,209,Lipid,Peptide,False,Fatty Acid Metabolism (Acyl Glutamine),Modified Peptides,False,neighbor_consensus,medium,strong_similarity_vote,0.894737,False
+X-25743,209,Lipid,Peptide,False,Fatty Acid Metabolism (Acyl Glutamine),Dipeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.894737,False
+X-25770,209,Lipid,Peptide,False,Fatty Acid Metabolism (Acyl Glutamine),Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.72093,False
+X-25782,209,Xenobiotics,Peptide,False,Chemical,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.695652,False
+X-25790,400,Peptide,Nucleotide,False,Dipeptide,Ask DTS,False,neighbor_consensus,medium,strong_similarity_vote,0.625,False
+X-26111,209,Xenobiotics,Lipid,False,Food Component/Plant,Unknown Steroid,False,neighbor_consensus,medium,strong_similarity_vote,0.666667,False
+X-26307,402,Peptide,Lipid,False,Dipeptide,Lysoplasmalogen,False,neighbor_consensus,medium,strong_similarity_vote,0.692308,False
+X-26517,209,Peptide,Lipid,False,Dipeptide,Non-canonical Bile Acid Conjugates,False,neighbor_consensus,medium,strong_similarity_vote,0.673077,False
+X-26518,209,Peptide,Lipid,False,Dipeptide,Non-Canonical Bile Acid Conjugates,False,neighbor_consensus,medium,strong_similarity_vote,0.698113,False
+X-26645,209,Peptide,Lipid,False,Dipeptide,Lysophospholipid,False,neighbor_consensus,medium,strong_similarity_vote,0.691176,False
+X-26647,402,Peptide,Lipid,False,Dipeptide,Lysophospholipid,False,neighbor_consensus,medium,strong_similarity_vote,0.686275,False
+X-26666,209,Peptide,Lipid,False,Dipeptide,Endocannabinoid,False,neighbor_consensus,medium,strong_similarity_vote,0.688889,False
+X-26668,209,Peptide,Lipid,False,Dipeptide,Lysophospholipid,False,neighbor_consensus,medium,strong_similarity_vote,0.630137,False
+X-26669,209,Peptide,Lipid,False,Dipeptide,Lysophospholipid,False,neighbor_consensus,medium,strong_similarity_vote,0.630137,False
+X-26699,402,Peptide,Lipid,False,Dipeptide,Fatty Acid Metabolism (Acyl Amino Acid),False,neighbor_consensus,medium,strong_similarity_vote,0.704545,False
+X-26705,209,Peptide,Lipid,False,Dipeptide,Lysophospholipid,False,neighbor_consensus,medium,strong_similarity_vote,0.616438,False
+X-11308,209,Lipid,Lipid,True,"Fatty Acid, Dicarboxylate","Fatty Acid, Dicarboxylate",True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-11315,209,Amino Acid,Amino Acid,True,Urea cycle; Arginine and Proline Metabolism,Unknown,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-11372,209,Lipid,Lipid,True,"Fatty Acid, Monohydroxy",Ask Annie/Matt/Brian I,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-11444,209,Lipid,Lipid,True,Androgenic Steroids,Unknown Steroid,False,neighbor_consensus,high,strong_similarity_vote,0.846154,False
+X-11470,209,Lipid,Lipid,True,Corticosteroids,Corticosteroids,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-11612,209,Nucleotide,Nucleotide,True,"Purine Metabolism, (Hypo)Xanthine/Inosine containing",Unknown,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-11880,209,Lipid,Lipid,True,Eicosanoid,"Fatty Acid, Dihydroxy",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-12056,400,Amino Acid,Amino Acid,True,Histidine Metabolism,Histidine Metabolism,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-12100,209,Amino Acid,Amino Acid,True,Tryptophan Metabolism,Tryptophan Metabolism,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-12101,209,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism","Methionine, Cysteine, SAM and Taurine Metabolism",True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-12124,400,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism",Glutathione Metabolism,False,neighbor_consensus,high,strong_similarity_vote,0.771429,False
+X-12221,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Benzoate Metabolism,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-12730,209,Xenobiotics,Xenobiotics,True,Chemical,Benzoate Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-12851,209,Lipid,Lipid,True,Secondary Bile Acid Metabolism,Secondary Bile Acid Metabolism,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-13007,209,Lipid,Lipid,True,"Fatty Acid, Trihydroxy","Fatty Acid, Trihydroxy",True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-13431,209,Lipid,Lipid,True,"Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)","Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)",True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-13507,209,Amino Acid,Amino Acid,True,Urea cycle; Arginine and Proline Metabolism,Urea cycle; Arginine and Proline Metabolism,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-13529,209,Amino Acid,Amino Acid,True,Lactoyl Amino Acid,Lactoyl Amino Acid,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-13699,400,Xenobiotics,Xenobiotics,True,Drug - Cardiovascular,Drug - Cardiovascular,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-13728,209,Xenobiotics,Xenobiotics,True,Xanthine Metabolism,Xanthine Metabolism,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-13838,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-14351,209,Peptide,Peptide,True,Dipeptide,Cyclic Dipeptide,False,neighbor_consensus,high,strong_similarity_vote,0.911111,False
+X-14389,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,neighbor_consensus,high,strong_similarity_vote,0.75,False
+X-14904,209,Lipid,Lipid,True,"Fatty Acid, Trihydroxy","Fatty Acid, Trihydroxy",True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-15497,209,Amino Acid,Amino Acid,True,Lactoyl Amino Acid,Lactoyl Amino Acid,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-15503,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Benzoate Metabolism,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-15728,209,Xenobiotics,Xenobiotics,True,Chemical,Benzoate Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-16267,209,Peptide,Peptide,True,Polypeptide,Modified Peptides,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-16935,209,Lipid,Lipid,True,Secondary Bile Acid Metabolism,Ask Annie/Matt/Brian I,False,neighbor_consensus,high,strong_similarity_vote,0.790323,False
+X-17301,400,Xenobiotics,Xenobiotics,True,Drug - Other,Tobacco Metabolite,False,neighbor_consensus,high,strong_similarity_vote,0.869565,False
+X-17353,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,high,strong_similarity_vote,0.888889,False
+X-17357,209,Lipid,Lipid,True,Corticosteroids,Unknown Steroid,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-17612,209,Lipid,Lipid,True,Secondary Bile Acid Metabolism,Secondary Bile Acid Metabolism,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-17620,209,Lipid,Lipid,True,Secondary Bile Acid Metabolism,Unknown Bile Acid,False,neighbor_consensus,high,strong_similarity_vote,0.757576,False
+X-17653,209,Lipid,Lipid,True,Monoacylglycerol,"Fatty Acid, Dicarboxylate",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-17654,209,Lipid,Lipid,True,"Fatty Acid, Dicarboxylate","Fatty Acid, Dicarboxylate",True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-17800,209,Peptide,Peptide,True,Modified Peptides,Polypeptide,False,neighbor_consensus,high,strong_similarity_vote,0.904762,False
+X-17828,209,Peptide,Peptide,True,Acetylated Peptides,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.804878,False
+X-17843,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-17855,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,neighbor_consensus,high,strong_similarity_vote,0.886364,False
+X-17871,209,Peptide,Peptide,True,Gamma-glutamyl Amino Acid,Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-17898,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.777778,False
+X-17919,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,neighbor_consensus,high,strong_similarity_vote,0.888889,False
+X-17960,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,high,strong_similarity_vote,0.842105,False
+X-17962,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-18240,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Drug - Neurological,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-18345,,Peptide,Peptide,True,Dipeptide,Dipeptide,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-18887,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,neighbor_consensus,high,strong_similarity_vote,0.886364,False
+X-18889,209,Amino Acid,Amino Acid,True,Lactoyl Amino Acid,Lactoyl Amino Acid,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-19096,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.795455,False
+X-19561,209,Amino Acid,Amino Acid,True,Lactoyl Amino Acid,Lactoyl Amino Acid,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-19921,209,Peptide,Peptide,True,Dipeptide,Modified Peptides,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-19925,209,Peptide,Peptide,True,Acetylated Peptides,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.825,False
+X-19926,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.860465,False
+X-19931,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-19940,209,Peptide,Peptide,True,Dipeptide,Modified Peptides,False,neighbor_consensus,high,strong_similarity_vote,0.77551,False
+X-21258,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Unknown Sulfated Molecule,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-21285,209,Lipid,Lipid,True,Androgenic Steroids,Estrogenic Steroids,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-21315,209,Xenobiotics,Xenobiotics,True,Chemical,Chemical,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-21327,209,Lipid,Lipid,True,"Fatty Acid, Trihydroxy","Fatty Acid, Trihydroxy",True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-21351,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Chemical,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-21362,209,Xenobiotics,Xenobiotics,True,Chemical,Benzoate Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-21756,400,Nucleotide,Nucleotide,True,"Pyrimidine Metabolism, Uracil containing","Pyrimidine Metabolism, Uracil containing",True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-21821,,Amino Acid,Amino Acid,True,Tryptophan Metabolism,Tryptophan Metabolism,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-21834,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Benzoate Metabolism,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-21851,209,Lipid,Lipid,True,Pregnenolone Steroids,Unknown Steroid,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-21928,305,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Chemical,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-22085,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-22092,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-22140,209,Peptide,Peptide,True,Polypeptide,Modified Peptides,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-22142,209,Peptide,Peptide,True,Dipeptide,Dipeptide,True,neighbor_consensus,high,strong_similarity_vote,0.77551,False
+X-22504,305,Amino Acid,Amino Acid,True,Glutamate Metabolism,"Methionine, Cysteine, SAM and Taurine Metabolism",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-22762,400,Lipid,Lipid,True,Phosphatidylcholine (PC),Phosphatidylcholine (PC),True,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-22763,400,Lipid,Lipid,True,Phosphatidylcholine (PC),Phosphatidylcholine (PC),True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-22770,209,Nucleotide,Nucleotide,True,"Purine Metabolism, Adenine containing",Unknown,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-22776,209,Xenobiotics,Xenobiotics,True,Drug - Antibiotic,Chemical,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-22834,209,Lipid,Lipid,True,Secondary Bile Acid Metabolism,Secondary Bile Acid Metabolism,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-22850,209,Lipid,Lipid,True,Galactosyl Glycerolipids,Galactosyl Glycerolipids,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-22860,305,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,high,strong_similarity_vote,0.813953,False
+X-22863,305,Energy,Energy,True,TCA Cycle,TCA Cycle,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23026,305,Xenobiotics,Xenobiotics,True,Chemical,Chemical,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23049,305,Lipid,Lipid,True,"Fatty Acid, Monohydroxy",Ketone Bodies,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23090,400,Xenobiotics,Xenobiotics,True,Drug - Gastrointestinal,Food Component/Plant,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23109,209,Lipid,Lipid,True,"Fatty Acid, Monohydroxy","Fatty Acid, Monohydroxy",True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23137,209,Lipid,Lipid,True,Endocannabinoid,Endocannabinoid,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23139,209,Lipid,Lipid,True,Endocannabinoid,Endocannabinoid,True,neighbor_consensus,high,strong_similarity_vote,0.757576,False
+X-23140,209,Lipid,Lipid,True,Endocannabinoid,Endocannabinoid,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23141,209,Lipid,Lipid,True,Endocannabinoid,Endocannabinoid,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23142,209,Lipid,Lipid,True,Endocannabinoid,Endocannabinoid,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23157,209,Lipid,Lipid,True,Secondary Bile Acid Metabolism,Secondary Bile Acid Metabolism,True,neighbor_consensus,high,strong_similarity_vote,0.84507,False
+X-23189,209,Lipid,Lipid,True,Long Chain Polyunsaturated Fatty Acid (n3 and n6),Long Chain Polyunsaturated Fatty Acid (n3 and n6),True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23190,209,Lipid,Lipid,True,Long Chain Polyunsaturated Fatty Acid (n3 and n6),Long Chain Polyunsaturated Fatty Acid (n3 and n6),True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23227,209,Xenobiotics,Xenobiotics,True,Chemical,Food Component/Plant,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23250,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Food Component/Plant,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23265,209,Xenobiotics,Xenobiotics,True,Chemical,Food Component/Plant,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23276,209,Lipid,Lipid,True,"Fatty Acid, Trihydroxy","Fatty Acid, Trihydroxy",True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23332,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23368,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,high,strong_similarity_vote,0.894737,False
+X-23428,209,Amino Acid,Amino Acid,True,Lysine Metabolism,Urea cycle; Arginine and Proline Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23581,400,Amino Acid,Amino Acid,True,Glutamate Metabolism,Lysine Metabolism,False,neighbor_consensus,high,strong_similarity_vote,0.75,False
+X-23587,209,Amino Acid,Amino Acid,True,"Leucine, Isoleucine and Valine Metabolism",Alanine and Aspartate Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23641,209,Lipid,Lipid,True,"Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)","Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)",True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23662,400,Amino Acid,Amino Acid,True,Polyamine Metabolism,Polyamine Metabolism,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23665,400,Amino Acid,Amino Acid,True,Lysine Metabolism,Lysine Metabolism,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23672,400,Lipid,Lipid,True,"Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)",Unknown Carnitine Conjugate,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23739,400,Peptide,Peptide,True,Dipeptide,Modified Peptides,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23787,209,Lipid,Lipid,True,Androgenic Steroids,Androgenic Steroids,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-23896,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,high,strong_similarity_vote,0.793103,False
+X-23947,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Benzoate Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24085,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24144,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24254,209,Lipid,Lipid,True,"Fatty Acid, Monohydroxy","Fatty Acid, Monohydroxy",True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24332,209,Lipid,Lipid,True,Long Chain Monounsaturated Fatty Acid,Medium chain fatty acid,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24406,209,Amino Acid,Amino Acid,True,"Leucine, Isoleucine and Valine Metabolism","Leucine, Isoleucine and Valine Metabolism",True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24417,209,Lipid,Lipid,True,Androgenic Steroids,Androgenic Steroids,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24418,209,Lipid,Lipid,True,Corticosteroids,Corticosteroids,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24474,400,Amino Acid,Amino Acid,True,Guanidino and Acetamido Metabolism,Lysine Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24492,209,Xenobiotics,Xenobiotics,True,"Drug - Analgesics, Anesthetics",Food Component/Plant,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24493,209,Xenobiotics,Xenobiotics,True,"Drug - Analgesics, Anesthetics",Food Component/Plant,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24495,209,Lipid,Lipid,True,Androgenic Steroids,Androgenic Steroids,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24539,209,Lipid,Lipid,True,Primary Bile Acid Metabolism,Secondary Bile Acid Metabolism,False,neighbor_consensus,high,strong_similarity_vote,0.813333,False
+X-24544,209,Lipid,Lipid,True,Androgenic Steroids,Pregnenolone Steroids,False,neighbor_consensus,high,strong_similarity_vote,0.759259,False
+X-24546,209,Lipid,Lipid,True,Androgenic Steroids,Androgenic Steroids,True,neighbor_consensus,high,strong_similarity_vote,0.849057,False
+X-24578,209,Xenobiotics,Xenobiotics,True,Drug - Antiviral,"Drug - Analgesics, Anesthetics",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24623,209,Xenobiotics,Xenobiotics,True,Chemical,Chemical,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24630,209,Peptide,Peptide,True,Dipeptide,Dipeptide,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24637,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,high,strong_similarity_vote,0.770492,False
+X-24643,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Chemical,False,neighbor_consensus,high,strong_similarity_vote,0.826087,False
+X-24670,209,Lipid,Lipid,True,Secondary Bile Acid Metabolism,Secondary Bile Acid Metabolism,True,neighbor_consensus,high,strong_similarity_vote,0.8,False
+X-24672,209,Lipid,Lipid,True,Secondary Bile Acid Metabolism,Secondary Bile Acid Metabolism,True,neighbor_consensus,high,strong_similarity_vote,0.8,False
+X-24715,209,Lipid,Lipid,True,Endocannabinoid,Secondary Bile Acid Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24736,400,Amino Acid,Amino Acid,True,Urea cycle; Arginine and Proline Metabolism,Urea cycle; Arginine and Proline Metabolism,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24737,305,Carbohydrate,Carbohydrate,True,"Fructose, Mannose and Galactose Metabolism","Fructose, Mannose and Galactose Metabolism",True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24741,209,Lipid,Lipid,True,Medium Chain Fatty Acid,Medium Chain Fatty Acid,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24762,209,Nucleotide,Nucleotide,True,"Pyrimidine Metabolism, Uracil containing","Pyrimidine Metabolism, Cytidine containing",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24841,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,high,strong_similarity_vote,0.75,False
+X-24947,209,Lipid,Lipid,True,Pregnenolone Steroids,Unknown Steroid,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24968,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Drug - Metabolic,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24975,209,Xenobiotics,Xenobiotics,True,Bacterial/Fungal,Chemical,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24977,209,Lipid,Lipid,True,Androgenic Steroids,Pregnenolone Steroids,False,neighbor_consensus,high,strong_similarity_vote,0.759259,False
+X-24978,209,Lipid,Lipid,True,"Fatty Acid, Monohydroxy","Fatty Acid, Monohydroxy",True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-24982,209,Lipid,Lipid,True,Long Chain Polyunsaturated Fatty Acid (n3 and n6),Ask Annie/Matt/Brian I,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25009,209,Cofactors and Vitamins,Cofactors and Vitamins,True,Thiamine Metabolism,Thiamine Metabolism,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25053,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,high,strong_similarity_vote,0.803922,False
+X-25087,400,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,high,strong_similarity_vote,0.756757,False
+X-25181,209,Lipid,Lipid,True,Eicosanoid,Eicosanoid,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25210,209,Lipid,Lipid,True,Eicosanoid,"Fatty Acid, Dicarboxylate",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25212,402,Lipid,Lipid,True,"Fatty Acid, Oxidized","Fatty Acid, Monohydroxy",False,neighbor_consensus,high,strong_similarity_vote,0.769231,False
+X-25225,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,high,strong_similarity_vote,0.894737,False
+X-25232,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,high,strong_similarity_vote,0.774648,False
+X-25233,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,high,strong_similarity_vote,0.774648,False
+X-25239,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25260,209,Xenobiotics,Xenobiotics,True,Chemical,Food Component/Plant,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25318,209,Xenobiotics,Xenobiotics,True,Chemical,Food Component/Plant,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25436,209,Lipid,Lipid,True,Secondary Bile Acid Metabolism,Secondary Bile Acid Metabolism,True,neighbor_consensus,high,strong_similarity_vote,0.8,False
+X-25457,209,Xenobiotics,Xenobiotics,True,Chemical,Unknown Sulfated Molecule,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25459,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25495,209,Cofactors and Vitamins,Cofactors and Vitamins,True,Nicotinate and Nicotinamide Metabolism,Hemoglobin and Porphyrin Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25517,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25527,209,Lipid,Lipid,True,Androgenic Steroids,Androgenic Steroids,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25530,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,high,strong_similarity_vote,0.757576,False
+X-25537,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,high,strong_similarity_vote,0.757576,False
+X-25546,400,Peptide,Peptide,True,Dipeptide,Dipeptide,True,neighbor_consensus,high,strong_similarity_vote,0.870968,False
+X-25549,305,Peptide,Peptide,True,Dipeptide,Dipeptide,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25551,400,Peptide,Peptide,True,Dipeptide,Dipeptide,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25560,305,Peptide,Peptide,True,Dipeptide,Dipeptide,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25563,400,Peptide,Peptide,True,Dipeptide,Dipeptide,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25564,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.833333,False
+X-25565,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.842105,False
+X-25566,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.842105,False
+X-25567,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.842105,False
+X-25568,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.842105,False
+X-25569,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.842105,False
+X-25570,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.842105,False
+X-25571,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.842105,False
+X-25572,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.842105,False
+X-25603,209,Amino Acid,Amino Acid,True,Histidine Metabolism,Lactoyl Amino Acid,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25607,209,Amino Acid,Amino Acid,True,Lactoyl Amino Acid,Lactoyl Amino Acid,True,neighbor_consensus,high,strong_similarity_vote,0.780488,False
+X-25610,209,Amino Acid,Amino Acid,True,Lactoyl Amino Acid,Lactoyl Amino Acid,True,neighbor_consensus,high,strong_similarity_vote,0.769231,False
+X-25660,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25664,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25668,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25680,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25682,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25683,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25684,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25686,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25699,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25715,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25719,209,Peptide,Peptide,True,Modified Peptides,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.904762,False
+X-25720,209,Peptide,Peptide,True,Modified Peptides,Polypeptide,False,neighbor_consensus,high,strong_similarity_vote,0.904762,False
+X-25727,209,Peptide,Peptide,True,Acetylated Peptides,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.804878,False
+X-25728,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.767442,False
+X-25729,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.767442,False
+X-25730,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25744,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,neighbor_consensus,high,strong_similarity_vote,0.843137,False
+X-25751,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.811321,False
+X-25753,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25755,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.777778,False
+X-25756,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.777778,False
+X-25757,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,neighbor_consensus,high,strong_similarity_vote,0.777778,False
+X-25758,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25759,209,Peptide,Peptide,True,Modified Peptides,Ask Annie/Matt,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25786,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25937,209,Lipid,Lipid,True,Androgenic Steroids,Unknown Steroid,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-25938,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Benzoate Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26054,209,Carbohydrate,Carbohydrate,True,Aminosugar Metabolism,Aminosugar Metabolism,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26062,209,Xenobiotics,Xenobiotics,True,Chemical,Chemical,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26068,209,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism","Methionine, Cysteine, SAM and Taurine Metabolism",True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26073,400,Amino Acid,Amino Acid,True,Lysine Metabolism,Lysine Metabolism,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26076,209,Amino Acid,Amino Acid,True,Alanine and Aspartate Metabolism,Glutamate Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26082,209,Amino Acid,Amino Acid,True,"Glycine, Serine and Threonine Metabolism",Alanine and Aspartate Metabolism,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26085,400,Amino Acid,Amino Acid,True,Alanine and Aspartate Metabolism,Alanine and Aspartate Metabolism,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26105,400,Amino Acid,Amino Acid,True,Glutamate Metabolism,"Glycine, Serine and Threonine Metabolism",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26107,402,Lipid,Lipid,True,Endocannabinoid,"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",False,neighbor_consensus,high,strong_similarity_vote,0.823529,False
+X-26119,209,Lipid,Lipid,True,Secondary Bile Acid Metabolism,Secondary Bile Acid Metabolism,True,neighbor_consensus,high,strong_similarity_vote,0.84507,False
+X-26159,209,Amino Acid,Amino Acid,True,Lactoyl Amino Acid,Lactoyl Amino Acid,True,neighbor_consensus,high,strong_similarity_vote,0.757576,False
+X-26161,400,Nucleotide,Nucleotide,True,"Pyrimidine Metabolism, Cytidine containing","Pyrimidine Metabolism, Cytidine containing",True,neighbor_consensus,high,strong_similarity_vote,0.76087,False
+X-26162,209,Lipid,Lipid,True,Secondary Bile Acid Metabolism,Secondary Bile Acid Metabolism,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26213,402,Lipid,Lipid,True,Dihydroceramides,Ceramides,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26214,402,Lipid,Lipid,True,Dihydroceramides,Ceramides,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26215,402,Lipid,Lipid,True,Dihydroceramides,Ceramides,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26216,402,Lipid,Lipid,True,Dihydroceramides,Ceramides,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26217,402,Lipid,Lipid,True,Dihydroceramides,Ceramides,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26218,209,Lipid,Lipid,True,"Fatty Acid, Monohydroxy","Fatty Acid, Dicarboxylate",False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26219,209,Lipid,Lipid,True,"Fatty Acid, Monohydroxy","Fatty Acid, Monohydroxy",True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26220,209,Lipid,Lipid,True,"Fatty Acid, Monohydroxy","Fatty Acid, Monohydroxy",True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26264,209,Lipid,Lipid,True,"Fatty Acid, Monohydroxy","Fatty Acid, Monohydroxy",True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26278,305,Lipid,Lipid,True,Phosphatidylethanolamine (PE),Phosphatidylethanolamine (PE),True,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-26279,305,Lipid,Lipid,True,Phosphatidylcholine (PC),Phosphatidylethanolamine (PE),False,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-26280,305,Lipid,Lipid,True,Phosphatidylethanolamine (PE),Phosphatidylethanolamine (PE),True,neighbor_consensus,high,strong_similarity_vote,0.755102,False
+X-26285,402,Lipid,Lipid,True,Phosphatidylcholine (PC),Ceramides,False,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-26288,402,Lipid,Lipid,True,Diacylglycerol,Ceramides,False,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-26296,402,Lipid,Lipid,True,Sphingosines,Sphingolipid Synthesis,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26302,402,Lipid,Lipid,True,Diacylglycerol,Lysoplasmalogen,False,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-26308,402,Lipid,Lipid,True,Plasmalogen,Plasmalogen,True,neighbor_consensus,high,strong_similarity_vote,0.898305,False
+X-26309,402,Lipid,Lipid,True,Plasmalogen,Phosphatidylcholine (PC),False,neighbor_consensus,high,strong_similarity_vote,0.898305,False
+X-26310,402,Lipid,Lipid,True,Plasmalogen,Plasmalogen,True,neighbor_consensus,high,strong_similarity_vote,0.898305,False
+X-26311,402,Lipid,Lipid,True,Phosphatidylethanolamine (PE),Phosphatidylcholine (PC),False,neighbor_consensus,high,strong_similarity_vote,0.803279,False
+X-26312,402,Lipid,Lipid,True,Plasmalogen,Plasmalogen,True,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-26313,402,Lipid,Lipid,True,Plasmalogen,Plasmalogen,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26314,402,Lipid,Lipid,True,Phosphatidylcholine (PC),Phosphatidylcholine (PC),True,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-26316,402,Lipid,Lipid,True,Phosphatidylcholine (PC),Phosphatidylcholine (PC),True,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-26317,402,Lipid,Lipid,True,Phosphatidylcholine (PC),Phosphatidylcholine (PC),True,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-26319,402,Lipid,Lipid,True,Plasmalogen,Plasmalogen,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26321,402,Lipid,Lipid,True,"Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)",Unknown Carnitine Conjugate,False,neighbor_consensus,high,strong_similarity_vote,0.809524,False
+X-26325,402,Lipid,Lipid,True,Plasmalogen,Phosphatidylethanolamine (PE),False,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-26326,402,Lipid,Lipid,True,Diacylglycerol,Diacylglycerol,True,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-26328,402,Lipid,Lipid,True,Sphingosines,Ceramides,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26331,402,Lipid,Lipid,True,Plasmalogen,Plasmalogen,True,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-26333,402,Lipid,Lipid,True,Diacylglycerol,Diacylglycerol,True,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-26334,402,Lipid,Lipid,True,Diacylglycerol,Diacylglycerol,True,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-26335,402,Lipid,Lipid,True,Diacylglycerol,Diacylglycerol,True,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-26417,402,Lipid,Lipid,True,Plasmalogen,Plasmalogen,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26418,402,Lipid,Lipid,True,Phosphatidylethanolamine (PE),Plasmalogen,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26633,402,Lipid,Lipid,True,Plasmalogen,Phosphatidylethanolamine (PE),False,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-26652,209,Lipid,Lipid,True,"Fatty Acid, Monohydroxy",Docosanoid,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26657,209,Lipid,Lipid,True,Eicosanoid,Lysophospholipid,False,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26670,402,Lipid,Lipid,True,Lysophospholipid,Lysophospholipid,True,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-26671,209,Lipid,Lipid,True,Lysophospholipid,Lysophospholipid,True,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-26676,209,Lipid,Lipid,True,"Fatty Acid Metabolism (Acyl Carnitine, Monounsaturated)",Fatty Acid Metabolism (Acyl Amino Acid),False,neighbor_consensus,high,strong_similarity_vote,0.75,False
+X-26696,402,Lipid,Lipid,True,"Fatty Acid Metabolism (Acyl Carnitine, Monounsaturated)",Fatty Acid Metabolism (Acyl Amino Acid),False,neighbor_consensus,high,strong_similarity_vote,0.75,False
+X-26698,402,Lipid,Lipid,True,"Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)",Fatty Acid Metabolism (Acyl Amino Acid),False,neighbor_consensus,high,strong_similarity_vote,0.864865,False
+X-26702,402,Lipid,Lipid,True,Lysophospholipid,Lysophospholipid,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26703,402,Lipid,Lipid,True,Lysophospholipid,Lysophospholipid,True,exact_reference_lookup,high,exact_reference_match,1.0,True
+X-26706,402,Lipid,Lipid,True,Lysophospholipid,Lysophospholipid,True,neighbor_consensus,high,strong_similarity_vote,1.0,False
+X-26728,209,Lipid,Lipid,True,Secondary Bile Acid Metabolism,Secondary Bile Acid Metabolism,True,neighbor_consensus,high,strong_similarity_vote,0.788462,False
+X-11196,400,Xenobiotics,Xenobiotics,True,Food Component/Plant,Chemical,False,neighbor_consensus,low,weak_similarity_backfill,0.298246,False
+X-11378,209,Lipid,Lipid,True,Progestin Steroids,Ask Annie/Matt/Brian I,False,neighbor_consensus,low,strong_similarity_vote,0.517241,False
+X-11677,400,Amino Acid,Amino Acid,True,Tryptophan Metabolism,Glutamate Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.4375,False
+X-11787,209,Amino Acid,Amino Acid,True,"Glycine, Serine and Threonine Metabolism","Leucine, Isoleucine and Valine Metabolism",False,neighbor_consensus,low,weak_similarity_backfill,0.363636,False
+X-11835,400,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.480769,False
+X-12007,209,Xenobiotics,Xenobiotics,True,Chemical,Bacterial/Fungal,False,neighbor_consensus,low,strong_similarity_vote,0.521739,False
+X-12127,400,Nucleotide,Nucleotide,True,"Pyrimidine Metabolism, Cytidine containing","Pyrimidine Metabolism, Cytidine containing",True,neighbor_consensus,low,strong_similarity_vote,0.5625,False
+X-12306,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Benzoate Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.589744,False
+X-12411,209,Carbohydrate,Carbohydrate,True,"Fructose, Mannose and Galactose Metabolism",Ask Annie/Matt/Brian I,False,neighbor_consensus,low,strong_similarity_vote,0.583333,False
+X-12707,209,Amino Acid,Amino Acid,True,Tyrosine Metabolism,Tyrosine Metabolism,True,neighbor_consensus,low,strong_similarity_vote,0.529412,False
+X-12714,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.531915,False
+X-12722,209,Amino Acid,Amino Acid,True,Tyrosine Metabolism,Tyrosine Metabolism,True,neighbor_consensus,low,strong_similarity_vote,0.485714,False
+X-12738,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Benzoate Metabolism,True,neighbor_consensus,low,strong_similarity_vote,0.513514,False
+X-12811,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Benzoate Metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.544118,False
+X-12816,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Ask Annie/Matt/Brian I,False,neighbor_consensus,low,weak_similarity_backfill,0.393939,False
+X-13726,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Benzoate Metabolism,True,neighbor_consensus,low,strong_similarity_vote,0.56,False
+X-13772,209,Lipid,Lipid,True,"Fatty Acid, Dicarboxylate","Fatty Acid, Dicarboxylate",True,neighbor_consensus,low,strong_similarity_vote,0.545455,False
+X-13846,209,Xenobiotics,Xenobiotics,True,Chemical,Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.5,False
+X-13879,209,Lipid,Lipid,True,"Fatty Acid, Dicarboxylate","Fatty Acid, Dicarboxylate",True,neighbor_consensus,low,strong_similarity_vote,0.545455,False
+X-14056,400,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism","Methionine, Cysteine, SAM and Taurine Metabolism",True,neighbor_consensus,low,strong_similarity_vote,0.571429,False
+X-14082,209,Lipid,Lipid,True,"Fatty Acid, Dihydroxy",Eicosanoid,False,neighbor_consensus,low,strong_similarity_vote,0.509434,False
+X-14263,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.525,False
+X-14837,400,Amino Acid,Amino Acid,True,Alanine and Aspartate Metabolism,Gamma-Glutamyl Amino Acid,False,neighbor_consensus,low,strong_similarity_vote,0.615385,False
+X-15854,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.512821,False
+X-16580,400,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism","Methionine, Cysteine, SAM and Taurine Metabolism",True,neighbor_consensus,low,strong_similarity_vote,0.424242,False
+X-17146,209,Xenobiotics,Xenobiotics,True,Chemical,Chemical,True,neighbor_consensus,low,strong_similarity_vote,0.421053,False
+X-17323,400,Lipid,Lipid,True,Endocannabinoid,Unknown Carnitine Conjugate,False,neighbor_consensus,low,strong_similarity_vote,0.511111,False
+X-17438,209,Lipid,Lipid,True,Diacylglycerol,"Fatty Acid, Dicarboxylate",False,neighbor_consensus,low,weak_similarity_backfill,0.388889,False
+X-17676,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Bacterial/Fungal,False,neighbor_consensus,low,strong_similarity_vote,0.53125,False
+X-17685,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Unknown Sulfated Molecule,False,neighbor_consensus,low,strong_similarity_vote,0.571429,False
+X-17711,400,Xenobiotics,Xenobiotics,True,Food Component/Plant,Tobacco Metabolite,False,neighbor_consensus,low,weak_similarity_backfill,0.25,False
+X-17804,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,neighbor_consensus,low,strong_similarity_vote,0.511111,False
+X-17842,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.530612,False
+X-17877,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.525,False
+X-17910,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.525,False
+X-18167,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.525,False
+X-18779,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Benzoate Metabolism,True,neighbor_consensus,low,strong_similarity_vote,0.533333,False
+X-18901,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Unknown Aromatic Molecule,False,neighbor_consensus,low,strong_similarity_vote,0.481481,False
+X-19141,209,Lipid,Lipid,True,Galactosyl Glycerolipids,"Fatty Acid, Monohydroxy",False,neighbor_consensus,low,weak_similarity_backfill,0.384615,False
+X-19299,209,Lipid,Lipid,True,Medium Chain Fatty Acid,"Fatty Acid, Dicarboxylate",False,neighbor_consensus,low,strong_similarity_vote,0.580645,False
+X-19912,209,Peptide,Peptide,True,Gamma-glutamyl Amino Acid,Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.5,False
+X-19919,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,low,weak_similarity_backfill,0.333333,False
+X-20512,209,Amino Acid,Amino Acid,True,Glutathione Metabolism,Tryptophan Metabolism,False,neighbor_consensus,low,weak_similarity_backfill,0.240964,False
+X-21283,400,Nucleotide,Nucleotide,True,"Pyrimidine Metabolism, Uracil containing","Pyrimidine Metabolism, Cytidine containing",False,neighbor_consensus,low,weak_similarity_backfill,0.322581,False
+X-21442,209,Lipid,Lipid,True,Long Chain Polyunsaturated Fatty Acid (n3 and n6),Eicosanoid,False,neighbor_consensus,low,strong_similarity_vote,0.477273,False
+X-21830,209,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism","Methionine, Cysteine, SAM and Taurine Metabolism",True,neighbor_consensus,low,strong_similarity_vote,0.461538,False
+X-21840,209,Xenobiotics,Xenobiotics,True,Chemical,Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.560976,False
+X-22062,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.525,False
+X-22102,209,Amino Acid,Amino Acid,True,"Leucine, Isoleucine and Valine Metabolism",Lactoyl Amino Acid,False,neighbor_consensus,low,strong_similarity_vote,0.5,False
+X-22146,209,Peptide,Peptide,True,Dipeptide,Dipeptide,True,neighbor_consensus,low,strong_similarity_vote,0.439024,False
+X-22148,209,Lipid,Lipid,True,"Fatty Acid, Dicarboxylate","Fatty Acid, Dicarboxylate",True,neighbor_consensus,low,strong_similarity_vote,0.545455,False
+X-22964,305,Xenobiotics,Xenobiotics,True,"Drug - Analgesics, Anesthetics",Drug - Antibiotic,False,neighbor_consensus,low,weak_similarity_backfill,0.348837,False
+X-23076,305,Xenobiotics,Xenobiotics,True,Phthalate,Chemical,False,neighbor_consensus,low,weak_similarity_backfill,0.392857,False
+X-23080,305,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Chemical,False,neighbor_consensus,low,weak_similarity_backfill,0.314286,False
+X-23123,209,Lipid,Lipid,True,"Fatty Acid, Methyl Ester",Unknown Sulfated Molecule,False,neighbor_consensus,low,strong_similarity_vote,0.516129,False
+X-23188,209,Lipid,Lipid,True,"Fatty Acid, Branched",Ask Annie/Matt/Brian I,False,neighbor_consensus,low,strong_similarity_vote,0.551724,False
+X-23206,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.555556,False
+X-23311,209,Xenobiotics,Xenobiotics,True,Chemical,Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.462963,False
+X-23315,209,Carbohydrate,Carbohydrate,True,Disaccharides and Oligosaccharides,Disaccharides and Oligosaccharides,True,neighbor_consensus,low,strong_similarity_vote,0.588235,False
+X-23325,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.517857,False
+X-23462,209,Lipid,Lipid,True,"Fatty Acid, Dicarboxylate","Fatty Acid, Dicarboxylate",True,neighbor_consensus,low,strong_similarity_vote,0.545455,False
+X-23475,209,Lipid,Lipid,True,"Fatty Acid, Dicarboxylate","Fatty Acid, Dicarboxylate",True,neighbor_consensus,low,strong_similarity_vote,0.55,False
+X-23477,209,Xenobiotics,Xenobiotics,True,Chemical,Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.574468,False
+X-23482,209,Amino Acid,Amino Acid,True,Tryptophan Metabolism,Tryptophan Metabolism,True,neighbor_consensus,low,weak_similarity_backfill,0.333333,False
+X-23557,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Benzoate Metabolism,False,neighbor_consensus,low,weak_similarity_backfill,0.25,False
+X-23562,209,Carbohydrate,Carbohydrate,True,"Fructose, Mannose and Galactose Metabolism","Glycolysis, Gluconeogenesis, and Pyruvate Metabolism",False,neighbor_consensus,low,strong_similarity_vote,0.558824,False
+X-23569,209,Carbohydrate,Carbohydrate,True,"Fructose, Mannose and Galactose Metabolism","Glycolysis, Gluconeogenesis, and Pyruvate Metabolism",False,neighbor_consensus,low,strong_similarity_vote,0.558824,False
+X-23570,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,low,weak_similarity_backfill,0.339623,False
+X-23592,209,Xenobiotics,Xenobiotics,True,Chemical,Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.560976,False
+X-23596,209,Xenobiotics,Xenobiotics,True,Chemical,Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.560976,False
+X-23608,209,Xenobiotics,Xenobiotics,True,Chemical,Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.560976,False
+X-23619,209,Carbohydrate,Carbohydrate,True,"Fructose, Mannose and Galactose Metabolism","Glycolysis, Gluconeogenesis, and Pyruvate Metabolism",False,neighbor_consensus,low,strong_similarity_vote,0.558824,False
+X-23644,305,Amino Acid,Amino Acid,True,Alanine and Aspartate Metabolism,Unknown,False,neighbor_consensus,low,strong_similarity_vote,0.48,False
+X-23680,402,Lipid,Lipid,True,Long Chain Monounsaturated Fatty Acid,Ask Annie/Matt/Brian I,False,neighbor_consensus,low,strong_similarity_vote,0.540541,False
+X-23782,402,Lipid,Lipid,True,Secondary Bile Acid Metabolism,Secondary Bile Acid Metabolism,True,neighbor_consensus,low,weak_similarity_backfill,0.227848,False
+X-23908,209,Amino Acid,Amino Acid,True,"Leucine, Isoleucine and Valine Metabolism",Unknown,False,neighbor_consensus,low,strong_similarity_vote,0.518519,False
+X-24035,402,Lipid,Lipid,True,Long Chain Polyunsaturated Fatty Acid (n3 and n6),Sterol,False,neighbor_consensus,low,strong_similarity_vote,0.55,False
+X-24102,402,Lipid,Lipid,True,Secondary Bile Acid Metabolism,Sphingomyelins,False,neighbor_consensus,low,weak_similarity_backfill,0.176471,False
+X-24210,402,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,low,weak_similarity_backfill,0.141026,False
+X-24228,400,Carbohydrate,Carbohydrate,True,Disaccharides and Oligosaccharides,Aminosugar Metabolism,False,neighbor_consensus,low,weak_similarity_backfill,0.346154,False
+X-24412,400,Xenobiotics,Xenobiotics,True,Chemical,Chemical,True,neighbor_consensus,low,weak_similarity_backfill,0.318182,False
+X-24414,209,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism",Glutathione metabolism,False,neighbor_consensus,low,strong_similarity_vote,0.5,False
+X-24545,209,Lipid,Lipid,True,Long Chain Polyunsaturated Fatty Acid (n3 and n6),Eicosanoid,False,neighbor_consensus,low,strong_similarity_vote,0.512821,False
+X-24577,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,"Drug - Analgesics, Anesthetics",False,neighbor_consensus,low,strong_similarity_vote,0.512195,False
+X-24621,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,low,weak_similarity_backfill,0.333333,False
+X-24728,400,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism","Methionine, Cysteine, SAM and Taurine Metabolism",True,neighbor_consensus,low,strong_similarity_vote,0.518519,False
+X-24730,400,Amino Acid,Amino Acid,True,Glutathione Metabolism,Glutathione Metabolism,True,neighbor_consensus,low,weak_similarity_backfill,0.367347,False
+X-24757,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Benzoate Metabolism,True,neighbor_consensus,low,strong_similarity_vote,0.538462,False
+X-24808,400,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.583333,False
+X-24984,402,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Food Component/Plant,False,neighbor_consensus,low,strong_similarity_vote,0.447368,False
+X-24996,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,low,strong_similarity_vote,0.630435,False
+X-25003,209,Amino Acid,Amino Acid,True,Creatine Metabolism,Lactoyl Amino Acid,False,neighbor_consensus,low,strong_similarity_vote,0.5,False
+X-25026,400,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism","Methionine, Cysteine, SAM and Taurine Metabolism",True,neighbor_consensus,low,strong_similarity_vote,0.551724,False
+X-25028,402,Lipid,Lipid,True,Hexosylceramides (HCER),Ask Annie/Matt/Brian I,False,neighbor_consensus,low,strong_similarity_vote,0.506849,False
+X-25109,400,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism","Methionine, Cysteine, SAM and Taurine Metabolism",True,neighbor_consensus,low,strong_similarity_vote,0.62069,False
+X-25164,400,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism","Methionine, Cysteine, SAM and Taurine Metabolism",True,neighbor_consensus,low,strong_similarity_vote,0.518519,False
+X-25180,400,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism","Methionine, Cysteine, SAM and Taurine Metabolism",True,neighbor_consensus,low,strong_similarity_vote,0.551724,False
+X-25200,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,low,strong_similarity_vote,0.508772,False
+X-25201,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,low,strong_similarity_vote,0.508772,False
+X-25203,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,low,strong_similarity_vote,0.508772,False
+X-25204,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,low,strong_similarity_vote,0.508772,False
+X-25385,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Chemical,False,neighbor_consensus,low,strong_similarity_vote,0.461538,False
+X-25386,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Chemical,False,neighbor_consensus,low,strong_similarity_vote,0.5,False
+X-25404,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Chemical,False,neighbor_consensus,low,weak_similarity_backfill,0.2,False
+X-25450,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Chemical,False,neighbor_consensus,low,strong_similarity_vote,0.535714,False
+X-25468,209,Xenobiotics,Xenobiotics,True,Chemical,Drug - Topical Agents,False,neighbor_consensus,low,strong_similarity_vote,0.577778,False
+X-25523,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,low,strong_similarity_vote,0.580645,False
+X-25531,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.512821,False
+X-25532,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.512821,False
+X-25533,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.512821,False
+X-25534,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.512821,False
+X-25535,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.512821,False
+X-25536,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.512821,False
+X-25670,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.458333,False
+X-25681,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,low,strong_similarity_vote,0.525,False
+X-25713,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.525,False
+X-25714,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,low,strong_similarity_vote,0.509804,False
+X-25800,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Drug - Cardiovascular,False,neighbor_consensus,low,strong_similarity_vote,0.571429,False
+X-25955,400,Peptide,Peptide,True,Dipeptide,Dipeptide,True,neighbor_consensus,low,strong_similarity_vote,0.422222,False
+X-25991,402,Lipid,Lipid,True,"Fatty Acid, Monohydroxy","Fatty Acid Metabolism (Acyl Carnitine, Monounsaturated)",False,neighbor_consensus,low,weak_similarity_backfill,0.357143,False
+X-26072,400,Amino Acid,Amino Acid,True,Urea cycle; Arginine and Proline Metabolism,Urea cycle; Arginine and Proline Metabolism,True,neighbor_consensus,low,strong_similarity_vote,0.482759,False
+X-26089,400,Amino Acid,Amino Acid,True,"Leucine, Isoleucine and Valine Metabolism","Leucine, Isoleucine and Valine Metabolism",True,neighbor_consensus,low,strong_similarity_vote,0.6,False
+X-26090,400,Amino Acid,Amino Acid,True,Alanine and Aspartate Metabolism,"Leucine, Isoleucine and Valine Metabolism",False,neighbor_consensus,low,weak_similarity_backfill,0.3,False
+X-26099,209,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism","Leucine, Isoleucine and Valine Metabolism",False,neighbor_consensus,low,strong_similarity_vote,0.514286,False
+X-26101,209,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism","Leucine, Isoleucine and Valine Metabolism",False,neighbor_consensus,low,strong_similarity_vote,0.514286,False
+X-26103,209,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism","Methionine, Cysteine, SAM and Taurine Metabolism",True,neighbor_consensus,low,strong_similarity_vote,0.514286,False
+X-26191,209,Lipid,Lipid,True,"Fatty Acid, Branched","Fatty Acid, Dicarboxylate",False,neighbor_consensus,low,strong_similarity_vote,0.586207,False
+X-26237,209,Xenobiotics,Xenobiotics,True,Chemical,Chemical,True,neighbor_consensus,low,strong_similarity_vote,0.5,False
+X-26284,402,Lipid,Lipid,True,Eicosanoid,Ceramides,False,neighbor_consensus,low,weak_similarity_backfill,0.292929,False
+X-26286,402,Lipid,Lipid,True,Long Chain Polyunsaturated Fatty Acid (n3 and n6),Ceramides,False,neighbor_consensus,low,weak_similarity_backfill,0.338983,False
+X-26290,402,Lipid,Lipid,True,"Fatty Acid, Amide",Ask DTS,False,neighbor_consensus,low,strong_similarity_vote,0.464286,False
+X-26303,402,Lipid,Lipid,True,Monoacylglycerol,Lysoplasmalogen,False,neighbor_consensus,low,weak_similarity_backfill,0.314815,False
+X-26305,402,Lipid,Lipid,True,"Fatty Acid Metabolism (Acyl Carnitine, Polyunsaturated)",Lysoplasmalogen,False,neighbor_consensus,low,weak_similarity_backfill,0.252747,False
+X-26674,209,Lipid,Lipid,True,Eicosanoid,Fatty Acid Metabolism (Acyl Amino Acid),False,neighbor_consensus,low,weak_similarity_backfill,0.391304,False
+X-07765,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Benzoate Metabolism,False,neighbor_consensus,medium,strong_similarity_vote,0.615385,False
+X-11576,400,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.688889,False
+X-11843,209,Xenobiotics,Xenobiotics,True,"Drug - Analgesics, Anesthetics","Drug - Analgesics, Anesthetics",True,neighbor_consensus,medium,strong_similarity_vote,0.657143,False
+X-12753,400,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism",Unknown,False,neighbor_consensus,medium,strong_similarity_vote,0.6,False
+X-12844,209,Lipid,Lipid,True,Corticosteroids,Androgenic Steroids,False,neighbor_consensus,medium,strong_similarity_vote,0.658228,False
+X-13844,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,"Drug - Antiinflammatory, Immunosuppressant",False,neighbor_consensus,medium,strong_similarity_vote,0.69697,False
+X-15853,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.727273,False
+X-17354,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,medium,strong_similarity_vote,0.6,False
+X-17367,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Benzoate Metabolism,False,neighbor_consensus,medium,strong_similarity_vote,0.606061,False
+X-17690,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Unknown Sulfated Molecule,False,neighbor_consensus,medium,strong_similarity_vote,0.615385,False
+X-17704,209,Lipid,Lipid,True,"Fatty Acid, Dihydroxy","Fatty Acid, Dihydroxy",True,neighbor_consensus,medium,strong_similarity_vote,0.603774,False
+X-17740,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.647059,False
+X-17765,209,Lipid,Lipid,True,"Fatty Acid, Dihydroxy","Fatty Acid, Dihydroxy",True,neighbor_consensus,medium,strong_similarity_vote,0.603774,False
+X-17852,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.675,False
+X-17861,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.714286,False
+X-17862,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.730769,False
+X-17884,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.745455,False
+X-17897,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.603448,False
+X-17970,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.714286,False
+X-17986,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.744186,False
+X-18899,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,"Drug - Antiinflammatory, Immunosuppressant",False,neighbor_consensus,medium,strong_similarity_vote,0.604167,False
+X-19934,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.717391,False
+X-19937,209,Peptide,Peptide,True,Polypeptide,Polypeptide,True,neighbor_consensus,medium,strong_similarity_vote,0.733333,False
+X-20716,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.72093,False
+X-21353,209,Lipid,Lipid,True,"Fatty Acid, Ester","Fatty Acid, Dicarboxylate",False,neighbor_consensus,medium,strong_similarity_vote,0.617647,False
+X-21364,209,Lipid,Lipid,True,Corticosteroids,Pregnenolone Steroids,False,neighbor_consensus,medium,strong_similarity_vote,0.736842,False
+X-21410,,Lipid,Lipid,True,Androgenic Steroids,Androgenic Steroids,True,neighbor_consensus,medium,strong_similarity_vote,0.722222,False
+X-21470,209,Lipid,Lipid,True,Pregnenolone Steroids,Androgenic Steroids,False,neighbor_consensus,medium,strong_similarity_vote,0.630769,False
+X-21607,209,Lipid,Lipid,True,Medium Chain Fatty Acid,Ask DTS,False,neighbor_consensus,medium,strong_similarity_vote,0.703704,False
+X-21788,209,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism","Methionine, Cysteine, SAM and Taurine Metabolism",True,neighbor_consensus,medium,strong_similarity_vote,0.633333,False
+X-22509,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,medium,strong_similarity_vote,0.6,False
+X-23126,305,Lipid,Lipid,True,Secondary Bile Acid Metabolism,Ask Annie/Matt/Brian I,False,neighbor_consensus,medium,strong_similarity_vote,0.666667,False
+X-23173,209,Amino Acid,Amino Acid,True,"Leucine, Isoleucine and Valine Metabolism","Leucine, Isoleucine and Valine Metabolism",True,neighbor_consensus,medium,strong_similarity_vote,0.6,False
+X-23191,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Chemical,False,neighbor_consensus,medium,strong_similarity_vote,0.651163,False
+X-23342,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Benzoate Metabolism,True,neighbor_consensus,medium,strong_similarity_vote,0.659091,False
+X-23579,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,medium,strong_similarity_vote,0.72,False
+X-23599,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,medium,strong_similarity_vote,0.72,False
+X-23890,209,Xenobiotics,Xenobiotics,True,Chemical,Food Component/Plant,False,neighbor_consensus,medium,strong_similarity_vote,0.625,False
+X-23928,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,medium,strong_similarity_vote,0.617021,False
+X-23940,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,medium,strong_similarity_vote,0.735849,False
+X-24084,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.675,False
+X-24137,,Amino Acid,Amino Acid,True,Phenylalanine Metabolism,Phenylalanine Metabolism,True,neighbor_consensus,medium,strong_similarity_vote,0.733333,False
+X-24187,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.693548,False
+X-24246,400,Amino Acid,Amino Acid,True,Polyamine Metabolism,Polyamine Metabolism,True,neighbor_consensus,medium,strong_similarity_vote,0.703704,False
+X-24273,402,Lipid,Lipid,True,Endocannabinoid,Unknown Carnitine Conjugate,False,neighbor_consensus,medium,strong_similarity_vote,0.705882,False
+X-24333,209,Amino Acid,Amino Acid,True,"Leucine, Isoleucine and Valine Metabolism","Leucine, Isoleucine and Valine Metabolism",True,neighbor_consensus,medium,strong_similarity_vote,0.615385,False
+X-24349,209,Lipid,Lipid,True,Sterol,Corticosteroids,False,neighbor_consensus,medium,strong_similarity_vote,0.690141,False
+X-24494,209,Lipid,Lipid,True,Androgenic Steroids,Androgenic Steroids,True,neighbor_consensus,medium,strong_similarity_vote,0.727273,False
+X-24549,209,Amino Acid,Amino Acid,True,Tryptophan Metabolism,Tryptophan Metabolism,True,neighbor_consensus,medium,strong_similarity_vote,0.606061,False
+X-24581,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,"Drug - Analgesics, Anesthetics",False,neighbor_consensus,medium,strong_similarity_vote,0.622642,False
+X-24582,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,"Drug - Analgesics, Anesthetics",False,neighbor_consensus,medium,strong_similarity_vote,0.727273,False
+X-24627,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.730769,False
+X-24729,400,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism","Methionine, Cysteine, SAM and Taurine Metabolism",True,neighbor_consensus,medium,strong_similarity_vote,0.657895,False
+X-24819,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.738095,False
+X-24972,,Lipid,Lipid,True,Androgenic Steroids,Androgenic Steroids,True,neighbor_consensus,medium,strong_similarity_vote,0.722222,False
+X-25004,209,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism","Methionine, Cysteine, SAM and Taurine Metabolism",True,neighbor_consensus,medium,strong_similarity_vote,0.655172,False
+X-25038,400,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.683333,False
+X-25076,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.685714,False
+X-25102,209,Amino Acid,Amino Acid,True,"Methionine, Cysteine, SAM and Taurine Metabolism","Methionine, Cysteine, SAM and Taurine Metabolism",True,neighbor_consensus,medium,strong_similarity_vote,0.655172,False
+X-25198,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,medium,strong_similarity_vote,0.66,False
+X-25199,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,medium,strong_similarity_vote,0.66,False
+X-25202,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Food Component/Plant,True,neighbor_consensus,medium,strong_similarity_vote,0.72,False
+X-25209,209,Lipid,Lipid,True,"Fatty Acid, Ester","Fatty Acid, Monohydroxy",False,neighbor_consensus,medium,strong_similarity_vote,0.666667,False
+X-25247,209,Xenobiotics,Xenobiotics,True,Chemical,Chemical,True,neighbor_consensus,medium,strong_similarity_vote,0.6,False
+X-25279,209,Xenobiotics,Xenobiotics,True,Chemical,Chemical,True,neighbor_consensus,medium,strong_similarity_vote,0.636364,False
+X-25402,209,Xenobiotics,Xenobiotics,True,Food Component/Plant,Chemical,False,neighbor_consensus,medium,strong_similarity_vote,0.717949,False
+X-25539,209,Cofactors and Vitamins,Cofactors and Vitamins,True,Tocopherol Metabolism,Tocopherol Metabolism,True,neighbor_consensus,medium,strong_similarity_vote,0.614035,False
+X-25708,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.685714,False
+X-25709,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.685714,False
+X-25710,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.727273,False
+X-25732,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.675,False
+X-25733,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.675,False
+X-25734,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.675,False
+X-25735,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.675,False
+X-25736,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.675,False
+X-25737,209,Peptide,Peptide,True,Dipeptide,Polypeptide,False,neighbor_consensus,medium,strong_similarity_vote,0.636364,False
+X-25738,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.730769,False
+X-25739,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.730769,False
+X-25740,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.730769,False
+X-25749,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.666667,False
+X-25750,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.666667,False
+X-25752,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.603448,False
+X-25754,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.603448,False
+X-25761,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.714286,False
+X-25762,209,Peptide,Peptide,True,Polypeptide,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.714286,False
+X-25763,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.744186,False
+X-25764,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.744186,False
+X-25775,209,Peptide,Peptide,True,Gamma-glutamyl Amino Acid,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.771429,False
+X-25776,209,Peptide,Peptide,True,Dipeptide,Ask Annie/Matt,False,neighbor_consensus,medium,strong_similarity_vote,0.74359,False
+X-25802,209,Xenobiotics,Xenobiotics,True,Benzoate Metabolism,Benzoate Metabolism,True,neighbor_consensus,medium,strong_similarity_vote,0.659091,False
+X-25856,209,Amino Acid,Amino Acid,True,Lactoyl Amino Acid,Lactoyl Amino Acid,True,neighbor_consensus,medium,strong_similarity_vote,0.692308,False
+X-25861,209,Amino Acid,Amino Acid,True,Lactoyl Amino Acid,Tryptophan Metabolism,False,neighbor_consensus,medium,strong_similarity_vote,0.8,False
+X-26066,209,Amino Acid,Amino Acid,True,Histidine Metabolism,Histidine Metabolism,True,neighbor_consensus,medium,strong_similarity_vote,0.65625,False
+X-26092,209,Amino Acid,Amino Acid,True,Alanine and Aspartate Metabolism,Alanine and Aspartate Metabolism,True,neighbor_consensus,medium,strong_similarity_vote,0.615385,False
+X-26276,209,Lipid,Lipid,True,"Fatty Acid, Branched",Long Chain Saturated Fatty Acid,False,neighbor_consensus,medium,strong_similarity_vote,0.689655,False
+X-26277,209,Lipid,Lipid,True,"Fatty Acid, Branched",Long Chain Saturated Fatty Acid,False,neighbor_consensus,medium,strong_similarity_vote,0.689655,False
+X-26318,402,Lipid,Lipid,True,Diacylglycerol,Lysophospholipid,False,neighbor_consensus,medium,strong_similarity_vote,0.744681,False
+X-26642,209,Lipid,Lipid,True,Lysophospholipid,Lysophospholipid,True,neighbor_consensus,medium,strong_similarity_vote,0.737705,False
+X-26673,209,Lipid,Lipid,True,"Fatty Acid Metabolism (Acyl Carnitine, Monounsaturated)",Fatty Acid Metabolism (Acyl Amino Acid),False,neighbor_consensus,medium,strong_similarity_vote,0.686275,False
+X-26675,209,Lipid,Lipid,True,"Fatty Acid Metabolism (Acyl Carnitine, Polyunsaturated)",Fatty Acid Metabolism (Acyl Amino Acid),False,neighbor_consensus,medium,strong_similarity_vote,0.698113,False
+X-26695,402,Lipid,Lipid,True,"Fatty Acid Metabolism (Acyl Carnitine, Polyunsaturated)",Fatty Acid Metabolism (Acyl Amino Acid),False,neighbor_consensus,medium,strong_similarity_vote,0.698113,False
+X-26697,402,Lipid,Lipid,True,"Fatty Acid Metabolism (Acyl Carnitine, Monounsaturated)",Fatty Acid Metabolism (Acyl Amino Acid),False,neighbor_consensus,medium,strong_similarity_vote,0.686275,False

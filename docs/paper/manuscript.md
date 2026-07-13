@@ -1,18 +1,14 @@
-# Evidence-Calibrated Structural Elucidation and Pathway Assignment of Unknown Metabolites from High-Resolution LC-MS/MS
+# Evidence-Aware Reporting of LC-MS/MS Metabolite Structure Hypotheses and Biochemical Taxonomy Assignments
 
-**Authors:** [Author list]<sup>1</sup>
+**Authors:** Joshua Simpson<sup>1</sup>, [additional authors]<sup>1</sup>
 **Affiliation:** <sup>1</sup>Metabolon, Inc., Morrisville, NC, USA
 **Corresponding author:** [email]
 
-*Manuscript draft generated from the structural-elucidation reporting pipeline. Numbers in this draft are produced by the audit tooling (`tools/audit_pathway_predictions.py`, `tools/audit_presentation.py`) over the full set of 3,897 X-compound features and are reproducible from the repository.*
-
----
-
 ## Abstract
 
-Untargeted metabolomics routinely detects thousands of reproducible spectral features ("unknowns", here denoted X-compounds) that lack an authentic-standard identification. We describe an end-to-end workflow that takes high-resolution LC-MS/MS features through de novo structure prediction, evidence-aware candidate reranking, pathway/subpathway assignment, and a calibrated, per-compound identification-confidence report. Applied to **3,897** X-compound features across four chromatographic libraries (two positive-, two negative-ion mode), the workflow produces a rank-1 structural hypothesis and a rank-1 pathway prediction for **100%** of features. We evaluate two accuracy questions against ground truth. First, for **structure** identification on the subset of controls with a known true structure (n = 92), the top candidate is correct (Tanimoto ≥ 0.70 to truth) for **47.8%** of features overall; an exact catalog match alone is correct only **~38%** of the time (median truth Tanimoto 0.51), essentially indistinguishable from de novo predictions (~56%). This finding motivated replacing an overstated "exact reference match" label with a calibrated confidence model combining four evidence axes (structure, mass/formula, MS2, pathway), Platt-scaled on the truth set, that reports honest probabilities and a Schymanski/MSI identification level (1–5) for every compound. Second, for **pathway** assignment, a neighbor-consensus predictor that votes Metabolon super-/sub-pathway labels achieves **94.5%** super-pathway and **89.7%** sub-pathway accuracy against the reference-database taxonomy on 1,466 exact-structure controls, with accuracy rising monotonically with the reported confidence tier and with structural similarity to the nearest reference metabolite (leave-one-out super-pathway accuracy 86.7% as a novel-compound proxy). We show that a widely used known-annotation comparison understates pathway accuracy to ~56% purely because two independent Metabolon annotations of the same structures agree only 62.5% of the time. We release the per-compound reports, the audit tooling, and a documented list of pipeline refinements (a hard mass gate in reranking recovers a structure for ~88% of the 15% of features whose top candidate mass is inconsistent with the observed feature).
+Untargeted LC-MS/MS detects reproducible features that lack authentic-standard identifications, creating a need for both structural hypotheses and honest communication of uncertainty. We evaluated an end-to-end workflow combining Spec2Mol-lineage retrieval/de novo candidate generation, evidence-aware reranking, biochemical taxonomy assignment, and per-compound confidence/MSI-style reporting across 3,897 X-compounds. Among 92 truth-verified controls, structural recovery was 47.8% at rank 1 (44/92; 95% CI 37.9–57.9%), 64.1% within the top 3 (59/92; 54.0–73.2%), and 73.9% within the top 10 (68/92; 64.1–81.8%). Exact-catalog-source and predicted-source rank-1 recovery were 38.1% (16/42; 25.0–53.2%) and 56.0% (28/50; 42.3–68.8%), respectively. Leave-one-out validation showed weak calibration (Brier score 0.255), so aggregate confidence is exploratory; MSI-style levels instead control whether a structure is shown. Of the taxonomy assignments, 1,459 were direct lookups and internally consistent by construction. Among 644 neighbor-consensus assignments with independent labels, super-pathway agreement was 52.2% (48.3–56.0%) and subpathway agreement 18.8% (15.9–22.0%). Intrinsic leave-one-out validation of the neighbor-vote mechanism yielded 86.7% super-pathway (4,417/5,095; 85.7–87.6%) and 71.1% subpathway accuracy (3,623/5,095; 69.9–72.3%). The workflow provides complete evidence reports while explicitly limiting structural claims when corroboration is insufficient.
 
-**Keywords:** untargeted metabolomics, structural elucidation, high-resolution mass spectrometry, identification confidence, pathway prediction, MSI levels
+**Keywords:** untargeted metabolomics, structural elucidation, tandem mass spectrometry, identification confidence, biochemical taxonomy, MSI levels
 
 ---
 
@@ -20,16 +16,21 @@ Untargeted metabolomics routinely detects thousands of reproducible spectral fea
 
 Untargeted LC-MS/MS metabolomics detects far more reproducible features than can be identified with authentic chemical standards. The unidentified remainder ("unknowns") carries substantial biological information, but communicating *how confident* an identification is—and *what kind* of identification it is—remains a central challenge [1,2]. The Metabolomics Standards Initiative (MSI) [2] and the Schymanski confidence scheme [1] formalized this as a small number of identification levels, from an exact-mass-only "level of interest" up to a standard-confirmed structure.
 
-We present a workflow that (i) predicts candidate structures for each unknown feature from its high-resolution MS1/MS2 evidence, (ii) reranks candidates using library, mass, and spectral evidence, (iii) assigns a pathway and subpathway by consensus over structurally similar reference metabolites, and (iv) renders a per-compound report with a single, calibrated identification confidence and an evidence-derived MSI level. Our contributions are:
+Library-retrieval-only workflows cannot propose genuinely novel structures and therefore require intensive manual chemistry followed by purchase or synthesis of candidate standards. This bottleneck constrains in-silico library expansion and discovery of dataset-specific metabolites [14]. To move beyond retrieval, published approaches including MS2Query, SIRIUS, Spec2Mol, and MSNovelist were assessed using the Critical Assessment of Small Molecule Identification (CASMI) framework [12,13]. The workflow evaluated here builds on Spec2Mol-style de novo generation and adds retrieval, evidence-aware reranking, confidence reporting, MSI-style claim control, and neighbor-based biochemical taxonomy assignment.
 
-1. **An honest, calibrated confidence model.** We show empirically that an exact catalog match is not high confidence, and replace descriptive labels with a probability calibrated on truth-verified controls.
-2. **A reproducible accuracy evaluation** of both structure identification (against a known-structure truth set) and pathway assignment (against the reference-database taxonomy, a known-annotation set, and a leave-one-out novel-compound proxy), including a clarification of why a naive known-annotation comparison understates pathway accuracy.
-3. **Per-compound MSI leveling for 100% of features**, framing specific structures as hypotheses at levels 2–3 and withholding a specific structure at levels 4–5.
-4. **A quantified refinement roadmap**, most notably a mass-consistency gate in reranking.
+We present a workflow that (i) predicts candidate structures for each unknown feature from its MS1/MS2 evidence, (ii) reranks candidates using library, mass, and spectral evidence, (iii) assigns a pathway and subpathway by consensus over structurally similar reference metabolites, and (iv) renders a per-compound report with an aggregate evidence score and an evidence-derived MSI-style reporting level. Our contributions are:
+
+1. **Rank-aware structural validation** with uncertainty, source-stratified recovery, and cross-validated confidence diagnostics.
+2. **Provenance-aware taxonomy evaluation** that separates direct database lookup, neighbor consensus, and agreement with independent labels.
+3. **Evidence-limited reporting for every feature**, with an MSI-style rubric that presents structure hypotheses only when minimum corroboration criteria are met.
 
 ![Figure 1. Structural-elucidation workflow.](figures/fig1_workflow.svg)
 
-*Figure 1. End-to-end workflow from raw LC-MS/MS to a per-compound report. Discovery detects reproducible MS2 features; de novo prediction proposes candidate structures; reranking orders candidates by library/mass/spectral evidence; a neighbor-consensus step assigns pathway/subpathway; and the reporting layer computes a calibrated confidence and an MSI level.*
+*Figure 1. End-to-end workflow from raw LC-MS/MS to a per-compound report. Discovery detects reproducible MS2 features; retrieval/de novo inference proposes candidate structures; reranking orders candidates by library/mass/spectral evidence; taxonomy is assigned by direct lookup or neighbor consensus; and the reporting layer computes an exploratory evidence score and an MSI-style reporting level.*
+
+### 1.1 Toolkit landscape (related work)
+
+Recent MS/MS structure-elucidation tools span a spectrum from library retrieval to de novo generation. **MS2Query** [8] performs analogue and exact-match search against a pretrained GNPS-based library, ranking candidates by a learned chemical-similarity score combined with precursor mass; it is well suited to library expansion but bounded by its reference library. **SIRIUS 4** [7] deterministically assigns molecular formulae from high-resolution isotope patterns and fragmentation trees (with the ZODIAC option for compounds >500 Da), predicts molecular fingerprints via CSI:FingerID, and assigns compound classes via CANOPUS [9]. **Spec2Mol** [10] is an encoder–decoder—analogous to speech-to-text—that reconstructs SMILES directly from spectra, making it de novo and not restricted to database membership. **MSNovelist** [11] couples CSI:FingerID fingerprints with an encoder–decoder generator, remaining independent of spectral libraries and strong on poorly represented structural classes. The pipeline reported here builds on the **Spec2Mol de novo lineage** and adds retrieval, evidence-aware reranking, exploratory evidence aggregation, MSI-style claim control, and pathway consensus; substructure-only tools (e.g., MS2LDA [15]) are complementary future work.
 
 ---
 
@@ -37,27 +38,43 @@ We present a workflow that (i) predicts candidate structures for each unknown fe
 
 ### 2.1 Dataset
 
-The evaluation set comprises **3,897** X-compound features drawn from four chromatographic libraries—libraries 209 and 305 (negative-ion mode) and 400 and 402 (positive-ion mode). Each feature carries a discovery-derived consensus MS2 spectrum and, where available, an observed parent m/z and neutral-mass estimate. A subset of features has an independent Metabolon annotation (`known_X`), and a further subset has a known true chemical structure used as the structure-identification ground truth.
+The delivered evaluation set comprises **3,897 unique X-compound features** from four internal chromatographic libraries: library 209 (negative ion, n=2,389), library 305 (negative ion, n=202), library 400 (positive ion, n=875), and library 402 (positive ion, n=431). A control present in more than one library was retained from the first library in that order (“first-library-wins”). Each report contains a discovery-derived consensus MS2 record and, where available, an observed precursor m/z and neutral-mass hypothesis. The reporting bundle does not retain specimen-level matrix, species, study-design, or original consent/IRB metadata; these are required from the source studies before journal submission.
+
+Three non-random evaluation subsets are distinguished. Structural recovery is evaluated on all **92 controls with a nonzero truth Tanimoto value** in the delivered candidate files. Independent taxonomy agreement is evaluated on **909 controls** with nonempty `known_X` super-/subpathway labels. Reference-taxonomy consistency is evaluated on **1,466 rank-1 structures** whose InChIKey skeleton occurs in the pathway reference database; 1,459 of these are direct database lookups. Selection into each subset depends on truth/reference availability and may introduce spectrum-, library-, and chemical-class bias. Authoritative P0 and P1 cohort analyses require separate source files not included in this bundle and are therefore not substituted with the 92-control set (Supplementary Methods).
+
+The earlier internal toolkit-benchmarking design—Library 1 (2,091 known serum/plasma metabolites spanning 9 super-pathways and 135 subpathways) and Library 2 (120 internally confirmed NMD/X-compounds plus 500 CASMI 2022 compounds)—is described in the Supplementary Information as prospective validation. Its counts are not pooled with the deployed 3,897-feature evaluation.
 
 ### 2.2 Workflow
 
-Discovery detects reproducible precursor features and aggregates their MS2 scans into consensus spectra. Elucidation predicts candidate structures (a generative MS2→SMILES model), enumerates and scores candidates, and reranks them with a unified reranker that incorporates library membership, mass/formula agreement with the observed neutral mass, and spectral scoring. Pathway assignment (Section 2.3) then votes a Metabolon taxonomy label from structurally similar reference metabolites. Finally, the reporting layer (Sections 2.4–2.5) renders one HTML report per compound plus a searchable, sortable master index.
+Discovery detects reproducible precursor features and aggregates their MS2 scans into consensus spectra. The Spec2Mol-lineage inference stack uses two complementary tracks. Track A performs cosine-nearest-neighbor retrieval from a structure embedding bank under progressive precursor-mass gates (0.05, 0.5, and 1.0 Da). Track B performs mass-conditioned—and optionally retention-index-conditioned—de novo decoding of SMILES, followed by adduct-aware mass gating. The default merge policy protects high-confidence retrieval rank 1 and jointly orders the remaining retrieval and de novo candidates; up to 10 structures per feature are retained.
+
+The unified reranker is a shallow gradient-boosted or logistic classifier trained on candidate-level labels defined by truth Tanimoto ≥0.70, with leave-one-control-out model diagnostics and source-specific isotonic calibration. Inputs include predicted-spectrum, mass-match, formula-prior, evidence-confidence, MS2-match, NCE, forward-spectrum, generation/novelty, source-rank/density, peptide/library/biotransformation flags, and isotope/carbon-agreement features. The displayed raw “rank score” is an ordering score, not a probability of structural correctness; the separate evidence-confidence field summarizes library, mass, and spectral corroboration.
+
+The delivered artifacts identify the pipeline lineage as `pipeline_equalization_v21_clean_peptide_corrected_v1`. Exact encoder/decoder checkpoint hashes, training-set snapshots, random seeds, CUDA/PyTorch versions, and EC2 hardware were not preserved in the report bundle and must be recovered from the inference run metadata before final submission. The reporting workflow then assigns pathway labels, computes identification confidence/MSI level, and renders one public and one internal HTML report per compound plus a searchable master index.
 
 ### 2.3 Pathway and subpathway prediction
 
-For each compound we compute Tanimoto similarity between the top candidate structure and the reference metabolite database, and take a similarity-weighted consensus ("neighbor vote") of the reference `metabolon_super`/`metabolon_sub` labels. Each prediction carries a status (`strong_similarity_vote` or `weak_similarity_backfill`), a confidence tier (high/medium/low), the best reference similarity, and the vote share.
+Pathway assignment follows two routes. If the rank-1 canonical SMILES exactly matches a labeled reference structure, the corresponding Metabolon super-pathway and subpathway are copied directly (high pathway confidence, vote share 1.0). Otherwise, the production workflow imports a legacy similarity-weighted neighbor-consensus builder and records the nearest-reference similarity, vote share, assignment status, and **pathway-confidence tier** (high/medium/low). The report bundle does not preserve that external builder's exact neighbor count, similarity floor, weighting exponent, molecular-weight priors, SMARTS rules, or amino-acid overrides; these are required provenance inputs. The independently reproducible mechanism-level evaluation in this study uses Morgan radius-2, 2,048-bit fingerprints [5,6], k=10 neighbors, Tanimoto floor 0.30, and similarity-squared vote weights.
 
 ### 2.4 Identification-confidence model
 
-We model P(top candidate structure is correct) as a completeness-weighted combination of four evidence axes with fixed weights: **structure similarity 0.40, mass/formula match 0.30, MS2 fragment fit 0.20, pathway consensus 0.10**. The weighted raw score is mapped to a probability by 1-D Platt scaling [3] (logistic parameters A = 1.887, B = −1.520) fit on the **n = 92** truth-verified controls (overall structure-correct base rate 0.478). Calibrated probabilities are bucketed into corroboration-aware, monotonic tiers with cutoffs 0.65 (High), 0.48 (Moderate), 0.38 (Low); a mass mismatch forces the lowest ("Tentative") tier regardless of score. The full model is implemented in `structural_elucidation/reports/confidence.py`.
+The exploratory identification-confidence score combines four available-evidence axes with prespecified weights: structure similarity 0.40, mass/formula match 0.30, MS2 fragment fit 0.20, and pathway consensus 0.10. Scores are divided by the sum of available weights. A one-dimensional Platt model [3] (A=1.887, B=−1.520) was originally fit in-sample on the 92 truth-verified controls (base rate 0.478), then mapped to identification-confidence tiers at 0.65 (High), 0.48 (Moderate), and 0.38 (Low), with mass mismatch forcing Tentative. For publication validation, probabilities were recomputed by leave-one-control-out Platt fitting and evaluated by Brier score, calibration slope/intercept, and reliability bins; an ablation omitted the pathway axis. Given the small, selected truth set and poor cross-validated calibration (Section 3.3), the score is presented as exploratory evidence aggregation rather than an externally validated absolute probability.
 
 ### 2.5 MSI identification levels
 
-Every report is assigned a Schymanski/MSI level (1–5) derived from the same evidence (`assign_msi_level`): **L1** confirmed (authentic-standard match); **L2** probable structure (strong structure + observed MS2 + mass); **L3** tentative candidate structure (mass-consistent, presented explicitly as a hypothesis); **L4** molecular formula only (structure unsupported, or the top candidate's mass is rejected); **L5** exact mass only. Levels 1–3 present a structure; levels 4–5 withhold a specific structure and report formula/mass. The externally-assigned Metabolon Level, where present, is shown as a cross-reference rather than as the derived level.
+Every report is assigned an evidence-derived Schymanski/MSI-style level (1–5): **L1** authentic-standard confirmation with a truth-matching top candidate; **L2** strong structural similarity (≥0.70), observed-MS2 fit (≥0.30), and strong mass fit (≥0.90); **L3** a mass-consistent structure hypothesis with similarity ≥0.45; **L4** molecular formula/observed mass with no adequately supported structure or a mass-rejected top candidate; and **L5** exact mass only. Levels 1–3 present a structure; levels 4–5 withhold it. These thresholds are a custom reporting rubric, not an externally validated MSI classifier; the independently assigned Metabolon Level is displayed as a cross-reference.
 
 ### 2.6 Evaluation and reproducibility
 
-Structure identification is scored on the known-structure controls as the fraction with truth Tanimoto ≥ 0.70. Pathway assignment is scored three ways: (a) against the **reference-DB taxonomy** on controls whose structure is identical (by InChIKey) to a reference entry; (b) against the independent **`known_X`** annotation; and (c) by **leave-one-out (LOO)** over 5,095 reference metabolites as a novel-compound proxy. Coverage, calibration, distribution, and compliance metrics are produced by `tools/audit_pathway_predictions.py` and `tools/audit_presentation.py`; figures are generated by `tools/paper_figures.py`.
+Structural recovery is reported at rank 1, top 3, and top 10 for truth-Tanimoto thresholds 0.50, 0.70, 0.85, and exact 2D structure; Tanimoto ≥0.70 is the prespecified primary threshold. Binomial proportions use Wilson 95% confidence intervals, and subgroup median similarities use 2,000 deterministic bootstrap replicates. Calibration uses leave-one-control-out Platt fitting. Authoritative P0/P1 analyses are not reported because their cohort/truth files were unavailable.
+
+Pathway outputs are evaluated separately as: (a) reference-taxonomy **consistency** for rank-1 structures present in the same database, stratified by direct lookup versus neighbor assignment; (b) agreement with independent `known_X` labels, stratified by assignment route, reference membership, pathway-confidence tier, status, and similarity; and (c) intrinsic leave-one-out validation of the neighbor-vote mechanism over 5,095 reference metabolites. Wilson 95% intervals are reported. The leave-one-out result does not validate the full production predictor's external priors/overrides.
+
+Following CASMI [12], four identification categories are considered in increasing importance: (1) adduct annotation, (2) elemental formula, (3) compound/structure class, and (4) 2D chemical structure—with 2D structure as the primary metric, scored **rank-independently** (a correct call means the true structure appears among a tool's top-k candidates). In this manuscript the 2D-structure category maps to Section 3.2 and the structure-class category to Section 3.4; adduct- and formula-level accuracy were not independently benchmarked and are reserved for the prospective four-toolkit study.
+
+### 2.7 Software, report construction, and reproducibility
+
+The final delivered reports were produced with eight report-generation workers from four per-library rerank CSVs (3,897 generated; no failures; elapsed time 2,864.84 s). Evidence was subsequently enriched from observed-m/z, observed-MS2, synonym, Metabolon-Level, and WGCNA sidecars, followed by idempotent HTML patches for confidence, candidate-score labeling, and consensus-glyph spacing. Public reports exclude observed fragment-ion detail (audited leaks=0); internal reports retain aggregate MS2 evidence. Compact audit JSON/CSV artifacts, source hashes, and a one-command regeneration script accompany the manuscript. The complete inference environment and proprietary spectra/reference database require controlled-access deposition.
 
 ---
 
@@ -65,33 +82,43 @@ Structure identification is scored on the known-structure controls as the fracti
 
 ### 3.1 Coverage
 
-The workflow assigns a rank-1 structural hypothesis and a rank-1 pathway prediction to **100%** of the 3,897 features (up from ~40% exact-database coverage previously). Pathway predictions are `strong_similarity_vote` for 3,452 and `weak_similarity_backfill` for 445 features; confidence tiers are high 1,788 / medium 666 / low 1,443. The best reference similarity has median 0.721 (p10 0.375, p90 1.0). Evidence coverage across the report set is summarized in Table 1.
+The workflow produces an evidence report and a biochemical taxonomy assignment for all 3,897 features. It presents a specific structure for the 2,726 L1–L3 reports (70.0%) and withholds one for the 1,171 L4–L5 reports (30.0%). Pathway provenance is direct reference lookup for 1,459 and neighbor consensus for 2,438 reports. Assignment statuses are strong-similarity vote for 3,452 and weak-similarity backfill for 445; **pathway-confidence tiers** are high 1,788 / medium 666 / low 1,443. The best-reference similarity has median 0.721 (p10 0.375, p90 1.0). Evidence availability is summarized in Table 1.
 
 **Table 1. Evidence coverage across all 3,897 reports.**
 
-| Evidence | Coverage |
-|---|---|
-| Rank-1 pathway prediction | 100% |
-| Observed parent m/z | 97.4% |
-| Metabolon Level (any) | 62.3% |
-| Observed MS2 spectrum | 43.6% |
-| Reference-DB name resolved | 36.9% |
-| Top-candidate mass mismatch | 15.4% |
-| Public MS2-ion leaks (compliance) | 0 |
+| Evidence | n / 3,897 (%) |
+|---|---:|
+| Rank-1 biochemical taxonomy assignment | 3,897 (100.0%) |
+| Observed parent m/z | 3,796 (97.4%) |
+| Metabolon Level (any) | 2,426 (62.3%) |
+| Observed MS2 spectrum | 1,700 (43.6%) |
+| Reference-database name resolved | 1,437 (36.9%) |
+| Top-candidate mass mismatch | 598 (15.4%) |
+| Public MS2-ion leaks (compliance) | 0 (0.0%) |
 
-### 3.2 Structure-identification accuracy on knowns
+### 3.2 Structural recovery on truth-verified controls
 
-On the 92 truth-verified controls, the rank-1 structure is correct (Tanimoto ≥ 0.70) for **47.8%** of features. Critically, an **exact catalog match is correct only ~38%** of the time (median truth Tanimoto 0.51)—essentially the same as de novo predictions (~56%). An "exact reference match" is therefore a factual descriptor of provenance, not a statement of high confidence. Because the available evidence is weakly discriminative (no authentic-standard confirmation; MS2 present for ≤44%), the calibrated probabilities compress into a narrow mid-range by design; this is an honest reflection of the evidence rather than a modeling deficiency.
+On the 92 truth-verified controls, recovery at Tanimoto ≥0.70 is **47.8% at rank 1** (44/92; 95% CI 37.9–57.9%), **64.1% within the top 3** (59/92; 54.0–73.2%), and **73.9% within the top 10** (68/92; 64.1–81.8%; Figure 2). Rank-1 recovery is 38.1% for exact-catalog-source calls (16/42; 25.0–53.2%; median truth Tanimoto 0.506) and 56.0% for predicted-source calls (28/50; 42.3–68.8%; median 0.811). The intervals overlap, and no formal equivalence claim is made. An exact catalog source is therefore provenance, not independent confirmation. Threshold-sensitivity results are provided in Supplementary Table S1.
+
+![Figure 2. Structural recovery at rank 1, top 3, and top 10, including rank-1 source subgroups.](figures/fig2_structure_accuracy.svg)
+
+*Figure 2. Structural recovery on 92 truth-verified controls. Correctness is truth Tanimoto ≥0.70; error bars are Wilson 95% confidence intervals. “Exact source” describes catalog provenance, not authentic-standard confirmation.*
 
 ### 3.3 Confidence tiers and MSI levels
 
-The calibrated overall confidence has median 0.432 (p10 0.372, p90 0.585). The tier distribution is Confirmed 44 / Moderate 1,416 / Low 1,344 / Tentative 1,093, with **none in the intermediate "High" tier** (Figure 5): the 44 "Confirmed" features are authentic-standard (Metabolon Level-1) matches, and with no standard confirmation and sparse MS2 for the remainder, nothing else is confidently confirmable yet—which the model reports honestly rather than inflating. Every report additionally carries an MSI level; the distribution (Figure 4) is L1 44 / L2 193 / L3 2,489 / L4 1,165 / L5 6 (100% coverage). Levels 4–5 (30.0% of features) withhold a specific structure—these are the mass-rejected or structurally unsupported cases. The MSI level (kind of identification) and the confidence tier (how likely the L1–L3 structure is correct) are complementary; their cross-tabulation is given in Table 2.
+The in-sample aggregate confidence has median 0.432 (p10 0.372, p90 0.585), but leave-one-control-out Platt validation reveals poor calibration: Brier score 0.255, calibration slope 0.056, and intercept −0.082 (Figure 3). Removing the pathway axis slightly improves Brier score to 0.253 and slope to 0.274. The aggregate score is therefore exploratory and should not be interpreted as a validated absolute probability.
 
-![Figure 4. MSI identification-level distribution.](figures/fig4_msi_distribution.svg)
+![Figure 3. Leave-one-out identification-confidence reliability.](figures/fig3_confidence_reliability.svg)
 
-![Figure 5. Identification-confidence tier distribution.](figures/fig5_confidence_tiers.svg)
+*Figure 3. Mean leave-one-out predicted probability versus observed structural correctness in five equal-count bins (n=92). Error bars are Wilson 95% confidence intervals; the dashed line is perfect calibration.*
 
-**Table 2. MSI level x confidence tier (report counts).**
+The **identification-confidence tier** distribution is Confirmed 44 / High 0 / Moderate 1,416 / Low 1,344 / Tentative 1,093. Separately, the MSI-style reporting distribution is L1 44 / L2 193 / L3 2,489 / L4 1,165 / L5 6 (Figure 4). L4–L5 withhold a specific structure. These custom thresholds require external validation; Table 2 shows their relationship to the identification-confidence tiers.
+
+![Figure 4. MSI-style reporting levels and identification-confidence tiers.](figures/fig4_identification_distributions.svg)
+
+*Figure 4. Counts and percentages across all 3,897 reports. A square-root count scale preserves small categories; the “High” identification-confidence tier is explicitly shown as empty.*
+
+**Table 2. MSI level x identification-confidence tier (report counts).**
 
 | MSI level | Confirmed | Moderate | Low | Tentative |
 |---|---|---|---|---|
@@ -101,78 +128,86 @@ The calibrated overall confidence has median 0.432 (p10 0.372, p90 0.585). The t
 | L4 formula | – | – | 260 | 905 |
 | L5 mass | – | – | – | 6 |
 
-### 3.4 Pathway and subpathway accuracy
+### 3.4 Biochemical taxonomy assignment
 
-Against the reference-DB taxonomy that the predictor targets, super-pathway accuracy is **94.5%** and sub-pathway accuracy is **89.7%** on 1,466 exact-structure controls. As a novel-compound proxy, leave-one-out accuracy is **86.7%** (super) / 71.1% (sub). Accuracy is well-calibrated: it increases monotonically with the reported confidence tier (Figure 3) and with structural similarity to the nearest reference metabolite (Figure 2). Sub-pathway assignment is intrinsically harder and should be read as indicative, especially for novel structures.
+The delivered reports use two assignment routes that must be evaluated separately. For 1,459 compounds, an exact structure match triggers direct lookup of the reference-database taxonomy; these assignments are 100% internally consistent (95% CI 99.7–100.0%) by construction and are **not an independent prediction-accuracy estimate**. The remaining 2,438 reports use neighbor consensus. Among 644 neighbor-consensus controls with independent `known_X` labels, super-pathway agreement is **52.2%** (336/644; 95% CI 48.3–56.0%) and subpathway agreement is **18.8%** (121/644; 15.9–22.0%). An intrinsic leave-one-out test of the neighbor-vote mechanism over 5,095 reference metabolites yields 86.7% super-pathway (4,417/5,095; 95% CI 85.7–87.6%) and 71.1% subpathway accuracy (3,623/5,095; 69.9–72.3%), but does not include all production priors and overrides (Figure 5).
 
-![Figure 2. Super-pathway accuracy vs. structural similarity.](figures/fig2_pathway_by_similarity.svg)
+![Figure 5. Pathway results separated by evaluation context.](figures/fig5_pathway_evaluations.svg)
 
-![Figure 3. Super-pathway accuracy by confidence tier.](figures/fig3_pathway_by_tier.svg)
+*Figure 5. Super-pathway and subpathway results by evaluation context. Direct lookup measures taxonomy consistency; `known_X` is an independent but discordant label source; LOO validates only the neighbor-vote mechanism. Error bars are Wilson 95% confidence intervals.*
 
-**Interpreting the known-annotation comparison.** Scored against the independent `known_X` annotation, raw super-pathway agreement is only 56.2% (n = 909 evaluable). This is not predictor error: on 267 X-compounds whose structure is identical to a reference entry, the `known_X` annotation and the reference-DB taxonomy themselves agree only **62.5%** of the time (e.g., dipeptides labeled "Amino Acid" in the DB vs. "Peptide" in `known_X`; acyl-glycines "Lipid" vs. "Amino Acid"). Scoring against `known_X` therefore measures annotation disagreement and is capped near 62.5%. Even so, `known_X` agreement remains monotonic in tier (high 71.8%, medium 62.9%, low 37.7%; Figure 3) and in similarity (Figure 2). Table 3 consolidates the pathway results.
+**Interpreting the independent-label comparison.** Across all 909 controls with `known_X` labels, super-pathway agreement is 55.3% (503/909; 95% CI 52.1–58.5%) and subpathway agreement is 23.5% (214/909; 20.9–26.4%). This includes both direct lookups and neighbor assignments. On 267 controls whose structure is identical to a reference entry, `known_X` and the reference-database taxonomy themselves agree only **62.5%** (95% CI 56.6–68.1%); examples include dipeptides labeled "Amino Acid" in one taxonomy and "Peptide" in the other. The independent-label score therefore reflects both model error and annotation disagreement. Agreement remains monotonic by pathway-confidence tier (high 70.3%, medium 61.4%, low 36.9%; Supplementary Figure S1). Table 3 separates the evaluation contexts.
 
-**Table 3. Pathway-prediction accuracy under three evaluations.**
+**Table 3. Pathway and subpathway results by evaluation context.**
 
-| Evaluation | n | Super | Sub |
+| Evaluation | n | Super (95% CI) | Sub (95% CI) |
 |---|---|---|---|
-| Reference-DB taxonomy (exact structure) | 1,466 | 94.5% | 89.7% |
-| Leave-one-out (novel-compound proxy) | 5,095 | 86.7% | 71.1% |
-| `known_X` annotation (disagreement-capped) | 909 | 56.2% | 24.2% |
-| — by tier: high / medium / low (`known_X`) | 365/175/369 | 71.8 / 62.9 / 37.7% | — |
-| — by similarity 0.7–1.0 / 0.5–0.7 / 0.3–0.5 (`known_X`) | 440/314/116 | 69.6 / 50.3 / 31.9% | — |
+| Reference taxonomy, direct lookup (consistency only) | 1,459 | 100.0% (99.7–100.0%) | 100.0% (99.7–100.0%) |
+| Neighbor consensus vs independent `known_X` | 644 | 52.2% (48.3–56.0%) | 18.8% (15.9–22.0%) |
+| All assignments vs independent `known_X` | 909 | 55.3% (52.1–58.5%) | 23.5% (20.9–26.4%) |
+| Neighbor-vote leave-one-out mechanism | 5,095 | 86.7% (85.7–87.6%) | 71.1% (69.9–72.3%) |
 
-The predicted super-pathway distribution tracks the truth distribution closely (Table 4), with only slight under-prediction of rare classes and minimal vocabulary drift (one predicted label, "partially characterized molecules", not in the truth vocabulary; no truth label went unpredicted).
-
-**Table 4. Predicted vs. truth super-pathway distribution (reference-DB evaluation).**
-
-| Super-pathway | Predicted | Truth |
-|---|---|---|
-| Lipid | 260 | 276 |
-| Peptide | 234 | 257 |
-| Xenobiotics | 200 | 184 |
-| Amino Acid | 152 | 141 |
-| Carbohydrate | 25 | 16 |
-| Nucleotide | 21 | 16 |
-| Cofactors and Vitamins | 9 | 18 |
-| Energy | 5 | 1 |
-
-The dominant super-pathway confusions are chemically adjacent (Table 5): Peptide↔Amino Acid (small peptides vs. modified amino acids) and Lipid↔Peptide/Xenobiotics (acylated species).
-
-**Table 5. Super-pathway confusion for the four most common true classes (row = true, column = predicted; reference-DB evaluation).**
-
-| true \ pred | Lipid | Peptide | Xenobiotics | Amino Acid | other |
-|---|---|---|---|---|---|
-| Lipid | 162 | 59 | 34 | 11 | 3 |
-| Peptide | 56 | 137 | 7 | 46 | 6 |
-| Xenobiotics | 26 | 10 | 120 | 22 | 4 |
-| Amino Acid | 10 | 25 | 26 | 72 | 4 |
+Within the 909-control independent-label cohort, predicted super-pathway frequencies broadly track `known_X`, while the dominant confusions are chemically adjacent (Peptide↔Amino Acid and Lipid↔Peptide/Xenobiotics). Full distributions and the confusion matrix are reported as Supplementary Tables S4–S5.
 
 ### 3.5 Failure modes and a quantified refinement
 
-For **15.4%** of features the rank-1 candidate's mass is inconsistent with the observed neutral mass. Auditing all 590 such cases shows this is a reranking problem, not a tolerance artifact: **519/590 (88%)** already have a mass-consistent candidate at a lower rank, the rank-1 errors are large and chemically meaningful (median nonzero error ~176 Da; hexose 162.05, glucuronide 176.03, sulfate 79.96), and 248/590 carry no computable formula for the rank-1 SMILES. A hard mass gate in reranking would recover a structure (MSI L4→L3+) for ~519 features (~13% of the set). Separately, the raw generative rerank score (`unified_final_score`; rank-1 median 0.035) is not a match-quality measure—the pipeline's own `evidence_confidence` (rank-1 median 0.996) reflects library/mass corroboration—so the report now surfaces evidence confidence and mass match and relabels the raw value a relative tie-breaker.
+There are **598/3,897 (15.4%)** rank-1 mass mismatches. Of these, 590 fall into the historical MSI-L4 deep-audit subset; the remaining eight are outside L4. A lower-ranked, strongly mass-consistent candidate exists for 523/598 overall and 519/590 in the L4 subset. This identifies a reranking opportunity, **not 523 proven-correct recovered structures**: the alternatives have not undergone post-gate truth validation. Rank-1 errors are often chemically meaningful (median nonzero error ~176 Da), and 248/590 L4 cases lack a computable rank-1 formula. Detailed counts appear in Supplementary Section S5.
 
 ---
 
 ## 4. Discussion
 
-Two results reframe how identifications from this pipeline should be read. First, **provenance is not confidence**: an exact catalog match is correct only ~38% of the time on our truth set, so a calibrated probability plus an explicit MSI level is a more faithful summary than a categorical "match" label. Framing L3 structures as hypotheses—while withholding a specific structure at L4–L5—aligns the report with the Schymanski/MSI communication standards [1,2] and prevents over-claiming for the 30% of features where the structure is unsupported or mass-rejected.
+Two results reframe how these outputs should be read. First, **provenance is not confidence**: exact-catalog-source rank-1 recovery is 38.1% (16/42; 95% CI 25.0–53.2%), so “exact source” cannot be interpreted as authentic-standard confirmation. The original aggregate probability is also poorly calibrated under leave-one-out validation. The defensible reporting mechanism is therefore claim limitation: L3 structures are explicitly hypotheses, while L4–L5 withhold a specific structure. This aligns with the communication intent of the Schymanski/MSI frameworks [1,2], although the custom thresholds still require external validation.
 
-Second, **pathway assignment is reliable when read with its confidence signal**. Super-pathway accuracy of 94.5% against the reference-DB taxonomy (86.7% leave-one-out) is strong, and because accuracy is monotonic in the reported tier and in structural similarity, the tier labels are actionable: high-tier predictions can be treated as reliable, while low-tier / weak-backfill predictions are tentative. The apparent ~56% "accuracy" against `known_X` is an artifact of two independent human annotations of the same molecules disagreeing 37.5% of the time; it is a measure of annotation harmonization, not model error. This distinction matters for anyone benchmarking pathway predictors against in-house annotations.
+Second, **taxonomy provenance is inseparable from apparent pathway performance**. Direct reference lookups are internally consistent but do not test prediction. Neighbor-consensus agreement with independent labels is materially lower, particularly for subpathways, while mechanism-level leave-one-out is much higher. The gap reflects both distribution shift and taxonomy discordance: reference-database and `known_X` labels agree only 62.5% on identical structures. Pathway-confidence tiers remain useful for prioritization because independent-label agreement is monotonic by tier, but they are not interchangeable with identification-confidence tiers.
+
+Relative to library-only analogue search (MS2Query), formula/fingerprint methods (SIRIUS/CANOPUS), and de novo generators (Spec2Mol/MSNovelist), this workflow's principal contribution is not a claim of state-of-the-art structural recovery. It is the integration of retrieval and generation with explicit evidence provenance, rank-aware evaluation, and reporting rules that limit unsupported structural claims. A formal head-to-head benchmark remains necessary.
+
+### 4.1 Applications
+
+Potential applications include prioritizing unknown features for standard acquisition or synthesis, expanding reference libraries from externally characterized spectra, and providing clearly qualified hypotheses for features associated with a biological phenotype. These uses require the report to distinguish the type of identification, the available corroborating evidence, and unresolved ambiguity rather than present an unqualified structure.
 
 ## 5. Limitations
 
-- **Calibration set size.** The confidence model is fit on 92 truth-verified controls; absolute probabilities are approximate and intentionally conservative. Expanding the authentic-standard truth set is the single best way to sharpen calibration and to let confirmed identifications legitimately reach the High tier.
+- **Selected, single-organization cohorts.** The 3,897-feature set and each truth subset are availability-selected and imbalanced across libraries. Specimen-level matrix/species metadata are absent from the reporting bundle, limiting generalizability and bias assessment.
+- **Calibration set size and performance.** The confidence model was originally fit on the same 92 controls used for evaluation. Leave-one-out Brier score (0.255) and calibration slope (0.056) show that absolute probabilities are not externally calibrated; P0/P1 truth files were unavailable.
 - **Sparse MS2.** Observed MS2 is present for only 43.6% of features; MS2 is the strongest independent corroboration, so its absence caps confidence. Broader capture and a better candidate-vs-spectrum scorer are needed.
-- **Sub-pathway generalization.** Sub-pathway accuracy is high on exact structures (89.7%) but falls with novelty (71.1% LOO) and should be read as indicative.
+- **Taxonomy evaluation.** Direct reference lookups are circular as accuracy tests. Independent labels are discordant with the reference taxonomy; neighbor-consensus subpathway agreement is low. Production neighbor-builder parameters were not retained in the bundle.
+- **Custom MSI-style rubric.** L2–L5 boundaries are operational thresholds and have not been independently validated against a sufficiently large authentic-standard cohort.
 - **Co-abundance correlations.** Client-specific WGCNA [4] co-abundance evidence is a placeholder in the current reports (covering 13% of controls) and is not yet an independent confidence axis.
+- **Reproducibility constraints.** Proprietary raw spectra, model checkpoints, and the reference database are not publicly deposited; exact run-environment metadata must be recovered before submission.
 
-## 6. Conclusion and future work
+## 6. Conclusion
 
-An end-to-end, evidence-calibrated workflow assigns a structural hypothesis, a pathway/subpathway, a calibrated identification confidence, and an MSI level to 100% of 3,897 unknown metabolite features. Pathway assignment is accurate (94.5% super / 89.7% sub vs. the reference taxonomy) and its confidence tiers are trustworthy; structure identification is honestly represented as probabilistic and, for 30% of features, deliberately withheld. The highest-impact next step is a mass-consistency gate in reranking (recovering a structure for ~88% of the 15% mass-mismatch cases), followed by folding `evidence_confidence` into the headline candidate score, broader MS2 capture with an improved spectral scorer, real client co-abundance correlations, and an expanded authentic-standard truth set for tighter calibration.
+The workflow generates a complete evidence report for 3,897 unknown metabolite features and presents a specific structure for 70.0% while withholding one for the remaining 30.0%. Structural recovery reaches 47.8% at rank 1 and 73.9% within the top 10 on a small selected truth set. Pathway output is complete, but direct lookups must be separated from neighbor prediction; independent neighbor-consensus agreement is moderate at the super-pathway level and low at the subpathway level. The central result is therefore a reporting framework that exposes provenance and limits claims, rather than an assertion of uniformly accurate structural or pathway prediction.
+
+## 7. Future work
+
+Priorities are external validation on the authoritative P0/P1 cohorts and a larger authentic-standard set; prospective testing of a hard mass gate; improved observed-MS2 coverage and candidate-spectrum scoring; and capture of real co-abundance evidence. A formal CASMI-style comparison of MS2Query, SIRIUS, Spec2Mol, and MSNovelist [8,10,11] across the prespecified benchmarking libraries is needed to support tool-selection claims. Substructure tools such as MS2LDA [15] may provide useful partial identifications when complete structures remain unresolved. Production deployment additionally requires immutable model/data provenance and evaluation of GPU scalability.
 
 ## Data and code availability
 
-Per-compound HTML reports, the searchable/sortable master index, and the audit and figure-generation tooling (`tools/audit_pathway_predictions.py`, `tools/audit_presentation.py`, `tools/paper_figures.py`) are in the project repository; the confidence and MSI models are in `structural_elucidation/reports/confidence.py`. All numbers in this manuscript are reproducible from the audit JSON outputs.
+Per-compound HTML reports, the searchable master index, audit code, compact aggregate audit artifacts, figure-generation tooling, and the exploratory confidence/MSI implementation are versioned in the project repository. Raw proprietary spectra, model checkpoints, and the full reference database require controlled access. **[REQUIRED BEFORE SUBMISSION: add repository release/DOI, software license, controlled-access request process, and immutable report-bundle checksum.]**
+
+## Author contributions
+
+Joshua Simpson: conceptualization, methodology, software, formal analysis, investigation, visualization, and writing—original draft. **[REQUIRED: add all authors and CRediT roles.]**
+
+## Funding
+
+**[REQUIRED: identify internal/external funding or state that no specific funding was received.]**
+
+## Competing interests
+
+The authors are affiliated with Metabolon, Inc. **[REQUIRED: confirm employment/equity and complete the journal-specific disclosure.]**
+
+## Ethics and human subjects
+
+No new biospecimens were collected for this computational study. It reanalyzed derived spectral features and reference-library metadata from prior internal workflows. **[REQUIRED: confirm de-identification and the consent/IRB or exemption governing the source studies before submission.]**
+
+## Acknowledgments
+
+**[REQUIRED: acknowledge data-generation, curation, chemistry, and computational-infrastructure contributors.]**
 
 ## References
 
@@ -183,3 +218,11 @@ Per-compound HTML reports, the searchable/sortable master index, and the audit a
 5. Landrum G, et al. RDKit: Open-source cheminformatics. https://www.rdkit.org.
 6. Bajusz D, Rácz A, Héberger K. Why is Tanimoto index an appropriate choice for fingerprint-based similarity calculations? *J. Cheminform.* 2015, 7:20.
 7. Dührkop K, Fleischauer M, Ludwig M, et al. SIRIUS 4: a rapid tool for turning tandem mass spectra into metabolite structure information. *Nat. Methods* 2019, 16:299–302.
+8. de Jonge NF, Louwen JJR, Chekmeneva E, et al. MS2Query: reliable and scalable MS2 mass spectra-based analogue search. *Nat. Commun.* 2023, 14:1752.
+9. Dührkop K, Nothias L-F, Fleischauer M, et al. Systematic classification of unknown metabolites using high-resolution fragmentation mass spectra (CANOPUS). *Nat. Biotechnol.* 2021, 39:462–471.
+10. Litsa EE, Chenthamarakshan V, Das P, Kavraki LE. An end-to-end deep learning framework for translating mass spectra to de-novo molecules (Spec2Mol). *Commun. Chem.* 2023, 6:132.
+11. Stravs MA, Dührkop K, Böcker S, Zamboni N. MSNovelist: de novo structure generation from mass spectra. *Nat. Methods* 2022, 19:865–870.
+12. Schymanski EL, Ruttkies C, Krauss M, et al. Critical Assessment of Small Molecule Identification 2016: automated methods. *J. Cheminform.* 2017, 9:22.
+13. de Jonge NF, Mildau K, Meijer D, et al. Good practices and recommendations for using and benchmarking computational metabolomics metabolite annotation tools. *Metabolomics* 2022, 18:103.
+14. Chen L, Zhang Z, Liu H, et al. Metabolite discovery through global annotation of untargeted metabolomics data. *Nat. Methods* 2021, 18:1377–1385.
+15. van der Hooft JJJ, Wandy J, Barrett MP, Burgess KEV, Rogers S. Topic modeling for untargeted substructure exploration in metabolomics (MS2LDA). *Proc. Natl. Acad. Sci. USA* 2016, 113:13738–13743.

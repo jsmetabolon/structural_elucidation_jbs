@@ -88,6 +88,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("reports_root", type=Path)
     ap.add_argument("--out-dir", type=Path, default=Path("output/_presentation_audit"))
+    ap.add_argument("--summary-only", action="store_true", help="write only the compact aggregate JSON")
     args = ap.parse_args()
     rows = []
     for d in sorted(p for p in args.reports_root.iterdir() if p.is_dir()):
@@ -96,10 +97,11 @@ def main() -> None:
             rows.append(r)
     n = len(rows)
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    with (args.out_dir / "audit_presentation_findings.csv").open("w", newline="") as h:
-        w = csv.DictWriter(h, fieldnames=list(rows[0]))
-        w.writeheader()
-        w.writerows(rows)
+    if not args.summary_only:
+        with (args.out_dir / "audit_presentation_findings.csv").open("w", newline="") as h:
+            w = csv.DictWriter(h, fieldnames=list(rows[0]))
+            w.writeheader()
+            w.writerows(rows)
 
     def frac(key):
         return round(sum(r[key] for r in rows) / n, 4) if n else 0.0
@@ -135,28 +137,29 @@ def main() -> None:
         "compliance": {"public_ms2_leaks": sum(r["public_ms2_leak"] for r in rows)},
         "confidence_completeness_median": sorted(r["completeness"] for r in rows)[n // 2] if n else 0.0,
     }
-    (args.out_dir / "audit_presentation_summary.json").write_text(json.dumps(summary, indent=2))
+    (args.out_dir / "audit_presentation_summary.json").write_text(json.dumps(summary, indent=2) + "\n")
 
     # gap gallery: worst cases per category
     def worst(key, reverse, limit=15):
         return sorted(rows, key=lambda r: (r[key] if isinstance(r[key], (int, float)) else 0), reverse=reverse)[:limit]
 
-    gallery = ["<html><body><h1>Report presentation gap gallery</h1>"]
-    for title, items in [
-        ("Mass mismatch (top candidate mass disagrees)", [r for r in rows if r["mass_mismatch"]][:20]),
-        ("Lowest confidence", worst("overall", False)),
-        ("Missing observed m/z", [r for r in rows if not r["observed_mz_available"]][:20]),
-        ("No MS2 spectrum", [r for r in rows if not r["ms2_present"]][:20]),
-    ]:
-        gallery.append(f"<h2>{title} ({len(items)} shown)</h2><ul>")
-        for r in items:
-            gallery.append(
-                f"<li>{r['control_id']} - {r['tier']} ({r['overall']:.2f}); "
-                f"struct={r['structure']}, mass={r['mass_score']}, ms2={r['ms2_score']}</li>"
-            )
-        gallery.append("</ul>")
-    gallery.append("</body></html>")
-    (args.out_dir / "gap_gallery.html").write_text("\n".join(gallery))
+    if not args.summary_only:
+        gallery = ["<html><body><h1>Report presentation gap gallery</h1>"]
+        for title, items in [
+            ("Mass mismatch (top candidate mass disagrees)", [r for r in rows if r["mass_mismatch"]][:20]),
+            ("Lowest confidence", worst("overall", False)),
+            ("Missing observed m/z", [r for r in rows if not r["observed_mz_available"]][:20]),
+            ("No MS2 spectrum", [r for r in rows if not r["ms2_present"]][:20]),
+        ]:
+            gallery.append(f"<h2>{title} ({len(items)} shown)</h2><ul>")
+            for r in items:
+                gallery.append(
+                    f"<li>{r['control_id']} - {r['tier']} ({r['overall']:.2f}); "
+                    f"struct={r['structure']}, mass={r['mass_score']}, ms2={r['ms2_score']}</li>"
+                )
+            gallery.append("</ul>")
+        gallery.append("</body></html>")
+        (args.out_dir / "gap_gallery.html").write_text("\n".join(gallery))
 
     print(f"[audit-presentation] n={n}")
     print(json.dumps(summary, indent=2))

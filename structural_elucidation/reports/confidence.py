@@ -9,11 +9,10 @@ Design (see docs/report_presentation_gap_findings.md for the evidence behind it)
   an availability flag: structure (nearest-reference Tanimoto / exact catalog
   match), mass (candidate vs target neutral-mass fit), MS2 (fragment/neutral-loss
   spectral fit), and pathway (neighbor pathway-vote consensus).
-- ``overall`` is a *calibrated* estimate of P(top structure correct), fitted with
-  1-D Platt scaling on the 92 truth-verified controls in the delivered set
-  (tools/calibrate_confidence.py). It is deliberately honest: with MS2 absent and
-  the observed m/z missing for ~85% of features, the available evidence is weakly
-  discriminative, so most predicted compounds land in a narrow mid range.
+- ``overall`` is an exploratory Platt-scaled evidence score fitted on the 92
+  truth-verified controls (tools/calibrate_confidence.py). Publication reanalysis
+  shows weak leave-one-out calibration (see tools/audit_structure_predictions.py),
+  so it must not be interpreted as an externally validated absolute probability.
 - ``tier`` is a corroboration-aware rubric, NOT a rename of the score. "Exact
   reference match" is NOT treated as high confidence: on truth-verified controls
   exact matches are correct only ~38%, so an exact catalog hit alone caps at
@@ -32,18 +31,16 @@ from pathlib import Path
 # --- calibration constants (from tools/calibrate_confidence.py) --------------
 WEIGHTS = {"structure": 0.40, "mass": 0.30, "ms2": 0.20, "pathway": 0.10}
 # Platt scaling of the completeness-weighted raw evidence score -> P(correct).
-# Fit by tools/calibrate_confidence.py on the 92 controls that have a known true
-# structure (the complete structure-truth set available). The evidence is weakly
-# discriminative (MS2 absent; observed m/z missing for ~85%), so probabilities
-# compress to a narrow mid range - this is intentionally honest.
+# Fit in-sample by tools/calibrate_confidence.py on the 92 controls with known
+# structures.  The delivered evidence is weakly discriminative (MS2 coverage
+# 43.6%); leave-one-out publication validation shows poor absolute calibration.
 PLATT_A = 1.887084
 PLATT_B = -1.520154
 CALIBRATION_N = 92          # truth-verified controls used to fit/validate
 CALIBRATION_BASE_RATE = 0.478
-# Tier cutoffs on the calibrated probability (validated to be monotonic in
-# observed correctness on the truth set). "High" is intentionally set above the
-# range the current evidence reaches: with MS2 present for <=44% and no authentic
-# standard, essentially nothing is confidently confirmable yet - honest by design.
+# Operational tier cutoffs on the in-sample Platt score. They were monotonic on
+# the small truth set but are not externally validated; publication-facing text
+# therefore labels the aggregate score exploratory.
 TIER_HIGH = 0.65
 TIER_MODERATE = 0.48
 TIER_LOW = 0.38
@@ -233,11 +230,11 @@ def raw_score(axes: list[Axis]) -> tuple[float, float]:
 
 
 def _tier(prob: float, axes: list[Axis], source: str) -> tuple[str, str]:
-    """Tier from the calibrated probability, with a mass-mismatch override.
+    """Tier from the exploratory Platt score, with a mass-mismatch override.
 
-    Tiering off the calibrated probability keeps tiers monotonic in observed
-    correctness (unlike a hand rubric). A top candidate whose mass disagrees with
-    the observed feature is always demoted, regardless of probability.
+    The tiers were monotonic on the small in-sample truth set but are not externally
+    calibrated. A top candidate whose mass disagrees with the observed feature is
+    always demoted, regardless of score.
     """
     by = {a.key: a for a in axes}
     mass = by["mass"].score if by["mass"].available else None
@@ -461,10 +458,10 @@ def scored_parameters_section_html(conf: Confidence, *, public: bool) -> str:
         "without a specific structure.</p>"
     )
     intro = msi_line + (
-        '<p class="note">The overall identification confidence is a calibrated estimate of the '
-        "probability that the top candidate structure is correct, combining structural similarity, "
-        "mass/formula match, MS2 spectral fit, and pathway consensus (calibrated on "
-        f"{CALIBRATION_N} structure-verified controls; base rate {CALIBRATION_BASE_RATE:.0%}). "
+        '<p class="note">The overall identification confidence is an exploratory evidence score '
+        "combining structural similarity, mass/formula match, MS2 spectral fit, and pathway "
+        f"consensus (fit in-sample on {CALIBRATION_N} structure-verified controls; "
+        f"base rate {CALIBRATION_BASE_RATE:.0%}; not externally calibrated). "
         f"Proposed structure: <strong>{html.escape(conf.descriptor)}</strong>. "
         f"Assessment: <strong>{html.escape(conf.tier)}</strong> - {html.escape(conf.tier_note)}.</p>"
     )

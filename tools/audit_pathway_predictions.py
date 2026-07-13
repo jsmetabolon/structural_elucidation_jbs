@@ -23,7 +23,9 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import csv
 import json
+import math
 import re
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -52,6 +54,29 @@ def clean(value: Any) -> str:
     return "" if text.lower() in NULLS else text
 
 
+def wilson(correct: int, n: int, z: float = 1.959963984540054) -> dict[str, Any]:
+    """Binomial accuracy with a Wilson 95% confidence interval."""
+
+    if n <= 0:
+        return {"n": 0, "correct": 0, "accuracy": None, "ci95": [None, None]}
+    p = correct / n
+    denom = 1.0 + z * z / n
+    center = (p + z * z / (2.0 * n)) / denom
+    half = z * math.sqrt((p * (1.0 - p) + z * z / (4.0 * n)) / n) / denom
+    return {
+        "n": int(n),
+        "correct": int(correct),
+        "accuracy": round(p, 4),
+        "ci95": [round(max(0.0, center - half), 4), round(min(1.0, center + half), 4)],
+    }
+
+
+def assignment_source(value: Any) -> str:
+    """Collapse pathway provenance to direct lookup vs neighbor consensus."""
+
+    return "exact_reference_lookup" if norm(value) == "exact" else "neighbor_consensus"
+
+
 def load_rank1_predictions(root: Path, libs: list[str], pred_name: str) -> pd.DataFrame:
     """Rank-1 prediction row per control, deduped across libs (first-lib-wins)."""
 
@@ -77,12 +102,52 @@ def load_rank1_predictions(root: Path, libs: list[str], pred_name: str) -> pd.Da
                     "predicted_smiles": clean(r.get("predicted_smiles")),
                     "predicted_pathway": clean(r.get("predicted_pathway")),
                     "predicted_subpathway": clean(r.get("predicted_subpathway")),
+                    "source": assignment_source(r.get("pathway_source")),
                     "tier": clean(r.get("pathway_confidence_tier")),
                     "status": clean(r.get("pathway_assignment_status")),
                     "vote_share": pd.to_numeric(r.get("pathway_vote_share"), errors="coerce"),
                     "best_similarity": pd.to_numeric(r.get("pathway_best_reference_similarity"), errors="coerce"),
                 }
             )
+    return pd.DataFrame(rows)
+
+
+def load_rank1_from_reports(root: Path) -> pd.DataFrame:
+    """Load canonical rank-1 pathway + structure rows from delivered report sidecars."""
+
+    rows: list[dict[str, Any]] = []
+    for report_dir in sorted(root.glob("X-*")):
+        if not report_dir.is_dir():
+            continue
+        slug = report_dir.name.lower()
+        data_dir = report_dir / "data"
+        pathway_path = data_dir / f"{slug}_pathway_prediction.csv"
+        candidate_path = data_dir / f"{slug}_top_candidates.csv"
+        if not pathway_path.exists() or not candidate_path.exists():
+            continue
+        with pathway_path.open(newline="") as handle:
+            pathway = next(csv.DictReader(handle), {})
+        with candidate_path.open(newline="") as handle:
+            candidates = list(csv.DictReader(handle))
+        candidates.sort(key=lambda row: pd.to_numeric(row.get("rank"), errors="coerce"))
+        rank1 = candidates[0] if candidates else {}
+        lib = clean(rank1.get("lib_id"))
+        rows.append(
+            {
+                "control_id": report_dir.name,
+                "lib": lib.removesuffix(".0"),
+                "predicted_smiles": clean(rank1.get("predicted_smiles")),
+                "predicted_pathway": clean(pathway.get("predicted_pathway")),
+                "predicted_subpathway": clean(pathway.get("predicted_subpathway")),
+                "source": assignment_source(pathway.get("pathway_source")),
+                "tier": clean(pathway.get("pathway_confidence_tier")),
+                "status": clean(pathway.get("pathway_assignment_status")),
+                "vote_share": pd.to_numeric(pathway.get("pathway_vote_share"), errors="coerce"),
+                "best_similarity": pd.to_numeric(
+                    pathway.get("pathway_best_reference_similarity"), errors="coerce"
+                ),
+            }
+        )
     return pd.DataFrame(rows)
 
 
@@ -157,21 +222,40 @@ def evaluate_vs_reference_db(
                 "predicted_subpathway": r["predicted_subpathway"],
                 "db_super": db_super,
                 "db_sub": db_sub,
+                "source": r["source"],
+                "tier": r["tier"],
+                "status": r["status"],
+                "best_similarity": r["best_similarity"],
             }
         )
     ex = pd.DataFrame(rows)
     if ex.empty:
         return {"n_exact_structure_in_db": 0}
     ex["correct_super"] = ex.apply(lambda x: norm(x["predicted_pathway"]) == norm(x["db_super"]), axis=1)
-    ex_sub = ex[ex["db_sub"].map(norm).ne("")]
+    ex["sub_evaluable"] = ex["db_sub"].map(norm).ne("")
+    ex["correct_sub"] = ex.apply(
+        lambda x: norm(x["predicted_subpathway"]) == norm(x["db_sub"]) and bool(x["sub_evaluable"]),
+        axis=1,
+    )
+    ex["sim_bin"] = ex["best_similarity"].map(similarity_bin)
+    metrics = super_sub_metrics(ex)
     result: dict[str, Any] = {
         "n_exact_structure_in_db": int(len(ex)),
-        "super_accuracy_vs_db": round(float(ex["correct_super"].mean()), 4),
-        "sub_accuracy_vs_db": (
-            round(float((ex_sub["predicted_subpathway"].map(norm) == ex_sub["db_sub"].map(norm)).mean()), 4)
-            if len(ex_sub)
-            else 0.0
-        ),
+        "super_accuracy_vs_db": metrics["super"]["accuracy"],
+        "sub_accuracy_vs_db": metrics["sub"]["accuracy"],
+        "overall": metrics,
+        "by_assignment_source": {
+            str(source): super_sub_metrics(group) for source, group in ex.groupby("source")
+        },
+        "by_pathway_tier": {
+            str(tier): super_sub_metrics(group) for tier, group in ex.groupby("tier")
+        },
+        "by_assignment_status": {
+            str(status): super_sub_metrics(group) for status, group in ex.groupby("status")
+        },
+        "by_similarity_bin": {
+            str(bin_name): super_sub_metrics(group) for bin_name, group in ex.groupby("sim_bin")
+        },
     }
     truth = gt.set_index("control_id")["true_super"].to_dict()
     agree = tot = 0
@@ -182,6 +266,19 @@ def evaluate_vs_reference_db(
             agree += int(ks == norm(x["db_super"]))
     if tot:
         result["db_vs_known_x_super_agreement"] = {"n": int(tot), "agreement": round(agree / tot, 4)}
+    confusion: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    for _, row in ex.iterrows():
+        confusion[clean(row["db_super"])][clean(row["predicted_pathway"])] += 1
+    result["confusion_super"] = {
+        truth_label: dict(sorted(predicted.items(), key=lambda pair: pair[1], reverse=True))
+        for truth_label, predicted in sorted(confusion.items())
+    }
+    result["distribution_super"] = {
+        "predicted": {
+            str(key): int(value) for key, value in Counter(ex["predicted_pathway"].map(clean)).most_common()
+        },
+        "truth": {str(key): int(value) for key, value in Counter(ex["db_super"].map(clean)).most_common()},
+    }
     return result
 
 
@@ -197,17 +294,35 @@ def similarity_bin(value: float) -> str:
 
 
 def accuracy_by(df: pd.DataFrame, key: str, correct_col: str) -> dict[str, dict[str, Any]]:
-    """Accuracy of ``correct_col`` grouped by ``key``."""
+    """Accuracy + Wilson interval of ``correct_col`` grouped by ``key``."""
 
     out: dict[str, dict[str, Any]] = {}
     for value, grp in df.groupby(key):
-        n = len(grp)
-        acc = float(grp[correct_col].mean()) if n else 0.0
-        out[str(value)] = {"n": int(n), "accuracy": round(acc, 4)}
+        out[str(value)] = wilson(int(grp[correct_col].sum()), len(grp))
     return out
 
 
-def build_summary(pred: pd.DataFrame, gt: pd.DataFrame) -> tuple[dict[str, Any], pd.DataFrame]:
+def accuracy_metrics(df: pd.DataFrame, correct_col: str) -> dict[str, Any]:
+    """Accuracy + Wilson interval for one Boolean correctness column."""
+
+    return wilson(int(df[correct_col].sum()), len(df))
+
+
+def super_sub_metrics(df: pd.DataFrame) -> dict[str, Any]:
+    """Super- and subpathway metrics for one evaluation cohort."""
+
+    sub = df[df["sub_evaluable"]].copy() if "sub_evaluable" in df else df.iloc[0:0]
+    return {
+        "super": accuracy_metrics(df, "correct_super"),
+        "sub": accuracy_metrics(sub, "correct_sub"),
+    }
+
+
+def build_summary(
+    pred: pd.DataFrame,
+    gt: pd.DataFrame,
+    db_map: dict[str, tuple[str, str]] | None = None,
+) -> tuple[dict[str, Any], pd.DataFrame]:
     """Compute coverage, accuracy, calibration, confusion, and bias metrics."""
 
     n_pred = len(pred)
@@ -233,7 +348,14 @@ def build_summary(pred: pd.DataFrame, gt: pd.DataFrame) -> tuple[dict[str, Any],
         lambda r: norm(r["predicted_subpathway"]) == norm(r["true_sub"]) and norm(r["true_sub"]) != "",
         axis=1,
     )
+    ev["sub_evaluable"] = ev["true_sub"].map(norm).ne("")
     ev["sim_bin"] = ev["best_similarity"].map(similarity_bin)
+    if db_map is not None:
+        ev["in_reference_db"] = ev["predicted_smiles"].map(
+            lambda smiles: inchikey_skeleton(smiles) in db_map
+        )
+    else:
+        ev["in_reference_db"] = False
 
     n_ev = len(ev)
     sub_evaluable = ev[ev["true_sub"].map(norm).ne("")]
@@ -250,6 +372,28 @@ def build_summary(pred: pd.DataFrame, gt: pd.DataFrame) -> tuple[dict[str, Any],
         "super_accuracy_by_tier": accuracy_by(ev, "tier", "correct_super"),
         "super_accuracy_by_status": accuracy_by(ev, "status", "correct_super"),
         "super_accuracy_by_similarity_bin": accuracy_by(ev, "sim_bin", "correct_super"),
+        "overall": super_sub_metrics(ev),
+        "by_assignment_source": {
+            str(source): super_sub_metrics(group) for source, group in ev.groupby("source")
+        },
+        "by_pathway_tier": {
+            str(tier): super_sub_metrics(group) for tier, group in ev.groupby("tier")
+        },
+        "by_assignment_status": {
+            str(status): super_sub_metrics(group) for status, group in ev.groupby("status")
+        },
+        "by_similarity_bin": {
+            str(bin_name): super_sub_metrics(group) for bin_name, group in ev.groupby("sim_bin")
+        },
+        "by_reference_membership": {
+            ("reference_structure" if bool(in_db) else "non_reference_structure"): super_sub_metrics(group)
+            for in_db, group in ev.groupby("in_reference_db")
+        },
+    }
+    neighbor = ev[ev["source"] == "neighbor_consensus"]
+    accuracy["neighbor_consensus_by_reference_membership"] = {
+        ("reference_structure" if bool(in_db) else "non_reference_structure"): super_sub_metrics(group)
+        for in_db, group in neighbor.groupby("in_reference_db")
     }
 
     # Vocabulary overlap (catch spelling drift that would understate accuracy).
@@ -356,29 +500,43 @@ def leave_one_out_validation(db_path: Path, k: int, floor: float, power: float) 
     return {
         "n_reference_labeled": int(n),
         "n_evaluated": int(evaluated),
+        "n_sub_evaluable": int(sub_evaluable),
         "k": k,
         "similarity_floor": floor,
         "similarity_power": power,
         "super_accuracy": round(correct_super / evaluated, 4) if evaluated else 0.0,
         "sub_accuracy": round(correct_sub / sub_evaluable, 4) if sub_evaluable else 0.0,
+        "super": wilson(correct_super, evaluated),
+        "sub": wilson(correct_sub, sub_evaluable),
         "super_accuracy_by_similarity_bin": {
-            b: {"n": c[1], "accuracy": round(c[0] / c[1], 4)} for b, c in sorted(by_bin.items())
+            b: wilson(c[0], c[1]) for b, c in sorted(by_bin.items())
         },
+        "scope_note": (
+            "Intrinsic leave-one-out validation of the neighbor-consensus mechanism only; "
+            "does not include production MW priors, SMARTS overrides, or other rules."
+        ),
     }
 
 
 def reference_db_md_lines(summary: dict[str, Any]) -> list[str]:
-    """Markdown for the reference-DB-taxonomy accuracy section (headline metric)."""
+    """Markdown for reference-taxonomy consistency (not independent accuracy)."""
 
     ref = summary.get("reference_db_evaluation") or {}
     if not ref.get("n_exact_structure_in_db"):
         return []
     lines = [
-        "## Accuracy vs reference-DB taxonomy (the labels the predictor targets)",
+        "## Reference-taxonomy consistency (not independent prediction accuracy)",
         f"- Exact-structure controls (InChIKey found in reference DB): **{ref['n_exact_structure_in_db']}**",
-        f"- **Super-pathway accuracy vs reference DB: {ref['super_accuracy_vs_db']:.1%}** "
-        f"(sub-pathway {ref['sub_accuracy_vs_db']:.1%})",
+        f"- Overall super/sub consistency: **{ref['super_accuracy_vs_db']:.1%} / "
+        f"{ref['sub_accuracy_vs_db']:.1%}**",
     ]
+    for source, metrics in ref.get("by_assignment_source", {}).items():
+        lines.append(
+            f"- {source}: super {metrics['super']['accuracy']:.1%} "
+            f"(n={metrics['super']['n']}), sub {metrics['sub']['accuracy']:.1%} "
+            f"(n={metrics['sub']['n']})"
+        )
+    lines.append("- Direct exact-reference assignments copy the database label and are circular as accuracy tests.")
     agreement = ref.get("db_vs_known_x_super_agreement")
     if agreement:
         lines.append(
@@ -439,6 +597,11 @@ def main() -> None:
     parser.add_argument("--libs", default=",".join(DEFAULT_LIBS))
     parser.add_argument("--known-x", default="data/known_X.csv")
     parser.add_argument("--out-dir", default="output/_pathway_audit")
+    parser.add_argument(
+        "--reports-root",
+        default=None,
+        help="load canonical rank-1 rows from delivered report sidecars instead of equalization output",
+    )
     parser.add_argument("--loo", action="store_true", help="also run leave-one-out validation over the reference DB")
     parser.add_argument("--db", default="vendor/metabolite_synonyms.sqlite")
     parser.add_argument("--loo-k", type=int, default=10)
@@ -450,21 +613,29 @@ def main() -> None:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    pred = load_rank1_predictions(Path(args.equalization_root), libs, args.pred_name)
+    pred = (
+        load_rank1_from_reports(Path(args.reports_root))
+        if args.reports_root
+        else load_rank1_predictions(Path(args.equalization_root), libs, args.pred_name)
+    )
     gt = load_ground_truth(Path(args.known_x))
     print(f"[pathway-audit] {len(pred)} predicted controls; {len(gt)} known_X ground-truth controls")
 
-    summary, ev = build_summary(pred, gt)
-
     db_path = Path(args.db)
+    if not db_path.exists() and Path("_bundle/metabolite_synonyms.sqlite").exists():
+        db_path = Path("_bundle/metabolite_synonyms.sqlite")
+    db_map = build_db_inchikey_map(db_path) if db_path.exists() else None
+    summary, ev = build_summary(pred, gt, db_map)
+
     if db_path.exists():
         print("[pathway-audit] scoring vs reference-DB taxonomy (exact-structure subset) ...")
-        summary["reference_db_evaluation"] = evaluate_vs_reference_db(pred, gt, build_db_inchikey_map(db_path))
+        summary["reference_db_evaluation"] = evaluate_vs_reference_db(pred, gt, db_map or {})
 
     ev_out = ev[
         [
             "control_id", "lib", "predicted_pathway", "true_super", "correct_super",
-            "predicted_subpathway", "true_sub", "correct_sub", "tier", "status", "best_similarity",
+            "predicted_subpathway", "true_sub", "correct_sub", "source", "tier", "status",
+            "best_similarity", "in_reference_db",
         ]
     ].sort_values(["correct_super", "tier"])
     ev_out.to_csv(out_dir / "audit_pathway_accuracy.csv", index=False)
@@ -474,8 +645,9 @@ def main() -> None:
     ref = summary.get("reference_db_evaluation") or {}
     if ref.get("n_exact_structure_in_db"):
         print(
-            f"[pathway-audit] vs reference-DB taxonomy: super {ref['super_accuracy_vs_db']:.1%} / "
-            f"sub {ref['sub_accuracy_vs_db']:.1%} on {ref['n_exact_structure_in_db']} exact-structure controls"
+            f"[pathway-audit] reference-taxonomy consistency: super "
+            f"{ref['super_accuracy_vs_db']:.1%} / sub {ref['sub_accuracy_vs_db']:.1%} "
+            f"on {ref['n_exact_structure_in_db']} exact-structure controls"
         )
         g = ref.get("db_vs_known_x_super_agreement")
         if g:
