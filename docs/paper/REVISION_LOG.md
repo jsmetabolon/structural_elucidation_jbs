@@ -40,6 +40,9 @@ earlier headline claims.
 - Rebuilt all figures from committed JSON data with cohort/n/CI labeling.
 - Added Supplementary Information with cohort glossary and extended tables.
 - Added a one-command regeneration/verification entry point.
+- Added a Nature initial-submission DOCX: 67-character title, 136-word summary,
+  12-point Times New Roman, double spacing, line/page numbering, five embedded
+  figures plus one main table, and Nature-ordered References/Methods/declarations.
 - Added explicit required human inputs for authorship, funding, disclosures,
   ethics, run-environment provenance, and data-access details.
 

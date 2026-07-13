@@ -159,6 +159,17 @@ def main() -> None:
         dry_run=args.dry_run,
     )
     run(
+        [
+            python,
+            "tools/build_manuscript_docx.py",
+            "--source",
+            str(args.paper_dir / "manuscript.md"),
+            "--output",
+            str(args.paper_dir / "manuscript.docx"),
+        ],
+        dry_run=args.dry_run,
+    )
+    run(
         [python, "tools/verify_paper_package.py", "--paper-dir", str(args.paper_dir)],
         dry_run=args.dry_run,
     )
