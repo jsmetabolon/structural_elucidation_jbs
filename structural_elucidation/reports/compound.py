@@ -623,6 +623,7 @@ def compact_candidate_scores(candidates: pd.DataFrame) -> pd.DataFrame:
         "lactoyl_diagnostic_bin_score",
         "lactoyl_aa_specific_score",
         "mass_match_score",
+        "evidence_confidence",
         "fusion_source_label",
         "rerank_policy",
         "source_comp_id",
@@ -806,6 +807,8 @@ def build_candidate_consensus_maps(
             "predicted_smiles": ref_smiles,
             "candidate_report_score": row.get("candidate_report_score", ""),
             "abs_mass_error_da": row.get("abs_mass_error_da", ""),
+            "evidence_confidence": row.get("evidence_confidence", ""),
+            "mass_match_score": row.get("mass_match_score", ""),
         }
     default_rank = 1 if 1 in maps else (min(maps) if maps else 0)
     return maps, summaries, default_rank
@@ -825,20 +828,47 @@ def candidate_consensus_scale_html() -> str:
           </div>"""
 
 
+def _candidate_score_line_html(row: dict[str, Any]) -> str:
+    """One-line evidence readout for a candidate.
+
+    Leads with the pipeline's evidence_confidence (library + mass + spectral) and
+    mass match - the meaningful identification signals - then the raw rerank score
+    explicitly labeled as a relative tie-breaker (it is a small, uncalibrated
+    generative-rerank value used to order otherwise-equivalent isomers).
+    """
+
+    def fnum(value: Any, nd: int) -> str | None:
+        try:
+            return f"{float(value):.{nd}f}"
+        except (TypeError, ValueError):
+            return None
+
+    parts = []
+    ev = fnum(row.get("evidence_confidence"), 3)
+    mm = fnum(row.get("mass_match_score"), 3)
+    rs = fnum(row.get("candidate_report_score"), 4)
+    me = fnum(row.get("abs_mass_error_da"), 6)
+    if ev is not None:
+        parts.append(f"Evidence confidence: <strong>{ev}</strong>")
+    if mm is not None:
+        parts.append(f"Mass match: <strong>{mm}</strong>")
+    if rs is not None:
+        parts.append(f"Rank score (relative): <strong>{rs}</strong>")
+    if me is not None:
+        parts.append(f"Mass error (Da): <strong>{me}</strong>")
+    return ("<p>" + " &middot; ".join(parts) + "</p>") if parts else ""
+
+
 def candidate_consensus_summary_html(summary: dict[str, Any]) -> str:
     """HTML summary block for the selected top candidate."""
 
     if not summary:
         return "<p class='note'>No candidate summary available.</p>"
-    score = summary.get("candidate_report_score", "")
-    score_text = f"{float(score):.4f}" if str(score) not in {"", "nan"} else html.escape(str(score))
-    mass_err = summary.get("abs_mass_error_da", "")
-    mass_text = f"{float(mass_err):.6f}" if str(mass_err) not in {"", "nan"} else html.escape(str(mass_err))
     return (
         "<div class='candidate-summary'>"
-        f"<p><strong>Rank {html.escape(str(summary.get('rank', '')))}</strong> · "
+        f"<p><strong>Rank {html.escape(str(summary.get('rank', '')))}</strong> &middot; "
         f"{html.escape(str(summary.get('predicted_formula', '')))}</p>"
-        f"<p>Report score: <strong>{score_text}</strong> · Mass error (Da): <strong>{mass_text}</strong></p>"
+        f"{_candidate_score_line_html(summary)}"
         f"<p><code>{html.escape(str(summary.get('predicted_smiles', '')))}</code></p>"
         "</div>"
     )
@@ -858,16 +888,6 @@ def candidate_structure_card_html(
         structure_html = f"<div class='structure-svg-frame'>{structure_svg}</div>"
     else:
         structure_html = "<div class='structure-svg-frame'><p class='note'>Structure unavailable.</p></div>"
-    score = row.get("candidate_report_score", "")
-    mass_err = row.get("abs_mass_error_da", "")
-    try:
-        score_text = f"{float(score):.4f}"
-    except (TypeError, ValueError):
-        score_text = html.escape(str(score))
-    try:
-        mass_text = f"{float(mass_err):.6f}"
-    except (TypeError, ValueError):
-        mass_text = html.escape(str(mass_err))
     consensus_block = ""
     if consensus_svg:
         consensus_block = f"<div class='consensus-box'>{consensus_svg}</div>" f"{candidate_consensus_scale_html()}"
@@ -876,8 +896,8 @@ def candidate_structure_card_html(
         f"<h3>{html.escape(title)}</h3>"
         f"{structure_html}"
         f"<p><code>{html.escape(smiles)}</code></p>"
-        f"<p class='note'>Formula: <strong>{html.escape(str(row.get('predicted_formula', '')))}</strong> · "
-        f"Report score: <strong>{score_text}</strong> · Mass error (Da): <strong>{mass_text}</strong></p>"
+        f"<p class='note'>Formula: <strong>{html.escape(str(row.get('predicted_formula', '')))}</strong></p>"
+        f"<p class='note'>{_candidate_score_line_html(row)}</p>"
         f"{consensus_block}"
         "</div>"
     )
@@ -2197,6 +2217,7 @@ def render_html(
     evidence: dict[str, Any],
     db_detail: dict[str, Any],
     confidence: Any,
+    conf_fields: dict[str, Any],
     pathway_info: dict[str, Any],
     synonyms: list[dict[str, Any]],
     neighbors: list[dict[str, Any]],
@@ -2302,14 +2323,14 @@ def render_html(
         if rank not in candidate_consensus_maps:
             continue
         formula = str(row.get("predicted_formula", "") or "n/a")
-        score = row.get("candidate_report_score", "")
+        ev = row.get("evidence_confidence", "")
         try:
-            score_label = f"{float(score):.3f}"
+            ev_label = f" &middot; conf {float(ev):.3f}"
         except (TypeError, ValueError):
-            score_label = str(score)
+            ev_label = ""
         selected = " selected" if rank == default_rank else ""
         candidate_select_options.append(
-            f'<option value="{rank}"{selected}>Rank {rank} · {html.escape(formula)} · score {html.escape(score_label)}</option>'
+            f'<option value="{rank}"{selected}>Rank {rank} &middot; {html.escape(formula)}{ev_label}</option>'
         )
     candidate_select_html = (
         "\n".join(candidate_select_options)
@@ -2445,6 +2466,7 @@ def render_html(
     <section class="section">
       {heading_with_info("h2", top10_title)}
       <p class="note">Select a candidate to view its consensus atom-position heatmap. The selected structure is the reference; atom circles show maximum-common-substructure retention across the top-10 candidate pool.</p>
+      <p class="note"><strong>Reading the scores:</strong> "Evidence confidence" (library + mass + spectral corroboration) and "Mass match" are the identification signals. The "Rank score (relative)" is a small, uncalibrated value the reranker uses only to order otherwise-equivalent candidates (e.g. mass-consistent isomers), so a low absolute value does not indicate a poor match.</p>
       <div class="candidate-picker">
         <label for="candidate-consensus-select">Candidate</label>
         <select id="candidate-consensus-select" aria-label="Select candidate structure for consensus heatmap">
@@ -2778,6 +2800,7 @@ def render_html(
           <tbody>{feature_rows}</tbody>
         </table>
       </div>
+      {confmod.ms2_evidence_section_html(conf_fields, public=public_mode)}
     </section>
 
     <section class="section">
@@ -2860,12 +2883,17 @@ def render_html(
         const summary = consensusSummaries[String(rank)] || {{}};
         const bits = [];
         if (summary.rank) bits.push('<p><strong>Rank ' + summary.rank + '</strong> · ' + (summary.predicted_formula || '') + '</p>');
-        if (summary.candidate_report_score !== undefined && summary.candidate_report_score !== '') {{
-          const score = Number(summary.candidate_report_score);
-          bits.push('<p>Report score: <strong>' + (Number.isFinite(score) ? score.toFixed(4) : summary.candidate_report_score) + '</strong>'
-            + (summary.abs_mass_error_da !== undefined && summary.abs_mass_error_da !== '' ? ' · Mass error (Da): <strong>' + Number(summary.abs_mass_error_da).toFixed(6) + '</strong>' : '')
-            + '</p>');
-        }}
+        const fmt = (v, nd) => (v !== undefined && v !== '' && Number.isFinite(Number(v))) ? Number(v).toFixed(nd) : null;
+        const seg = [];
+        const ev = fmt(summary.evidence_confidence, 3);
+        const mm = fmt(summary.mass_match_score, 3);
+        const rs = fmt(summary.candidate_report_score, 4);
+        const me = fmt(summary.abs_mass_error_da, 6);
+        if (ev !== null) seg.push('Evidence confidence: <strong>' + ev + '</strong>');
+        if (mm !== null) seg.push('Mass match: <strong>' + mm + '</strong>');
+        if (rs !== null) seg.push('Rank score (relative): <strong>' + rs + '</strong>');
+        if (me !== null) seg.push('Mass error (Da): <strong>' + me + '</strong>');
+        if (seg.length) bits.push('<p>' + seg.join(' · ') + '</p>');
         if (summary.predicted_smiles) bits.push('<p><code>' + summary.predicted_smiles + '</code></p>');
         candidateConsensusSummary.innerHTML = bits.join('') || '<p class="note">No candidate summary available.</p>';
       }}
@@ -3517,6 +3545,24 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         correlations_real=not correlation_blocker,
     )
     _conf_fields["observed_mz"] = _observed_mz
+    # Parity with the enrich -> patch flow: Metabolon Level, mass-consistent
+    # alternative, and observed-MS2 detail so the from-source render matches.
+    _level = str(kx_row.get("Level", "") or "").strip()
+    _conf_fields["metabolon_level"] = "" if _level.lower() in {"nan", "artifact", "exclude", "4?"} else _level
+    _conf_fields["mass_alt"] = confmod.mass_consistent_alt(_css_records)
+    _n_peaks = int(len(peaks)) if hasattr(peaks, "empty") and not peaks.empty else 0
+    _conf_fields["ms2_detail"] = {
+        # The observed-MS2 panel must reflect an *observed* spectrum (from --peak-csv /
+        # the observed lookup), not the pipeline's predicted spectral score.
+        "present": _n_peaks > 0,
+        "n_pairs": _n_peaks,
+        "n_ion_bins": 0,
+        "n_loss_bins": 0,
+        "forward": _n(rank1.get("forward_spectrum_score")),
+        "predicted_v2": _n(rank1.get("predicted_spectrum_score_v2")),
+        "match": _n(rank1.get("ms2_match_score")),
+    }
+    _conf_fields["ms2_n_pairs"] = _n_peaks
     confidence_obj = confmod.compute_confidence(_conf_fields)
 
     render_kwargs = dict(
@@ -3525,6 +3571,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         evidence=evidence,
         db_detail=db_detail,
         confidence=confidence_obj,
+        conf_fields=_conf_fields,
         pathway_info=pathway_info,
         synonyms=syn_df.fillna("").to_dict(orient="records"),
         neighbors=neighbors,

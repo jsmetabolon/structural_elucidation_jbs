@@ -1,0 +1,34 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='720' height='440' viewBox='0 0 720 440' font-family='Helvetica, Arial, sans-serif'>
+<rect width='720' height='440' fill='white'/>
+<text x='70' y='30' font-size='18' font-weight='bold' fill='#1b1f24'>MSI identification level (all 3,897 reports)</text>
+<text x='70' y='50' font-size='12' fill='#5b6570'>Schymanski/MSI level derived from the evidence axes</text>
+<line x1='70' y1='344.0' x2='696' y2='344.0' stroke='#d7dce1' stroke-width='1'/>
+<text x='62' y='348.0' font-size='11' fill='#5b6570' text-anchor='end'>0</text>
+<line x1='70' y1='290.0' x2='696' y2='290.0' stroke='#d7dce1' stroke-width='1'/>
+<text x='62' y='294.0' font-size='11' fill='#5b6570' text-anchor='end'>572</text>
+<line x1='70' y1='236.0' x2='696' y2='236.0' stroke='#d7dce1' stroke-width='1'/>
+<text x='62' y='240.0' font-size='11' fill='#5b6570' text-anchor='end'>1145</text>
+<line x1='70' y1='182.0' x2='696' y2='182.0' stroke='#d7dce1' stroke-width='1'/>
+<text x='62' y='186.0' font-size='11' fill='#5b6570' text-anchor='end'>1717</text>
+<line x1='70' y1='128.0' x2='696' y2='128.0' stroke='#d7dce1' stroke-width='1'/>
+<text x='62' y='132.0' font-size='11' fill='#5b6570' text-anchor='end'>2290</text>
+<line x1='70' y1='74.0' x2='696' y2='74.0' stroke='#d7dce1' stroke-width='1'/>
+<text x='62' y='78.0' font-size='11' fill='#5b6570' text-anchor='end'>2862</text>
+<text x='16' y='209.0' font-size='12' fill='#5b6570' text-anchor='middle' transform='rotate(-90 16 209.0)'>Reports</text>
+<rect x='95.0' y='339.8' width='75.1' height='4.2' fill='#3b6ea5' rx='2'/>
+<text x='132.6' y='333.8' font-size='12' font-weight='bold' fill='#1b1f24' text-anchor='middle'>44</text>
+<text x='132.6' y='362.0' font-size='11' fill='#1b1f24' text-anchor='middle'>L1 confirmed</text>
+<rect x='220.2' y='325.8' width='75.1' height='18.2' fill='#4a8f6d' rx='2'/>
+<text x='257.8' y='319.8' font-size='12' font-weight='bold' fill='#1b1f24' text-anchor='middle'>193</text>
+<text x='257.8' y='362.0' font-size='11' fill='#1b1f24' text-anchor='middle'>L2 probable</text>
+<rect x='345.4' y='109.2' width='75.1' height='234.8' fill='#b06a3b' rx='2'/>
+<text x='383.0' y='103.2' font-size='12' font-weight='bold' fill='#1b1f24' text-anchor='middle'>2489</text>
+<text x='383.0' y='362.0' font-size='11' fill='#1b1f24' text-anchor='middle'>L3 tentative</text>
+<rect x='470.6' y='234.1' width='75.1' height='109.9' fill='#8a6ea5' rx='2'/>
+<text x='508.2' y='228.1' font-size='12' font-weight='bold' fill='#1b1f24' text-anchor='middle'>1165</text>
+<text x='508.2' y='362.0' font-size='11' fill='#1b1f24' text-anchor='middle'>L4 formula</text>
+<rect x='595.8' y='343.4' width='75.1' height='0.6' fill='#a53b52' rx='2'/>
+<text x='633.4' y='337.4' font-size='12' font-weight='bold' fill='#1b1f24' text-anchor='middle'>6</text>
+<text x='633.4' y='362.0' font-size='11' fill='#1b1f24' text-anchor='middle'>L5 mass</text>
+<line x1='70' y1='344' x2='696' y2='344' stroke='#1b1f24' stroke-width='1.2'/>
+</svg>

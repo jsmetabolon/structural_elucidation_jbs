@@ -30,7 +30,6 @@ CLI examples::
 from __future__ import annotations
 
 import argparse
-import html
 import json
 import re
 import sys
@@ -44,6 +43,11 @@ from typing import Any
 import pandas as pd
 
 from structural_elucidation.paths import REPO_ROOT, resolve
+from structural_elucidation.reports.index_render import (
+    IndexRow,
+    _read_confidence_extra,
+    render_master_index,
+)
 
 ID_COLUMNS = ("control_id", "x_compound_id")
 DEFAULT_PREDICTIONS_NAME = "unified_rerank_all_top10.csv"
@@ -253,21 +257,6 @@ def build_one(
 
 # ── Master index + summary ────────────────────────────────────────────────────
 
-@dataclass
-class IndexRow:
-    """One row in the master index, sourced from a compound ``manifest.json``."""
-
-    control_id: str
-    lib: str = ""
-    name: str = ""
-    formula: str = ""
-    exact_mass: str = ""
-    db_chemical_id: str = ""
-    n_neighbors: int = 0
-    status: str = ""
-    report: str = ""
-
-
 def collect_index_rows(out_root: Path, results: list[BuildResult]) -> list[IndexRow]:
     """Read each compound ``manifest.json`` and merge in batch build status."""
 
@@ -281,17 +270,20 @@ def collect_index_rows(out_root: Path, results: list[BuildResult]) -> list[Index
             continue
         cid = str(payload.get("control_id") or manifest_path.parent.name)
         target = payload.get("target") or {}
+        extra = _read_confidence_extra(manifest_path.parent)
         rows.append(
             IndexRow(
                 control_id=cid,
                 lib=lib_by_id.get(cid, ""),
-                name=str(target.get("name") or ""),
+                name=str(extra.get("display_name") or target.get("name") or ""),
                 formula=str(target.get("formula") or ""),
                 exact_mass=("" if target.get("exact_mass") in (None, "") else f"{float(target['exact_mass']):.4f}"),
                 db_chemical_id=str(payload.get("db_chemical_id") or ""),
                 n_neighbors=int(payload.get("n_neighbors") or 0),
                 status=status_by_id.get(cid, "existing"),
                 report=f"{manifest_path.parent.name}/index.html",
+                msi_level=str(extra.get("msi_level") or ""),
+                msi_label=str(extra.get("msi_label") or ""),
             )
         )
     rows.sort(key=lambda r: (r.lib, r.control_id))
@@ -311,6 +303,8 @@ def write_reports_index_csv(out_root: Path, rows: list[IndexRow]) -> Path:
                 "exact_mass": r.exact_mass,
                 "db_chemical_id": r.db_chemical_id,
                 "n_neighbors": r.n_neighbors,
+                "msi_level": r.msi_level,
+                "msi_label": r.msi_label,
                 "status": r.status,
                 "report": r.report,
             }
@@ -320,112 +314,6 @@ def write_reports_index_csv(out_root: Path, rows: list[IndexRow]) -> Path:
     path = out_root / "reports_index.csv"
     df.to_csv(path, index=False)
     return path
-
-
-def render_master_index(rows: list[IndexRow], generated_at: str) -> str:
-    """Render the self-contained master ``index.html`` (search + sortable table)."""
-
-    def esc(value: Any) -> str:
-        return html.escape(str(value))
-
-    libs = sorted({r.lib for r in rows if r.lib})
-    body_rows = []
-    for idx, r in enumerate(rows, start=1):
-        body_rows.append(
-            "<tr>"
-            f"<td class='num'>{idx}</td>"
-            f"<td><a href='{esc(r.report)}'>{esc(r.control_id)}</a></td>"
-            f"<td>{esc(r.name)}</td>"
-            f"<td class='mono'>{esc(r.formula)}</td>"
-            f"<td class='num'>{esc(r.exact_mass)}</td>"
-            f"<td class='num'>{esc(r.lib)}</td>"
-            f"<td class='mono'>{esc(r.db_chemical_id)}</td>"
-            f"<td class='num'>{esc(r.n_neighbors)}</td>"
-            f"<td class='status status-{esc(r.status)}'>{esc(r.status)}</td>"
-            "</tr>"
-        )
-    lib_chips = " ".join(
-        f"<span class='chip'>lib {esc(lib)}: {sum(1 for r in rows if r.lib == lib)}</span>" for lib in libs
-    )
-    rows_html = "\n".join(body_rows)
-    total = len(rows)
-    return f"""<!DOCTYPE html>
-<html lang='en'>
-<head>
-<meta charset='utf-8'>
-<meta name='viewport' content='width=device-width, initial-scale=1'>
-<title>X-compound reports ({total})</title>
-<style>
-  :root {{ color-scheme: light dark; }}
-  * {{ box-sizing: border-box; }}
-  body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-         margin: 0; padding: 32px; line-height: 1.45; }}
-  h1 {{ margin: 0 0 4px; font-size: 22px; }}
-  .meta {{ color: #6a737d; font-size: 13px; margin-bottom: 16px; }}
-  .chips {{ margin: 10px 0 18px; }}
-  .chip {{ display: inline-block; padding: 3px 10px; margin: 2px 6px 2px 0; border-radius: 999px;
-          background: rgba(127,127,127,0.14); font-size: 12px; }}
-  #q {{ width: 100%; max-width: 420px; padding: 9px 12px; font-size: 14px; border-radius: 8px;
-       border: 1px solid rgba(127,127,127,0.4); margin-bottom: 14px; }}
-  table {{ border-collapse: collapse; width: 100%; font-size: 13px; }}
-  th, td {{ text-align: left; padding: 7px 10px; border-bottom: 1px solid rgba(127,127,127,0.18); }}
-  th {{ position: sticky; top: 0; cursor: pointer; user-select: none; background: rgba(127,127,127,0.10);
-       backdrop-filter: blur(6px); }}
-  th:hover {{ background: rgba(127,127,127,0.18); }}
-  td.num {{ text-align: right; font-variant-numeric: tabular-nums; }}
-  td.mono {{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }}
-  tr:hover td {{ background: rgba(127,127,127,0.07); }}
-  a {{ color: #0969da; text-decoration: none; }}
-  a:hover {{ text-decoration: underline; }}
-  .status {{ font-size: 12px; }}
-  .status-failed {{ color: #cf222e; }}
-  .status-skipped {{ color: #9a6700; }}
-  .status-generated {{ color: #1a7f37; }}
-</style>
-</head>
-<body>
-  <h1>X-compound HTML reports</h1>
-  <div class='meta'>{total} compounds &middot; generated {esc(generated_at)}</div>
-  <div class='chips'>{lib_chips}</div>
-  <input id='q' type='search' placeholder='Filter by id, name, formula, lib&hellip;' autocomplete='off'>
-  <table id='t'>
-    <thead><tr>
-      <th data-k='n'>#</th><th>Control ID</th><th>Name</th><th>Formula</th>
-      <th>Exact mass</th><th>Lib</th><th>DB chem id</th><th>Neighbors</th><th>Status</th>
-    </tr></thead>
-    <tbody>
-{rows_html}
-    </tbody>
-  </table>
-<script>
-  const q = document.getElementById('q');
-  const tbody = document.querySelector('#t tbody');
-  const rows = Array.from(tbody.rows);
-  q.addEventListener('input', () => {{
-    const needle = q.value.toLowerCase();
-    for (const row of rows) {{
-      row.style.display = row.textContent.toLowerCase().includes(needle) ? '' : 'none';
-    }}
-  }});
-  document.querySelectorAll('#t thead th').forEach((th, col) => {{
-    let asc = true;
-    th.addEventListener('click', () => {{
-      const visible = rows.slice();
-      visible.sort((a, b) => {{
-        const x = a.cells[col].textContent.trim();
-        const y = b.cells[col].textContent.trim();
-        const nx = parseFloat(x), ny = parseFloat(y);
-        const cmp = (!isNaN(nx) && !isNaN(ny)) ? nx - ny : x.localeCompare(y);
-        return asc ? cmp : -cmp;
-      }});
-      asc = !asc;
-      visible.forEach(r => tbody.appendChild(r));
-    }});
-  }});
-</script>
-</body>
-</html>
-"""
 
 
 @dataclass

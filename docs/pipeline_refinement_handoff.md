@@ -86,6 +86,11 @@ Context you need:
   mass-alt callout becomes rare; `msi_level_distribution` L4 falls, L2/L3 rise.
 - Open question: exact tolerance + how to treat adduct ambiguity (the same feature
   may be explainable as multiple adducts/conjugates).
+- Reference prototype: `tools/prototype_mass_gate_rerank.py` (read-only) applies this
+  gate to the delivered `top_candidates.csv` and confirms the projected impact:
+  598 rank-1 mass-rejected today, **523 (87%) recoverable** by promoting an in-list
+  mass-consistent candidate (~523 MSI L4 -> L3+), 75 with no in-list alt (need
+  conjugate enumeration). Use it as the spec for the reranker change.
 
 ## 3. Broader MS2 capture + a better candidate-vs-spectrum scorer
 - Goal: raise MS2 coverage above 44% and make the spectral score more
@@ -121,22 +126,73 @@ Context you need:
 - Open question: whether to also fit per-library or per-pathway calibration once
   the labeled set is large enough.
 
+## 5. Evidence-aware headline candidate score (fold evidence_confidence into rerank)
+- Goal: make the number the reranker emits as the candidate's headline score reflect
+  the actual identification evidence, not just generative likelihood.
+- Evidence: `candidate_report_score` (= `unified_final_score` = `rerank_score`) is a
+  raw, uncalibrated generative-rerank value. Across all 3,897 rank-1 candidates its
+  median is **0.035** while the pipeline's own `evidence_confidence` median is
+  **0.996**; 57% of reports have `evidence_confidence >= 0.90` but a headline score
+  < 0.10, and 91% of library-hit + mass-perfect rank-1s show a headline score < 0.10
+  (e.g. X-02269 phenyl glucopyranoside: `evidence_confidence 0.999`, `mass_match
+  0.9998`, headline score 0.036). The score is small partly because it spreads over
+  many mass-consistent isomers.
+- Current (report layer, stopgap): reports now surface `evidence_confidence` +
+  `mass_match` in the top-10 widget and relabel the raw value "Rank score (relative)"
+  (see `tools/patch_candidate_scores.py` + `compound.py`), so readers stop reading
+  the 0.036 as a match quality. This does not change ranking.
+- Plug-in: in the reranker, combine `evidence_confidence` (library + mass + spectral)
+  with the generative score into the final ordering/score, or expose a calibrated
+  0-1 `candidate_confidence` column and use it as the headline. Keep the raw
+  generative score available as a secondary isomer tie-breaker.
+- Caveat (do not overclaim): `evidence_confidence` is shared across mass-consistent
+  isomers (all five C12H16O6 isomers of X-02269 score 0.9986), so it certifies the
+  formula/library class, not the specific isomer. Retain an isomer-margin term (the
+  small generative-score gap) so a confident class does not become a false-confident
+  single structure - this mirrors why the report's overall confidence stays Moderate
+  / MSI Level 3 for such cases.
+- Verify: headline candidate score median rises and tracks correctness on the truth
+  set; the report note about "relative" rank score can then be removed.
+- Reference prototype: `tools/prototype_mass_gate_rerank.py` shows the headline shift
+  on the delivered data (median raw `candidate_report_score` 0.035 ->
+  `evidence_confidence` 0.997).
+
 ## Cross-cutting: from-source regeneration + render_html parity task
 Once items 1-4 land upstream, prefer regenerating reports from source
 (`python -m structural_elucidation.reports.batch` with `--observed-lookup-dir`,
 `--db`, and the pathway-enriched rerank CSVs) rather than patching, so the
 delivered bundle is a single clean render.
 
-Parity status (important): the overall-confidence badge/card + scored-parameters
-table are already wired into `render_html` (via the shared `confidence.py`
-builders), so those match a from-source render. The remaining gap-fix DISPLAY
-elements are currently applied only by `tools/patch_report_confidence.py` and are
-NOT yet in `render_html`: the WGCNA correlations table, the MS Fit MS2-evidence
-panel, the resolved display name, the Metabolon Level line, and the
-mass-consistent-alternative callout. Before a from-source regen will match the
-delivered (patched) bundle, wire these into `compound.py::render_html` (build the
-same normalized fields in `build_report` from the bundle inputs, then call the
-existing `confidence.py` builders: `correlations_table_html`,
-`ms2_evidence_section_html`, etc.). Until then, the enrich -> patch flow
-(`tools/enrich_report_evidence.py` + `tools/patch_report_confidence.py` +
-`tools/patch_consensus_crowding.py`) is the source of truth for delivery.
+Parity status (updated). The following now render identically from source
+(`compound.py::render_html`/`build_report`) and from the enrich->patch flow, verified
+on lib209 by `tools/diff_source_vs_patched.py` (public MS2-ion leaks = 0):
+the overall-confidence badge/card, scored-parameters table, MSI badge/card/line,
+the top-10 candidate-widget evidence (`evidence_confidence` + `mass_match` +
+relabeled "Rank score (relative)"), the Metabolon Level line, the
+mass-consistent-alternative callout, the internal MS2-evidence panel
+(`ms2_evidence_section_html`), and the master-index MSI column + column sorting
+(`index_render.py`). `mass_consistent_alt` is shared in `confidence.py`.
+
+Two DATA-SOURCE gaps remain before a from-source regen can replace the patch chain
+(the render code is ready; the inputs differ):
+1. Observed-MS2 source mismatch: the two paths key MS2 presence off *different*
+   observed files. `build_report` (via `--peak-csv`, auto-derived from
+   `--observed-lookup-dir`) uses the per-lib `*_observed_ms2_lookup.csv`, while the
+   enrich flow uses `per_control_all_x.csv`. They disagree for ~47% of lib209
+   controls (e.g. X-11640 is in the per-lib lookup but not in `per_control_all_x`,
+   so from-source shows the MS2 panel while the patched report does not). Fix: pick
+   one canonical observed-MS2 source + presence criterion and use it for both the
+   MS2 panel and the MS2 confidence axis in both paths.
+2. `mass_match_score`: the current `_bundle/rerank/*.csv` lacks this column, so
+   `mass_consistent_alt` cannot fire from source (the enrich flow had it from the
+   originally-generated `candidate_score_summary.csv`). Either emit
+   `mass_match_score` in the rerank CSV or derive it from `abs_mass_error_da` + the
+   observed neutral mass in `compact_candidate_scores`.
+
+A single-compound and a 93-compound (lib209) from-source build both succeed in-VM
+(~1 s/compound; ~15-20 min for all 3,897 at `--jobs 8`). DECISION: do not switch
+delivery yet - close the two gaps above and re-run `tools/diff_source_vs_patched.py`
+to confirm full parity first. Until then, the enrich -> patch flow
+(`tools/enrich_report_evidence.py`, `tools/patch_report_confidence.py`,
+`tools/patch_candidate_scores.py`, `tools/patch_consensus_crowding.py`, and
+`tools/rebuild_master_index.py`) remains the source of truth for delivery.
