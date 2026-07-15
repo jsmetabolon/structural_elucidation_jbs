@@ -689,6 +689,57 @@ def candidate_confidences(rows: list[dict], feature_overall: float | None) -> li
     return result
 
 
+CANDIDATE_TIE_NOTE = (
+    "<p class='note'>Tied with other same-formula candidates: the formula/class is "
+    "supported but the specific isomer is not resolved.</p>"
+)
+
+CANDIDATE_SCORES_NOTE = (
+    '<p class="note"><strong>Reading the scores:</strong> "Candidate confidence" is a 0-1 '
+    "estimate that this specific structure is the correct one; it decreases down the ranking, "
+    "and the rank-1 value equals the report's overall identification confidence. \"Mass match\" "
+    'and "Formula/class evidence" corroborate the molecular formula/class but are shared across '
+    "same-formula isomers, so they do not distinguish individual candidates. When candidates are "
+    'marked tied, the formula/class is supported but the exact isomer is not resolved (check the '
+    '"Mass-consistent alternative" note for any better-fitting structure).</p>'
+)
+
+
+def candidate_score_line_html(row: dict) -> str:
+    """Shared server-rendered score line for one candidate (renderer + patcher).
+
+    Leads with ``candidate_confidence`` (monotone with rank), then ``Mass match``
+    and the class-level ``Formula/class evidence`` (the pipeline
+    ``evidence_confidence``), then ``Mass error``. Flags tied isomers. Both the
+    from-source renderer and the delivered-set patcher call this so their cards
+    are byte-identical.
+    """
+
+    def fnum(value, nd):
+        try:
+            return f"{float(value):.{nd}f}"
+        except (TypeError, ValueError):
+            return None
+
+    parts = []
+    cc = fnum(row.get("candidate_confidence"), 3)
+    mm = fnum(row.get("mass_match_score"), 3)
+    ev = fnum(row.get("evidence_confidence"), 3)
+    me = fnum(row.get("abs_mass_error_da"), 6)
+    if cc is not None:
+        parts.append(f"Candidate confidence: <strong>{cc}</strong>")
+    if mm is not None:
+        parts.append(f"Mass match: <strong>{mm}</strong>")
+    if ev is not None:
+        parts.append(f"Formula/class evidence: <strong>{ev}</strong>")
+    if me is not None:
+        parts.append(f"Mass error (Da): <strong>{me}</strong>")
+    line = ("<p>" + " &middot; ".join(parts) + "</p>") if parts else ""
+    if row.get("candidate_confidence_tied"):
+        line += CANDIDATE_TIE_NOTE
+    return line
+
+
 def read_fields_from_sidecars(data_dir: Path, slug: str) -> dict | None:
     """Build confidence ``fields`` from a report's on-disk sidecars.
 

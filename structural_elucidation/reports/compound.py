@@ -829,34 +829,15 @@ def candidate_consensus_scale_html() -> str:
 
 
 def _candidate_score_line_html(row: dict[str, Any]) -> str:
-    """One-line evidence readout for a candidate.
+    """One-line score readout for a candidate (shared with the delivered-set patcher).
 
-    Leads with the pipeline's evidence_confidence (library + mass + spectral) and
-    mass match - the meaningful identification signals - then the raw rerank score
-    explicitly labeled as a relative tie-breaker (it is a small, uncalibrated
-    generative-rerank value used to order otherwise-equivalent isomers).
+    Delegates to :func:`confidence.candidate_score_line_html` so the from-source
+    render and the enrich->patch flow emit byte-identical candidate cards. Leads
+    with ``candidate_confidence`` (monotone with rank), then ``Mass match`` and
+    the class-level ``Formula/class evidence``; tied isomers are flagged.
     """
 
-    def fnum(value: Any, nd: int) -> str | None:
-        try:
-            return f"{float(value):.{nd}f}"
-        except (TypeError, ValueError):
-            return None
-
-    parts = []
-    ev = fnum(row.get("evidence_confidence"), 3)
-    mm = fnum(row.get("mass_match_score"), 3)
-    rs = fnum(row.get("candidate_report_score"), 4)
-    me = fnum(row.get("abs_mass_error_da"), 6)
-    if ev is not None:
-        parts.append(f"Evidence confidence: <strong>{ev}</strong>")
-    if mm is not None:
-        parts.append(f"Mass match: <strong>{mm}</strong>")
-    if rs is not None:
-        parts.append(f"Rank score (relative): <strong>{rs}</strong>")
-    if me is not None:
-        parts.append(f"Mass error (Da): <strong>{me}</strong>")
-    return ("<p>" + " &middot; ".join(parts) + "</p>") if parts else ""
+    return confmod.candidate_score_line_html(row)
 
 
 def candidate_consensus_summary_html(summary: dict[str, Any]) -> str:
@@ -2323,14 +2304,16 @@ def render_html(
         if rank not in candidate_consensus_maps:
             continue
         formula = str(row.get("predicted_formula", "") or "n/a")
-        ev = row.get("evidence_confidence", "")
+        cc = row.get("candidate_confidence", "")
         try:
-            ev_label = f" &middot; conf {float(ev):.3f}"
+            cc_label = f" &middot; conf {float(cc):.3f}"
         except (TypeError, ValueError):
-            ev_label = ""
+            cc_label = ""
+        if row.get("candidate_confidence_tied"):
+            cc_label += " (tied)"
         selected = " selected" if rank == default_rank else ""
         candidate_select_options.append(
-            f'<option value="{rank}"{selected}>Rank {rank} &middot; {html.escape(formula)}{ev_label}</option>'
+            f'<option value="{rank}"{selected}>Rank {rank} &middot; {html.escape(formula)}{cc_label}</option>'
         )
     candidate_select_html = (
         "\n".join(candidate_select_options)
@@ -2466,7 +2449,7 @@ def render_html(
     <section class="section">
       {heading_with_info("h2", top10_title)}
       <p class="note">Select a candidate to view its consensus atom-position heatmap. The selected structure is the reference; atom circles show maximum-common-substructure retention across the top-10 candidate pool.</p>
-      <p class="note"><strong>Reading the scores:</strong> "Evidence confidence" (library + mass + spectral corroboration) and "Mass match" are the identification signals. The "Rank score (relative)" is a small, uncalibrated value the reranker uses only to order otherwise-equivalent candidates (e.g. mass-consistent isomers), so a low absolute value does not indicate a poor match.</p>
+      {confmod.CANDIDATE_SCORES_NOTE}
       <div class="candidate-picker">
         <label for="candidate-consensus-select">Candidate</label>
         <select id="candidate-consensus-select" aria-label="Select candidate structure for consensus heatmap">
@@ -2885,15 +2868,16 @@ def render_html(
         if (summary.rank) bits.push('<p><strong>Rank ' + summary.rank + '</strong> · ' + (summary.predicted_formula || '') + '</p>');
         const fmt = (v, nd) => (v !== undefined && v !== '' && Number.isFinite(Number(v))) ? Number(v).toFixed(nd) : null;
         const seg = [];
-        const ev = fmt(summary.evidence_confidence, 3);
+        const cc = fmt(summary.candidate_confidence, 3);
         const mm = fmt(summary.mass_match_score, 3);
-        const rs = fmt(summary.candidate_report_score, 4);
+        const ev = fmt(summary.evidence_confidence, 3);
         const me = fmt(summary.abs_mass_error_da, 6);
-        if (ev !== null) seg.push('Evidence confidence: <strong>' + ev + '</strong>');
+        if (cc !== null) seg.push('Candidate confidence: <strong>' + cc + '</strong>');
         if (mm !== null) seg.push('Mass match: <strong>' + mm + '</strong>');
-        if (rs !== null) seg.push('Rank score (relative): <strong>' + rs + '</strong>');
+        if (ev !== null) seg.push('Formula/class evidence: <strong>' + ev + '</strong>');
         if (me !== null) seg.push('Mass error (Da): <strong>' + me + '</strong>');
         if (seg.length) bits.push('<p>' + seg.join(' · ') + '</p>');
+        if (summary.candidate_confidence_tied) bits.push('<p class="note">Tied with other same-formula candidates: the formula/class is supported but the specific isomer is not resolved.</p>');
         if (summary.predicted_smiles) bits.push('<p><code>' + summary.predicted_smiles + '</code></p>');
         candidateConsensusSummary.innerHTML = bits.join('') || '<p class="note">No candidate summary available.</p>';
       }}
@@ -3565,6 +3549,25 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     _conf_fields["ms2_n_pairs"] = _n_peaks
     confidence_obj = confmod.compute_confidence(_conf_fields)
 
+    # Per-candidate display confidence: monotone non-increasing with rank and
+    # anchored so the rank-1 candidate equals the report overall confidence. This
+    # replaces the saturated, isomer-shared evidence_confidence as the featured
+    # per-candidate number, so the top-10 scores mesh with the 1..10 ordering.
+    _cand_records = candidate_score_df.fillna("").to_dict(orient="records")
+    _cand_conf = confmod.candidate_confidences(_cand_records, confidence_obj.overall)
+    for _rec, _cc in zip(_cand_records, _cand_conf):
+        _rec["candidate_confidence"] = _cc["candidate_confidence"]
+        _rec["candidate_confidence_tied"] = _cc["tied"]
+    candidate_score_df["candidate_confidence"] = [c["candidate_confidence"] for c in _cand_conf]
+    candidate_score_df["candidate_confidence_tied"] = [c["tied"] for c in _cand_conf]
+    candidate_score_df.to_csv(data_dir / f"{slug}_candidate_score_summary.csv", index=False)
+    _cc_by_rank = {int(c["rank"]): c for c in _cand_conf}
+    for _rank_key, _summary in candidate_consensus_summaries.items():
+        _match = _cc_by_rank.get(int(_rank_key))
+        if _match:
+            _summary["candidate_confidence"] = _match["candidate_confidence"]
+            _summary["candidate_confidence_tied"] = _match["tied"]
+
     render_kwargs = dict(
         out_dir=out_dir,
         target=target,
@@ -3577,7 +3580,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         neighbors=neighbors,
         nodes=nodes,
         edges=edges,
-        candidate_scores=candidate_score_df.fillna("").to_dict(orient="records"),
+        candidate_scores=_cand_records,
         structure_panel_html=structure_panel_html,
         consensus_svg=consensus_svg,
         candidate_consensus_maps=candidate_consensus_maps,
