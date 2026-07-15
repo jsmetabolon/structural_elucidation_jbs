@@ -1,18 +1,28 @@
 #!/usr/bin/env python3
-"""Patch the top-10 candidate widget in already-generated reports.
+"""Patch the top-10 candidate widget in already-generated reports (v2).
 
-Surfaces the pipeline's ``evidence_confidence`` + ``mass_match_score`` (the real
-identification signals, read from each report's ``confidence_inputs.json``
-``candidate_evidence`` array) and relabels the raw ``candidate_report_score`` as a
-relative tie-breaker. Four in-place edits per HTML variant:
+Features a per-candidate ``candidate_confidence`` that meshes with the 1..10
+ranking (monotone non-increasing; rank 1 equals the report overall confidence),
+read from each report's ``confidence_inputs.json`` ``candidate_evidence`` array
+(written by ``tools/enrich_report_evidence.py``). The class-level
+``evidence_confidence`` is relabeled "Formula/class evidence" and shown as
+supporting context alongside "Mass match"; the tiny, uncalibrated raw rerank
+score is no longer featured. Tied same-formula isomers are flagged.
 
-  1. the ``<select>`` option labels (``... score X`` -> ``... conf E``),
-  2. the server-rendered initial summary card,
-  3. the embedded ``candidate-consensus-data`` JSON (add ev + mass_match per rank),
+This supersedes the v1 patch (which featured the saturated, isomer-shared
+``evidence_confidence`` and labeled the raw score "Rank score (relative)"). It
+transforms both original and v1-patched reports into v2 and is idempotent via an
+HTML-comment sentinel embedded in the summary card.
+
+Edits per HTML variant:
+  1. the ``<select>`` option labels (``... score X`` / ``... conf X`` -> ``... conf C``),
+  2. the server-rendered initial summary card (rebuilt from the default rank),
+  3. the embedded ``candidate-consensus-data`` JSON (candidate_confidence + tie +
+     evidence + mass_match per rank),
   4. the ``renderCandidateSummary`` JS builder,
+  5. the "Reading the scores" note (replaced or injected).
 
-plus a one-line "reading the scores" note. Idempotent (sentinel-guarded). Pure
-standard library.
+Pure standard library.
 
 Usage:
     python3 tools/patch_candidate_scores.py <reports_root>
@@ -24,7 +34,11 @@ import re
 import sys
 from pathlib import Path
 
-SENTINEL = "Rank score (relative)"
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "structural_elucidation" / "reports"))
+import confidence as C  # noqa: E402
+
+# Idempotency marker embedded in the rebuilt summary card (always present after v2).
+V2_SENTINEL = "<!--cc-v2-->"
 
 JSON_RE = re.compile(
     r'(<script type="application/json" id="candidate-consensus-data">)(.*?)(</script>)', re.S
@@ -32,15 +46,12 @@ JSON_RE = re.compile(
 SUMMARY_DIV_RE = re.compile(r'(<div id="candidate-consensus-summary">)(.*?)(</div>\s*<div class="consensus-box")', re.S)
 JS_RE = re.compile(r"      function renderCandidateSummary\(rank\) \{.*?\n      \}", re.S)
 OPTION_RE = re.compile(r'<option value="(\d+)"([^>]*)>(.*?)</option>', re.S)
-SCORE_SUFFIX_RE = re.compile(r"\s*(?:&middot;|\u00b7)\s*score\s*[-0-9.eE]+\s*$")
+# Strip an existing " · score 0.03" or " · conf 0.99 (tied)" suffix from an option.
+SUFFIX_RE = re.compile(r"\s*(?:&middot;|\u00b7)\s*(?:score|conf)\s*[-0-9.eE]+(?:\s*\(tied\))?\s*$")
 NOTE_ANCHOR = "atom circles show maximum-common-substructure retention across the top-10 candidate pool.</p>"
-NOTE_HTML = (
-    '\n      <p class="note"><strong>Reading the scores:</strong> "Evidence confidence" '
-    "(library + mass + spectral corroboration) and \"Mass match\" are the identification "
-    'signals. The "Rank score (relative)" is a small, uncalibrated value the reranker uses '
-    "only to order otherwise-equivalent candidates (e.g. mass-consistent isomers), so a low "
-    "absolute value does not indicate a poor match.</p>"
-)
+NOTE_BODY = C.CANDIDATE_SCORES_NOTE
+NOTE_HTML = "\n      " + NOTE_BODY
+NOTE_RE = re.compile(r'<p class="note"><strong>Reading the scores:</strong>.*?</p>', re.S)
 
 NEW_JS = """      function renderCandidateSummary(rank) {
         const summary = consensusSummaries[String(rank)] || {};
@@ -52,15 +63,19 @@ NEW_JS = """      function renderCandidateSummary(rank) {
         const fmt = (v, nd) => (v !== undefined && v !== ''
           && Number.isFinite(Number(v))) ? Number(v).toFixed(nd) : null;
         const seg = [];
-        const ev = fmt(summary.evidence_confidence, 3);
+        const cc = fmt(summary.candidate_confidence, 3);
         const mm = fmt(summary.mass_match_score, 3);
-        const rs = fmt(summary.candidate_report_score, 4);
+        const ev = fmt(summary.evidence_confidence, 3);
         const me = fmt(summary.abs_mass_error_da, 6);
-        if (ev !== null) seg.push('Evidence confidence: <strong>' + ev + '</strong>');
+        if (cc !== null) seg.push('Candidate confidence: <strong>' + cc + '</strong>');
         if (mm !== null) seg.push('Mass match: <strong>' + mm + '</strong>');
-        if (rs !== null) seg.push('Rank score (relative): <strong>' + rs + '</strong>');
+        if (ev !== null) seg.push('Formula/class evidence: <strong>' + ev + '</strong>');
         if (me !== null) seg.push('Mass error (Da): <strong>' + me + '</strong>');
         if (seg.length) bits.push('<p>' + seg.join(' \u00b7 ') + '</p>');
+        if (summary.candidate_confidence_tied) {
+          bits.push('<p class="note">Tied with other same-formula candidates: the '
+            + 'formula/class is supported but the specific isomer is not resolved.</p>');
+        }
         if (summary.predicted_smiles) bits.push('<p><code>' + summary.predicted_smiles + '</code></p>');
         candidateConsensusSummary.innerHTML = bits.join('') || '<p class=\"note\">No candidate summary available.</p>';
       }"""
@@ -73,30 +88,13 @@ def _fmt(v, nd):
         return None
 
 
-def _score_line(summary: dict) -> str:
-    parts = []
-    ev = _fmt(summary.get("evidence_confidence"), 3)
-    mm = _fmt(summary.get("mass_match_score"), 3)
-    rs = _fmt(summary.get("candidate_report_score"), 4)
-    me = _fmt(summary.get("abs_mass_error_da"), 6)
-    if ev is not None:
-        parts.append(f"Evidence confidence: <strong>{ev}</strong>")
-    if mm is not None:
-        parts.append(f"Mass match: <strong>{mm}</strong>")
-    if rs is not None:
-        parts.append(f"Rank score (relative): <strong>{rs}</strong>")
-    if me is not None:
-        parts.append(f"Mass error (Da): <strong>{me}</strong>")
-    return ("<p>" + " \u00b7 ".join(parts) + "</p>") if parts else ""
-
-
 def _summary_card(summary: dict) -> str:
     from html import escape
     return (
-        "<div class='candidate-summary'>"
-        f"<p><strong>Rank {escape(str(summary.get('rank', '')))}</strong> \u00b7 "
+        "<div class='candidate-summary'>" + V2_SENTINEL
+        + f"<p><strong>Rank {escape(str(summary.get('rank', '')))}</strong> \u00b7 "
         f"{escape(str(summary.get('predicted_formula', '')))}</p>"
-        f"{_score_line(summary)}"
+        f"{C.candidate_score_line_html(summary)}"
         f"<p><code>{escape(str(summary.get('predicted_smiles', '')))}</code></p>"
         "</div>"
     )
@@ -120,8 +118,8 @@ def _evidence_by_rank(data_dir: Path, slug: str) -> dict[int, dict]:
 
 
 def patch_html(text: str, ev_by_rank: dict[int, dict]) -> str | None:
-    if SENTINEL in text:
-        return None  # already patched (idempotent)
+    if V2_SENTINEL in text:
+        return None  # already v2 (idempotent)
 
     m = JSON_RE.search(text)
     if not m:
@@ -138,6 +136,8 @@ def patch_html(text: str, ev_by_rank: dict[int, dict]) -> str | None:
             ev = ev_by_rank.get(int(rank_s), {})
         except (TypeError, ValueError):
             ev = {}
+        summ["candidate_confidence"] = ev.get("candidate_confidence", "")
+        summ["candidate_confidence_tied"] = bool(ev.get("candidate_confidence_tied"))
         summ["evidence_confidence"] = ev.get("evidence_confidence", "")
         summ["mass_match_score"] = ev.get("mass_match_score", "")
     new_json = json.dumps(payload).replace("</", "<\\/")
@@ -154,16 +154,18 @@ def patch_html(text: str, ev_by_rank: dict[int, dict]) -> str | None:
             count=1,
         )
 
-    # relabel <select> options: "... score X" -> "... conf E"
+    # relabel <select> options: "... score X" / "... conf X" -> "... conf C"
     def _opt(mm: re.Match) -> str:
         rank_s, attrs, label = mm.group(1), mm.group(2), mm.group(3)
-        base = SCORE_SUFFIX_RE.sub("", label)
+        base = SUFFIX_RE.sub("", label)
         try:
             ev = ev_by_rank.get(int(rank_s), {})
         except (TypeError, ValueError):
             ev = {}
-        conf = _fmt(ev.get("evidence_confidence"), 3)
+        conf = _fmt(ev.get("candidate_confidence"), 3)
         suffix = f" \u00b7 conf {conf}" if conf is not None else ""
+        if ev.get("candidate_confidence_tied"):
+            suffix += " (tied)"
         return f'<option value="{rank_s}"{attrs}>{base}{suffix}</option>'
 
     text = OPTION_RE.sub(_opt, text)
@@ -171,8 +173,10 @@ def patch_html(text: str, ev_by_rank: dict[int, dict]) -> str | None:
     # JS builder
     text = JS_RE.sub(lambda _m: NEW_JS, text, count=1)
 
-    # reading-the-scores note (once)
-    if NOTE_ANCHOR in text and "Reading the scores" not in text:
+    # reading-the-scores note: replace an existing note, else inject after the anchor
+    if NOTE_RE.search(text):
+        text = NOTE_RE.sub(lambda _m: NOTE_BODY, text, count=1)
+    elif NOTE_ANCHOR in text:
         text = text.replace(NOTE_ANCHOR, NOTE_ANCHOR + NOTE_HTML, 1)
     return text
 
