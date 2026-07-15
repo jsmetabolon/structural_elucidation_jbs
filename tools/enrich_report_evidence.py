@@ -143,13 +143,15 @@ def _rank1(rows: list[dict]) -> dict:
     return best
 
 
-def candidate_evidence_rows(css: list[dict], tc: list[dict]) -> list[dict]:
-    """Per-rank evidence for the top-10 widget.
+def candidate_evidence_rows(css: list[dict], tc: list[dict], feature_overall: float | None) -> list[dict]:
+    """Per-rank evidence + rank-consistent confidence for the top-10 widget.
 
-    Joins the pipeline's ``evidence_confidence`` + ``mass_match_score`` (from
-    ``top_candidates.csv``) onto the displayed candidate rows so the patcher can
-    surface them alongside the raw rerank score. Matches by SMILES, falling back
-    to row order (both files are rank-ordered).
+    The featured per-candidate number is ``candidate_confidence``
+    (``confidence.candidate_confidences``): monotone non-increasing with rank and
+    anchored so rank 1 equals the report overall confidence. The class-level
+    ``evidence_confidence`` + ``mass_match_score`` (from ``top_candidates.csv``,
+    matched by SMILES, falling back to rank-ordered row order) are retained as
+    supporting context. ``tied`` flags genuinely unresolved same-formula isomers.
     """
     ev_by_smiles: dict[str, dict] = {}
     for row in tc:
@@ -159,8 +161,10 @@ def candidate_evidence_rows(css: list[dict], tc: list[dict]) -> list[dict]:
                 "evidence_confidence": _num(row.get("evidence_confidence")),
                 "mass_match_score": _num(row.get("mass_match_score")),
             }
+    top = css[:10]
+    cc = C.candidate_confidences(top, feature_overall)
     out = []
-    for i, row in enumerate(css[:10]):
+    for i, row in enumerate(top):
         s = str(row.get("predicted_smiles", "")).strip()
         ev = ev_by_smiles.get(s)
         if ev is None and i < len(tc):
@@ -172,6 +176,8 @@ def candidate_evidence_rows(css: list[dict], tc: list[dict]) -> list[dict]:
         rank = _num(row.get("rank"))
         out.append({
             "rank": int(rank) if rank is not None else i + 1,
+            "candidate_confidence": cc[i]["candidate_confidence"],
+            "candidate_confidence_tied": cc[i]["tied"],
             "evidence_confidence": ev.get("evidence_confidence"),
             "mass_match_score": ev.get("mass_match_score"),
         })
@@ -233,7 +239,6 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna) -> str:
     fields["metabolon_level"] = levels.get(cid, "")
     fields["truth_match"] = truth_match
     fields["mass_alt"] = C.mass_consistent_alt(css)
-    fields["candidate_evidence"] = candidate_evidence_rows(css, tc)
     # display name / synonyms (gap 2)
     ev = data / f"{slug}_evidence_summary.json"
     target = {}
@@ -259,6 +264,9 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna) -> str:
     fields["msi_level"] = conf.msi_level
     fields["msi_label"] = conf.msi_label
     fields["msi_rationale"] = conf.msi_rationale
+    # Per-candidate confidence needs the report overall as the rank-1 anchor, so
+    # it is computed after compute_confidence.
+    fields["candidate_evidence"] = candidate_evidence_rows(css, tc, conf.overall)
     (data / f"{slug}_confidence_inputs.json").write_text(json.dumps(fields, indent=2))
     return "enriched"
 
