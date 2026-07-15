@@ -610,6 +610,85 @@ def mass_consistent_alt(css: list[dict]) -> dict | None:
     return None
 
 
+# --- per-candidate display confidence (renderer + enrich + patcher + audit) --
+# The top-10 candidate widget must show a per-candidate confidence that meshes
+# with the 1..10 ranking. The pipeline's ``evidence_confidence`` cannot do this:
+# it saturates near 1.0 and is shared across mass-consistent isomers (so every
+# candidate looks identical), and it is a reranker *input feature*, not the
+# ranking objective, so it is frequently higher for a lower-ranked candidate.
+#
+# ``candidate_confidences`` derives, per candidate, an interpretable 0..1 value
+# that is monotone non-increasing with rank by construction: the rank-1 candidate
+# is anchored to the report's overall identification confidence (the headline the
+# reader already sees), and each lower-ranked candidate receives that ceiling
+# scaled by the reranker ordering-score ratio to rank 1, with a running-minimum so
+# nothing can invert. Genuinely tied candidates (equal ordering score / confidence
+# within ``CANDIDATE_TIE_EPS``) are flagged so the report presents them as an
+# unresolved isomer group rather than fake-distinct numbers.
+CANDIDATE_TIE_EPS = 0.005
+
+
+def candidate_confidences(rows: list[dict], feature_overall: float | None) -> list[dict]:
+    """Monotone, rank-consistent per-candidate confidence for the top-N widget.
+
+    Args:
+        rows: rank-ordered candidate dicts, each with ``rank`` and
+            ``candidate_report_score`` (= ``unified_final_score``, the reranker
+            ordering objective from which ``rank`` is derived).
+        feature_overall: the report's overall identification confidence in [0,1]
+            (``Confidence.overall``); used as the rank-1 ceiling.
+
+    Returns:
+        A list aligned to ``rows``; each item is
+        ``{"rank": int, "candidate_confidence": float, "tie_group": int,
+        "tied": bool}`` with ``candidate_confidence`` non-increasing across rank.
+    """
+    ceiling = _clamp01(_num(feature_overall) or 0.0)
+    n = len(rows)
+    if n == 0:
+        return []
+
+    def _rank_of(row: dict, position: int) -> int:
+        value = _num(row.get("rank"))
+        return int(value) if value is not None else position + 1
+
+    order = sorted(range(n), key=lambda i: _rank_of(rows[i], i))
+    scores: list[float] = []
+    for i in order:
+        s = _num(rows[i].get("candidate_report_score"))
+        scores.append(max(0.0, s) if s is not None else 0.0)
+    top = scores[0] if scores else 0.0
+
+    running = 1.0
+    confidences: list[float] = []
+    for s in scores:
+        ratio = 1.0 if top <= 0 else _clamp01(s / top)
+        running = min(running, ratio)  # enforce monotonic non-increase with rank
+        confidences.append(round(_clamp01(ceiling * running), 4))
+
+    groups: list[int] = []
+    group = 0
+    prev: float | None = None
+    for cc in confidences:
+        if prev is None or (prev - cc) > CANDIDATE_TIE_EPS:
+            group += 1
+        groups.append(group)
+        prev = cc
+    sizes: dict[int, int] = {}
+    for g in groups:
+        sizes[g] = sizes.get(g, 0) + 1
+
+    result: list[dict] = [None] * n  # type: ignore[list-item]
+    for pos, i in enumerate(order):
+        result[i] = {
+            "rank": _rank_of(rows[i], i),
+            "candidate_confidence": confidences[pos],
+            "tie_group": groups[pos],
+            "tied": sizes[groups[pos]] > 1,
+        }
+    return result
+
+
 def read_fields_from_sidecars(data_dir: Path, slug: str) -> dict | None:
     """Build confidence ``fields`` from a report's on-disk sidecars.
 
