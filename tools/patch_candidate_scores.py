@@ -191,10 +191,10 @@ def patch_report(report_dir: Path) -> str:
         return "no_evidence"
     changed = False
     seen = False
-    for name in ("index.html", "internal.html", "public.html"):
-        f = report_dir / name
-        if not f.exists():
-            continue
+    # Patch every HTML variant in the report dir that carries the candidate widget
+    # (index/internal/public and the canonical X_<id>.html); files without the
+    # widget - e.g. guides.html - are no-ops because patch_html finds no JSON block.
+    for f in sorted(report_dir.glob("*.html")):
         seen = True
         text = f.read_text()
         new = patch_html(text, ev_by_rank)
