@@ -169,6 +169,7 @@ def audit_report(report_dir: Path, top_n: int) -> dict | None:
     after_scores = [a["candidate_confidence"] for a in after]
     tie_groups = {a["tie_group"] for a in after}
     tie_group_members = sum(1 for a in after if a["tied"])
+    rank1_tied = bool(after and after[0]["tied"])
     # parity: does any already-refreshed candidate_confidence match the computed value?
     refreshed = all(v is not None for v in shipped_cc)
     shipped_matches = refreshed and all(
@@ -210,6 +211,7 @@ def audit_report(report_dir: Path, top_n: int) -> dict | None:
             "n_tie_groups": len(tie_groups),
             "tied_members": tie_group_members,
             "rank1": after_scores[0] if after_scores else None,
+            "rank1_tied": rank1_tied,
         },
         "mass_all_equal": all_equal(mass),
     }
@@ -257,6 +259,7 @@ def summarize(reports: list[dict]) -> dict:
             "median_spread": median([r["candidate_confidence"]["spread"] for r in reports]),
             "median_tau": median([r["candidate_confidence"]["kendall_tau_vs_rank"] for r in reports]),
             "frac_with_tie_group": frac(lambda r: r["candidate_confidence"]["n_tie_groups"] < r["n_candidates"]),
+            "frac_rank1_tied": frac(lambda r: r["candidate_confidence"].get("rank1_tied", False)),
             "median_rank1": median([r["candidate_confidence"]["rank1"] for r in reports]),
         },
     }
@@ -309,6 +312,7 @@ def main() -> None:
     print(f"    >=1 inversion           : {cc['frac_with_inversion']:.1%}   (total {cc['total_inversions']})")
     print(f"    median spread / tau     : {cc['median_spread']} / {cc['median_tau']}")
     print(f"    median rank-1 conf      : {cc['median_rank1']}")
+    print(f"    rank-1 tied (ambiguous) : {cc['frac_rank1_tied']:.1%}")
     if worst:
         print("  worst featured-inversion examples:", ", ".join(w["control_id"] for w in worst[:args.examples]))
 
