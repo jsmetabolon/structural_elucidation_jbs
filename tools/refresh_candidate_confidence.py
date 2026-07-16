@@ -48,8 +48,8 @@ def refresh(report_dir: Path) -> str:
     # use it for the SMILES join to preserve the "Formula/class evidence" context;
     # fall back to css when the file is absent.
     tc = E._read(data / f"{slug}_top_candidates.csv")
-    overall = C.compute_confidence(fields).overall
-    fields["candidate_evidence"] = E.candidate_evidence_rows(css, tc or css, overall)
+    anchor = C.compute_confidence(fields).raw_evidence
+    fields["candidate_evidence"] = E.candidate_evidence_rows(css, tc or css, anchor)
     ci.write_text(json.dumps(fields, indent=2))
     return "refreshed"
 

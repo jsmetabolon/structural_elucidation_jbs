@@ -2320,6 +2320,15 @@ def render_html(
         if candidate_select_options
         else '<option value="">No candidates available</option>'
     )
+    n_candidates_shown = len(candidate_select_options)
+    candidate_count_note = (
+        ""
+        if n_candidates_shown >= 10
+        else (
+            f'<p class="note">Showing <strong>{n_candidates_shown}</strong> of up to 10 candidate '
+            "structures; the reranker generated fewer than 10 distinct candidates for this feature.</p>"
+        )
+    )
     candidate_consensus_data_json = json.dumps(
         {
             "maps": {str(k): v for k, v in candidate_consensus_maps.items()},
@@ -2450,6 +2459,7 @@ def render_html(
       {heading_with_info("h2", top10_title)}
       <p class="note">Select a candidate to view its consensus atom-position heatmap. The selected structure is the reference; atom circles show maximum-common-substructure retention across the top-10 candidate pool.</p>
       {confmod.CANDIDATE_SCORES_NOTE}
+      {candidate_count_note}
       <div class="candidate-picker">
         <label for="candidate-consensus-select">Candidate</label>
         <select id="candidate-consensus-select" aria-label="Select candidate structure for consensus heatmap">
@@ -3554,7 +3564,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     # replaces the saturated, isomer-shared evidence_confidence as the featured
     # per-candidate number, so the top-10 scores mesh with the 1..10 ordering.
     _cand_records = candidate_score_df.fillna("").to_dict(orient="records")
-    _cand_conf = confmod.candidate_confidences(_cand_records, confidence_obj.overall)
+    _cand_conf = confmod.candidate_confidences(_cand_records, confidence_obj.raw_evidence)
     for _rec, _cc in zip(_cand_records, _cand_conf):
         _rec["candidate_confidence"] = _cc["candidate_confidence"]
         _rec["candidate_confidence_tied"] = _cc["tied"]

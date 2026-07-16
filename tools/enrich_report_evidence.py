@@ -264,9 +264,9 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna) -> str:
     fields["msi_level"] = conf.msi_level
     fields["msi_label"] = conf.msi_label
     fields["msi_rationale"] = conf.msi_rationale
-    # Per-candidate confidence needs the report overall as the rank-1 anchor, so
-    # it is computed after compute_confidence.
-    fields["candidate_evidence"] = candidate_evidence_rows(css, tc, conf.overall)
+    # Per-candidate confidence is anchored to the report's evidence match strength
+    # (raw_evidence), which is fuller-range than the compressed Platt overall.
+    fields["candidate_evidence"] = candidate_evidence_rows(css, tc, conf.raw_evidence)
     (data / f"{slug}_confidence_inputs.json").write_text(json.dumps(fields, indent=2))
     return "enriched"
 

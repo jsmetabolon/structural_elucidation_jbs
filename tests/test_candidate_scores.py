@@ -62,6 +62,19 @@ def test_candidate_confidences_enforces_monotonicity_over_noisy_scores():
     assert vals == sorted(vals, reverse=True)
 
 
+def test_compute_confidence_exposes_raw_evidence_anchor():
+    fields = {
+        "source": "predicted", "structure_similarity": 0.9, "mass_match_score": 1.0,
+        "ms2_spectrum_present": True, "ms2_score": 0.5, "observed_mz_available": True,
+    }
+    conf = C.compute_confidence(fields)
+    assert 0.0 <= conf.raw_evidence <= 1.0
+    # raw evidence is fuller-range than the compressed Platt overall for strong evidence,
+    # so anchoring the featured candidate confidence to it un-deflates strong best matches.
+    assert conf.raw_evidence > conf.overall
+    assert conf.as_dict()["raw_evidence"] == conf.raw_evidence
+
+
 def test_candidate_confidences_empty_and_degenerate():
     assert C.candidate_confidences([], 0.5) == []
     out = C.candidate_confidences([{"rank": 1, "candidate_report_score": 0.0}], None)
@@ -175,6 +188,12 @@ def test_patch_is_idempotent():
     once = P.patch_html(_widget(" \u00b7 conf 0.999", V1_NOTE), _ev())
     assert once is not None
     assert P.patch_html(once, _ev()) is None  # v2 sentinel -> no re-patch
+
+
+def test_patch_adds_count_note_when_fewer_than_10():
+    out = P.patch_html(_widget(" \u00b7 conf 0.999", V1_NOTE), _ev())  # _ev has 2 candidates
+    assert "of up to 10 candidate structures" in out
+    assert "<strong>2</strong> of up to 10" in out
 
 
 def test_patch_marks_ties():

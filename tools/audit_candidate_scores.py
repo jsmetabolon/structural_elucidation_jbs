@@ -112,17 +112,18 @@ def _load_ci(data_dir: Path, slug: str) -> dict:
 
 
 def _overall_anchor(data_dir: Path, slug: str, ci: dict) -> float | None:
-    # confidence_inputs.json IS the confidence fields dict; extra keys are ignored.
+    # Anchor is the report's evidence match strength (raw_evidence), matching the
+    # renderer/enricher. confidence_inputs.json IS the confidence fields dict.
     if ci:
         try:
-            return C.compute_confidence(ci).overall
+            return C.compute_confidence(ci).raw_evidence
         except Exception:
             pass
     fields = C.read_fields_from_sidecars(data_dir, slug)
     if not fields:
         return None
     try:
-        return C.compute_confidence(fields).overall
+        return C.compute_confidence(fields).raw_evidence
     except Exception:
         return None
 

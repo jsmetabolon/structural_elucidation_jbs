@@ -88,6 +88,7 @@ class Confidence:
     tier_note: str
     completeness: float
     descriptor: str
+    raw_evidence: float = 0.0
     axes: list[Axis] = field(default_factory=list)
     flags: list[str] = field(default_factory=list)
     source: str = ""
@@ -108,6 +109,7 @@ class Confidence:
             "tier_note": self.tier_note,
             "completeness": self.completeness,
             "descriptor": self.descriptor,
+            "raw_evidence": self.raw_evidence,
             "source": self.source,
             "observed_mz": self.observed_mz,
             "observed_neutral_mass": self.observed_neutral_mass,
@@ -334,6 +336,7 @@ def compute_confidence(fields: dict) -> Confidence:
         tier_note=tier_note,
         completeness=round(completeness, 4),
         descriptor=descriptor,
+        raw_evidence=round(raw, 4),
         axes=axes,
         flags=_flags(axes, fields),
         source=source,
@@ -635,8 +638,12 @@ def candidate_confidences(rows: list[dict], feature_overall: float | None) -> li
         rows: rank-ordered candidate dicts, each with ``rank`` and
             ``candidate_report_score`` (= ``unified_final_score``, the reranker
             ordering objective from which ``rank`` is derived).
-        feature_overall: the report's overall identification confidence in [0,1]
-            (``Confidence.overall``); used as the rank-1 ceiling.
+        feature_overall: the rank-1 ceiling in [0,1] - the report's evidence
+            match strength (``Confidence.raw_evidence``: completeness-weighted
+            structure/mass/MS2/pathway evidence). Raw evidence is used instead of
+            the Platt ``overall`` because the latter is compressed (caps ~0.59 for
+            non-authentic-standard matches) and deflates strong best matches; raw
+            evidence spans a fuller range and still tracks truth (AUC ~0.79).
 
     Returns:
         A list aligned to ``rows``; each item is
@@ -696,12 +703,14 @@ CANDIDATE_TIE_NOTE = (
 
 CANDIDATE_SCORES_NOTE = (
     '<p class="note"><strong>Reading the scores:</strong> "Candidate confidence" is a 0-1 '
-    "estimate that this specific structure is the correct one; it decreases down the ranking, "
-    "and the rank-1 value equals the report's overall identification confidence. \"Mass match\" "
-    'and "Formula/class evidence" corroborate the molecular formula/class but are shared across '
-    "same-formula isomers, so they do not distinguish individual candidates. When candidates are "
-    'marked tied, the formula/class is supported but the exact isomer is not resolved (check the '
-    '"Mass-consistent alternative" note for any better-fitting structure).</p>'
+    "evidence-based match strength for this specific structure (completeness-weighted structure, "
+    "mass, MS2, and pathway support); it decreases down the ranking, and the rank-1 value is the "
+    'feature\'s overall evidence match strength. "Mass match" and "Formula/class evidence" '
+    "corroborate the molecular formula/class but are shared across same-formula isomers, so they "
+    "do not distinguish individual candidates. When candidates are marked tied, the formula/class "
+    'is supported but the exact isomer is not resolved (check the "Mass-consistent alternative" '
+    "note for any better-fitting structure). The separate header shows the calibrated overall "
+    "identification confidence, which is intentionally conservative.</p>"
 )
 
 

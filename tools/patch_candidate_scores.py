@@ -173,11 +173,22 @@ def patch_html(text: str, ev_by_rank: dict[int, dict]) -> str | None:
     # JS builder
     text = JS_RE.sub(lambda _m: NEW_JS, text, count=1)
 
+    # "N of 10" note when the reranker generated fewer than 10 candidates
+    n_shown = len(summaries)
+    count_note = (
+        ""
+        if n_shown >= 10
+        else (
+            f'<p class="note">Showing <strong>{n_shown}</strong> of up to 10 candidate structures; '
+            "the reranker generated fewer than 10 distinct candidates for this feature.</p>"
+        )
+    )
+
     # reading-the-scores note: replace an existing note, else inject after the anchor
     if NOTE_RE.search(text):
-        text = NOTE_RE.sub(lambda _m: NOTE_BODY, text, count=1)
+        text = NOTE_RE.sub(lambda _m: NOTE_BODY + count_note, text, count=1)
     elif NOTE_ANCHOR in text:
-        text = text.replace(NOTE_ANCHOR, NOTE_ANCHOR + NOTE_HTML, 1)
+        text = text.replace(NOTE_ANCHOR, NOTE_ANCHOR + NOTE_HTML + count_note, 1)
     return text
 
 
