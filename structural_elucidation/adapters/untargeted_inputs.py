@@ -37,9 +37,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Optional
 
 import pandas as pd
 
@@ -126,11 +127,36 @@ class NovelFeature:
     compound_name: str = ""
     prior_match_level: str = ""
     prior_matched_name: str = ""
+    # Adduct-corrected neutral mass from the upstream pipeline's peak grouping
+    # (e.g. OpenMS ``dc_charge_adduct_mass``). When present this is preferred over
+    # the naive [M+/-H] assumption so non-protonated base peaks are anchored right.
+    neutral_mass: Optional[float] = None
+    adduct_type: str = ""
 
     @property
     def control_id(self) -> str:
         """Synthetic X-compound id for this feature."""
         return control_id_for_feature(self.feature_id)
+
+    @property
+    def effective_neutral_mass(self) -> float:
+        """Best neutral-mass anchor: upstream adduct-corrected value or [M+/-H]."""
+        nm = self.neutral_mass
+        if nm is not None:
+            try:
+                value = float(nm)
+            except (TypeError, ValueError):
+                value = float("nan")
+            if math.isfinite(value) and value > 0:
+                return value
+        return neutral_mass_from_precursor(self.parent_mz, self.lib_id)
+
+    @property
+    def primary_adduct_label(self) -> str:
+        """Adduct label to record for the primary neutral-mass hypothesis."""
+        if self.adduct_type:
+            return str(self.adduct_type)
+        return "[M+H]+" if int(self.lib_id) in {400, 402} else "[M-H]-"
 
     @property
     def comp_id(self) -> int:
@@ -214,6 +240,11 @@ def load_handoff(path: Path) -> list[NovelFeature]:
     for record in records or []:
         lib_id = int(record["lib_id"])
         ion_mode = str(record.get("ion_mode") or ion_mode_for_lib(lib_id)).strip().lower()
+        raw_neutral = record.get("neutral_mass", None)
+        try:
+            neutral_mass = float(raw_neutral) if raw_neutral is not None else None
+        except (TypeError, ValueError):
+            neutral_mass = None
         features.append(
             NovelFeature(
                 feature_id=int(record["feature_id"]),
@@ -225,6 +256,8 @@ def load_handoff(path: Path) -> list[NovelFeature]:
                 compound_name=str(record.get("compound_name", "") or ""),
                 prior_match_level=str(record.get("prior_match_level", "") or ""),
                 prior_matched_name=str(record.get("prior_matched_name", "") or ""),
+                neutral_mass=neutral_mass,
+                adduct_type=str(record.get("adduct_type", "") or ""),
             )
         )
     return features
@@ -242,7 +275,7 @@ def _feature_rows_frame(features: Iterable[NovelFeature]) -> pd.DataFrame:
                 "lib_id": int(feat.lib_id),
                 "ion_mode": feat.ion_mode,
                 "parent_mz": float(feat.parent_mz),
-                "neutral_mass_fallback": neutral_mass_from_precursor(feat.parent_mz, feat.lib_id),
+                "neutral_mass_fallback": feat.effective_neutral_mass,
                 "n_ms2_peaks": len(feat.peaks),
                 "observed_ion_bins_json": json.dumps(ion_bins),
                 "observed_loss_bins_json": json.dumps(loss_bins),
@@ -254,9 +287,18 @@ def _feature_rows_frame(features: Iterable[NovelFeature]) -> pd.DataFrame:
 def _neutral_mass_hypotheses_frame(features: Iterable[NovelFeature]) -> pd.DataFrame:
     rows: list[dict[str, Any]] = []
     for feat in features:
-        for rank, (label, neutral, recomputed) in enumerate(
-            _adduct_hypotheses(feat.parent_mz, feat.lib_id), start=1
-        ):
+        # Primary hypothesis uses the upstream adduct-corrected neutral mass so
+        # candidate mass matching is anchored correctly even for non-[M+/-H] base
+        # peaks; the standard ladder is appended as additional fallbacks.
+        eff = feat.effective_neutral_mass
+        hypotheses: list[tuple[str, float, float]] = [
+            (feat.primary_adduct_label, eff, float(feat.parent_mz))
+        ]
+        for label, neutral, recomputed in _adduct_hypotheses(feat.parent_mz, feat.lib_id):
+            if abs(float(neutral) - float(eff)) <= 1e-6:
+                continue
+            hypotheses.append((label, neutral, recomputed))
+        for rank, (label, neutral, recomputed) in enumerate(hypotheses, start=1):
             rows.append(
                 {
                     "feature_key": feat.feature_key,
@@ -299,7 +341,7 @@ def _gap_manifest_frame(features: Iterable[NovelFeature]) -> pd.DataFrame:
                 "comp_id": feat.comp_id,
                 "feature_key": feat.feature_key,
                 "parent_mz": float(feat.parent_mz),
-                "neutral_mass_estimate": neutral_mass_from_precursor(feat.parent_mz, feat.lib_id),
+                "neutral_mass_estimate": feat.effective_neutral_mass,
                 "has_feature_rows": True,
                 "has_mass_hypotheses": True,
                 "already_in_unified_pool": False,
@@ -322,7 +364,7 @@ def _observed_lookup_frame(features: Iterable[NovelFeature]) -> pd.DataFrame:
                 "lib_id": int(feat.lib_id),
                 "ion_mode": feat.ion_mode,
                 "parent_mz": float(feat.parent_mz),
-                "neutral_mass": neutral_mass_from_precursor(feat.parent_mz, feat.lib_id),
+                "neutral_mass": feat.effective_neutral_mass,
                 "ms2_present": True,
                 "n_ms2_pairs": len(feat.peaks),
                 "n_observed_ion_bins": len(ion_bins),

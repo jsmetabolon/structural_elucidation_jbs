@@ -175,6 +175,47 @@ def test_all_x_catalog_seeds_non_s0_split(tmp_path: Path) -> None:
     assert "S0" not in str(novel.iloc[0]["evidence_tier"])
 
 
+def test_effective_neutral_mass_prefers_provided() -> None:
+    """A provided adduct-corrected neutral mass overrides the [M+/-H] fallback."""
+    feat = NovelFeature(
+        feature_id=9, lib_id=400, ion_mode="positive", parent_mz=200.0, ri=1.0,
+        peaks=[(80.0, 1.0)], neutral_mass=176.9, adduct_type="[M+Na]+",
+    )
+    assert feat.effective_neutral_mass == pytest.approx(176.9)
+    assert feat.primary_adduct_label == "[M+Na]+"
+    # Falls back to [M+H]+ neutral mass when none provided.
+    feat2 = NovelFeature(
+        feature_id=9, lib_id=400, ion_mode="positive", parent_mz=200.0, ri=1.0, peaks=[(80.0, 1.0)]
+    )
+    assert feat2.effective_neutral_mass == pytest.approx(200.0 - 1.007276466812)
+    assert feat2.primary_adduct_label == "[M+H]+"
+
+
+def test_provided_neutral_mass_flows_into_tables(tmp_path: Path) -> None:
+    """The adduct-corrected neutral mass anchors feature_rows/hypotheses/lookup."""
+    import pandas as pd
+
+    feat = NovelFeature(
+        feature_id=42, lib_id=400, ion_mode="positive", parent_mz=250.0, ri=10.0,
+        peaks=[(80.0, 1.0), (150.0, 0.5)], neutral_mass=226.9, adduct_type="[M+Na]+",
+    )
+    manifest = build_inputs([feat], tmp_path)
+    scope = manifest.scopes[0]
+
+    fr = pd.read_csv(scope.feature_rows)
+    assert fr.iloc[0]["neutral_mass_fallback"] == pytest.approx(226.9)
+
+    lookup = pd.read_csv(scope.observed_ms2_lookup)
+    assert lookup.iloc[0]["neutral_mass"] == pytest.approx(226.9)
+
+    hyp = pd.read_csv(scope.neutral_mass_hypotheses)
+    primary = hyp[hyp["adduct_rank"] == 1].iloc[0]
+    assert primary["neutral_mass"] == pytest.approx(226.9)
+    assert primary["adduct_label"] == "[M+Na]+"
+    # The naive [M+H]+ mass should NOT be the anchor here.
+    assert abs(float(primary["neutral_mass"]) - (250.0 - 1.007276466812)) > 1.0
+
+
 def test_load_handoff_roundtrip(tmp_path: Path) -> None:
     """``load_handoff`` parses the documented JSON schema."""
     handoff = {

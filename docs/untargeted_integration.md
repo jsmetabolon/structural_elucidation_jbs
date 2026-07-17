@@ -63,11 +63,20 @@ Key flags:
       "peaks": [[67.0, 0.5], [137.05, 1.0]],
       "compound_name": "",
       "prior_match_level": "MS2",
-      "prior_matched_name": "some_lib_hit"
+      "prior_matched_name": "some_lib_hit",
+      "neutral_mass": 278.1517,
+      "adduct_type": "[M+Na]+"
     }
   ]
 }
 ```
+
+`neutral_mass` and `adduct_type` are optional but recommended: when the upstream
+pipeline has resolved the adduct (e.g. via OpenMS peak grouping), pass the
+adduct-corrected neutral mass so candidate mass matching is anchored correctly
+even when the representative (base-peak) ion is not `[M+H]+`/`[M-H]-`. When
+`neutral_mass` is omitted the adapter falls back to the naive `[M+/-H]`
+assumption from `parent_mz`.
 
 Only libraries `209, 305, 400, 402` are supported (others are skipped). Each
 feature is given a synthetic control id `X-<900000000 + feature_id>` that matches
