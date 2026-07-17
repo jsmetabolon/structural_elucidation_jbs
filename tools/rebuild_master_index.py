@@ -58,6 +58,9 @@ def main() -> None:
                     report=str(r.get("report") or f"{cid}/index.html"),
                     msi_level=str(extra.get("msi_level") or ""),
                     msi_label=str(extra.get("msi_label") or ""),
+                    msi_sublevel=str(extra.get("msi_sublevel") or ""),
+                    metabolon_sublevel=str(extra.get("metabolon_sublevel") or ""),
+                    match_conf=str(extra.get("match_conf") if extra.get("match_conf") not in (None, "") else ""),
                 )
             )
     rows.sort(key=lambda x: (x.lib, x.control_id))

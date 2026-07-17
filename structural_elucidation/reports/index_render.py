@@ -28,10 +28,19 @@ class IndexRow:
     report: str = ""
     msi_level: str = ""
     msi_label: str = ""
+    msi_sublevel: str = ""          # derived fine sublevel (3A only)
+    metabolon_sublevel: str = ""    # curated known_X SubLevel (authoritative)
+    match_conf: str = ""            # rank-1 candidate_confidence (include/exclude score)
+
+
+# Identification-confidence ordering for sortable sublevel column (lower = higher confidence).
+_SUBLEVEL_ORDER = {s: i for i, s in enumerate(
+    ["1", "KNOWN", "Released", "2A", "2B", "2C", "3A", "3B", "3C", "3D", "4", "4?", "5"]
+)}
 
 
 def _read_confidence_extra(report_dir: Path) -> dict:
-    """Read msi_level/label + display_name from a report's confidence_inputs sidecar."""
+    """Read msi level/sublevel + curated sublevel + match confidence + display name."""
 
     slug = report_dir.name.lower()
     p = report_dir / "data" / f"{slug}_confidence_inputs.json"
@@ -41,9 +50,14 @@ def _read_confidence_extra(report_dir: Path) -> dict:
         d = json.loads(p.read_text(encoding="utf-8"))
     except (ValueError, OSError):
         return {}
+    cev = d.get("candidate_evidence") or []
+    match_conf = cev[0].get("candidate_confidence", "") if cev else ""
     return {
         "msi_level": d.get("msi_level", ""),
         "msi_label": d.get("msi_label", ""),
+        "msi_sublevel": d.get("msi_sublevel", ""),
+        "metabolon_sublevel": d.get("metabolon_sublevel", ""),
+        "match_conf": match_conf,
         "display_name": d.get("display_name", ""),
     }
 
@@ -57,13 +71,24 @@ def render_master_index(rows: list[IndexRow], generated_at: str) -> str:
     libs = sorted({r.lib for r in rows if r.lib})
     body_rows = []
     for idx, r in enumerate(rows, start=1):
+        # derived MSI level (with 3A when applicable)
+        msi_display = ("L" + (r.msi_sublevel or esc(r.msi_level))) if r.msi_level else ""
+        # curated Metabolon sublevel (authoritative); sortable by confidence order
+        cur = esc(r.metabolon_sublevel)
+        cur_sort = _SUBLEVEL_ORDER.get(str(r.metabolon_sublevel), 99)
+        try:
+            conf_sort = f"{float(r.match_conf):.4f}"
+            conf_disp = f"{float(r.match_conf):.3f}"
+        except (TypeError, ValueError):
+            conf_sort, conf_disp = "", ""
         body_rows.append(
             "<tr>"
             f"<td class='num'>{idx}</td>"
             f"<td><a href='{esc(r.report)}'>{esc(r.control_id)}</a></td>"
             f"<td>{esc(r.name)}</td>"
-            f"<td class='num' data-sort='{esc(r.msi_level)}' title='{esc(r.msi_label)}'>"
-            f"{('L' + esc(r.msi_level)) if r.msi_level else ''}</td>"
+            f"<td class='num' data-sort='{esc(r.msi_level)}' title='{esc(r.msi_label)}'>{msi_display}</td>"
+            f"<td class='num' data-sort='{cur_sort}' title='Curated Metabolon SubLevel (authoritative)'>{cur}</td>"
+            f"<td class='num' data-sort='{conf_sort}' title='Rank-1 candidate match confidence'>{conf_disp}</td>"
             f"<td class='mono'>{esc(r.formula)}</td>"
             f"<td class='num'>{esc(r.exact_mass)}</td>"
             f"<td class='num'>{esc(r.lib)}</td>"
@@ -121,7 +146,10 @@ def render_master_index(rows: list[IndexRow], generated_at: str) -> str:
   <table id='t'>
     <thead><tr>
       <th data-k='n'>#</th><th>Control ID</th><th>Name</th>
-      <th title='MSI identification level (1-5)'>MSI</th><th>Formula</th>
+      <th title='Derived MSI identification level (1-5; 3A = positional isomer)'>MSI</th>
+      <th title='Curated Metabolon SubLevel (authoritative)'>Curated</th>
+      <th title='Rank-1 candidate match confidence (0-1) for include/exclude'>Match&nbsp;conf</th>
+      <th>Formula</th>
       <th>Exact mass</th><th>Lib</th><th>DB chem id</th><th>Neighbors</th><th>Status</th>
     </tr></thead>
     <tbody>

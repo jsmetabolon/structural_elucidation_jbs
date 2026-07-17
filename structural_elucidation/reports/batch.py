@@ -284,6 +284,9 @@ def collect_index_rows(out_root: Path, results: list[BuildResult]) -> list[Index
                 report=f"{manifest_path.parent.name}/index.html",
                 msi_level=str(extra.get("msi_level") or ""),
                 msi_label=str(extra.get("msi_label") or ""),
+                msi_sublevel=str(extra.get("msi_sublevel") or ""),
+                metabolon_sublevel=str(extra.get("metabolon_sublevel") or ""),
+                match_conf=str(extra.get("match_conf") if extra.get("match_conf") not in (None, "") else ""),
             )
         )
     rows.sort(key=lambda r: (r.lib, r.control_id))

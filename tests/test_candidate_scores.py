@@ -233,14 +233,18 @@ def test_patch_card_uses_shared_score_line():
 
 # ── master index MSI column (unchanged) ─────────────────────────────────────
 
-def test_index_render_has_msi_column_and_sort():
+def test_index_render_has_sublevel_columns_and_sort():
     rows = [
-        IR.IndexRow(control_id="X-1", lib="209", name="foo", formula="C6", msi_level="3", msi_label="Tentative candidate structure"),
-        IR.IndexRow(control_id="X-2", lib="209", name="bar", formula="C7", msi_level="1", msi_label="Confirmed (authentic standard)"),
+        IR.IndexRow(control_id="X-1", lib="209", name="foo", formula="C6", msi_level="3",
+                    msi_label="Tentative candidate structure", msi_sublevel="3A", metabolon_sublevel="", match_conf="0.42"),
+        IR.IndexRow(control_id="X-2", lib="209", name="bar", formula="C7", msi_level="1",
+                    msi_label="Confirmed (authentic standard)", metabolon_sublevel="2C", match_conf="0.88"),
     ]
     html_out = IR.render_master_index(rows, "2026-01-01")
-    assert "<th title='MSI identification level (1-5)'>MSI</th>" in html_out
-    assert "data-sort='3'" in html_out and ">L3<" in html_out
+    assert ">MSI</th>" in html_out and ">Curated</th>" in html_out and "Match" in html_out
+    assert ">L3A<" in html_out       # derived 3A shown in the MSI column
+    assert ">2C<" in html_out        # curated authoritative sublevel column
+    assert "0.880" in html_out       # rank-1 match confidence formatted
     assert "data-dir" in html_out and "cellVal" in html_out  # sortable JS
 
 
