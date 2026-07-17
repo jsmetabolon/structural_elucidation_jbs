@@ -48,8 +48,21 @@ def refresh(report_dir: Path) -> str:
     # use it for the SMILES join to preserve the "Formula/class evidence" context;
     # fall back to css when the file is absent.
     tc = E._read(data / f"{slug}_top_candidates.csv")
-    anchor = C.compute_confidence(fields).raw_evidence
-    fields["candidate_evidence"] = E.candidate_evidence_rows(css, tc or css, anchor)
+
+    # Sublevel evidence: curated Metabolon SubLevel (authoritative) + same-formula
+    # multiplicity (the positional-isomer / 3A signal), both reports-tree-only.
+    kx = E._read(data / f"{slug}_known_x_row.csv")
+    if kx:
+        fields["metabolon_sublevel"] = str(kx[0].get("SubLevel", "") or "").strip()
+    fields["n_isomers"] = E.same_formula_multiplicity(tc or css)
+
+    conf = C.compute_confidence(fields)
+    fields["msi_level"] = conf.msi_level
+    fields["msi_label"] = conf.msi_label
+    fields["msi_rationale"] = conf.msi_rationale
+    fields["msi_sublevel"] = conf.msi_sublevel
+    fields["metabolon_sublevel"] = conf.metabolon_sublevel
+    fields["candidate_evidence"] = E.candidate_evidence_rows(css, tc or css, conf.raw_evidence)
     ci.write_text(json.dumps(fields, indent=2))
     return "refreshed"
 

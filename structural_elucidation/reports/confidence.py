@@ -101,6 +101,8 @@ class Confidence:
     msi_level: int = 5
     msi_label: str = ""
     msi_rationale: str = ""
+    msi_sublevel: str = ""          # derived fine sublevel (only 3A is defensible)
+    metabolon_sublevel: str = ""    # curated known_X SubLevel (authoritative)
 
     def as_dict(self) -> dict:
         return {
@@ -119,6 +121,8 @@ class Confidence:
             "msi_level": self.msi_level,
             "msi_label": self.msi_label,
             "msi_rationale": self.msi_rationale,
+            "msi_sublevel": self.msi_sublevel,
+            "metabolon_sublevel": self.metabolon_sublevel,
             "axes": [a.as_dict() for a in self.axes],
             "flags": self.flags,
         }
@@ -279,6 +283,39 @@ MSI_LABELS = {
 }
 
 
+# Curated Metabolon SubLevel tokens (authoritative; surfaced as-is).
+CURATED_SUBLEVELS = {"1", "2A", "2B", "2C", "3A", "3B", "3C", "3D", "4", "4?", "5", "KNOWN", "Released"}
+
+# Derived fine-sublevel labels (only the defensible subset; see
+# docs/msi_sublevel_findings.md). Fine 2C/3B/3C/3D and 2A/2B are NOT derived
+# because current evidence neither reproduces the curated letters (9.5% exact)
+# nor orders them by correctness; they require observed RT, a reference MS2
+# spectral library, and diagnostic-fragment matching (upstream handoff).
+MSI_SUBLEVEL_LABELS = {
+    "3A": "Positional-isomer candidates (multiple same-formula structures)",
+}
+
+
+def curated_sublevel(fields: dict) -> str:
+    """Authoritative Metabolon SubLevel from known_X, or '' if absent/non-metabolite."""
+    curated = str(fields.get("metabolon_sublevel", "") or "").strip()
+    return curated if curated in CURATED_SUBLEVELS else ""
+
+
+def assign_msi_sublevel(fields: dict, conf: "Confidence") -> str:
+    """Derived fine sublevel for our evidence-based MSI level.
+
+    Only ``3A`` (positional-isomer candidates) is assigned, since same-formula
+    multiplicity is the one fine distinction our evidence supports defensibly. The
+    curated Metabolon SubLevel is surfaced separately as an authoritative
+    cross-reference; it is not overwritten by this derived value.
+    """
+    n_isomers = _num(fields.get("n_isomers")) or 0
+    if conf.msi_level == 3 and n_isomers >= 2:
+        return "3A"
+    return ""
+
+
 def assign_msi_level(fields: dict, conf: "Confidence") -> tuple[int, str, str]:
     """Assign a Schymanski/MSI identification-confidence level (1-5) from evidence.
 
@@ -345,8 +382,10 @@ def compute_confidence(fields: dict) -> Confidence:
         ms2_n_pairs=int(_num(fields.get("ms2_n_pairs")) or 0),
         metabolon_level=str(fields.get("metabolon_level", "") or ""),
         mass_alt=fields.get("mass_alt") if isinstance(fields.get("mass_alt"), dict) else None,
+        metabolon_sublevel=curated_sublevel(fields),
     )
     result.msi_level, result.msi_label, result.msi_rationale = assign_msi_level(fields, result)
+    result.msi_sublevel = assign_msi_sublevel(fields, result)
     return result
 
 
@@ -425,14 +464,19 @@ def confidence_metric_card_html(conf: Confidence) -> str:
 
 def msi_badge_html(conf: Confidence) -> str:
     cls = "badge ok" if conf.msi_level <= 2 else "badge"
-    return f'<span class="{cls}">MSI Level {conf.msi_level} \u00b7 {html.escape(conf.msi_label)}</span>'
+    level_str = conf.msi_sublevel or str(conf.msi_level)
+    return f'<span class="{cls}">MSI Level {level_str} \u00b7 {html.escape(conf.msi_label)}</span>'
 
 
 def msi_metric_card_html(conf: Confidence) -> str:
+    level_str = conf.msi_sublevel or str(conf.msi_level)
+    note = conf.msi_label
+    if conf.msi_sublevel:
+        note += " - " + MSI_SUBLEVEL_LABELS.get(conf.msi_sublevel, "")
     return (
         '<div class="metric-card"><div class="metric-label">MSI identification level</div>'
-        f'<div class="metric-value">Level {conf.msi_level}</div>'
-        f'<div class="metric-note">{html.escape(conf.msi_label)}</div></div>'
+        f'<div class="metric-value">Level {level_str}</div>'
+        f'<div class="metric-note">{html.escape(note)}</div></div>'
     )
 
 
@@ -454,9 +498,13 @@ def scored_parameters_section_html(conf: Confidence, *, public: bool) -> str:
         "<th>Available</th><th>Interpretation</th></tr></thead>"
         f"<tbody>{''.join(rows)}</tbody></table></div>"
     )
+    level_str = conf.msi_sublevel or str(conf.msi_level)
+    sublevel_note = ""
+    if conf.msi_sublevel:
+        sublevel_note = f" Sub-level {conf.msi_sublevel}: {MSI_SUBLEVEL_LABELS.get(conf.msi_sublevel, '')}."
     msi_line = (
-        f'<p class="note"><strong>MSI identification level: Level {conf.msi_level} - '
-        f"{html.escape(conf.msi_label)}.</strong> {html.escape(conf.msi_rationale)}. "
+        f'<p class="note"><strong>MSI identification level: Level {level_str} - '
+        f"{html.escape(conf.msi_label)}.</strong> {html.escape(conf.msi_rationale)}.{html.escape(sublevel_note)} "
         "Levels 1-3 present a structure (Level 3 as a hypothesis); Levels 4-5 report formula/mass "
         "without a specific structure.</p>"
     )
@@ -482,12 +530,13 @@ def scored_parameters_section_html(conf: Confidence, *, public: bool) -> str:
             tail += f" Observed MS2 spectrum: {int(conf.ms2_n_pairs)} fragment peaks."
         tail += "</p>"
     extra = ""
-    if conf.metabolon_level:
+    if conf.metabolon_level or conf.metabolon_sublevel:
+        sub = f" (SubLevel {html.escape(conf.metabolon_sublevel)})" if conf.metabolon_sublevel else ""
         extra += (
-            f'<p class="note"><strong>Metabolon identification Level:</strong> '
-            f"{html.escape(conf.metabolon_level)}"
-            + (" (authentic-standard confirmed)" if conf.metabolon_level == "1" else "")
-            + ".</p>"
+            f'<p class="note"><strong>Metabolon identification Level (curated):</strong> '
+            f"{html.escape(conf.metabolon_level or 'n/a')}{sub}"
+            + (" - authentic-standard confirmed" if conf.metabolon_level == "1" else "")
+            + ". This is Metabolon's authoritative curated assignment.</p>"
         )
     if conf.mass_alt:
         alt = conf.mass_alt

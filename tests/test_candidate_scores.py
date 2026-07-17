@@ -75,6 +75,21 @@ def test_compute_confidence_exposes_raw_evidence_anchor():
     assert conf.as_dict()["raw_evidence"] == conf.raw_evidence
 
 
+def test_msi_sublevel_curated_surface_and_defensible_derivation():
+    base = {"source": "predicted", "structure_similarity": 0.6, "mass_match_score": 1.0, "observed_mz_available": True}
+    # curated SubLevel is surfaced authoritatively and NOT overwritten by derivation
+    c = C.compute_confidence({**base, "metabolon_sublevel": "3B", "n_isomers": 1})
+    assert c.metabolon_sublevel == "3B"
+    assert c.msi_sublevel == ""  # fine letters are not fabricated
+    # positional-isomer (multiple same-formula candidates) is the one derived fine bin
+    c2 = C.compute_confidence({**base, "n_isomers": 3})
+    assert c2.msi_level == 3 and c2.msi_sublevel == "3A"
+    # non-metabolite curated tokens are ignored
+    c3 = C.compute_confidence({**base, "metabolon_sublevel": "Exclude", "n_isomers": 1})
+    assert c3.metabolon_sublevel == ""
+    assert c.as_dict()["metabolon_sublevel"] == "3B"
+
+
 def test_candidate_confidences_empty_and_degenerate():
     assert C.candidate_confidences([], 0.5) == []
     out = C.candidate_confidences([{"rank": 1, "candidate_report_score": 0.0}], None)

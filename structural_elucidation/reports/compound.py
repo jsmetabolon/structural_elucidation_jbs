@@ -3543,6 +3543,12 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     # alternative, and observed-MS2 detail so the from-source render matches.
     _level = str(kx_row.get("Level", "") or "").strip()
     _conf_fields["metabolon_level"] = "" if _level.lower() in {"nan", "artifact", "exclude", "4?"} else _level
+    _conf_fields["metabolon_sublevel"] = str(kx_row.get("SubLevel", "") or "").strip()
+    _r1_formula = str(_css_records[0].get("predicted_formula", "") or "").strip() if _css_records else ""
+    _conf_fields["n_isomers"] = sum(
+        1 for r in _css_records[:10]
+        if _r1_formula and str(r.get("predicted_formula", "") or "").strip() == _r1_formula
+    )
     _conf_fields["mass_alt"] = confmod.mass_consistent_alt(_css_records)
     _n_peaks = int(len(peaks)) if hasattr(peaks, "empty") and not peaks.empty else 0
     _conf_fields["ms2_detail"] = {

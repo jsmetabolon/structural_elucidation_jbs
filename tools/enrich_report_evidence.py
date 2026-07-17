@@ -91,6 +91,29 @@ def load_levels(known_x: Path) -> dict[str, str]:
     return out
 
 
+def load_sublevels(known_x: Path) -> dict[str, str]:
+    """control_id -> curated Metabolon SubLevel (authoritative; e.g. 2C, 3A-3D)."""
+    out: dict[str, str] = {}
+    for row in _read(known_x):
+        cid = str(row.get("Unknown", "")).strip()
+        sub = str(row.get("SubLevel", "")).strip()
+        if cid and cid not in out and sub:
+            out[cid] = sub
+    return out
+
+
+def same_formula_multiplicity(rows: list[dict]) -> int:
+    """# of top-10 candidates sharing the rank-1 predicted_formula (positional-isomer / 3A signal)."""
+    top = rows[:10]
+    if not top:
+        return 0
+    r1 = _rank1(top)
+    formula = str(r1.get("predicted_formula", "") or "").strip()
+    if not formula:
+        return 0
+    return sum(1 for r in top if str(r.get("predicted_formula", "") or "").strip() == formula)
+
+
 def load_db_names(bundle: Path) -> dict[str, dict]:
     """InChIKey skeleton -> {name, synonyms}."""
     db = bundle / "metabolite_synonyms.sqlite"
@@ -184,7 +207,7 @@ def candidate_evidence_rows(css: list[dict], tc: list[dict], feature_overall: fl
     return out
 
 
-def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna) -> str:
+def enrich(report_dir: Path, obs_mz, ms2, levels, sublevels, db_names, wgcna) -> str:
     data = report_dir / "data"
     if not data.is_dir():
         return "no_data"
@@ -237,6 +260,8 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna) -> str:
         "match": _num(r1.get("ms2_match_score")),
     }
     fields["metabolon_level"] = levels.get(cid, "")
+    fields["metabolon_sublevel"] = sublevels.get(cid, "")
+    fields["n_isomers"] = same_formula_multiplicity(tc)
     fields["truth_match"] = truth_match
     fields["mass_alt"] = C.mass_consistent_alt(css)
     # display name / synonyms (gap 2)
@@ -264,6 +289,8 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna) -> str:
     fields["msi_level"] = conf.msi_level
     fields["msi_label"] = conf.msi_label
     fields["msi_rationale"] = conf.msi_rationale
+    fields["msi_sublevel"] = conf.msi_sublevel
+    fields["metabolon_sublevel"] = conf.metabolon_sublevel
     # Per-candidate confidence is anchored to the report's evidence match strength
     # (raw_evidence), which is fuller-range than the compressed Platt overall.
     fields["candidate_evidence"] = candidate_evidence_rows(css, tc, conf.raw_evidence)
@@ -278,13 +305,14 @@ def main() -> None:
     obs_mz = load_observed_mz(bundle, known_x)
     ms2 = load_ms2(bundle)
     levels = load_levels(known_x)
+    sublevels = load_sublevels(known_x)
     db_names = load_db_names(bundle)
     wgcna = load_wgcna(bundle)
-    print(f"[enrich] m/z:{len(obs_mz)} ms2:{len(ms2)} levels:{len(levels)} "
+    print(f"[enrich] m/z:{len(obs_mz)} ms2:{len(ms2)} levels:{len(levels)} sublevels:{len(sublevels)} "
           f"db_names:{len(db_names)} wgcna:{len(wgcna)}", file=sys.stderr)
     counts: dict[str, int] = {}
     for d in sorted(p for p in root.iterdir() if p.is_dir()):
-        st = enrich(d, obs_mz, ms2, levels, db_names, wgcna)
+        st = enrich(d, obs_mz, ms2, levels, sublevels, db_names, wgcna)
         counts[st] = counts.get(st, 0) + 1
     print(f"[enrich] {counts}", file=sys.stderr)
 
