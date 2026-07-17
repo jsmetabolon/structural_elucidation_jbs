@@ -213,3 +213,32 @@ to confirm full parity first. Until then, the enrich -> patch flow
 (`tools/enrich_report_evidence.py`, `tools/patch_report_confidence.py`,
 `tools/patch_candidate_scores.py`, `tools/patch_consensus_crowding.py`, and
 `tools/rebuild_master_index.py`) remains the source of truth for delivery.
+
+## 6. Evidence to derive the fine MSI sublevels (2A/2B/2C, 3B/3C/3D)
+- Goal: let the report *derive* Metabolon's fine sublevels for uncurated unknowns,
+  not just surface the curated `known_X.SubLevel` (2,484/3,897) and derive the one
+  defensible bin (`3A` positional-isomer). See `docs/msi_sublevel_findings.md`.
+- Evidence (`tools/audit_sublevel_evidence.py` on the 2,484 curated controls): the
+  fine sublevels are **not reconstructable from current report evidence** - a
+  derived rubric matches the curated letter only **9.5%** of the time and its fine
+  ordering is inverted vs truth (derived 2C truth 0.452 < 3B 0.731). The rubric's
+  distinguishing axes are missing/empty in the delivered data: `isotope_formula_score`
+  is a constant 0.5, per-candidate `fragment_match_count` is ~0 (observed-vs-candidate
+  matching was never computed), `library_match_type` is mass-only (no spectral hit),
+  and observed RT is absent from `feature_rows`.
+- Plug-in (three inputs, by payoff):
+  1. **Candidate-vs-observed diagnostic-fragment matching** from the observed MS2
+     spectra (`observed_ms2_lookups/*` carry bins + `ms2_pairs_json` + intensities):
+     in-silico fragment/neutral-loss matching per candidate -> fragment count + type
+     (diagnostic vs subclass-aligned vs in-silico) that powers 2b/3b/3c.
+  2. **Observed RT + reference RI join** (`ions_w_ri.csv` has reference RT/RI + quant
+     ions; capture observed RT per X-compound into `feature_rows`) -> "Consistent RT"
+     for 1a/1b/2a.
+  3. **Reference MS2 spectral library** match (distinct from the current mass-only
+     `library_match_type`) -> "Library MS2" for 2a and for separating 2C from the
+     3-series.
+- Also required: **2A/2B labeled examples** (the full `known_X` Level 2 is 100% `2C`),
+  without which 2A/2B cannot be validated even once the evidence exists.
+- Verify: re-run `tools/audit_sublevel_evidence.py`; derived-vs-curated exact
+  agreement and derived-order-vs-truth tau should both rise materially before any
+  fine derived sublevel is shipped.
