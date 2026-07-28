@@ -24,6 +24,7 @@ from typing import Any
 INK = "#1f2933"
 MUTED = "#52606d"
 GRID = "#d9e2ec"
+WHITE = "#ffffff"
 COLORS = ("#2563a6", "#2f855a", "#b45309", "#805ad5", "#b83280", "#64748b")
 
 
@@ -31,11 +32,20 @@ def esc(value: Any) -> str:
     return str(value).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def text(x: float, y: float, value: Any, *, size: int = 11, anchor: str = "middle", bold: bool = False) -> str:
+def text(
+    x: float,
+    y: float,
+    value: Any,
+    *,
+    size: int = 11,
+    anchor: str = "middle",
+    bold: bool = False,
+    color: str = INK,
+) -> str:
     weight = " font-weight='bold'" if bold else ""
     return (
         f"<text x='{x:.1f}' y='{y:.1f}' font-size='{size}' text-anchor='{anchor}' "
-        f"fill='{INK}'{weight}>{esc(value)}</text>"
+        f"fill='{color}'{weight}>{esc(value)}</text>"
     )
 
 
@@ -95,11 +105,13 @@ def bar_chart(
                 f"<rect x='{x:.1f}' y='{y:.1f}' width='{bar_w - 3:.1f}' "
                 f"height='{value / ymax * plot_h:.1f}' fill='{item['color']}' rx='2'/>"
             )
+            center_x = x + (bar_w - 3) / 2
+            label_top = y
             ci = metric.get("ci95") or [None, None]
             if ci[0] is not None:
                 low_y = top + plot_h - float(ci[0]) * 100.0 / ymax * plot_h
                 high_y = top + plot_h - float(ci[1]) * 100.0 / ymax * plot_h
-                mid_x = x + (bar_w - 3) / 2
+                mid_x = center_x
                 svg += [
                     f"<line x1='{mid_x:.1f}' y1='{high_y:.1f}' x2='{mid_x:.1f}' "
                     f"y2='{low_y:.1f}' stroke='{INK}' stroke-width='1.2'/>",
@@ -108,9 +120,14 @@ def bar_chart(
                     f"<line x1='{mid_x - 5:.1f}' y1='{low_y:.1f}' x2='{mid_x + 5:.1f}' "
                     f"y2='{low_y:.1f}' stroke='{INK}'/>",
                 ]
-            svg.append(text(x + (bar_w - 3) / 2, y - 7, f"{value:.1f}", size=10, bold=True))
+                label_top = min(y, high_y)
+            svg.append(text(center_x, label_top - 8, f"{value:.1f}", size=10, bold=True))
             if metric.get("n") is not None:
-                svg.append(text(x + (bar_w - 3) / 2, y + 15, f"n={metric['n']}", size=9))
+                bar_px = top + plot_h - y
+                if bar_px >= 26:
+                    svg.append(text(center_x, y + 16, f"n={metric['n']}", size=9, color=WHITE))
+                else:
+                    svg.append(text(center_x, top + plot_h - 5, f"n={metric['n']}", size=9, color=MUTED))
         label_y = top + plot_h + 20
         for line_index, line in enumerate(split_label(category)):
             svg.append(text(center, label_y + 14 * line_index, line, size=10))
@@ -126,6 +143,8 @@ def bar_chart(
 def reliability_chart(path: Path, full: dict[str, Any], ablated: dict[str, Any]) -> None:
     width, height = 680, 560
     left, top, size = 85, 75, 400
+    bin_sizes = [int(row["n"]) for row in full["reliability_bins"]] or [0]
+    min_bin, max_bin = min(bin_sizes), max(bin_sizes)
     svg = [
         f"<svg xmlns='http://www.w3.org/2000/svg' width='{width}' height='{height}' "
         f"viewBox='0 0 {width} {height}' font-family='Arial, Helvetica, sans-serif'>",
@@ -134,7 +153,8 @@ def reliability_chart(path: Path, full: dict[str, Any], ablated: dict[str, Any])
         text(
             left,
             50,
-            f"n={full['n']}; full Brier={full['brier_score']:.3f}; no-pathway Brier={ablated['brier_score']:.3f}",
+            f"n={full['n']}; full Brier={full['brier_score']:.3f}; no-pathway Brier={ablated['brier_score']:.3f}"
+            f"; {min_bin}\u2013{max_bin} controls per bin",
             size=11,
             anchor="start",
         ),
@@ -167,7 +187,6 @@ def reliability_chart(path: Path, full: dict[str, Any], ablated: dict[str, Any])
                 f"<line x1='{x:.1f}' y1='{high_y:.1f}' x2='{x:.1f}' y2='{low_y:.1f}' "
                 f"stroke='{color}' stroke-width='1.5'/>",
                 f"<circle cx='{x:.1f}' cy='{y:.1f}' r='5' fill='{color}'/>",
-                text(x + 8, y - 7, f"n={row['n']}", size=9, anchor="start"),
             ]
         if len(points) > 1:
             coords = " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
@@ -224,7 +243,7 @@ def distribution_chart(path: Path, presentation: dict[str, Any]) -> None:
         max_root = math.sqrt(max(counts) or 1)
         slot = panel_w / len(labels)
         for index, (label, count) in enumerate(zip(labels, counts)):
-            bar_h = math.sqrt(count) / max_root * panel_h if count else 0
+            bar_h = math.sqrt(count) / max_root * panel_h * 0.88 if count else 0
             x = x0 + index * slot + 15
             y = y0 + panel_h - bar_h
             svg.append(

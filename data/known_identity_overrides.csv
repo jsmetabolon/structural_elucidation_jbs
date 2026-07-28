@@ -1,0 +1,18 @@
+control_id,identity_confidence,reason
+# Curated known-identity allowlist for the "Library identity (authentic-standard pending)" metric.
+# Compounds listed here are treated as identity-known with the given curator-rubric confidence
+# (>= 0.90 by convention), independent of the calibrated structure-prediction probability.
+# Columns:
+#   control_id            X-compound id, e.g. X-22834
+#   identity_confidence   Rubric value in [0,1]; blank -> IDENTITY_CONF_OVERRIDE_DEFAULT (0.98)
+#   reason                Free-text rationale (shown in the report card)
+X-22834,0.98,Named Metabolon library bile acid (glycodeoxycholate); identity known
+X-17612,0.98,Named Metabolon library bile-acid conjugate (deoxycholic acid glucuronide); identity known
+X-24178,0.98,Named Metabolon library bile-acid conjugate (lithocholic acid glucuronide); identity known
+X-25458,0.98,Named Metabolon library bile-acid conjugate (lithocholic acid glucuronide); identity known
+X-21803,0.98,Named Metabolon library indole (6-hydroxyindole sulfate); identity known
+X-25318,0.98,Named Metabolon library indole (6-hydroxyindole sulfate); identity known
+X-23456,0.98,Named Metabolon library indole (indoleacetylaspartate); identity known
+X-24732,0.98,Named Metabolon library indole (2-oxindole-3-acetate); identity known
+X-24975,0.98,Named Metabolon library indole (1H-indole-7-acetic acid); identity known
+X-21315,0.98,"Named Metabolon library industrial phenol (2,4-dichlorophenol sulfate); identity known"

@@ -28,6 +28,12 @@ class IndexRow:
     report: str = ""
     msi_level: str = ""
     msi_label: str = ""
+    identity_status: str = ""
+    identity_confidence: str = ""
+    descriptor_kind: str = ""
+    descriptor_confidence: str = ""
+    descriptor_parent_formula: str = ""
+    descriptor_conjugate_count: str = ""
 
 
 def _read_confidence_extra(report_dir: Path) -> dict:
@@ -41,10 +47,21 @@ def _read_confidence_extra(report_dir: Path) -> dict:
         d = json.loads(p.read_text(encoding="utf-8"))
     except (ValueError, OSError):
         return {}
+    identity_status = d.get("identity_status", "") or ""
+    identity_conf = d.get("identity_confidence")
+    identity_conf_pct = ""
+    if isinstance(identity_conf, (int, float)):
+        identity_conf_pct = f"{round(100 * float(identity_conf))}%"
     return {
         "msi_level": d.get("msi_level", ""),
         "msi_label": d.get("msi_label", ""),
         "display_name": d.get("display_name", ""),
+        "identity_status": identity_status,
+        "identity_confidence": identity_conf_pct,
+        "descriptor_kind": d.get("descriptor_kind", "") or "",
+        "descriptor_confidence": d.get("descriptor_confidence", "") or "",
+        "descriptor_parent_formula": d.get("descriptor_parent_formula", "") or "",
+        "descriptor_conjugate_count": d.get("descriptor_conjugate_count", "") or "",
     }
 
 
@@ -55,8 +72,51 @@ def render_master_index(rows: list[IndexRow], generated_at: str) -> str:
         return html.escape(str(value))
 
     libs = sorted({r.lib for r in rows if r.lib})
+    _IDENTITY_LABEL = {
+        "known_pending": "Known (standard pending)",
+        "putative": "Putative",
+        "unknown": "",
+    }
+    _DESCRIPTOR_LABEL = {
+        "peptide": "Peptide",
+        "lipid": "Lipid",
+        "conjugate_resolved": "Conjugate",
+        "conjugate_unresolved": "Conjugate",
+        "motif_only": "Structural motif",
+        "candidate_name": "Candidate name",
+        "known_x_name": "Known X name",
+        "external_db_exact": "External DB",
+        "external_db_skeleton": "External DB (stereo)",
+        "analog": "Analog",
+        "chemical_class": "Chemical class",
+        "iupac_generated": "IUPAC (generated)",
+    }
     body_rows = []
     for idx, r in enumerate(rows, start=1):
+        identity_label = _IDENTITY_LABEL.get(r.identity_status, "")
+        identity_display = (
+            f"{identity_label} \u00b7 {r.identity_confidence}" if identity_label and r.identity_confidence
+            else identity_label
+        )
+        identity_sort = (
+            f"3 {r.identity_confidence}" if r.identity_status == "known_pending"
+            else "2" if r.identity_status == "putative"
+            else "1"
+        )
+        descriptor_label = _DESCRIPTOR_LABEL.get(
+            r.descriptor_kind,
+            r.descriptor_kind.replace("_", " ").title(),
+        )
+        descriptor_display = (
+            f"{descriptor_label} \N{MIDDLE DOT} {r.descriptor_confidence.title()}"
+            if descriptor_label and r.descriptor_confidence
+            else descriptor_label
+        )
+        descriptor_sort = {
+            "high": "3",
+            "medium": "2",
+            "low": "1",
+        }.get(r.descriptor_confidence, "0")
         body_rows.append(
             "<tr>"
             f"<td class='num'>{idx}</td>"
@@ -64,6 +124,10 @@ def render_master_index(rows: list[IndexRow], generated_at: str) -> str:
             f"<td>{esc(r.name)}</td>"
             f"<td class='num' data-sort='{esc(r.msi_level)}' title='{esc(r.msi_label)}'>"
             f"{('L' + esc(r.msi_level)) if r.msi_level else ''}</td>"
+            f"<td data-sort='{esc(identity_sort)}' title='Library identity (authentic-standard pending)'>"
+            f"{esc(identity_display)}</td>"
+            f"<td data-sort='{esc(descriptor_sort + ' ' + r.descriptor_kind)}'>"
+            f"{esc(descriptor_display)}</td>"
             f"<td class='mono'>{esc(r.formula)}</td>"
             f"<td class='num'>{esc(r.exact_mass)}</td>"
             f"<td class='num'>{esc(r.lib)}</td>"
@@ -121,7 +185,10 @@ def render_master_index(rows: list[IndexRow], generated_at: str) -> str:
   <table id='t'>
     <thead><tr>
       <th data-k='n'>#</th><th>Control ID</th><th>Name</th>
-      <th title='MSI identification level (1-5)'>MSI</th><th>Formula</th>
+      <th title='MSI identification level (1-5)'>MSI</th>
+      <th title='Library identity status (authentic-standard pending)'>Identity</th>
+      <th title='Tentative structural descriptor type and heuristic confidence'>Descriptor</th>
+      <th>Formula</th>
       <th>Exact mass</th><th>Lib</th><th>DB chem id</th><th>Neighbors</th><th>Status</th>
     </tr></thead>
     <tbody>

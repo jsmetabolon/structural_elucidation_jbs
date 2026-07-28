@@ -13,3 +13,6 @@ tqdm
 openpyxl
 matplotlib
 psutil
+
+# Optional extras for second-stage IUPAC naming (heavy: pulls TensorFlow):
+# pip install STOUT-pypi>=2.0.5

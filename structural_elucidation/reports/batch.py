@@ -284,6 +284,12 @@ def collect_index_rows(out_root: Path, results: list[BuildResult]) -> list[Index
                 report=f"{manifest_path.parent.name}/index.html",
                 msi_level=str(extra.get("msi_level") or ""),
                 msi_label=str(extra.get("msi_label") or ""),
+                identity_status=str(extra.get("identity_status") or ""),
+                identity_confidence=str(extra.get("identity_confidence") or ""),
+                descriptor_kind=str(extra.get("descriptor_kind") or ""),
+                descriptor_confidence=str(extra.get("descriptor_confidence") or ""),
+                descriptor_parent_formula=str(extra.get("descriptor_parent_formula") or ""),
+                descriptor_conjugate_count=str(extra.get("descriptor_conjugate_count") or ""),
             )
         )
     rows.sort(key=lambda r: (r.lib, r.control_id))
@@ -305,6 +311,10 @@ def write_reports_index_csv(out_root: Path, rows: list[IndexRow]) -> Path:
                 "n_neighbors": r.n_neighbors,
                 "msi_level": r.msi_level,
                 "msi_label": r.msi_label,
+                "descriptor_kind": r.descriptor_kind,
+                "descriptor_confidence": r.descriptor_confidence,
+                "descriptor_parent_formula": r.descriptor_parent_formula,
+                "descriptor_conjugate_count": r.descriptor_conjugate_count,
                 "status": r.status,
                 "report": r.report,
             }

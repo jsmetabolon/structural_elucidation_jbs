@@ -27,6 +27,7 @@ import json
 import math
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 # --- calibration constants (from tools/calibrate_confidence.py) --------------
 WEIGHTS = {"structure": 0.40, "mass": 0.30, "ms2": 0.20, "pathway": 0.10}
@@ -44,6 +45,12 @@ CALIBRATION_BASE_RATE = 0.478
 TIER_HIGH = 0.65
 TIER_MODERATE = 0.48
 TIER_LOW = 0.38
+# Policy floor for authentic-standard-confirmed reports (MSI Level 1). This is a
+# display value, not a recalibrated probability: a run authentic standard is the
+# gold standard, so it reads 100%. Curator-known-identity promotions are clamped
+# strictly below this (see IDENTITY_PROMOTED_MAX) to preserve the ordering
+# authentic-standard > known-identity-pending.
+CONFIRMED_OVERALL = 1.0
 
 AXIS_LABELS = {
     "structure": "Structure similarity",
@@ -59,6 +66,31 @@ STRUCT_STRONG = 0.85
 STRUCT_MODERATE = 0.70
 STRUCT_WEAK = 0.45
 MS2_PRESENT = 0.30
+
+# --- Library identity ("authentic-standard pending") metric ------------------
+# Separate, clearly-labeled from the calibrated ``overall`` P(correct). Reflects
+# a library / database identity assessment for compounds whose top structure is
+# a named reference-DB metabolite with corroborating accurate mass (and, when
+# available, observed MS2). It is a curator-driven rubric value, not a
+# validated probability. Confirmation-by-authentic-standard remains pending.
+IDENTITY_STATUS_KNOWN = "known_pending"
+IDENTITY_STATUS_PUTATIVE = "putative"
+IDENTITY_STATUS_UNKNOWN = "unknown"
+
+# Auto-rule: promote every named exact-match library metabolite with strong
+# mass corroboration. OFF by default so behavior stays curator-driven; when
+# ON the auto-rule uses IDENTITY_CONF_AUTO_MS2 / _NO_MS2 below.
+IDENTITY_AUTO_RULE = False
+
+# Rubric confidence values for the library-identity metric (policy, not P(correct)).
+IDENTITY_CONF_OVERRIDE_DEFAULT = 0.98  # allowlist override without a per-row value
+IDENTITY_CONF_AUTO_MS2 = 0.95          # auto-promoted, observed MS2 corroborates
+IDENTITY_CONF_AUTO_NO_MS2 = 0.92       # auto-promoted, no observed MS2
+
+# Upper bound on the overall headline value when a curator known-identity
+# promotion applies. 100% is reserved for authentic-standard-confirmed reports
+# (see CONFIRMED_OVERALL); a curator override can never reach the same ceiling.
+IDENTITY_PROMOTED_MAX = 0.99
 
 
 @dataclass
@@ -94,12 +126,17 @@ class Confidence:
     # display extras
     observed_mz: float | None = None
     observed_neutral_mass: float | None = None
+    candidate_exact_mass: float | None = None
     ms2_n_pairs: int = 0
     metabolon_level: str = ""
     mass_alt: dict | None = None
     msi_level: int = 5
     msi_label: str = ""
     msi_rationale: str = ""
+    # Library identity ("authentic-standard pending") metric - separate from ``overall``.
+    identity_status: str = IDENTITY_STATUS_UNKNOWN
+    identity_confidence: float | None = None
+    identity_basis: str = ""
 
     def as_dict(self) -> dict:
         return {
@@ -111,12 +148,16 @@ class Confidence:
             "source": self.source,
             "observed_mz": self.observed_mz,
             "observed_neutral_mass": self.observed_neutral_mass,
+            "candidate_exact_mass": self.candidate_exact_mass,
             "ms2_n_pairs": self.ms2_n_pairs,
             "metabolon_level": self.metabolon_level,
             "mass_alt": self.mass_alt,
             "msi_level": self.msi_level,
             "msi_label": self.msi_label,
             "msi_rationale": self.msi_rationale,
+            "identity_status": self.identity_status,
+            "identity_confidence": self.identity_confidence,
+            "identity_basis": self.identity_basis,
             "axes": [a.as_dict() for a in self.axes],
             "flags": self.flags,
         }
@@ -163,13 +204,26 @@ def build_axes(fields: dict) -> list[Axis]:
     # Mass: candidate neutral mass vs the target neutral mass hypothesis.
     mass = _num(fields.get("mass_match_score"))
     abs_err = _num(fields.get("abs_mass_error_da"))
+    observed_neutral_mass = _num(fields.get("observed_neutral_mass"))
+    candidate_exact_mass = _num(fields.get("candidate_exact_mass"))
     mass_available = mass is not None
     if not mass_available:
         m_detail = "No mass-match score available"
     elif mass >= MASS_STRONG:
-        m_detail = "Candidate formula/mass matches the target neutral mass"
-        if abs_err is not None:
-            m_detail += f" (|error| {abs_err:.3f} Da)"
+        if (
+            observed_neutral_mass is not None
+            and candidate_exact_mass is not None
+        ):
+            m_detail = (
+                f"Strong: observed neutral mass {observed_neutral_mass:.6f} Da "
+                f"vs predicted {candidate_exact_mass:.6f} Da"
+            )
+            if abs_err is not None:
+                m_detail += f" (absolute error {abs_err:.6f} Da)"
+        else:
+            m_detail = "Strong: candidate formula/mass matches the target neutral mass"
+            if abs_err is not None:
+                m_detail += f" (absolute error {abs_err:.6f} Da)"
     elif mass >= MASS_WEAK:
         m_detail = "Partial mass agreement"
     else:
@@ -309,6 +363,83 @@ def assign_msi_level(fields: dict, conf: "Confidence") -> tuple[int, str, str]:
     return 5, MSI_LABELS[5], "Only an exact mass is available; no confident formula or structure"
 
 
+def assign_identity(fields: dict, conf: "Confidence") -> tuple[str, float | None, str]:
+    """Assign the library-identity ("authentic-standard pending") status.
+
+    This is DISTINCT from ``conf.overall`` (the calibrated P(top structure
+    correct)). It reflects a library / database identity claim:
+
+      - ``known_pending`` = top structure is a named reference-DB metabolite
+        with corroborating accurate mass (and, if available, observed MS2);
+        confirmation by authentic standard is pending. Reached either by an
+        explicit curator override (``fields["known_identity_override"]``) or by
+        the auto-rule when ``IDENTITY_AUTO_RULE`` is enabled.
+      - ``putative`` = library-plausible but does not meet the corroboration bar
+        (weak mass, mass mismatch, or unresolved name).
+      - ``unknown`` = de novo / no library correspondence.
+
+    Confidence values are a curator rubric, NOT a validated probability.
+    """
+    source = str(fields.get("source", "")).strip()
+    name_resolved = bool(fields.get("name_resolved"))
+    by = {a.key: a for a in conf.axes}
+    mass = by["mass"].score if by["mass"].available else None
+    mass_ok = mass is not None and mass >= MASS_STRONG
+    mass_mismatch = mass is not None and mass < MASS_WEAK
+    ms2_ok = by["ms2"].available and (by["ms2"].score or 0.0) >= MS2_PRESENT
+
+    override = fields.get("known_identity_override")
+    if override:
+        # Accept truthy scalar (bool) or a dict {confidence, reason}
+        if isinstance(override, dict):
+            cval = _num(override.get("confidence")) or _num(override.get("identity_confidence"))
+            reason = str(override.get("reason") or "").strip()
+        else:
+            cval = None
+            reason = ""
+        identity_confidence = cval if cval is not None else IDENTITY_CONF_OVERRIDE_DEFAULT
+        basis_bits = ["Curated known identity (authentic standard pending)"]
+        if reason:
+            basis_bits.append(reason)
+        if name_resolved:
+            basis_bits.append("named reference-DB metabolite")
+        if mass_ok:
+            basis_bits.append("accurate-mass corroborated")
+        return IDENTITY_STATUS_KNOWN, round(float(identity_confidence), 4), "; ".join(basis_bits)
+
+    auto_named_exact = (
+        IDENTITY_AUTO_RULE
+        and source == "exact"
+        and name_resolved
+        and mass_ok
+        and not mass_mismatch
+    )
+    if auto_named_exact:
+        cval = IDENTITY_CONF_AUTO_MS2 if ms2_ok else IDENTITY_CONF_AUTO_NO_MS2
+        basis = (
+            "Named reference-library metabolite with accurate-mass corroboration"
+            + (" and observed-MS2 fit" if ms2_ok else "")
+            + "; authentic-standard confirmation pending"
+        )
+        return IDENTITY_STATUS_KNOWN, round(float(cval), 4), basis
+
+    if source == "predicted":
+        return IDENTITY_STATUS_UNKNOWN, None, "De novo / predicted structure; no library correspondence"
+
+    # source == "exact" or other library-adjacent but not meeting the bar
+    if source == "exact":
+        if mass_mismatch:
+            basis = "Library-match structure but mass disagrees with the observed feature"
+        elif not mass_ok:
+            basis = "Library-match structure with partial mass corroboration; identity not established"
+        elif not name_resolved:
+            basis = "Library-match structure but no canonical name resolved from the reference DB"
+        else:
+            basis = "Library-match structure; identity not curator-confirmed"
+        return IDENTITY_STATUS_PUTATIVE, None, basis
+    return IDENTITY_STATUS_UNKNOWN, None, "No library correspondence for this feature"
+
+
 def compute_confidence(fields: dict) -> Confidence:
     """Compute the hybrid identification confidence from normalized ``fields``."""
     source = str(fields.get("source", "")).strip()
@@ -317,11 +448,15 @@ def compute_confidence(fields: dict) -> Confidence:
     overall = _sigmoid(PLATT_A * raw + PLATT_B)
     tier, tier_note = _tier(overall, axes, source)
     # Authentic-standard override (gap 6): a Metabolon Level-1 control whose top
-    # candidate matches the confirmed structure is genuinely confirmable -> High.
+    # candidate matches the confirmed structure is genuinely confirmable. Display
+    # policy: an authentic-standard-confirmed identification is the gold standard,
+    # so the headline overall reads 100% (CONFIRMED_OVERALL). The underlying
+    # exploratory calibrated evidence score is still shown in the scored-parameters
+    # section text; this is a policy display value, not a recalibrated probability.
     if str(fields.get("metabolon_level", "")).strip() == "1" and bool(fields.get("truth_match")):
         tier = "Confirmed"
         tier_note = "Authentic-standard confirmed (Metabolon Level 1); top candidate matches the confirmed structure"
-        overall = max(overall, 0.97)
+        overall = max(overall, CONFIRMED_OVERALL)
     if source == "exact":
         descriptor = "Cataloged reference metabolite (exact structural match)"
     elif source == "predicted":
@@ -339,12 +474,73 @@ def compute_confidence(fields: dict) -> Confidence:
         source=source,
         observed_mz=_num(fields.get("observed_mz")),
         observed_neutral_mass=_num(fields.get("observed_neutral_mass")),
+        candidate_exact_mass=_num(fields.get("candidate_exact_mass")),
         ms2_n_pairs=int(_num(fields.get("ms2_n_pairs")) or 0),
         metabolon_level=str(fields.get("metabolon_level", "") or ""),
         mass_alt=fields.get("mass_alt") if isinstance(fields.get("mass_alt"), dict) else None,
     )
     result.msi_level, result.msi_label, result.msi_rationale = assign_msi_level(fields, result)
+    result.identity_status, result.identity_confidence, result.identity_basis = assign_identity(fields, result)
+    # Curator-known library identity: promote the headline overall confidence to the
+    # identity rubric value (>= 90%) so reports reflect "we know what it is,
+    # authentic standard pending" without upgrading to MSI Level 1 / Confirmed.
+    if (
+        result.identity_status == IDENTITY_STATUS_KNOWN
+        and result.identity_confidence is not None
+        and result.identity_confidence >= 0.90
+        and result.tier != "Confirmed"
+    ):
+        calibrated = result.overall
+        # Clamp below the authentic-standard-confirmed floor so a curator override
+        # can never match the Level 1 headline (100%).
+        promoted = min(float(result.identity_confidence), IDENTITY_PROMOTED_MAX)
+        result.overall = round(promoted, 4)
+        result.tier = "High"
+        result.tier_note = (
+            "This is a High Confidence probable structure based on corroborating "
+            "evidence derived from Metabolon\u2019s validated structural elucidation workflow."
+        )
+        if calibrated < result.overall - 0.05:
+            result.flags.append(
+                f"Overall confidence reflects curator-known library identity "
+                f"(underlying calibrated evidence score was {round(100 * calibrated)}%)."
+            )
     return result
+
+
+def load_identity_overrides(path: Path | str | None) -> dict[str, dict]:
+    """Load the curated known-identity allowlist CSV.
+
+    Columns (case-insensitive): ``control_id`` (required),
+    ``identity_confidence`` (optional; defaults to ``IDENTITY_CONF_OVERRIDE_DEFAULT``),
+    ``reason`` (optional; free-text rationale). Returns a mapping
+    ``{control_id: {"confidence": float, "reason": str}}``. Missing / unreadable
+    files return an empty dict so callers can pass in an optional path.
+    """
+    if path is None:
+        return {}
+    p = Path(path)
+    if not p.exists():
+        return {}
+    out: dict[str, dict] = {}
+    try:
+        with p.open(newline="") as handle:
+            # Skip full-line comments starting with '#' (they must not appear inside quoted fields).
+            filtered = (line for line in handle if not line.lstrip().startswith("#"))
+            reader = csv.DictReader(filtered)
+            for row in reader:
+                cid = str(row.get("control_id") or row.get("Control_ID") or "").strip()
+                if not cid or cid.startswith("#"):
+                    continue
+                cval = _num(row.get("identity_confidence") or row.get("confidence"))
+                reason = str(row.get("reason") or row.get("note") or "").strip()
+                out[cid] = {
+                    "confidence": cval if cval is not None else IDENTITY_CONF_OVERRIDE_DEFAULT,
+                    "reason": reason,
+                }
+    except (OSError, ValueError):
+        return {}
+    return out
 
 
 # --- shared input normalization (renderer + patcher + audit + calibration) ---
@@ -394,8 +590,8 @@ def fields_from_parts(
 
 # --- shared HTML builders (renderer + patcher; variant-aware) ----------------
 # Compliance: observed MS2 fragment ions/peaks are internal-only. Public reports
-# never itemize MS2 or show ion-level detail; the MS2 fit still contributes to the
-# single overall confidence value shown in both variants.
+# may show the aggregate MS2 fit that contributes to confidence, but never raw
+# ion-level or per-fragment detail.
 
 _TIER_CLASS = {
     "Confirmed": "badge ok", "High": "badge ok", "Moderate": "badge ok",
@@ -433,12 +629,219 @@ def msi_metric_card_html(conf: Confidence) -> str:
     )
 
 
+# --- Library-identity ("authentic-standard pending") HTML builders -----------
+# These render a SEPARATE metric from ``overall`` (which stays untouched). The
+# metric expresses a curator-driven library / database identity claim and is
+# clearly labeled as such - it is NOT a validated P(structure correct).
+
+_IDENTITY_LABEL = {
+    IDENTITY_STATUS_KNOWN: "Known - authentic standard pending",
+    IDENTITY_STATUS_PUTATIVE: "Putative (library match)",
+    IDENTITY_STATUS_UNKNOWN: "Not established",
+}
+
+
+def _identity_pct(conf: Confidence) -> str:
+    if conf.identity_confidence is None:
+        return "not established"
+    return f"{round(100 * conf.identity_confidence)}%"
+
+
+def identity_badge_html(conf: Confidence) -> str:
+    """Header badge for the library-identity metric.
+
+    Only shown when the status is ``known_pending`` (>=90% rubric value).
+    """
+    if conf.identity_status != IDENTITY_STATUS_KNOWN:
+        return ""
+    return (
+        f'<span class="badge ok">Identity: Known \u00b7 standard pending \u00b7 '
+        f"{_identity_pct(conf)}</span>"
+    )
+
+
+def identity_metric_card_html(conf: Confidence) -> str:
+    """Metric card for the library-identity metric.
+
+    Emits a card for all statuses so the reader always sees an explicit answer;
+    only the ``known_pending`` case reports a numeric confidence.
+    """
+    if conf.identity_status == IDENTITY_STATUS_KNOWN:
+        return (
+            '<div class="metric-card"><div class="metric-label">Library identity status</div>'
+            '<div class="metric-value">High Confidence ID, Authentic Standard Confirmation '
+            "Pending to Promote to Level 1 Library</div></div>"
+        )
+    label = _IDENTITY_LABEL.get(conf.identity_status, "Not established")
+    return (
+        '<div class="metric-card"><div class="metric-label">Library identity status</div>'
+        f'<div class="metric-value">{html.escape(label)}</div>'
+        f'<div class="metric-note">{html.escape(conf.identity_basis or "")}</div></div>'
+    )
+
+
+def candidate_pathway_agreement_note(
+    candidates: list[dict[str, Any]],
+    expected: Any,
+    field: str,
+    label: str,
+) -> str:
+    """Summarize agreement among up to ten ranked candidate pathway calls."""
+
+    expected_text = str(expected or "").strip()
+    if not expected_text:
+        return ""
+    top = candidates[:10]
+    if not top:
+        return ""
+    matches = sum(
+        str(row.get(field) or "").strip().casefold() == expected_text.casefold()
+        for row in top
+    )
+    share = matches / len(top)
+    level = "High" if share >= 0.80 else ("Moderate" if share >= 0.60 else "Low")
+    return (
+        f"{level} Confidence: {matches}/{len(top)} top candidate structures "
+        f"map to this {label}"
+    )
+
+
+def identification_parameter_cards_html(
+    confidence: Confidence,
+    *,
+    candidate_scores: list[dict[str, Any]],
+    pathway_info: dict[str, Any],
+    top_similarity: float,
+    neighbor_count: int,
+) -> str:
+    """Render report-level evidence summaries from shared persisted inputs."""
+
+    axes = {axis.key: axis for axis in confidence.axes}
+    mass_axis = axes.get("mass")
+    fragment_axis = axes.get("ms2")
+    if mass_axis is not None and mass_axis.available and mass_axis.score is not None:
+        mass_strength = (
+            "Strong"
+            if mass_axis.score >= MASS_STRONG
+            else ("Moderate" if mass_axis.score >= MASS_WEAK else "Weak")
+        )
+        mass_score = f"{mass_strength} \N{MIDDLE DOT} {mass_axis.score:.2f}"
+    else:
+        mass_score = "Not available"
+    mass_note = mass_axis.detail if mass_axis is not None else "Mass evidence was not available"
+    fragment_score = (
+        f"{fragment_axis.score:.2f}"
+        if fragment_axis is not None and fragment_axis.available and fragment_axis.score is not None
+        else "Not available"
+    )
+    fragment_note = (
+        fragment_axis.detail
+        if fragment_axis is not None
+        else "Aggregate fragment-match evidence was not available"
+    )
+    pathway_super = str(pathway_info.get("super") or "").strip()
+    pathway_sub = str(pathway_info.get("sub") or "").strip()
+    super_note = candidate_pathway_agreement_note(
+        candidate_scores, pathway_super, "predicted_pathway", "Pathway"
+    )
+    sub_note = candidate_pathway_agreement_note(
+        candidate_scores, pathway_sub, "predicted_subpathway", "SubPathway"
+    )
+    if top_similarity >= 0.999:
+        similarity_note = (
+            "The top candidate exactly matches a Metabolon library standard, "
+            "enabling a higher confidence structural candidate"
+        )
+    elif top_similarity > 0:
+        similarity_note = (
+            f"The top candidate’s nearest Metabolon library-standard similarity is "
+            f"{top_similarity:.2f}; closer matches support higher confidence"
+        )
+    else:
+        similarity_note = "No Metabolon library-standard structure match was available"
+    neighbor_word = "standard" if neighbor_count == 1 else "standards"
+    neighbor_note = (
+        f"This metabolite is similar to {neighbor_count} Metabolon library {neighbor_word}, "
+        "enabling a higher confidence structural candidate"
+        if neighbor_count
+        else "No Metabolon library standards were above the similarity floor"
+    )
+
+    def card(label: str, value: Any, note: str) -> str:
+        return (
+            '<div class="metric-card">'
+            f'<div class="metric-label">{html.escape(label)}</div>'
+            f'<div class="metric-value">{html.escape(str(value))}</div>'
+            f'<div class="metric-note">{html.escape(note)}</div></div>'
+        )
+
+    cards = [
+        card("Mass Match", mass_score, mass_note),
+        card("Library Neighbors", neighbor_count, neighbor_note),
+        card("Top Candidate Structural Similarity", f"{top_similarity:.2f}", similarity_note),
+        card(
+            "Candidate Chemical Pathway",
+            pathway_super or "Not available",
+            super_note or "Candidate-level pathway agreement was not available",
+        ),
+        card(
+            "Candidate Chemical SubPathway",
+            pathway_sub or "Not available",
+            sub_note or "Candidate-level SubPathway agreement was not available",
+        ),
+        card("Fragment Match Score", fragment_score, fragment_note),
+    ]
+    return (
+        '<!--ID_PARAMETER_CARDS--><div class="metrics">'
+        + "".join(cards)
+        + "</div><!--/ID_PARAMETER_CARDS-->"
+    )
+
+
+def identity_note_html(conf: Confidence, *, public: bool) -> str:
+    """Explanatory paragraph placed alongside the scored-parameters section.
+
+    Publicly, the note must not mention observed MS2 (mirrors the public/internal
+    split used elsewhere in this module). The value shown is explicitly a curator
+    rubric, not the calibrated structure-prediction probability.
+    """
+    if conf.identity_status == IDENTITY_STATUS_KNOWN:
+        pieces = [
+            "<strong>Library identity:</strong> ",
+            html.escape(_IDENTITY_LABEL[IDENTITY_STATUS_KNOWN]),
+            f" ({_identity_pct(conf)}). ",
+            "This reflects a named reference-library match with corroborating "
+            "accurate mass",
+        ]
+        if not public and conf.ms2_n_pairs:
+            pieces.append(" and observed-MS2 fit")
+        pieces.append(
+            "; confirmation by authentic standard is pending. "
+            "This is a library/database identity assessment (curator rubric), "
+            "distinct from the calibrated structure-prediction confidence shown above."
+        )
+        body = "".join(pieces)
+    elif conf.identity_status == IDENTITY_STATUS_PUTATIVE:
+        body = (
+            "<strong>Library identity:</strong> "
+            + html.escape(_IDENTITY_LABEL[IDENTITY_STATUS_PUTATIVE])
+            + ". "
+            + html.escape(conf.identity_basis or "")
+        )
+    else:
+        body = (
+            "<strong>Library identity:</strong> "
+            + html.escape(_IDENTITY_LABEL[IDENTITY_STATUS_UNKNOWN])
+            + ". "
+            + html.escape(conf.identity_basis or "")
+        )
+    return f'<p class="note">{body}</p>'
+
+
 def scored_parameters_section_html(conf: Confidence, *, public: bool) -> str:
-    """Body HTML for the 'Parameters Contributing to Identification Confidence' section."""
+    """Body HTML for the 'Parameters Contributing to ID Confidence' section."""
     rows = []
     for ax in conf.axes:
-        if ax.key == "ms2" and public:  # public: no MS2 itemization at all
-            continue
         score = "n/a" if (ax.score is None or not ax.available) else f"{ax.score:.2f}"
         avail = "yes" if ax.available else "no"
         rows.append(
@@ -463,8 +866,9 @@ def scored_parameters_section_html(conf: Confidence, *, public: bool) -> str:
         f"consensus (fit in-sample on {CALIBRATION_N} structure-verified controls; "
         f"base rate {CALIBRATION_BASE_RATE:.0%}; not externally calibrated). "
         f"Proposed structure: <strong>{html.escape(conf.descriptor)}</strong>. "
-        f"Assessment: <strong>{html.escape(conf.tier)}</strong> - {html.escape(conf.tier_note)}.</p>"
-    )
+        f"Assessment: <strong>{html.escape(conf.tier)}</strong> - "
+        f"{html.escape(conf.tier_note.rstrip('.'))}.</p>"
+    ) + identity_note_html(conf, public=public)
     if public:
         tail = (
             '<p class="note">Additional MS2 spectral evidence is incorporated into the overall '
@@ -519,9 +923,9 @@ def scored_parameters_section_html(conf: Confidence, *, public: bool) -> str:
 def ms2_evidence_section_html(fields: dict, *, public: bool) -> str:
     """Body HTML for the MS Fit / Feature Match section.
 
-    Public: no per-fragment/ion detail (compliance) - only that MS2 is folded into
-    the overall confidence. Internal: pipeline spectral scores + observed peak
-    counts (aggregate; still not raw ion m/z, which are not decodably available)."""
+    Public: no per-fragment/ion detail (compliance). Internal: pipeline spectral
+    scores + observed peak counts (aggregate; still not raw ion m/z, which is not
+    decodably available)."""
     d = fields.get("ms2_detail") or {}
     present = bool(d.get("present"))
     if public:
@@ -548,6 +952,185 @@ def ms2_evidence_section_html(fields: dict, *, public: bool) -> str:
         f"<tr><td>Observed neutral-loss bins</td><td>{int(d.get('n_loss_bins') or 0)}</td></tr>"
         "</tbody></table></div>"
     )
+
+
+def _present_field(value: Any) -> bool:
+    if value is None:
+        return False
+    text = str(value).strip()
+    return text.lower() not in {"", "nan", "none"}
+
+
+def _score_display(value: Any) -> str:
+    num = _num(value)
+    if num is not None:
+        return f"{num:.3f}"
+    return html.escape(str(value).strip())
+
+
+def _candidate_ms2_fit(row: dict[str, Any]) -> float | None:
+    scores = [
+        _num(row.get(key))
+        for key in ("forward_spectrum_score", "predicted_spectrum_score_v2", "ms2_match_score")
+    ]
+    scores = [score for score in scores if score is not None]
+    return max(scores) if scores else None
+
+
+def _candidate_label(row: dict[str, Any]) -> str:
+    formula = str(row.get("predicted_formula") or "").strip() or "n/a"
+    smiles = str(row.get("predicted_smiles") or "").strip()
+    if not smiles:
+        return formula
+    short = smiles if len(smiles) <= 40 else f"{smiles[:40]}…"
+    return f"{formula} ({short})"
+
+
+def diagnostic_substructure_rows_html(rank1: dict[str, Any], evidence: dict[str, Any] | None = None) -> str:
+    """Render diagnostic substructure / biotransformation rows for the Fragment Scores table."""
+
+    evidence = evidence or {}
+    rows: list[tuple[str, Any]] = []
+
+    lactoyl = rank1.get("lactoyl_hypothesis_score")
+    if not _present_field(lactoyl):
+        lactoyl = evidence.get("lactoyl_hypothesis_score")
+    if _present_field(lactoyl):
+        rows.append(("Lactoyl", lactoyl))
+
+    adduct_label = str(rank1.get("adduct_label") or "").strip()
+    adduct_score = rank1.get("adduct_score") or rank1.get("nce__score_adduct")
+    if _present_field(adduct_score):
+        label = f"Adduct ({adduct_label})" if adduct_label else "Adduct"
+        rows.append((label, adduct_score))
+
+    transform = str(rank1.get("transform_name") or rank1.get("conjugate_name") or "").strip()
+    bio_score = rank1.get("biotransform_v2_score")
+    if transform and _present_field(bio_score):
+        rows.append((f"Biotransformation ({transform})", bio_score))
+    elif transform:
+        rows.append((f"Biotransformation ({transform})", "supported"))
+    elif _present_field(bio_score):
+        rows.append(("Biotransformation", bio_score))
+
+    recursive = rank1.get("recursive__recursive_substructure_weighted_score")
+    if _present_field(recursive):
+        rows.append(("Recursive substructure", recursive))
+
+    lib_overlap = rank1.get("library_fragment_overlap_score")
+    if _present_field(lib_overlap):
+        rows.append(("Library fragment overlap", lib_overlap))
+
+    neutral_loss = rank1.get("spectrum_neutral_loss_score")
+    if _present_field(neutral_loss):
+        rows.append(("Neutral-loss fit", neutral_loss))
+
+    if not rows:
+        body = (
+            '<tr><td colspan="2">No diagnostic substructure hypotheses were scored for this feature.</td></tr>'
+        )
+    else:
+        body = "\n".join(
+            f"<tr><td>{html.escape(label)}</td><td>{_score_display(score)}</td>"
+            for label, score in rows
+        )
+    return f"<!--FRAGMENT_DIAGNOSTICS-->{body}<!--/FRAGMENT_DIAGNOSTICS-->"
+
+
+def fragment_summary_section_html(
+    fields: dict[str, Any],
+    candidate_rows: list[dict[str, Any]],
+    *,
+    public: bool,
+    top_n: int = 3,
+) -> str:
+    """Non-raw MS2 fragment summary for the MS Fit / Feature Match section."""
+
+    detail = fields.get("ms2_detail") or {}
+    present = bool(detail.get("present"))
+    parts: list[str] = []
+
+    if present:
+        profile_rows = [
+            ("Observed fragment peaks", int(detail.get("n_pairs") or 0)),
+            ("Fragment-ion bins", int(detail.get("n_ion_bins") or 0)),
+            ("Neutral-loss bins", int(detail.get("n_loss_bins") or 0)),
+        ]
+        profile_body = "".join(
+            f"<tr><td>{html.escape(label)}</td><td>{value}</td></tr>" for label, value in profile_rows
+        )
+        parts.append(
+            '<p class="note">Summary of the observed MS2 spectrum (counts only; no ion m/z).</p>'
+            '<div class="table-wrap"><table><thead><tr><th>Metric</th><th>Count</th></tr></thead>'
+            f"<tbody>{profile_body}</tbody></table></div>"
+        )
+    else:
+        parts.append('<p class="note">No observed MS2 spectrum was available for this feature.</p>')
+
+    fit_by_rank = {
+        int(_num(item.get("rank")) or 0): item
+        for item in (fields.get("fragment_candidate_fits") or [])
+        if _num(item.get("rank")) is not None
+    }
+    candidate_body: list[str] = []
+    for row in candidate_rows[:top_n]:
+        rank_num = _num(row.get("rank"))
+        rank_key = int(rank_num) if rank_num is not None else 0
+        fit = fit_by_rank.get(rank_key, {})
+        forward = _num(row.get("forward_spectrum_score"))
+        predicted_v2 = _num(row.get("predicted_spectrum_score_v2"))
+        best_fit = _candidate_ms2_fit(row)
+        neutral = _num(row.get("spectrum_neutral_loss_score"))
+        matched_ions = fit.get("matched_ion_bins")
+        matched_losses = fit.get("matched_loss_bins")
+        matched_ions_txt = (
+            str(int(matched_ions))
+            if isinstance(matched_ions, (int, float)) and not math.isnan(float(matched_ions))
+            else "n/a"
+        )
+        matched_losses_txt = (
+            str(int(matched_losses))
+            if isinstance(matched_losses, (int, float)) and not math.isnan(float(matched_losses))
+            else "n/a"
+        )
+        candidate_body.append(
+            "<tr>"
+            f"<td>{html.escape(str(row.get('rank', '')))}</td>"
+            f"<td>{html.escape(_candidate_label(row))}</td>"
+            f"<td>{_score_display(forward) if forward is not None else 'n/a'}</td>"
+            f"<td>{_score_display(predicted_v2) if predicted_v2 is not None else 'n/a'}</td>"
+            f"<td>{_score_display(best_fit) if best_fit is not None else 'n/a'}</td>"
+            f"<td>{_score_display(neutral) if neutral is not None else 'n/a'}</td>"
+            f"<td>{html.escape(matched_ions_txt)}</td>"
+            f"<td>{html.escape(matched_losses_txt)}</td>"
+            "</tr>"
+        )
+
+    if candidate_body:
+        parts.append(
+            '<p class="note">Per-candidate spectral fit scores (0–1 fractions; higher means more of '
+            "the observed spectrum is explained by the candidate). Matched bin counts are shown when "
+            "available.</p>"
+            '<div class="table-wrap"><table><thead><tr>'
+            "<th>Rank</th><th>Candidate</th><th>Forward fit</th><th>Predicted fit (v2)</th>"
+            "<th>Best fit</th><th>Neutral-loss fit</th><th>Matched ion bins</th>"
+            "<th>Matched loss bins</th></tr></thead><tbody>"
+            + "".join(candidate_body)
+            + "</tbody></table></div>"
+        )
+    elif present:
+        parts.append('<p class="note">Per-candidate spectral fit scores were not available for this report.</p>')
+
+    if public:
+        parts.append(
+            '<p class="note">MS2 spectral fit is incorporated into the overall identification '
+            "confidence. Per-ion m/z detail is provided in the internal report.</p>"
+        )
+    else:
+        parts.append(ms2_evidence_section_html(fields, public=False))
+
+    body = "\n      ".join(parts)
+    return f"<!--FRAGMENT_SUMMARY-->{body}<!--/FRAGMENT_SUMMARY-->"
 
 
 def correlations_table_html(correlations: list[dict]) -> str:

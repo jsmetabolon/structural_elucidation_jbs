@@ -1,0 +1,22 @@
+file,description
+structure_meta.csv,"Truth definition, n, P0/P1 status"
+structure_rank_k.csv,Fig2: rank-1/top-3/top-10 accuracy by Tanimoto threshold
+structure_source_subgroups.csv,Fig2: exact vs predicted source subgroups
+structure_calibration_summary.csv,Fig3: Brier score and calibration slope/intercept
+structure_reliability_bins.csv,Fig3: reliability diagram bins
+structure_calibration_predictions.csv,Per-control LOO calibration predictions
+structure_controls.csv,Per-control structure truth table
+pathway_coverage.csv,Pathway assignment coverage counts and percentiles
+pathway_accuracy_metrics.csv,Fig5/S1/S3: known_X and reference-DB pathway metrics
+pathway_loo_summary.csv,Fig5/S2: neighbor-vote LOO overall
+pathway_loo_by_similarity.csv,FigS2: LOO accuracy by similarity bin
+pathway_per_control_accuracy.csv,Per-control pathway accuracy rows
+pathway_confusion.csv,Super-pathway confusion counts
+pathway_bias_distributions.csv,Predicted vs truth super-pathway distributions
+pathway_vocabulary.csv,Vocabulary mismatches
+presentation_overview.csv,Fig4 overview: n_reports and confidence summaries
+presentation_distributions.csv,Fig4: MSI and identification-confidence tier counts
+presentation_rates.csv,Evidence coverage and presentation gap rates
+claims.csv,FigS4 + manuscript claim ledger
+claim_sources.csv,SHA256 hashes of claim source artifacts
+claim_evidence.csv,Claim evidence ledger (original CSV)

@@ -1,0 +1,4 @@
+section,group,level,n,correct,accuracy,ci95_low,ci95_high,similarity_bin
+loo,"similarity_bin:[0.3,0.5)",super,442,303,0.6855,0.6408,0.7271,"[0.3,0.5)"
+loo,"similarity_bin:[0.5,0.7)",super,1304,1008,0.773,0.7495,0.7949,"[0.5,0.7)"
+loo,"similarity_bin:[0.7,1.0)",super,3349,3106,0.9274,0.9182,0.9357,"[0.7,1.0)"
