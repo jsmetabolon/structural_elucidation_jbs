@@ -126,36 +126,53 @@ Context you need:
 - Open question: whether to also fit per-library or per-pathway calibration once
   the labeled set is large enough.
 
-## 5. Evidence-aware headline candidate score (fold evidence_confidence into rerank)
-- Goal: make the number the reranker emits as the candidate's headline score reflect
-  the actual identification evidence, not just generative likelihood.
-- Evidence: `candidate_report_score` (= `unified_final_score` = `rerank_score`) is a
-  raw, uncalibrated generative-rerank value. Across all 3,897 rank-1 candidates its
-  median is **0.035** while the pipeline's own `evidence_confidence` median is
-  **0.996**; 57% of reports have `evidence_confidence >= 0.90` but a headline score
-  < 0.10, and 91% of library-hit + mass-perfect rank-1s show a headline score < 0.10
-  (e.g. X-02269 phenyl glucopyranoside: `evidence_confidence 0.999`, `mass_match
-  0.9998`, headline score 0.036). The score is small partly because it spreads over
-  many mass-consistent isomers.
-- Current (report layer, stopgap): reports now surface `evidence_confidence` +
-  `mass_match` in the top-10 widget and relabel the raw value "Rank score (relative)"
-  (see `tools/patch_candidate_scores.py` + `compound.py`), so readers stop reading
-  the 0.036 as a match quality. This does not change ranking.
-- Plug-in: in the reranker, combine `evidence_confidence` (library + mass + spectral)
-  with the generative score into the final ordering/score, or expose a calibrated
-  0-1 `candidate_confidence` column and use it as the headline. Keep the raw
-  generative score available as a secondary isomer tie-breaker.
-- Caveat (do not overclaim): `evidence_confidence` is shared across mass-consistent
-  isomers (all five C12H16O6 isomers of X-02269 score 0.9986), so it certifies the
-  formula/library class, not the specific isomer. Retain an isomer-margin term (the
-  small generative-score gap) so a confident class does not become a false-confident
-  single structure - this mirrors why the report's overall confidence stays Moderate
-  / MSI Level 3 for such cases.
-- Verify: headline candidate score median rises and tracks correctness on the truth
-  set; the report note about "relative" rank score can then be removed.
-- Reference prototype: `tools/prototype_mass_gate_rerank.py` shows the headline shift
-  on the delivered data (median raw `candidate_report_score` 0.035 ->
-  `evidence_confidence` 0.997).
+## 5. Rank-consistent candidate confidence (SHIPPED in the report layer; align upstream)
+- Goal: the per-candidate number shown in the top-10 widget must mesh with the 1..10
+  ranking - it should decrease down the ranking and never be higher for a
+  lower-ranked candidate than a higher-ranked one.
+- Original failure (two symptoms observed by the client):
+  1. **All top-10 identical**: the widget led with `evidence_confidence`, which is
+     `clip(max(formula_prior, forward, ms2, nce) + 0.05*ms1, 0, 1)` in
+     `pipeline/candidates.py` - it saturates near 1.0 and is **shared across
+     mass-consistent isomers** (all five C12H16O6 isomers of X-02269 score 0.9986),
+     so every candidate looked the same.
+  2. **Higher rank, lower score**: `evidence_confidence` is a reranker *input
+     feature*, not the ranking objective, so it is frequently higher for a
+     lower-ranked candidate. Meanwhile the true ordering score
+     `candidate_report_score` (= `unified_final_score` = `rerank_score`) is monotone
+     with rank but tiny (median **0.035**) and was de-emphasized as a "tie-breaker".
+- SHIPPED FIX (report layer, no rerun needed): the widget now features
+  **`candidate_confidence`** (`reports/confidence.candidate_confidences`): a 0-1
+  value that is **monotone non-increasing with rank by construction** (rank 1 is
+  anchored to the report overall identification confidence; lower ranks are that
+  ceiling scaled by the ordering-score ratio to rank 1, with a running-minimum so
+  nothing inverts). Genuinely tied isomers are flagged ("tied") instead of shown as
+  fake-distinct numbers. `evidence_confidence` is relabeled **"Formula/class
+  evidence"** and kept, with `mass_match`, as supporting context; the raw rerank
+  score is no longer featured. Implemented once in `reports/confidence.py` and used
+  by the renderer (`reports/compound.py`), the enricher
+  (`tools/enrich_report_evidence.py` -> `candidate_evidence` in
+  `confidence_inputs.json`), and the delivered-set patcher
+  (`tools/patch_candidate_scores.py`, v2). Audit before/after with
+  `tools/audit_candidate_scores.py` (inversions must go to 0).
+- Caveat (do not overclaim): because the top isomers share formula/class evidence,
+  `candidate_confidence` still caps at the report overall confidence and marks ties,
+  so a confident *class* never reads as a false-confident single *isomer* - this
+  mirrors why the report overall confidence stays Moderate / MSI Level 3 for such
+  cases. The specific structure remains a hypothesis at L3.
+- UPSTREAM alignment (recommended; validate on EC2): the reranker now emits a
+  `candidate_confidence` column (`pipeline/rerank.py::candidate_confidence_column`)
+  = the per-source isotonic-calibrated probability (`rerank_score_calibrated`, else
+  `rerank_score`) forced non-increasing within each control via `cummin`. Remaining
+  work: (a) fit/validate the calibration of this column to P(correct) on the truth
+  set so the *absolute* value is meaningful pipeline-side (currently the report
+  layer supplies the meaningful rank-1 anchor); (b) optionally fold
+  `evidence_confidence` into `unified_final_score` so the *ordering* itself is
+  evidence-aware; (c) once the rerank CSV carries a validated `candidate_confidence`,
+  have the report layer prefer it over the overall-anchored fallback.
+- Verify: `tools/audit_candidate_scores.py <reports_root>` shows
+  `candidate_confidence` inversions = 0 and honest tie groups; the featured value
+  tracks correctness on the truth set once calibrated.
 
 ## Cross-cutting: from-source regeneration + render_html parity task
 Once items 1-4 land upstream, prefer regenerating reports from source
@@ -196,3 +213,32 @@ to confirm full parity first. Until then, the enrich -> patch flow
 (`tools/enrich_report_evidence.py`, `tools/patch_report_confidence.py`,
 `tools/patch_candidate_scores.py`, `tools/patch_consensus_crowding.py`, and
 `tools/rebuild_master_index.py`) remains the source of truth for delivery.
+
+## 6. Evidence to derive the fine MSI sublevels (2A/2B/2C, 3B/3C/3D)
+- Goal: let the report *derive* Metabolon's fine sublevels for uncurated unknowns,
+  not just surface the curated `known_X.SubLevel` (2,484/3,897) and derive the one
+  defensible bin (`3A` positional-isomer). See `docs/msi_sublevel_findings.md`.
+- Evidence (`tools/audit_sublevel_evidence.py` on the 2,484 curated controls): the
+  fine sublevels are **not reconstructable from current report evidence** - a
+  derived rubric matches the curated letter only **9.5%** of the time and its fine
+  ordering is inverted vs truth (derived 2C truth 0.452 < 3B 0.731). The rubric's
+  distinguishing axes are missing/empty in the delivered data: `isotope_formula_score`
+  is a constant 0.5, per-candidate `fragment_match_count` is ~0 (observed-vs-candidate
+  matching was never computed), `library_match_type` is mass-only (no spectral hit),
+  and observed RT is absent from `feature_rows`.
+- Plug-in (three inputs, by payoff):
+  1. **Candidate-vs-observed diagnostic-fragment matching** from the observed MS2
+     spectra (`observed_ms2_lookups/*` carry bins + `ms2_pairs_json` + intensities):
+     in-silico fragment/neutral-loss matching per candidate -> fragment count + type
+     (diagnostic vs subclass-aligned vs in-silico) that powers 2b/3b/3c.
+  2. **Observed RT + reference RI join** (`ions_w_ri.csv` has reference RT/RI + quant
+     ions; capture observed RT per X-compound into `feature_rows`) -> "Consistent RT"
+     for 1a/1b/2a.
+  3. **Reference MS2 spectral library** match (distinct from the current mass-only
+     `library_match_type`) -> "Library MS2" for 2a and for separating 2C from the
+     3-series.
+- Also required: **2A/2B labeled examples** (the full `known_X` Level 2 is 100% `2C`),
+  without which 2A/2B cannot be validated even once the evidence exists.
+- Verify: re-run `tools/audit_sublevel_evidence.py`; derived-vs-curated exact
+  agreement and derived-order-vs-truth tau should both rise materially before any
+  fine derived sublevel is shipped.

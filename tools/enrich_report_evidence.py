@@ -117,6 +117,29 @@ def load_levels(known_x: Path) -> dict[str, str]:
     return out
 
 
+def load_sublevels(known_x: Path) -> dict[str, str]:
+    """control_id -> curated Metabolon SubLevel (authoritative; e.g. 2C, 3A-3D)."""
+    out: dict[str, str] = {}
+    for row in _read(known_x):
+        cid = str(row.get("Unknown", "")).strip()
+        sub = str(row.get("SubLevel", "")).strip()
+        if cid and cid not in out and sub:
+            out[cid] = sub
+    return out
+
+
+def same_formula_multiplicity(rows: list[dict]) -> int:
+    """# of top-10 candidates sharing the rank-1 predicted_formula (positional-isomer / 3A signal)."""
+    top = rows[:10]
+    if not top:
+        return 0
+    r1 = _rank1(top)
+    formula = str(r1.get("predicted_formula", "") or "").strip()
+    if not formula:
+        return 0
+    return sum(1 for r in top if str(r.get("predicted_formula", "") or "").strip() == formula)
+
+
 def load_db_names(bundle: Path) -> dict[str, dict]:
     """InChIKey skeleton -> {name, synonyms}."""
     db = bundle / "metabolite_synonyms.sqlite"
@@ -169,13 +192,15 @@ def _rank1(rows: list[dict]) -> dict:
     return best
 
 
-def candidate_evidence_rows(css: list[dict], tc: list[dict]) -> list[dict]:
-    """Per-rank evidence for the top-10 widget.
+def candidate_evidence_rows(css: list[dict], tc: list[dict], feature_overall: float | None) -> list[dict]:
+    """Per-rank evidence + rank-consistent confidence for the top-10 widget.
 
-    Joins the pipeline's ``evidence_confidence`` + ``mass_match_score`` (from
-    ``top_candidates.csv``) onto the displayed candidate rows so the patcher can
-    surface them alongside the raw rerank score. Matches by SMILES, falling back
-    to row order (both files are rank-ordered).
+    The featured per-candidate number is ``candidate_confidence``
+    (``confidence.candidate_confidences``): monotone non-increasing with rank and
+    anchored so rank 1 equals the report overall confidence. The class-level
+    ``evidence_confidence`` + ``mass_match_score`` (from ``top_candidates.csv``,
+    matched by SMILES, falling back to rank-ordered row order) are retained as
+    supporting context. ``tied`` flags genuinely unresolved same-formula isomers.
     """
     ev_by_smiles: dict[str, dict] = {}
     for row in tc:
@@ -185,8 +210,10 @@ def candidate_evidence_rows(css: list[dict], tc: list[dict]) -> list[dict]:
                 "evidence_confidence": _num(row.get("evidence_confidence")),
                 "mass_match_score": _num(row.get("mass_match_score")),
             }
+    top = css[:10]
+    cc = C.candidate_confidences(top, feature_overall)
     out = []
-    for i, row in enumerate(css[:10]):
+    for i, row in enumerate(top):
         s = str(row.get("predicted_smiles", "")).strip()
         ev = ev_by_smiles.get(s)
         if ev is None and i < len(tc):
@@ -198,6 +225,8 @@ def candidate_evidence_rows(css: list[dict], tc: list[dict]) -> list[dict]:
         rank = _num(row.get("rank"))
         out.append({
             "rank": int(rank) if rank is not None else i + 1,
+            "candidate_confidence": cc[i]["candidate_confidence"],
+            "candidate_confidence_tied": cc[i]["tied"],
             "evidence_confidence": ev.get("evidence_confidence"),
             "mass_match_score": ev.get("mass_match_score"),
         })
@@ -236,7 +265,7 @@ def fragment_candidate_fits(tc: list[dict], ms2_rec: dict) -> list[dict]:
     return out
 
 
-def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna, identity_overrides=None) -> str:
+def enrich(report_dir: Path, obs_mz, ms2, levels, sublevels, db_names, wgcna, identity_overrides=None) -> str:
     data = report_dir / "data"
     if not data.is_dir():
         return "no_data"
@@ -290,9 +319,10 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna, identity_over
     }
     fields["fragment_candidate_fits"] = fragment_candidate_fits(tc, ms2_rec)
     fields["metabolon_level"] = levels.get(cid, "")
+    fields["metabolon_sublevel"] = sublevels.get(cid, "")
+    fields["n_isomers"] = same_formula_multiplicity(tc)
     fields["truth_match"] = truth_match
     fields["mass_alt"] = C.mass_consistent_alt(css)
-    fields["candidate_evidence"] = candidate_evidence_rows(css, tc)
     # Curated known-identity override (drives the "Library identity" metric).
     if identity_overrides:
         override = identity_overrides.get(cid)
@@ -343,6 +373,11 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna, identity_over
     fields["msi_level"] = conf.msi_level
     fields["msi_label"] = conf.msi_label
     fields["msi_rationale"] = conf.msi_rationale
+    fields["msi_sublevel"] = conf.msi_sublevel
+    fields["metabolon_sublevel"] = conf.metabolon_sublevel
+    # Per-candidate confidence is anchored to the report's evidence match strength
+    # (raw_evidence), which is fuller-range than the compressed Platt overall.
+    fields["candidate_evidence"] = candidate_evidence_rows(css, tc, conf.raw_evidence)
     (data / f"{slug}_confidence_inputs.json").write_text(json.dumps(fields, indent=2))
     return "enriched"
 
@@ -360,15 +395,16 @@ def main() -> None:
     obs_mz = load_observed_mz(bundle, known_x)
     ms2 = load_ms2(bundle)
     levels = load_levels(known_x)
+    sublevels = load_sublevels(known_x)
     db_names = load_db_names(bundle)
     wgcna = load_wgcna(bundle)
     identity_overrides = C.load_identity_overrides(identity_overrides_path)
-    print(f"[enrich] m/z:{len(obs_mz)} ms2:{len(ms2)} levels:{len(levels)} "
+    print(f"[enrich] m/z:{len(obs_mz)} ms2:{len(ms2)} levels:{len(levels)} sublevels:{len(sublevels)} "
           f"db_names:{len(db_names)} wgcna:{len(wgcna)} identity_overrides:{len(identity_overrides)}",
           file=sys.stderr)
     counts: dict[str, int] = {}
     for d in sorted(p for p in root.iterdir() if p.is_dir()):
-        st = enrich(d, obs_mz, ms2, levels, db_names, wgcna, identity_overrides=identity_overrides)
+        st = enrich(d, obs_mz, ms2, levels, sublevels, db_names, wgcna, identity_overrides=identity_overrides)
         counts[st] = counts.get(st, 0) + 1
     print(f"[enrich] {counts}", file=sys.stderr)
 

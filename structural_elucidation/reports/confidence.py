@@ -120,6 +120,7 @@ class Confidence:
     tier_note: str
     completeness: float
     descriptor: str
+    raw_evidence: float = 0.0
     axes: list[Axis] = field(default_factory=list)
     flags: list[str] = field(default_factory=list)
     source: str = ""
@@ -133,6 +134,8 @@ class Confidence:
     msi_level: int = 5
     msi_label: str = ""
     msi_rationale: str = ""
+    msi_sublevel: str = ""          # derived fine sublevel (only 3A is defensible)
+    metabolon_sublevel: str = ""    # curated known_X SubLevel (authoritative)
     # Library identity ("authentic-standard pending") metric - separate from ``overall``.
     identity_status: str = IDENTITY_STATUS_UNKNOWN
     identity_confidence: float | None = None
@@ -145,6 +148,7 @@ class Confidence:
             "tier_note": self.tier_note,
             "completeness": self.completeness,
             "descriptor": self.descriptor,
+            "raw_evidence": self.raw_evidence,
             "source": self.source,
             "observed_mz": self.observed_mz,
             "observed_neutral_mass": self.observed_neutral_mass,
@@ -155,6 +159,8 @@ class Confidence:
             "msi_level": self.msi_level,
             "msi_label": self.msi_label,
             "msi_rationale": self.msi_rationale,
+            "msi_sublevel": self.msi_sublevel,
+            "metabolon_sublevel": self.metabolon_sublevel,
             "identity_status": self.identity_status,
             "identity_confidence": self.identity_confidence,
             "identity_basis": self.identity_basis,
@@ -331,6 +337,39 @@ MSI_LABELS = {
 }
 
 
+# Curated Metabolon SubLevel tokens (authoritative; surfaced as-is).
+CURATED_SUBLEVELS = {"1", "2A", "2B", "2C", "3A", "3B", "3C", "3D", "4", "4?", "5", "KNOWN", "Released"}
+
+# Derived fine-sublevel labels (only the defensible subset; see
+# docs/msi_sublevel_findings.md). Fine 2C/3B/3C/3D and 2A/2B are NOT derived
+# because current evidence neither reproduces the curated letters (9.5% exact)
+# nor orders them by correctness; they require observed RT, a reference MS2
+# spectral library, and diagnostic-fragment matching (upstream handoff).
+MSI_SUBLEVEL_LABELS = {
+    "3A": "Positional-isomer candidates (multiple same-formula structures)",
+}
+
+
+def curated_sublevel(fields: dict) -> str:
+    """Authoritative Metabolon SubLevel from known_X, or '' if absent/non-metabolite."""
+    curated = str(fields.get("metabolon_sublevel", "") or "").strip()
+    return curated if curated in CURATED_SUBLEVELS else ""
+
+
+def assign_msi_sublevel(fields: dict, conf: "Confidence") -> str:
+    """Derived fine sublevel for our evidence-based MSI level.
+
+    Only ``3A`` (positional-isomer candidates) is assigned, since same-formula
+    multiplicity is the one fine distinction our evidence supports defensibly. The
+    curated Metabolon SubLevel is surfaced separately as an authoritative
+    cross-reference; it is not overwritten by this derived value.
+    """
+    n_isomers = _num(fields.get("n_isomers")) or 0
+    if conf.msi_level == 3 and n_isomers >= 2:
+        return "3A"
+    return ""
+
+
 def assign_msi_level(fields: dict, conf: "Confidence") -> tuple[int, str, str]:
     """Assign a Schymanski/MSI identification-confidence level (1-5) from evidence.
 
@@ -469,6 +508,7 @@ def compute_confidence(fields: dict) -> Confidence:
         tier_note=tier_note,
         completeness=round(completeness, 4),
         descriptor=descriptor,
+        raw_evidence=round(raw, 4),
         axes=axes,
         flags=_flags(axes, fields),
         source=source,
@@ -478,8 +518,10 @@ def compute_confidence(fields: dict) -> Confidence:
         ms2_n_pairs=int(_num(fields.get("ms2_n_pairs")) or 0),
         metabolon_level=str(fields.get("metabolon_level", "") or ""),
         mass_alt=fields.get("mass_alt") if isinstance(fields.get("mass_alt"), dict) else None,
+        metabolon_sublevel=curated_sublevel(fields),
     )
     result.msi_level, result.msi_label, result.msi_rationale = assign_msi_level(fields, result)
+    result.msi_sublevel = assign_msi_sublevel(fields, result)
     result.identity_status, result.identity_confidence, result.identity_basis = assign_identity(fields, result)
     # Curator-known library identity: promote the headline overall confidence to the
     # identity rubric value (>= 90%) so reports reflect "we know what it is,
@@ -618,14 +660,19 @@ def confidence_metric_card_html(conf: Confidence) -> str:
 
 def msi_badge_html(conf: Confidence) -> str:
     cls = "badge ok" if conf.msi_level <= 2 else "badge"
-    return f'<span class="{cls}">MSI Level {conf.msi_level} \u00b7 {html.escape(conf.msi_label)}</span>'
+    level_str = conf.msi_sublevel or str(conf.msi_level)
+    return f'<span class="{cls}">MSI Level {level_str} \u00b7 {html.escape(conf.msi_label)}</span>'
 
 
 def msi_metric_card_html(conf: Confidence) -> str:
+    level_str = conf.msi_sublevel or str(conf.msi_level)
+    note = conf.msi_label
+    if conf.msi_sublevel:
+        note += " - " + MSI_SUBLEVEL_LABELS.get(conf.msi_sublevel, "")
     return (
         '<div class="metric-card"><div class="metric-label">MSI identification level</div>'
-        f'<div class="metric-value">Level {conf.msi_level}</div>'
-        f'<div class="metric-note">{html.escape(conf.msi_label)}</div></div>'
+        f'<div class="metric-value">Level {level_str}</div>'
+        f'<div class="metric-note">{html.escape(note)}</div></div>'
     )
 
 
@@ -854,9 +901,13 @@ def scored_parameters_section_html(conf: Confidence, *, public: bool) -> str:
         "<th>Available</th><th>Interpretation</th></tr></thead>"
         f"<tbody>{''.join(rows)}</tbody></table></div>"
     )
+    level_str = conf.msi_sublevel or str(conf.msi_level)
+    sublevel_note = ""
+    if conf.msi_sublevel:
+        sublevel_note = f" Sub-level {conf.msi_sublevel}: {MSI_SUBLEVEL_LABELS.get(conf.msi_sublevel, '')}."
     msi_line = (
-        f'<p class="note"><strong>MSI identification level: Level {conf.msi_level} - '
-        f"{html.escape(conf.msi_label)}.</strong> {html.escape(conf.msi_rationale)}. "
+        f'<p class="note"><strong>MSI identification level: Level {level_str} - '
+        f"{html.escape(conf.msi_label)}.</strong> {html.escape(conf.msi_rationale)}.{html.escape(sublevel_note)} "
         "Levels 1-3 present a structure (Level 3 as a hypothesis); Levels 4-5 report formula/mass "
         "without a specific structure.</p>"
     )
@@ -883,12 +934,13 @@ def scored_parameters_section_html(conf: Confidence, *, public: bool) -> str:
             tail += f" Observed MS2 spectrum: {int(conf.ms2_n_pairs)} fragment peaks."
         tail += "</p>"
     extra = ""
-    if conf.metabolon_level:
+    if conf.metabolon_level or conf.metabolon_sublevel:
+        sub = f" (SubLevel {html.escape(conf.metabolon_sublevel)})" if conf.metabolon_sublevel else ""
         extra += (
-            f'<p class="note"><strong>Metabolon identification Level:</strong> '
-            f"{html.escape(conf.metabolon_level)}"
-            + (" (authentic-standard confirmed)" if conf.metabolon_level == "1" else "")
-            + ".</p>"
+            f'<p class="note"><strong>Metabolon identification Level (curated):</strong> '
+            f"{html.escape(conf.metabolon_level or 'n/a')}{sub}"
+            + (" - authentic-standard confirmed" if conf.metabolon_level == "1" else "")
+            + ". This is Metabolon's authoritative curated assignment.</p>"
         )
     if conf.mass_alt:
         alt = conf.mass_alt
@@ -1191,6 +1243,142 @@ def mass_consistent_alt(css: list[dict]) -> dict | None:
                 "rank1_abs_mass_error_da": r1_err,
             }
     return None
+
+
+# --- per-candidate display confidence (renderer + enrich + patcher + audit) --
+# The top-10 candidate widget must show a per-candidate confidence that meshes
+# with the 1..10 ranking. The pipeline's ``evidence_confidence`` cannot do this:
+# it saturates near 1.0 and is shared across mass-consistent isomers (so every
+# candidate looks identical), and it is a reranker *input feature*, not the
+# ranking objective, so it is frequently higher for a lower-ranked candidate.
+#
+# ``candidate_confidences`` derives, per candidate, an interpretable 0..1 value
+# that is monotone non-increasing with rank by construction: the rank-1 candidate
+# is anchored to the report's overall identification confidence (the headline the
+# reader already sees), and each lower-ranked candidate receives that ceiling
+# scaled by the reranker ordering-score ratio to rank 1, with a running-minimum so
+# nothing can invert. Genuinely tied candidates (equal ordering score / confidence
+# within ``CANDIDATE_TIE_EPS``) are flagged so the report presents them as an
+# unresolved isomer group rather than fake-distinct numbers.
+CANDIDATE_TIE_EPS = 0.005
+
+
+def candidate_confidences(rows: list[dict], feature_overall: float | None) -> list[dict]:
+    """Monotone, rank-consistent per-candidate confidence for the top-N widget.
+
+    Args:
+        rows: rank-ordered candidate dicts, each with ``rank`` and
+            ``candidate_report_score`` (= ``unified_final_score``, the reranker
+            ordering objective from which ``rank`` is derived).
+        feature_overall: the rank-1 ceiling in [0,1] - the report's evidence
+            match strength (``Confidence.raw_evidence``: completeness-weighted
+            structure/mass/MS2/pathway evidence). Raw evidence is used instead of
+            the Platt ``overall`` because the latter is compressed (caps ~0.59 for
+            non-authentic-standard matches) and deflates strong best matches; raw
+            evidence spans a fuller range and still tracks truth (AUC ~0.79).
+
+    Returns:
+        A list aligned to ``rows``; each item is
+        ``{"rank": int, "candidate_confidence": float, "tie_group": int,
+        "tied": bool}`` with ``candidate_confidence`` non-increasing across rank.
+    """
+    ceiling = _clamp01(_num(feature_overall) or 0.0)
+    n = len(rows)
+    if n == 0:
+        return []
+
+    def _rank_of(row: dict, position: int) -> int:
+        value = _num(row.get("rank"))
+        return int(value) if value is not None else position + 1
+
+    order = sorted(range(n), key=lambda i: _rank_of(rows[i], i))
+    scores: list[float] = []
+    for i in order:
+        s = _num(rows[i].get("candidate_report_score"))
+        scores.append(max(0.0, s) if s is not None else 0.0)
+    top = scores[0] if scores else 0.0
+
+    running = 1.0
+    confidences: list[float] = []
+    for s in scores:
+        ratio = 1.0 if top <= 0 else _clamp01(s / top)
+        running = min(running, ratio)  # enforce monotonic non-increase with rank
+        confidences.append(round(_clamp01(ceiling * running), 4))
+
+    groups: list[int] = []
+    group = 0
+    prev: float | None = None
+    for cc in confidences:
+        if prev is None or (prev - cc) > CANDIDATE_TIE_EPS:
+            group += 1
+        groups.append(group)
+        prev = cc
+    sizes: dict[int, int] = {}
+    for g in groups:
+        sizes[g] = sizes.get(g, 0) + 1
+
+    result: list[dict] = [None] * n  # type: ignore[list-item]
+    for pos, i in enumerate(order):
+        result[i] = {
+            "rank": _rank_of(rows[i], i),
+            "candidate_confidence": confidences[pos],
+            "tie_group": groups[pos],
+            "tied": sizes[groups[pos]] > 1,
+        }
+    return result
+
+
+CANDIDATE_TIE_NOTE = (
+    "<p class='note'>Tied with other same-formula candidates: the formula/class is "
+    "supported but the specific isomer is not resolved.</p>"
+)
+
+CANDIDATE_SCORES_NOTE = (
+    '<p class="note"><strong>Reading the scores:</strong> "Candidate confidence" is a 0-1 '
+    "evidence-based match strength for this specific structure (completeness-weighted structure, "
+    "mass, MS2, and pathway support); it decreases down the ranking, and the rank-1 value is the "
+    'feature\'s overall evidence match strength. "Mass match" and "Formula/class evidence" '
+    "corroborate the molecular formula/class but are shared across same-formula isomers, so they "
+    "do not distinguish individual candidates. When candidates are marked tied, the formula/class "
+    'is supported but the exact isomer is not resolved (check the "Mass-consistent alternative" '
+    "note for any better-fitting structure). The separate header shows the calibrated overall "
+    "identification confidence, which is intentionally conservative.</p>"
+)
+
+
+def candidate_score_line_html(row: dict) -> str:
+    """Shared server-rendered score line for one candidate (renderer + patcher).
+
+    Leads with ``candidate_confidence`` (monotone with rank), then ``Mass match``
+    and the class-level ``Formula/class evidence`` (the pipeline
+    ``evidence_confidence``), then ``Mass error``. Flags tied isomers. Both the
+    from-source renderer and the delivered-set patcher call this so their cards
+    are byte-identical.
+    """
+
+    def fnum(value, nd):
+        try:
+            return f"{float(value):.{nd}f}"
+        except (TypeError, ValueError):
+            return None
+
+    parts = []
+    cc = fnum(row.get("candidate_confidence"), 3)
+    mm = fnum(row.get("mass_match_score"), 3)
+    ev = fnum(row.get("evidence_confidence"), 3)
+    me = fnum(row.get("abs_mass_error_da"), 6)
+    if cc is not None:
+        parts.append(f"Candidate confidence: <strong>{cc}</strong>")
+    if mm is not None:
+        parts.append(f"Mass match: <strong>{mm}</strong>")
+    if ev is not None:
+        parts.append(f"Formula/class evidence: <strong>{ev}</strong>")
+    if me is not None:
+        parts.append(f"Mass error (Da): <strong>{me}</strong>")
+    line = ("<p>" + " &middot; ".join(parts) + "</p>") if parts else ""
+    if row.get("candidate_confidence_tied"):
+        line += CANDIDATE_TIE_NOTE
+    return line
 
 
 def read_fields_from_sidecars(data_dir: Path, slug: str) -> dict | None:

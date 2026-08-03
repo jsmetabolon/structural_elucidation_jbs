@@ -1,0 +1,168 @@
+{
+  "n_reports": 3897,
+  "n_curated": 2331,
+  "curated_feature_medians": {
+    "2C": {
+      "n": 163,
+      "struct": 0.659,
+      "mass": 1.0,
+      "raw_evidence": 0.639,
+      "ms2_score": 0.121,
+      "iso_score": 0.5,
+      "n_isomers": 4,
+      "ms2_present_rate": 0.67
+    },
+    "3A": {
+      "n": 356,
+      "struct": 0.671,
+      "mass": 1.0,
+      "raw_evidence": 0.627,
+      "ms2_score": 0.154,
+      "iso_score": 0.5,
+      "n_isomers": 4.0,
+      "ms2_present_rate": 0.63
+    },
+    "3B": {
+      "n": 253,
+      "struct": 0.731,
+      "mass": 1.0,
+      "raw_evidence": 0.636,
+      "ms2_score": 0.122,
+      "iso_score": 0.5,
+      "n_isomers": 7,
+      "ms2_present_rate": 0.89
+    },
+    "3C": {
+      "n": 173,
+      "struct": 0.618,
+      "mass": 0.999,
+      "raw_evidence": 0.609,
+      "ms2_score": 0.14,
+      "iso_score": 0.5,
+      "n_isomers": 4,
+      "ms2_present_rate": 0.78
+    },
+    "3D": {
+      "n": 3,
+      "struct": 1.0,
+      "mass": 0.0,
+      "raw_evidence": 0.559,
+      "ms2_score": 0.091,
+      "iso_score": 0.5,
+      "n_isomers": 1,
+      "ms2_present_rate": 0.67
+    },
+    "4": {
+      "n": 102,
+      "struct": 0.66,
+      "mass": 1.0,
+      "raw_evidence": 0.61,
+      "ms2_score": 0.023,
+      "iso_score": 0.5,
+      "n_isomers": 2.0,
+      "ms2_present_rate": 0.76
+    },
+    "5": {
+      "n": 1281,
+      "struct": 0.7,
+      "mass": 1.0,
+      "raw_evidence": 0.613,
+      "ms2_score": 0.176,
+      "iso_score": 0.5,
+      "n_isomers": 3,
+      "ms2_present_rate": 0.64
+    }
+  },
+  "agreement": {
+    "n": 2331,
+    "exact": 0.095,
+    "within_one_order": 0.442,
+    "confusion": {
+      "3B": {
+        "3B": 51,
+        "3C": 37,
+        "2C": 25,
+        "4": 59,
+        "3A": 76,
+        "5": 5
+      },
+      "3A": {
+        "4": 101,
+        "3A": 68,
+        "3C": 88,
+        "3B": 53,
+        "2C": 31,
+        "5": 15
+      },
+      "3C": {
+        "3A": 29,
+        "2C": 11,
+        "3C": 34,
+        "4": 46,
+        "5": 4,
+        "3B": 49
+      },
+      "4": {
+        "4": 35,
+        "3C": 23,
+        "3B": 22,
+        "3A": 14,
+        "2C": 8
+      },
+      "5": {
+        "3A": 237,
+        "3B": 196,
+        "4": 523,
+        "5": 18,
+        "3C": 269,
+        "2C": 38
+      },
+      "3D": {
+        "4": 3
+      },
+      "2C": {
+        "3C": 39,
+        "3A": 36,
+        "4": 42,
+        "3B": 29,
+        "2C": 16,
+        "5": 1
+      }
+    }
+  },
+  "defensibility_truth": {
+    "by_derived": {
+      "2C": {
+        "n": 12,
+        "median_truth": 0.452,
+        "frac_correct_ge_0.7": 0.25
+      },
+      "3A": {
+        "n": 29,
+        "median_truth": 0.565,
+        "frac_correct_ge_0.7": 0.448
+      },
+      "3B": {
+        "n": 12,
+        "median_truth": 0.731,
+        "frac_correct_ge_0.7": 0.583
+      },
+      "3C": {
+        "n": 59,
+        "median_truth": 0.0,
+        "frac_correct_ge_0.7": 0.136
+      },
+      "4": {
+        "n": 210,
+        "median_truth": 0.0,
+        "frac_correct_ge_0.7": 0.033
+      },
+      "5": {
+        "n": 6,
+        "median_truth": 1.0,
+        "frac_correct_ge_0.7": 1.0
+      }
+    },
+    "order_vs_truth_tau": 0.59
+  }
+}

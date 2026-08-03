@@ -1,0 +1,392 @@
+{
+  "summary": {
+    "n_reports": 3786,
+    "n_refreshed": 0,
+    "refreshed_parity_ok": null,
+    "featured_evidence": {
+      "frac_all_equal": 0.2853,
+      "frac_with_inversion": 0.5877,
+      "total_inversions": 19088,
+      "median_spread": 0.4179,
+      "median_tau": 0.619
+    },
+    "ordering_score": {
+      "frac_all_equal": 0.0,
+      "frac_with_inversion": 0.0,
+      "median_tau": 1.0
+    },
+    "candidate_confidence": {
+      "frac_all_equal": 0.0,
+      "frac_with_inversion": 0.0,
+      "total_inversions": 0,
+      "median_spread": 0.3655,
+      "median_tau": 1.0,
+      "frac_with_tie_group": 0.925,
+      "median_rank1": 0.4309
+    }
+  },
+  "skipped": 111,
+  "worst_featured_inversions": [
+    {
+      "control_id": "X-22167",
+      "n_candidates": 10,
+      "overall_anchor": 0.4928,
+      "refreshed": false,
+      "shipped_matches_computed": false,
+      "featured_evidence": {
+        "all_equal": false,
+        "inversions": 32,
+        "inversion_pairs": 45,
+        "kendall_tau_vs_rank": -0.7778,
+        "spread": 0.6374
+      },
+      "ordering_score": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.008
+      },
+      "candidate_confidence": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.1819,
+        "n_tie_groups": 5,
+        "tied_members": 8,
+        "rank1": 0.4928
+      },
+      "mass_all_equal": false
+    },
+    {
+      "control_id": "X-21338",
+      "n_candidates": 10,
+      "overall_anchor": 0.5787,
+      "refreshed": false,
+      "shipped_matches_computed": false,
+      "featured_evidence": {
+        "all_equal": false,
+        "inversions": 31,
+        "inversion_pairs": 45,
+        "kendall_tau_vs_rank": -0.8788,
+        "spread": 0.6033
+      },
+      "ordering_score": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.0025
+      },
+      "candidate_confidence": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.5156,
+        "n_tie_groups": 7,
+        "tied_members": 4,
+        "rank1": 0.5787
+      },
+      "mass_all_equal": false
+    },
+    {
+      "control_id": "X-25836",
+      "n_candidates": 10,
+      "overall_anchor": 0.5488,
+      "refreshed": false,
+      "shipped_matches_computed": false,
+      "featured_evidence": {
+        "all_equal": false,
+        "inversions": 31,
+        "inversion_pairs": 45,
+        "kendall_tau_vs_rank": -0.6757,
+        "spread": 0.9992
+      },
+      "ordering_score": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.0116
+      },
+      "candidate_confidence": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.294,
+        "n_tie_groups": 6,
+        "tied_members": 6,
+        "rank1": 0.5488
+      },
+      "mass_all_equal": false
+    },
+    {
+      "control_id": "X-24530",
+      "n_candidates": 10,
+      "overall_anchor": 0.5237,
+      "refreshed": false,
+      "shipped_matches_computed": false,
+      "featured_evidence": {
+        "all_equal": false,
+        "inversions": 30,
+        "inversion_pairs": 45,
+        "kendall_tau_vs_rank": -0.5385,
+        "spread": 0.9986
+      },
+      "ordering_score": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.0177
+      },
+      "candidate_confidence": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.3267,
+        "n_tie_groups": 8,
+        "tied_members": 4,
+        "rank1": 0.5237
+      },
+      "mass_all_equal": false
+    },
+    {
+      "control_id": "X-14095",
+      "n_candidates": 10,
+      "overall_anchor": 0.585,
+      "refreshed": false,
+      "shipped_matches_computed": false,
+      "featured_evidence": {
+        "all_equal": false,
+        "inversions": 29,
+        "inversion_pairs": 45,
+        "kendall_tau_vs_rank": -0.8125,
+        "spread": 0.1238
+      },
+      "ordering_score": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.0057
+      },
+      "candidate_confidence": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.5548,
+        "n_tie_groups": 5,
+        "tied_members": 6,
+        "rank1": 0.585
+      },
+      "mass_all_equal": false
+    },
+    {
+      "control_id": "X-24813",
+      "n_candidates": 10,
+      "overall_anchor": 0.5418,
+      "refreshed": false,
+      "shipped_matches_computed": false,
+      "featured_evidence": {
+        "all_equal": false,
+        "inversions": 29,
+        "inversion_pairs": 45,
+        "kendall_tau_vs_rank": -0.4872,
+        "spread": 0.5287
+      },
+      "ordering_score": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.0027
+      },
+      "candidate_confidence": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.4705,
+        "n_tie_groups": 9,
+        "tied_members": 2,
+        "rank1": 0.5418
+      },
+      "mass_all_equal": false
+    },
+    {
+      "control_id": "X-25111",
+      "n_candidates": 10,
+      "overall_anchor": 0.3914,
+      "refreshed": false,
+      "shipped_matches_computed": false,
+      "featured_evidence": {
+        "all_equal": false,
+        "inversions": 29,
+        "inversion_pairs": 45,
+        "kendall_tau_vs_rank": -0.5676,
+        "spread": 0.9985
+      },
+      "ordering_score": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.0095
+      },
+      "candidate_confidence": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.1381,
+        "n_tie_groups": 6,
+        "tied_members": 7,
+        "rank1": 0.3914
+      },
+      "mass_all_equal": false
+    },
+    {
+      "control_id": "X-11547",
+      "n_candidates": 10,
+      "overall_anchor": 0.5814,
+      "refreshed": false,
+      "shipped_matches_computed": false,
+      "featured_evidence": {
+        "all_equal": false,
+        "inversions": 28,
+        "inversion_pairs": 45,
+        "kendall_tau_vs_rank": -0.697,
+        "spread": 0.5994
+      },
+      "ordering_score": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.0146
+      },
+      "candidate_confidence": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.3002,
+        "n_tie_groups": 7,
+        "tied_members": 5,
+        "rank1": 0.5814
+      },
+      "mass_all_equal": false
+    },
+    {
+      "control_id": "X-25084",
+      "n_candidates": 10,
+      "overall_anchor": 0.4099,
+      "refreshed": false,
+      "shipped_matches_computed": false,
+      "featured_evidence": {
+        "all_equal": false,
+        "inversions": 28,
+        "inversion_pairs": 45,
+        "kendall_tau_vs_rank": -1.0,
+        "spread": 0.9971
+      },
+      "ordering_score": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.0091
+      },
+      "candidate_confidence": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.1558,
+        "n_tie_groups": 6,
+        "tied_members": 5,
+        "rank1": 0.4099
+      },
+      "mass_all_equal": false
+    },
+    {
+      "control_id": "X-25730",
+      "n_candidates": 10,
+      "overall_anchor": 0.3919,
+      "refreshed": false,
+      "shipped_matches_computed": false,
+      "featured_evidence": {
+        "all_equal": false,
+        "inversions": 28,
+        "inversion_pairs": 45,
+        "kendall_tau_vs_rank": -0.2727,
+        "spread": 0.5376
+      },
+      "ordering_score": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.005
+      },
+      "candidate_confidence": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.3055,
+        "n_tie_groups": 5,
+        "tied_members": 7,
+        "rank1": 0.3919
+      },
+      "mass_all_equal": false
+    },
+    {
+      "control_id": "X-11677",
+      "n_candidates": 10,
+      "overall_anchor": 0.4185,
+      "refreshed": false,
+      "shipped_matches_computed": false,
+      "featured_evidence": {
+        "all_equal": false,
+        "inversions": 27,
+        "inversion_pairs": 45,
+        "kendall_tau_vs_rank": -0.35,
+        "spread": 0.9955
+      },
+      "ordering_score": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.0637
+      },
+      "candidate_confidence": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.3617,
+        "n_tie_groups": 6,
+        "tied_members": 6,
+        "rank1": 0.4185
+      },
+      "mass_all_equal": false
+    },
+    {
+      "control_id": "X-17306",
+      "n_candidates": 10,
+      "overall_anchor": 0.4099,
+      "refreshed": false,
+      "shipped_matches_computed": false,
+      "featured_evidence": {
+        "all_equal": false,
+        "inversions": 27,
+        "inversion_pairs": 45,
+        "kendall_tau_vs_rank": -0.9286,
+        "spread": 0.9979
+      },
+      "ordering_score": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.0173
+      },
+      "candidate_confidence": {
+        "all_equal": false,
+        "inversions": 0,
+        "kendall_tau_vs_rank": 1.0,
+        "spread": 0.175,
+        "n_tie_groups": 5,
+        "tied_members": 6,
+        "rank1": 0.4099
+      },
+      "mass_all_equal": false
+    }
+  ],
+  "top_n": 10
+}

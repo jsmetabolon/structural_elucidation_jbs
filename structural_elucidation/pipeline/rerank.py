@@ -446,6 +446,28 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     ).clip(0.0, 1.0)
 
 
+def candidate_confidence_column(out: pd.DataFrame) -> pd.Series:
+    """Per-candidate confidence that is monotone non-increasing with rank.
+
+    The report top-10 widget needs a per-candidate confidence that meshes with the
+    1..10 ranking; the raw ``rerank_score`` is tiny/uncalibrated and
+    ``evidence_confidence`` saturates and is shared across isomers. This column
+    prefers the per-source isotonic-calibrated probability
+    (``rerank_score_calibrated`` = P(correct)); otherwise it falls back to
+    ``rerank_score``. Within each control the value is forced non-increasing with
+    rank via a cumulative minimum so it never inverts across sources.
+
+    ``out`` must already be sorted by (``control_id``, ``rerank_score`` desc), as
+    it is inside :func:`rank_frame`. This mirrors
+    ``reports/confidence.candidate_confidences``; the report layer additionally
+    re-anchors rank 1 to the report overall confidence (see
+    docs/pipeline_refinement_handoff.md section 5).
+    """
+    base_col = "rerank_score_calibrated" if "rerank_score_calibrated" in out.columns else "rerank_score"
+    base = pd.to_numeric(out[base_col], errors="coerce").fillna(0.0).clip(lower=0.0, upper=1.0)
+    return base.groupby(out["control_id"], dropna=False).cummin().round(6)
+
+
 def rank_frame(scored: pd.DataFrame, score_col: str, top_k: int, policy: str = "unified_rerank_v1") -> pd.DataFrame:
     """Sort by rerank score and assign per-control ranks up to *top_k*."""
     out = scored.copy()
@@ -470,6 +492,7 @@ def rank_frame(scored: pd.DataFrame, score_col: str, top_k: int, policy: str = "
         lambda value: f"unified_rerank_{value}"
     )
     out["rank"] = out.groupby("control_id", dropna=False).cumcount() + 1
+    out["candidate_confidence"] = candidate_confidence_column(out)
     return out[out["rank"].le(int(top_k))].reset_index(drop=True)
 
 
