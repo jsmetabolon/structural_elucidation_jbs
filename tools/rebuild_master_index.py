@@ -24,7 +24,9 @@ import index_render as IR  # noqa: E402
 
 CSV_COLUMNS = [
     "control_id", "lib", "name", "formula", "exact_mass", "db_chemical_id",
-    "n_neighbors", "msi_level", "msi_label", "status", "report",
+    "n_neighbors", "msi_level", "msi_label", "descriptor_kind",
+    "descriptor_confidence", "descriptor_parent_formula",
+    "descriptor_conjugate_count", "status", "report",
 ]
 
 
@@ -61,6 +63,12 @@ def main() -> None:
                     msi_sublevel=str(extra.get("msi_sublevel") or ""),
                     metabolon_sublevel=str(extra.get("metabolon_sublevel") or ""),
                     match_conf=str(extra.get("match_conf") if extra.get("match_conf") not in (None, "") else ""),
+                    identity_status=str(extra.get("identity_status") or ""),
+                    identity_confidence=str(extra.get("identity_confidence") or ""),
+                    descriptor_kind=str(extra.get("descriptor_kind") or ""),
+                    descriptor_confidence=str(extra.get("descriptor_confidence") or ""),
+                    descriptor_parent_formula=str(extra.get("descriptor_parent_formula") or ""),
+                    descriptor_conjugate_count=str(extra.get("descriptor_conjugate_count") or ""),
                 )
             )
     rows.sort(key=lambda x: (x.lib, x.control_id))
@@ -76,6 +84,10 @@ def main() -> None:
                 "formula": r.formula, "exact_mass": r.exact_mass,
                 "db_chemical_id": r.db_chemical_id, "n_neighbors": r.n_neighbors,
                 "msi_level": r.msi_level, "msi_label": r.msi_label,
+                "descriptor_kind": r.descriptor_kind,
+                "descriptor_confidence": r.descriptor_confidence,
+                "descriptor_parent_formula": r.descriptor_parent_formula,
+                "descriptor_conjugate_count": r.descriptor_conjugate_count,
                 "status": r.status, "report": r.report,
             })
     with_msi = sum(1 for r in rows if r.msi_level)

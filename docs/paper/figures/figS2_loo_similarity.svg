@@ -19,22 +19,22 @@
 <line x1='210.2' y1='174.6' x2='210.2' y2='201.4' stroke='#1f2933' stroke-width='1.2'/>
 <line x1='205.2' y1='174.6' x2='215.2' y2='174.6' stroke='#1f2933'/>
 <line x1='205.2' y1='201.4' x2='215.2' y2='201.4' stroke='#1f2933'/>
-<text x='210.2' y='180.5' font-size='10' text-anchor='middle' fill='#1f2933' font-weight='bold'>68.5</text>
-<text x='210.2' y='202.5' font-size='9' text-anchor='middle' fill='#1f2933'>n=442</text>
+<text x='210.2' y='166.6' font-size='10' text-anchor='middle' fill='#1f2933' font-weight='bold'>68.5</text>
+<text x='210.2' y='203.5' font-size='9' text-anchor='middle' fill='#ffffff'>n=442</text>
 <text x='211.7' y='420.0' font-size='10' text-anchor='middle' fill='#1f2933'>[0.3,0.5)</text>
 <rect x='449.0' y='160.4' width='49.0' height='239.6' fill='#2563a6' rx='2'/>
 <line x1='473.5' y1='153.6' x2='473.5' y2='167.7' stroke='#1f2933' stroke-width='1.2'/>
 <line x1='468.5' y1='153.6' x2='478.5' y2='153.6' stroke='#1f2933'/>
 <line x1='468.5' y1='167.7' x2='478.5' y2='167.7' stroke='#1f2933'/>
-<text x='473.5' y='153.4' font-size='10' text-anchor='middle' fill='#1f2933' font-weight='bold'>77.3</text>
-<text x='473.5' y='175.4' font-size='9' text-anchor='middle' fill='#1f2933'>n=1304</text>
+<text x='473.5' y='145.6' font-size='10' text-anchor='middle' fill='#1f2933' font-weight='bold'>77.3</text>
+<text x='473.5' y='176.4' font-size='9' text-anchor='middle' fill='#ffffff'>n=1304</text>
 <text x='475.0' y='420.0' font-size='10' text-anchor='middle' fill='#1f2933'>[0.5,0.7)</text>
 <rect x='712.3' y='112.5' width='49.0' height='287.5' fill='#2563a6' rx='2'/>
 <line x1='736.8' y1='109.9' x2='736.8' y2='115.4' stroke='#1f2933' stroke-width='1.2'/>
 <line x1='731.8' y1='109.9' x2='741.8' y2='109.9' stroke='#1f2933'/>
 <line x1='731.8' y1='115.4' x2='741.8' y2='115.4' stroke='#1f2933'/>
-<text x='736.8' y='105.5' font-size='10' text-anchor='middle' fill='#1f2933' font-weight='bold'>92.7</text>
-<text x='736.8' y='127.5' font-size='9' text-anchor='middle' fill='#1f2933'>n=3349</text>
+<text x='736.8' y='101.9' font-size='10' text-anchor='middle' fill='#1f2933' font-weight='bold'>92.7</text>
+<text x='736.8' y='128.5' font-size='9' text-anchor='middle' fill='#ffffff'>n=3349</text>
 <text x='738.3' y='420.0' font-size='10' text-anchor='middle' fill='#1f2933'>[0.7,1.0)</text>
 <rect x='690.0' y='65' width='12' height='12' fill='#2563a6'/>
 <text x='708.0' y='75.0' font-size='10' text-anchor='start' fill='#1f2933'>Super-pathway</text>

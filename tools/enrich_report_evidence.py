@@ -23,10 +23,19 @@ import json
 import sqlite3
 import sys
 from pathlib import Path
+from typing import Any
 
 csv.field_size_limit(10 ** 7)
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "structural_elucidation" / "reports"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "structural_elucidation" / "nce"))
 import confidence as C  # noqa: E402
+import tentative_naming as TN  # noqa: E402
+import tentative_naming_ext as TN_EXT  # noqa: E402
+
+try:
+    import evidence as NCE_EVIDENCE  # noqa: E402
+except ImportError:
+    NCE_EVIDENCE = None
 
 LEVEL_JUNK = {"", "nan", "artifact", "exclude", "4?"}
 TRUTH_CORRECT = 0.70
@@ -70,6 +79,20 @@ def load_ms2(bundle: Path) -> dict[str, dict]:
     for row in _read(path):
         cid = str(row.get("control_id", "")).strip()
         if cid:
+            ion_bins: list[Any] = []
+            loss_bins: list[Any] = []
+            for key, target in (
+                ("observed_ion_bins_json", ion_bins),
+                ("observed_loss_bins_json", loss_bins),
+            ):
+                raw = str(row.get(key, "") or "").strip()
+                if raw:
+                    try:
+                        parsed = json.loads(raw)
+                        if isinstance(parsed, list):
+                            target.extend(parsed)
+                    except (ValueError, TypeError):
+                        pass
             out[cid] = {
                 "present": str(row.get("ms2_present", "")).strip().lower() in ("true", "1"),
                 "n_pairs": _num(row.get("n_ms2_pairs")) or 0,
@@ -77,6 +100,9 @@ def load_ms2(bundle: Path) -> dict[str, dict]:
                 "n_loss_bins": _num(row.get("n_observed_loss_bins")) or 0,
                 "parent_mz": _num(row.get("parent_mz")),
                 "neutral_mass": _num(row.get("neutral_mass")),
+                "observed_ion_bins": ion_bins,
+                "observed_loss_bins": loss_bins,
+                "lib_id": _num(row.get("lib_id")) or 209,
             }
     return out
 
@@ -207,7 +233,39 @@ def candidate_evidence_rows(css: list[dict], tc: list[dict], feature_overall: fl
     return out
 
 
-def enrich(report_dir: Path, obs_mz, ms2, levels, sublevels, db_names, wgcna) -> str:
+def fragment_candidate_fits(tc: list[dict], ms2_rec: dict) -> list[dict]:
+    """Per-candidate matched ion/loss bin counts (non-raw; public-safe)."""
+
+    if not tc or not ms2_rec.get("present"):
+        return []
+    ion_bins = {str(item) for item in (ms2_rec.get("observed_ion_bins") or []) if str(item) not in {"", "0"}}
+    loss_bins = {str(item) for item in (ms2_rec.get("observed_loss_bins") or []) if str(item) not in {"", "0"}}
+    if not ion_bins and not loss_bins:
+        return []
+    lib_id = int(ms2_rec.get("lib_id") or 209)
+    out: list[dict] = []
+    for row in tc[:3]:
+        rank = _num(row.get("rank"))
+        smiles = str(row.get("predicted_smiles", "")).strip()
+        matched_ions = None
+        matched_losses = None
+        if smiles and NCE_EVIDENCE is not None:
+            pred_ions, pred_losses = NCE_EVIDENCE.candidate_fragment_bins(smiles, lib_id)
+            if ion_bins:
+                matched_ions = len({str(item) for item in pred_ions} & ion_bins)
+            if loss_bins:
+                matched_losses = len({str(item) for item in pred_losses} & loss_bins)
+        out.append(
+            {
+                "rank": int(rank) if rank is not None else len(out) + 1,
+                "matched_ion_bins": matched_ions,
+                "matched_loss_bins": matched_losses,
+            }
+        )
+    return out
+
+
+def enrich(report_dir: Path, obs_mz, ms2, levels, sublevels, db_names, wgcna, identity_overrides=None) -> str:
     data = report_dir / "data"
     if not data.is_dir():
         return "no_data"
@@ -259,11 +317,17 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, sublevels, db_names, wgcna) ->
         "predicted_v2": _num(r1.get("predicted_spectrum_score_v2")),
         "match": _num(r1.get("ms2_match_score")),
     }
+    fields["fragment_candidate_fits"] = fragment_candidate_fits(tc, ms2_rec)
     fields["metabolon_level"] = levels.get(cid, "")
     fields["metabolon_sublevel"] = sublevels.get(cid, "")
     fields["n_isomers"] = same_formula_multiplicity(tc)
     fields["truth_match"] = truth_match
     fields["mass_alt"] = C.mass_consistent_alt(css)
+    # Curated known-identity override (drives the "Library identity" metric).
+    if identity_overrides:
+        override = identity_overrides.get(cid)
+        if override:
+            fields["known_identity_override"] = override
     # display name / synonyms (gap 2)
     ev = data / f"{slug}_evidence_summary.json"
     target = {}
@@ -274,14 +338,34 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, sublevels, db_names, wgcna) ->
             target = {}
     ik = str(target.get("inchikey", "")).strip()
     formula = str(target.get("formula", "")).strip()
+    smiles = str(target.get("smiles", "")).strip()
+    fields["candidate_exact_mass"] = target.get("exact_mass")
     dbn = db_names.get(ik.split("-")[0]) if ik else None
+    name_resolved = bool(dbn)
+    tentative = TN.resolve(
+        smiles,
+        formula,
+        r1,
+        db_names,
+        name_resolved=name_resolved,
+        bundle_dir=report_dir,
+        extended_ctx=TN_EXT.default_extended_context(reports_root=report_dir.parent),
+        inchikey=ik,
+        control_id=cid,
+    )
     if dbn:
         fields["display_name"] = dbn["name"]
         fields["synonyms"] = dbn["synonyms"]
     else:
-        fields["display_name"] = f"De novo structure ({formula})" if formula else cid
+        fields["display_name"] = (
+            tentative.label
+            if tentative
+            else "De novo structure"
+        )
         fields["synonyms"] = []
-    fields["name_resolved"] = bool(dbn)
+    fields["smiles"] = smiles
+    fields["name_resolved"] = name_resolved
+    fields.update(TN.descriptor_fields(tentative))
     # co-abundance neighbors (gap 1, placeholder)
     fields["correlations"] = wgcna.get(cid, [])
     # derive + store the MSI identification level (also derivable at render time)
@@ -298,21 +382,29 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, sublevels, db_names, wgcna) ->
     return "enriched"
 
 
+DEFAULT_IDENTITY_OVERRIDES = (
+    Path(__file__).resolve().parent.parent / "data" / "known_identity_overrides.csv"
+)
+
+
 def main() -> None:
     root = Path(sys.argv[1] if len(sys.argv) > 1 else "_audit_pull/reports")
     bundle = Path(sys.argv[2] if len(sys.argv) > 2 else "_bundle")
     known_x = Path(sys.argv[3] if len(sys.argv) > 3 else "data/known_X.csv")
+    identity_overrides_path = Path(sys.argv[4]) if len(sys.argv) > 4 else DEFAULT_IDENTITY_OVERRIDES
     obs_mz = load_observed_mz(bundle, known_x)
     ms2 = load_ms2(bundle)
     levels = load_levels(known_x)
     sublevels = load_sublevels(known_x)
     db_names = load_db_names(bundle)
     wgcna = load_wgcna(bundle)
+    identity_overrides = C.load_identity_overrides(identity_overrides_path)
     print(f"[enrich] m/z:{len(obs_mz)} ms2:{len(ms2)} levels:{len(levels)} sublevels:{len(sublevels)} "
-          f"db_names:{len(db_names)} wgcna:{len(wgcna)}", file=sys.stderr)
+          f"db_names:{len(db_names)} wgcna:{len(wgcna)} identity_overrides:{len(identity_overrides)}",
+          file=sys.stderr)
     counts: dict[str, int] = {}
     for d in sorted(p for p in root.iterdir() if p.is_dir()):
-        st = enrich(d, obs_mz, ms2, levels, sublevels, db_names, wgcna)
+        st = enrich(d, obs_mz, ms2, levels, sublevels, db_names, wgcna, identity_overrides=identity_overrides)
         counts[st] = counts.get(st, 0) + 1
     print(f"[enrich] {counts}", file=sys.stderr)
 

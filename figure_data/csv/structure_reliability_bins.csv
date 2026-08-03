@@ -1,0 +1,11 @@
+calibration,bin,n,mean_predicted,observed,observed_ci95_low,observed_ci95_high
+calibration_full,1,19,0.3851,0.4211,0.2314,0.6372
+calibration_full,2,19,0.4253,0.3158,0.1536,0.5399
+calibration_full,3,18,0.4708,0.7778,0.5479,0.91
+calibration_full,4,18,0.5347,0.3889,0.2031,0.6138
+calibration_full,5,18,0.5877,0.5,0.2903,0.7097
+calibration_without_pathway,1,19,0.3672,0.3684,0.1915,0.5896
+calibration_without_pathway,2,19,0.4252,0.4737,0.2733,0.6829
+calibration_without_pathway,3,18,0.4698,0.5556,0.3372,0.7544
+calibration_without_pathway,4,18,0.5379,0.5,0.2903,0.7097
+calibration_without_pathway,5,18,0.605,0.5,0.2903,0.7097

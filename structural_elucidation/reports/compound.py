@@ -43,14 +43,16 @@ from urllib.parse import quote
 
 import pandas as pd
 
-from structural_elucidation.utils.denovo import exact_mass_from_smiles, formula_from_smiles, inchikey_from_smiles
-from structural_elucidation.paths import REPO_ROOT, resolve
 import structural_elucidation.utils.wgcna as wgcna
+from structural_elucidation.paths import REPO_ROOT, resolve
 from structural_elucidation.reports import confidence as confmod
+from structural_elucidation.reports import tentative_naming as tnmod
+from structural_elucidation.reports.tentative_naming_ext import default_extended_context
+from structural_elucidation.utils.denovo import exact_mass_from_smiles, formula_from_smiles, inchikey_from_smiles
 
 try:
     from rdkit import Chem
-    from rdkit.Chem import Descriptors, Draw, rdDepictor, rdFMCS, rdFingerprintGenerator
+    from rdkit.Chem import Descriptors, Draw, rdDepictor, rdFingerprintGenerator, rdFMCS
     from rdkit.DataStructs import TanimotoSimilarity
 
     HAS_RDKIT = True
@@ -624,6 +626,8 @@ def compact_candidate_scores(candidates: pd.DataFrame) -> pd.DataFrame:
         "lactoyl_aa_specific_score",
         "mass_match_score",
         "evidence_confidence",
+        "predicted_pathway",
+        "predicted_subpathway",
         "fusion_source_label",
         "rerank_policy",
         "source_comp_id",
@@ -2205,6 +2209,7 @@ def render_html(
     nodes: list[dict[str, Any]],
     edges: list[dict[str, Any]],
     candidate_scores: list[dict[str, Any]],
+    fragment_candidate_rows: list[dict[str, Any]] | None = None,
     structure_panel_html: str,
     consensus_svg: str,
     candidate_consensus_maps: dict[int, str],
@@ -2226,10 +2231,19 @@ def render_html(
     public_mode = variant == "public"
     variant_label = "Public" if variant == "public" else "Internal"
     control_id = str(target.get("control_id", "")).strip() or "compound"
+    tentative_descriptor = target.get("tentative_descriptor") or {}
+    report_title = str(tentative_descriptor.get("label") or control_id)
+    descriptor_confidence = str(tentative_descriptor.get("confidence") or "").strip().title()
+    descriptor_badge_html = ""
+    if descriptor_confidence:
+        descriptor_badge_html = (
+            '<!--TENTATIVE_DESCRIPTOR_BADGE-->'
+            '<span class="badge" title="Descriptor specificity only; not identification confidence">'
+            f"Tentative descriptor \N{MIDDLE DOT} {html.escape(descriptor_confidence)}</span>"
+            "<!--/TENTATIVE_DESCRIPTOR_BADGE-->"
+        )
     slug = control_slug(control_id)
     pathway_super = str(pathway_info.get("super") or "").strip()
-    pathway_sub = str(pathway_info.get("sub") or "").strip()
-    pathway_note = str(pathway_info.get("note") or "")
     pathway_badge_html = f"<span class='badge'>{html.escape(pathway_super)}</span>" if pathway_super else ""
     # Top-candidate structural similarity: Tanimoto of the rank-1 predicted structure
     # to its nearest reference metabolite (1.0 when it is an exact reference match).
@@ -2242,32 +2256,12 @@ def render_html(
     pathway_source = str(pathway_info.get("source") or "").strip()
     if pathway_source == "exact":
         top_similarity_badge = "Exact reference match"
-        top_similarity_note = "Top candidate structure exactly matches a reference DB metabolite"
     elif top_similarity > 0:
         top_similarity_badge = f"Nearest-ref Tanimoto {top_similarity:.2f}"
-        top_similarity_note = "Max Tanimoto of top candidate to nearest reference metabolite"
     else:
         top_similarity_badge = "No reference match"
-        top_similarity_note = "No reference structure above the similarity floor"
     pubchem_link = f"https://pubchem.ncbi.nlm.nih.gov/#query={quote(str(target['name']))}"
     top_candidate = candidate_scores[0] if candidate_scores else {}
-    syn_col_count = 1 if public_mode else 3
-    syn_header_html = (
-        "<thead><tr><th>Synonym</th></tr></thead>"
-        if public_mode
-        else "<thead><tr><th>Synonym</th><th>Normalized</th><th>Sources</th></tr></thead>"
-    )
-    syn_rows = (
-        "\n".join(
-            (
-                f"<tr><td>{html.escape(str(row.get('synonym', '')))}</td></tr>"
-                if public_mode
-                else f"<tr><td>{html.escape(str(row.get('synonym', '')))}</td><td>{html.escape(str(row.get('normalized', '')))}</td><td>{html.escape(str(row.get('sources', '')))}</td></tr>"
-            )
-            for row in synonyms
-        )
-        or f"<tr><td colspan='{syn_col_count}'>No synonyms returned.</td></tr>"
-    )
     synonym_lines = [
         html.escape(str(row.get("synonym", ""))) for row in synonyms if str(row.get("synonym", "")).strip()
     ]
@@ -2275,20 +2269,12 @@ def render_html(
         "".join(f"<div>{line}</div>" for line in synonym_lines) if synonym_lines else "<div>No synonyms returned.</div>"
     )
     library_neighbors = neighbors[:10]
-    high_similarity_count = sum(float(row.get("similarity_to_target", 0.0) or 0.0) >= 0.60 for row in neighbors)
-    medium_similarity_count = sum(float(row.get("similarity_to_target", 0.0) or 0.0) >= 0.50 for row in neighbors)
-    lactoyl_context_count = sum(
-        "lactoyl" in f"{row.get('canonical_name', '')} {row.get('metabolon_sub', '')}".lower()
-        or "alanine" in f"{row.get('canonical_name', '')} {row.get('metabolon_sub', '')}".lower()
-        for row in neighbors
-    )
-    top_neighbor = neighbors[0] if neighbors else {}
-    neighbor_rows = "\n".join(
-        f"<tr data-kind='known' data-confidence='{html.escape(row['confidence'])}' data-similarity='{float(row['similarity_to_target']):.3f}' "
-        f"data-name='{html.escape(str(row['canonical_name']))}' data-pathway='{html.escape(str(row.get('metabolon_super', '')))} / {html.escape(str(row.get('metabolon_sub', '')))}' "
-        f"style='border-left: 6px solid {similarity_color(float(row['similarity_to_target']))};'>"
-        f"<td>{html.escape(row['chemical_id'])}</td><td>{html.escape(row['canonical_name'])}</td><td>{row['similarity_to_target']:.3f}</td><td>{html.escape(row['metabolon_super'])} / {html.escape(row['metabolon_sub'])}</td><td>{html.escape(row['confidence'])}</td></tr>"
-        for row in library_neighbors
+    parameter_cards_html = confmod.identification_parameter_cards_html(
+        confidence,
+        candidate_scores=candidate_scores,
+        pathway_info=pathway_info,
+        top_similarity=top_similarity,
+        neighbor_count=len(neighbors),
     )
     top10_candidates = candidate_scores[:10]
     default_rank = (
@@ -2335,23 +2321,12 @@ def render_html(
             "summaries": {str(k): v for k, v in candidate_consensus_summaries.items()},
         }
     ).replace("</", "<\\/")
-    feature_rows = (
-        "\n".join(
-            "<tr>"
-            f"<td>{html.escape(str(row.get('rank', '')))}</td>"
-            f"<td>{html.escape(str(row.get('predicted_smiles', '')))}</td>"
-            f"<td>{html.escape(str(row.get('spectrum_matched_peak_count', '')))}</td>"
-            f"<td>{feature_total_count}</td>"
-            "</tr>"
-            for row in candidate_scores[:3]
-        )
-        or "<tr><td colspan='4'>No feature-match rows available.</td></tr>"
-    )
-    substructure_rows = (
-        "<tr>"
-        "<td>Lactoyl</td>"
-        f"<td>{html.escape(str(top_candidate.get('lactoyl_hypothesis_score', evidence.get('lactoyl_hypothesis_score', ''))))}</td>"
-        "</tr>"
+    fragment_rows = fragment_candidate_rows if fragment_candidate_rows is not None else candidate_scores
+    substructure_rows = confmod.diagnostic_substructure_rows_html(top_candidate, evidence)
+    fragment_summary_html = confmod.fragment_summary_section_html(
+        conf_fields,
+        fragment_rows,
+        public=public_mode,
     )
     mass_rows = (
         "<tr>"
@@ -2421,11 +2396,7 @@ def render_html(
     top10_title = "Top 10 potential structures" if public_mode else "Top 10 Candidate Structures"
     fragment_title = "Fragment Scores" if public_mode else "Substructure Scores"
     ms_fit_title = "MS Fit Scores" if public_mode else "Feature Match Scores"
-    params_title = (
-        "Parameters Contributing to Identification Confidence"
-        if public_mode
-        else "Parameters Contributing To Identification Confidence"
-    )
+    params_title = "Parameters Contributing to ID Confidence"
     synonyms_title = "Metabolite Synonyms" if public_mode else "Synonyms Of Top Candidate"
     guide_targets: list[tuple[str, str]] = []
 
@@ -2572,7 +2543,7 @@ def render_html(
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{html.escape(control_id)} Structure Resolution ({variant_label})</title>
+  <title>{html.escape(report_title)} Structure Resolution ({variant_label})</title>
   <style>
     :root {{
       color-scheme: light;
@@ -2681,15 +2652,17 @@ def render_html(
     <div class="hero-grid">
       <div>
         <p class="eyebrow">X-Compound Elucidation Dashboard • {variant_label}</p>
-        <h1>{html.escape(control_id)}</h1>
+        <h1>{html.escape(report_title)}</h1>
         <p class="subtitle">
           Structure-resolution report for <strong>{html.escape(control_id)}</strong>, formula <code>{html.escape(target['formula'])}</code>.
           The most likely candidate structure is shown below.
         </p>
         <p>
           <span class="badge ok">top-1 candidate</span>
+          {descriptor_badge_html}
           {confmod.confidence_badge_html(confidence)}
           {confmod.msi_badge_html(confidence)}
+          {confmod.identity_badge_html(confidence)}
           <span class="badge ok">{html.escape(top_similarity_badge)}</span>
           {pathway_badge_html}
         </p>
@@ -2708,10 +2681,10 @@ def render_html(
           {heading_with_info("h3", "Most Likely Structure", include_info=False)}
           {structure_panel_html}
           <p><strong>{html.escape(target['name'])}</strong></p>
-          <p class="note">Exact stereochemistry is not overclaimed; this is the top-ranked candidate structure for this feature.</p>
+          <p class="note">This is the top ranked candidate structure for this feature. Note that exact stereochemistry is not known from available evidence.</p>
         </div>
         <div class="structure-card">
-          {heading_with_info("h3", "Final Consensus Atom-Position Confidence", include_info=False)}
+          {heading_with_info("h3", "Atom-position confidence mapped to top candidate", include_info=False)}
           <div class="consensus-box">{consensus_svg}</div>
           <div class="consensus-scale" aria-label="Consensus heatmap scale">
             <div class="consensus-scale-bar"></div>
@@ -2727,10 +2700,7 @@ def render_html(
       <div class="metrics">
         {confmod.confidence_metric_card_html(confidence)}
         {confmod.msi_metric_card_html(confidence)}
-        <div class="metric-card"><div class="metric-label">Top candidate structural similarity</div><div class="metric-value">{top_similarity:.2f}</div><div class="metric-note">{html.escape(top_similarity_note)}</div></div>
-        <div class="metric-card"><div class="metric-label">Candidate Chemical Pathway</div><div class="metric-value">{html.escape(pathway_super or 'Not available')}</div><div class="metric-note">{html.escape(pathway_note or 'Metabolite DB super-pathway')}</div></div>
-        <div class="metric-card"><div class="metric-label">Candidate Chemical SubPathway</div><div class="metric-value">{html.escape(pathway_sub or 'Not available')}</div><div class="metric-note">{html.escape(pathway_note or 'Metabolite DB sub-pathway')}</div></div>
-        <div class="metric-card"><div class="metric-label">Library neighbors</div><div class="metric-value">{len(neighbors)}</div><div class="metric-note">DB structures above similarity floor</div></div>
+        {confmod.identity_metric_card_html(confidence)}
       </div>
       <div class="structure-card" style="margin-top:18px;">
         {heading_with_info("h3", "Identification Evidence", include_info=False)}
@@ -2746,6 +2716,7 @@ def render_html(
 
     <section class="section">
       {heading_with_info("h2", params_title)}
+      {parameter_cards_html}
       {confmod.scored_parameters_section_html(confidence, public=public_mode)}
     </section>
 
@@ -2786,14 +2757,8 @@ def render_html(
 
     <section class="section">
       {heading_with_info("h2", ms_fit_title)}
-      <p class="note">Metabolon’s elucidation pipeline uses mass fragment (MS2) matching as a key parameter for structural elucidation. The table below summarizes the number of fragments that matched the candidate structures.</p>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Rank</th><th>Candidate</th><th>Matching Fragments</th><th>Total Fragments</th></tr></thead>
-          <tbody>{feature_rows}</tbody>
-        </table>
-      </div>
-      {confmod.ms2_evidence_section_html(conf_fields, public=public_mode)}
+      <p class="note">Metabolon’s elucidation pipeline uses mass fragment (MS2) matching as a key parameter for structural elucidation. The tables below summarize observed fragment counts and how well each candidate explains the spectrum.</p>
+      {fragment_summary_html}
     </section>
 
     <section class="section">
@@ -3260,23 +3225,42 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     chemical_id = str(args.chemical_id or resolve_chemical_id(db_path, kx_row, target_name) or "").strip()
 
     target_inchikey = inchikey_from_smiles(target_smiles)
-    if not args.chemical_id:
-        db_identity = resolve_db_identity_by_inchikey(db_path, target_inchikey)
-        if db_identity:
-            resolved_chem_id, resolved_name = db_identity
-            if not is_real_chemical_id(db_path, chemical_id):
-                chemical_id = resolved_chem_id
-            if target_name == control_id and resolved_name:
-                target_name = resolved_name
+    db_identity = resolve_db_identity_by_inchikey(db_path, target_inchikey)
+    name_resolved = bool(db_identity)
+    if not args.chemical_id and db_identity:
+        resolved_chem_id, resolved_name = db_identity
+        if not is_real_chemical_id(db_path, chemical_id):
+            chemical_id = resolved_chem_id
+        if target_name == control_id and resolved_name:
+            target_name = resolved_name
 
+    target_formula = formula_from_smiles(target_smiles)
+    pd.DataFrame([kx_row]).to_csv(data_dir / f"{slug}_known_x_row.csv", index=False)
+    tentative = tnmod.resolve(
+        target_smiles,
+        target_formula,
+        rank1,
+        tnmod.SqliteNameLookup(db_path),
+        name_resolved=name_resolved,
+        bundle_dir=data_dir.parent,
+        extended_ctx=default_extended_context(reports_root=data_dir.parent.parent),
+        inchikey=target_inchikey,
+        control_id=control_id,
+    )
+    if tentative:
+        target_name = tentative.label
+    elif not name_resolved:
+        target_name = "De novo structure"
     target = {
         "control_id": control_id,
         "name": target_name,
         "smiles": target_smiles,
-        "formula": formula_from_smiles(target_smiles),
+        "formula": target_formula,
         "exact_mass": exact_mass_from_smiles(target_smiles),
         "inchikey": target_inchikey,
     }
+    if tentative:
+        target["tentative_descriptor"] = tentative.as_dict()
     target_structure_svg = render_smiles_svg(target_smiles)
     asset_base = f"{slug}_structure"
     if target_structure_svg:
@@ -3328,8 +3312,6 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     )
     consensus_rows, consensus_svg = consensus_atom_support(target_smiles, top.head(int(args.consensus_top_n)).copy())
     write_csv(data_dir / f"{slug}_consensus_atom_support.csv", consensus_rows)
-
-    pd.DataFrame([kx_row]).to_csv(data_dir / f"{slug}_known_x_row.csv", index=False)
 
     db_detail = {}
     syn_df = pd.DataFrame()
@@ -3539,6 +3521,10 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         correlations_real=not correlation_blocker,
     )
     _conf_fields["observed_mz"] = _observed_mz
+    _conf_fields["observed_neutral_mass"] = (
+        _n(rank1.get("target_neutral_mass")) or _n(rank1.get("neutral_mass"))
+    )
+    _conf_fields["candidate_exact_mass"] = target["exact_mass"]
     # Parity with the enrich -> patch flow: Metabolon Level, mass-consistent
     # alternative, and observed-MS2 detail so the from-source render matches.
     _level = str(kx_row.get("Level", "") or "").strip()
@@ -3564,6 +3550,26 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     }
     _conf_fields["ms2_n_pairs"] = _n_peaks
     confidence_obj = confmod.compute_confidence(_conf_fields)
+    _conf_fields["smiles"] = target_smiles
+    _conf_fields["display_name"] = target_name
+    _conf_fields["synonyms"] = [
+        str(value).strip()
+        for value in syn_df.get("synonym", pd.Series(dtype=str)).tolist()
+        if str(value).strip()
+    ][:8]
+    _conf_fields["name_resolved"] = name_resolved
+    _conf_fields.update(tnmod.descriptor_fields(tentative))
+    _conf_fields["msi_level"] = confidence_obj.msi_level
+    _conf_fields["msi_label"] = confidence_obj.msi_label
+    _conf_fields["msi_rationale"] = confidence_obj.msi_rationale
+    _conf_fields["msi_sublevel"] = confidence_obj.msi_sublevel
+    _conf_fields["metabolon_sublevel"] = confidence_obj.metabolon_sublevel
+    _conf_fields["identity_status"] = confidence_obj.identity_status
+    _conf_fields["identity_confidence"] = confidence_obj.identity_confidence
+    _conf_fields["identity_basis"] = confidence_obj.identity_basis
+    (data_dir / f"{slug}_confidence_inputs.json").write_text(
+        json.dumps(_conf_fields, indent=2)
+    )
 
     # Per-candidate display confidence: monotone non-increasing with rank and
     # anchored so the rank-1 candidate equals the report overall confidence. This
@@ -3584,6 +3590,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             _summary["candidate_confidence"] = _match["candidate_confidence"]
             _summary["candidate_confidence_tied"] = _match["tied"]
 
+    fragment_candidate_rows = top.head(int(args.candidate_tab_n)).fillna("").to_dict(orient="records")
     render_kwargs = dict(
         out_dir=out_dir,
         target=target,
@@ -3597,6 +3604,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         nodes=nodes,
         edges=edges,
         candidate_scores=_cand_records,
+        fragment_candidate_rows=fragment_candidate_rows,
         structure_panel_html=structure_panel_html,
         consensus_svg=consensus_svg,
         candidate_consensus_maps=candidate_consensus_maps,
@@ -3623,7 +3631,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         (slugify_label(label), label)
         for label in [
             "Top Candidate Compound",
-            "Parameters Contributing to Identification Confidence",
+            "Parameters Contributing to ID Confidence",
             "Top 10 potential structures",
             "Top 10 Metabolon Library Matches",
             "Fragment Scores",

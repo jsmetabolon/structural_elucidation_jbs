@@ -1,0 +1,10 @@
+section,metric,rate
+evidence_coverage,observed_mz_available,0.9741
+evidence_coverage,ms2_spectrum_present,0.4362
+evidence_coverage,mass_mismatch,0.1535
+evidence_coverage,pathway_available,1.0
+presentation_gaps,name_resolved_from_db,0.3687
+presentation_gaps,synonyms_empty,0.6313
+presentation_gaps,has_wgcna_correlations,0.1329
+presentation_gaps,has_metabolon_level,0.6225
+presentation_gaps,mass_nan_public,0

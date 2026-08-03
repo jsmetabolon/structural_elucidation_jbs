@@ -31,6 +31,12 @@ class IndexRow:
     msi_sublevel: str = ""          # derived fine sublevel (3A only)
     metabolon_sublevel: str = ""    # curated known_X SubLevel (authoritative)
     match_conf: str = ""            # rank-1 candidate_confidence (include/exclude score)
+    identity_status: str = ""
+    identity_confidence: str = ""
+    descriptor_kind: str = ""
+    descriptor_confidence: str = ""
+    descriptor_parent_formula: str = ""
+    descriptor_conjugate_count: str = ""
 
 
 # Identification-confidence ordering for sortable sublevel column (lower = higher confidence).
@@ -52,6 +58,11 @@ def _read_confidence_extra(report_dir: Path) -> dict:
         return {}
     cev = d.get("candidate_evidence") or []
     match_conf = cev[0].get("candidate_confidence", "") if cev else ""
+    identity_status = d.get("identity_status", "") or ""
+    identity_conf = d.get("identity_confidence")
+    identity_conf_pct = ""
+    if isinstance(identity_conf, (int, float)):
+        identity_conf_pct = f"{round(100 * float(identity_conf))}%"
     return {
         "msi_level": d.get("msi_level", ""),
         "msi_label": d.get("msi_label", ""),
@@ -59,6 +70,12 @@ def _read_confidence_extra(report_dir: Path) -> dict:
         "metabolon_sublevel": d.get("metabolon_sublevel", ""),
         "match_conf": match_conf,
         "display_name": d.get("display_name", ""),
+        "identity_status": identity_status,
+        "identity_confidence": identity_conf_pct,
+        "descriptor_kind": d.get("descriptor_kind", "") or "",
+        "descriptor_confidence": d.get("descriptor_confidence", "") or "",
+        "descriptor_parent_formula": d.get("descriptor_parent_formula", "") or "",
+        "descriptor_conjugate_count": d.get("descriptor_conjugate_count", "") or "",
     }
 
 
@@ -69,6 +86,25 @@ def render_master_index(rows: list[IndexRow], generated_at: str) -> str:
         return html.escape(str(value))
 
     libs = sorted({r.lib for r in rows if r.lib})
+    _IDENTITY_LABEL = {
+        "known_pending": "Known (standard pending)",
+        "putative": "Putative",
+        "unknown": "",
+    }
+    _DESCRIPTOR_LABEL = {
+        "peptide": "Peptide",
+        "lipid": "Lipid",
+        "conjugate_resolved": "Conjugate",
+        "conjugate_unresolved": "Conjugate",
+        "motif_only": "Structural motif",
+        "candidate_name": "Candidate name",
+        "known_x_name": "Known X name",
+        "external_db_exact": "External DB",
+        "external_db_skeleton": "External DB (stereo)",
+        "analog": "Analog",
+        "chemical_class": "Chemical class",
+        "iupac_generated": "IUPAC (generated)",
+    }
     body_rows = []
     for idx, r in enumerate(rows, start=1):
         # derived MSI level (with 3A when applicable)
@@ -81,12 +117,40 @@ def render_master_index(rows: list[IndexRow], generated_at: str) -> str:
             conf_disp = f"{float(r.match_conf):.3f}"
         except (TypeError, ValueError):
             conf_sort, conf_disp = "", ""
+        identity_label = _IDENTITY_LABEL.get(r.identity_status, "")
+        identity_display = (
+            f"{identity_label} \u00b7 {r.identity_confidence}" if identity_label and r.identity_confidence
+            else identity_label
+        )
+        identity_sort = (
+            f"3 {r.identity_confidence}" if r.identity_status == "known_pending"
+            else "2" if r.identity_status == "putative"
+            else "1"
+        )
+        descriptor_label = _DESCRIPTOR_LABEL.get(
+            r.descriptor_kind,
+            r.descriptor_kind.replace("_", " ").title(),
+        )
+        descriptor_display = (
+            f"{descriptor_label} \N{MIDDLE DOT} {r.descriptor_confidence.title()}"
+            if descriptor_label and r.descriptor_confidence
+            else descriptor_label
+        )
+        descriptor_sort = {
+            "high": "3",
+            "medium": "2",
+            "low": "1",
+        }.get(r.descriptor_confidence, "0")
         body_rows.append(
             "<tr>"
             f"<td class='num'>{idx}</td>"
             f"<td><a href='{esc(r.report)}'>{esc(r.control_id)}</a></td>"
             f"<td>{esc(r.name)}</td>"
             f"<td class='num' data-sort='{esc(r.msi_level)}' title='{esc(r.msi_label)}'>{msi_display}</td>"
+            f"<td data-sort='{esc(identity_sort)}' title='Library identity (authentic-standard pending)'>"
+            f"{esc(identity_display)}</td>"
+            f"<td data-sort='{esc(descriptor_sort + ' ' + r.descriptor_kind)}'>"
+            f"{esc(descriptor_display)}</td>"
             f"<td class='num' data-sort='{cur_sort}' title='Curated Metabolon SubLevel (authoritative)'>{cur}</td>"
             f"<td class='num' data-sort='{conf_sort}' title='Rank-1 candidate match confidence'>{conf_disp}</td>"
             f"<td class='mono'>{esc(r.formula)}</td>"
@@ -147,6 +211,8 @@ def render_master_index(rows: list[IndexRow], generated_at: str) -> str:
     <thead><tr>
       <th data-k='n'>#</th><th>Control ID</th><th>Name</th>
       <th title='Derived MSI identification level (1-5; 3A = positional isomer)'>MSI</th>
+      <th title='Library identity status (authentic-standard pending)'>Identity</th>
+      <th title='Tentative structural descriptor type and heuristic confidence'>Descriptor</th>
       <th title='Curated Metabolon SubLevel (authoritative)'>Curated</th>
       <th title='Rank-1 candidate match confidence (0-1) for include/exclude'>Match&nbsp;conf</th>
       <th>Formula</th>
