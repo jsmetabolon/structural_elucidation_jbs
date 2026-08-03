@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="660" height="290" viewBox="0 0 660 290" font-family="Arial, Helvetica, sans-serif">
+<rect width="660" height="290" fill="white"/>
+<text x="30" y="32" font-size="17" text-anchor="start" fill="#1f2933" font-weight="bold">From detected signal to a graded result</text>
+
+<rect x="30" y="60" width="138" height="118" rx="6" fill="#eef4fa" stroke="#2563a6" stroke-width="1.5"/>
+<text x="99" y="90" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">Detect</text>
+<text x="99" y="118" font-size="11.5" text-anchor="middle" fill="#52606d">Reproducible</text>
+<text x="99" y="134" font-size="11.5" text-anchor="middle" fill="#52606d">unnamed features</text>
+<text x="99" y="150" font-size="11.5" text-anchor="middle" fill="#52606d">are extracted</text>
+
+<rect x="192" y="60" width="138" height="118" rx="6" fill="#eef4fa" stroke="#2563a6" stroke-width="1.5"/>
+<text x="261" y="90" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">Propose</text>
+<text x="261" y="118" font-size="11.5" text-anchor="middle" fill="#52606d">Candidate structures</text>
+<text x="261" y="134" font-size="11.5" text-anchor="middle" fill="#52606d">are assembled, beyond</text>
+<text x="261" y="150" font-size="11.5" text-anchor="middle" fill="#52606d">library membership</text>
+
+<rect x="354" y="60" width="138" height="118" rx="6" fill="#eef4fa" stroke="#2563a6" stroke-width="1.5"/>
+<text x="423" y="90" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">Weigh</text>
+<text x="423" y="118" font-size="11.5" text-anchor="middle" fill="#52606d">Candidates ordered</text>
+<text x="423" y="134" font-size="11.5" text-anchor="middle" fill="#52606d">by how well independent</text>
+<text x="423" y="150" font-size="11.5" text-anchor="middle" fill="#52606d">evidence agrees</text>
+
+<rect x="516" y="60" width="138" height="118" rx="6" fill="#e8f3ec" stroke="#2f855a" stroke-width="1.5"/>
+<text x="585" y="90" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold">Report</text>
+<text x="585" y="118" font-size="11.5" text-anchor="middle" fill="#52606d">Each result graded,</text>
+<text x="585" y="134" font-size="11.5" text-anchor="middle" fill="#52606d">given pathway context,</text>
+<text x="585" y="150" font-size="11.5" text-anchor="middle" fill="#52606d">and claim-limited</text>
+
+<path d="M 168 119 L 188 119" stroke="#52606d" stroke-width="1.6" marker-end="url(#arrow)"/>
+<path d="M 330 119 L 350 119" stroke="#52606d" stroke-width="1.6" marker-end="url(#arrow)"/>
+<path d="M 492 119 L 512 119" stroke="#52606d" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#52606d"/>
+</marker>
+</defs>
+
+<rect x="30" y="204" width="624" height="62" rx="6" fill="#f7f9fb" stroke="#d9e2ec"/>
+<text x="48" y="228" font-size="12.5" text-anchor="start" fill="#1f2933" font-weight="bold">Every feature completes all four stages.</text>
+<text x="48" y="250" font-size="12.5" text-anchor="start" fill="#52606d">Where evidence does not support a structure, the final stage withholds it and says so.</text>
+</svg>

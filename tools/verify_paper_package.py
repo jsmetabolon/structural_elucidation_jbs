@@ -8,6 +8,10 @@ import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from docx import Document
+from docx.enum.text import WD_LINE_SPACING
+from docx.oxml.ns import qn
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -21,6 +25,7 @@ def main() -> None:
 
     required = [
         manuscript_path,
+        paper / "manuscript.docx",
         paper / "README.md",
         paper / "REVISION_LOG.md",
         paper / "supplement/supplementary_information.md",
@@ -38,10 +43,10 @@ def main() -> None:
         raise SystemExit("\n".join(errors))
 
     manuscript = manuscript_path.read_text()
-    abstract = manuscript.split("## Abstract", 1)[1].split("**Keywords:**", 1)[0]
+    abstract = manuscript.split("## Abstract", 1)[1].split("---", 1)[0]
     abstract_words = len(abstract.split())
-    if abstract_words > 250:
-        errors.append(f"abstract exceeds 250 words: {abstract_words}")
+    if abstract_words > 200:
+        errors.append(f"Nature summary exceeds ~200 words: {abstract_words}")
 
     stale = {
         "94.5%": "old circular reference-DB pathway headline",
@@ -97,6 +102,26 @@ def main() -> None:
             figure_numbers.append(int(match.group(1)))
     if figure_numbers != sorted(figure_numbers):
         errors.append(f"main figures are not in numeric order: {figure_numbers}")
+
+    docx_path = paper / "manuscript.docx"
+    if docx_path.exists():
+        word = Document(docx_path)
+        if len(word.core_properties.title) > 75:
+            errors.append(f"Nature title exceeds 75 characters: {word.core_properties.title}")
+        if word.styles["Normal"].font.name != "Times New Roman":
+            errors.append("Nature DOCX body is not Times New Roman")
+        if word.styles["Normal"].font.size.pt != 12:
+            errors.append("Nature DOCX body is not 12 point")
+        if word.styles["Normal"].paragraph_format.line_spacing_rule != WD_LINE_SPACING.DOUBLE:
+            errors.append("Nature DOCX body is not double-spaced")
+        if len(word.inline_shapes) != 5 or len(word.tables) != 1:
+            errors.append(
+                f"Nature display-item packaging changed: {len(word.inline_shapes)} figures, "
+                f"{len(word.tables)} tables"
+            )
+        line_numbers = word.sections[0]._sectPr.find(qn("w:lnNumType"))
+        if line_numbers is None:
+            errors.append("Nature DOCX lacks line numbering")
 
     human_placeholders = sorted(set(re.findall(r"\[REQUIRED[^\]]*\]", manuscript)))
     if "[additional authors]" in manuscript:

@@ -1,0 +1,16 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='660' height='250' viewBox='0 0 660 250' font-family='Arial, Helvetica, sans-serif'>
+<rect width='660' height='250' fill='white'/>
+<text x='40.0' y='34.0' font-size='17' text-anchor='start' fill='#1f2933' font-weight='bold'>Every feature is reported</text>
+<text x='40.0' y='56.0' font-size='12' text-anchor='start' fill='#52606d'>All 3,897 delivered features receive a report and biochemical pathway context</text>
+<text x='40.0' y='84.0' font-size='12' text-anchor='start' fill='#52606d'>Of those reports:</text>
+<rect x='40.0' y='96' width='405.7' height='78' fill='#2f855a'/>
+<text x='242.9' y='132.0' font-size='24' text-anchor='middle' fill='#ffffff' font-weight='bold'>70.0%</text>
+<text x='242.9' y='156.0' font-size='12' text-anchor='middle' fill='#ffffff'>2,726 features</text>
+<text x='242.9' y='198.0' font-size='13' text-anchor='middle' fill='#1f2933' font-weight='bold'>Structure proposed</text>
+<rect x='445.7' y='96' width='174.3' height='78' fill='#52606d'/>
+<text x='532.9' y='132.0' font-size='24' text-anchor='middle' fill='#ffffff' font-weight='bold'>30.0%</text>
+<text x='532.9' y='156.0' font-size='12' text-anchor='middle' fill='#ffffff'>1,171 features</text>
+<text x='532.9' y='198.0' font-size='13' text-anchor='middle' fill='#1f2933' font-weight='bold'>Structure withheld</text>
+<rect x='40' y='96' width='580' height='78' fill='none' stroke='#d9e2ec'/>
+<text x='40.0' y='236.0' font-size='12' text-anchor='start' fill='#1f2933'>A structure is shown only where the supporting evidence justifies it.</text>
+</svg>

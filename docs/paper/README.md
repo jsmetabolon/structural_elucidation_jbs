@@ -3,12 +3,17 @@
 This folder holds the manuscript, committed aggregate audit artifacts, vector
 figures, and Supplementary Information.
 
-- `manuscript.md` — main manuscript.
+- `manuscript.docx` — primary Nature initial-submission manuscript (figures embedded).
+- `manuscript.md` — editable source.
 - `supplement/supplementary_information.md` — cohort glossary, extended tables,
   calibration, pathway, and mass-mismatch details.
 - `supplement/claim_evidence.csv` / `baseline_claims.json` — claim-to-source ledger.
 - `data/` — compact pathway, structure, presentation, and LOO audit artifacts.
 - `figures/` — main and supplementary SVG figures generated from `data/`.
+
+A separate customer-facing summary of the same work lives in `docs/public_brief/`.
+It shares this folder's audited data but deliberately withholds all methodology;
+see that folder's README before editing either document.
 
 ## Verify from a clean checkout
 
@@ -17,9 +22,10 @@ python3 tools/rebuild_paper_artifacts.py --verify-only
 ```
 
 This validates the abstract word count, required files, audited counts, stale
-claims, citations, figure links/order, and SVG syntax. Human-supplied submission
-fields (authors, email, funding, disclosures, ethics, repository DOI) are reported
-as warnings unless `tools/verify_paper_package.py --strict-human-inputs` is used.
+claims, citations, figure links/order, and SVG syntax, then runs the public
+brief's release gate. Human-supplied submission fields (authors, email, funding,
+disclosures, ethics, repository DOI) are reported as warnings unless
+`tools/verify_paper_package.py --strict-human-inputs` is used.
 
 ## Fully regenerate with controlled inputs
 
@@ -41,18 +47,22 @@ Authoritative P0/P1 results are intentionally absent until
 `models/p1_reference_v1/` are supplied; the 92-control calibration set is not
 substituted for those cohorts.
 
-## Build a PDF / Word document
+## Build the Nature Word manuscript
 
-The manuscript is Markdown and renders directly on GitHub. PDF requires
-`pandoc` plus a TeX engine; DOCX requires `pandoc`.
+The Word generator enforces the Nature-oriented title/summary/display-item limits,
+uses 12-point Times New Roman with double spacing, adds page and continuous line
+numbers, converts SVGs to high-resolution embedded PNGs, and preserves Word-native
+tables and references.
 
 ```bash
-pandoc docs/paper/manuscript.md -o manuscript.pdf --pdf-engine=tectonic --resource-path=docs/paper
-pandoc docs/paper/manuscript.md -o manuscript.docx --resource-path=docs/paper
+python3 tools/build_manuscript_docx.py \
+  --source docs/paper/manuscript.md \
+  --output docs/paper/manuscript.docx
 ```
 
-For engines without SVG support, convert figures first (for example with
-`rsvg-convert -f pdf`).
+The initial-submission DOCX contains the five main figures inline and one main
+table (six display items total). Detailed evidence/MSI tables remain in
+Supplementary Information.
 
 ## Current audited results
 

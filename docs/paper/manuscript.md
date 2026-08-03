@@ -1,4 +1,4 @@
-# Evidence-Aware Reporting of LC-MS/MS Metabolite Structure Hypotheses and Biochemical Taxonomy Assignments
+# Evidence-aware reporting of unknown metabolite structure hypotheses
 
 **Authors:** Joshua Simpson<sup>1</sup>, [additional authors]<sup>1</sup>
 **Affiliation:** <sup>1</sup>Metabolon, Inc., Morrisville, NC, USA
@@ -6,9 +6,7 @@
 
 ## Abstract
 
-Untargeted LC-MS/MS detects reproducible features that lack authentic-standard identifications, creating a need for both structural hypotheses and honest communication of uncertainty. We evaluated an end-to-end workflow combining Spec2Mol-lineage retrieval/de novo candidate generation, evidence-aware reranking, biochemical taxonomy assignment, and per-compound confidence/MSI-style reporting across 3,897 X-compounds. Among 92 truth-verified controls, structural recovery was 47.8% at rank 1 (44/92; 95% CI 37.9–57.9%), 64.1% within the top 3 (59/92; 54.0–73.2%), and 73.9% within the top 10 (68/92; 64.1–81.8%). Exact-catalog-source and predicted-source rank-1 recovery were 38.1% (16/42; 25.0–53.2%) and 56.0% (28/50; 42.3–68.8%), respectively. Leave-one-out validation showed weak calibration (Brier score 0.255), so aggregate confidence is exploratory; MSI-style levels instead control whether a structure is shown. Of the taxonomy assignments, 1,459 were direct lookups and internally consistent by construction. Among 644 neighbor-consensus assignments with independent labels, super-pathway agreement was 52.2% (48.3–56.0%) and subpathway agreement 18.8% (15.9–22.0%). Intrinsic leave-one-out validation of the neighbor-vote mechanism yielded 86.7% super-pathway (4,417/5,095; 85.7–87.6%) and 71.1% subpathway accuracy (3,623/5,095; 69.9–72.3%). The workflow provides complete evidence reports while explicitly limiting structural claims when corroboration is insufficient.
-
-**Keywords:** untargeted metabolomics, structural elucidation, tandem mass spectrometry, identification confidence, biochemical taxonomy, MSI levels
+Untargeted LC-MS/MS detects reproducible features lacking authentic-standard identifications, requiring structural hypotheses with explicit uncertainty [1,2]. We evaluated retrieval/de novo candidate generation, evidence-aware reranking, biochemical taxonomy assignment and MSI-style reporting across 3,897 X-compounds. Among 92 truth-verified controls, structural recovery was 47.8% at rank 1 (44/92; 95% CI 37.9–57.9%), 64.1% within the top 3 (59/92; 54.0–73.2%) and 73.9% within the top 10 (68/92; 64.1–81.8%). Leave-one-out validation showed weak aggregate-score calibration (Brier score 0.255), supporting evidence-limited rather than probability-based claims. Of the taxonomy assignments, 1,459 were direct reference lookups and internally consistent by construction. Among 644 neighbor-consensus assignments with independent labels, super-pathway agreement was 52.2% (48.3–56.0%) and subpathway agreement 18.8% (15.9–22.0%). Intrinsic leave-one-out validation of the neighbor-vote mechanism yielded 86.7% super-pathway and 71.1% subpathway accuracy. This workflow provides complete evidence reports while withholding specific structures when corroboration is insufficient.
 
 ---
 
@@ -58,7 +56,7 @@ Pathway assignment follows two routes. If the rank-1 canonical SMILES exactly ma
 
 ### 2.4 Identification-confidence model
 
-The exploratory identification-confidence score combines four available-evidence axes with prespecified weights: structure similarity 0.40, mass/formula match 0.30, MS2 fragment fit 0.20, and pathway consensus 0.10. Scores are divided by the sum of available weights. A one-dimensional Platt model [3] (A=1.887, B=−1.520) was originally fit in-sample on the 92 truth-verified controls (base rate 0.478), then mapped to identification-confidence tiers at 0.65 (High), 0.48 (Moderate), and 0.38 (Low), with mass mismatch forcing Tentative. For publication validation, probabilities were recomputed by leave-one-control-out Platt fitting and evaluated by Brier score, calibration slope/intercept, and reliability bins; an ablation omitted the pathway axis. Given the small, selected truth set and poor cross-validated calibration (Section 3.3), the score is presented as exploratory evidence aggregation rather than an externally validated absolute probability.
+The exploratory identification-confidence score combines four available-evidence axes with prespecified weights: structure similarity 0.40, mass/formula match 0.30, MS2 fragment fit 0.20, and pathway consensus 0.10. Scores are divided by the sum of available weights. A one-dimensional Platt model [3] (A=1.887, B=−1.520) was originally fit in-sample on the 92 truth-verified controls (base rate 0.478), then mapped to identification-confidence tiers at 0.65 (High), 0.48 (Moderate), and 0.38 (Low), with mass mismatch forcing Tentative. For publication validation, probabilities were recomputed by leave-one-control-out Platt fitting and evaluated by Brier score, calibration slope/intercept, and reliability bins; an ablation omitted the pathway axis. Given the small, selected truth set and poor cross-validated calibration reported below, the score is presented as exploratory evidence aggregation rather than an externally validated absolute probability.
 
 ### 2.5 MSI identification levels
 
@@ -70,9 +68,9 @@ Structural recovery is reported at rank 1, top 3, and top 10 for truth-Tanimoto 
 
 Pathway outputs are evaluated separately as: (a) reference-taxonomy **consistency** for rank-1 structures present in the same database, stratified by direct lookup versus neighbor assignment; (b) agreement with independent `known_X` labels, stratified by assignment route, reference membership, pathway-confidence tier, status, and similarity; and (c) intrinsic leave-one-out validation of the neighbor-vote mechanism over 5,095 reference metabolites. Wilson 95% intervals are reported. The leave-one-out result does not validate the full production predictor's external priors/overrides.
 
-Following CASMI [12], four identification categories are considered in increasing importance: (1) adduct annotation, (2) elemental formula, (3) compound/structure class, and (4) 2D chemical structure—with 2D structure as the primary metric, scored **rank-independently** (a correct call means the true structure appears among a tool's top-k candidates). In this manuscript the 2D-structure category maps to Section 3.2 and the structure-class category to Section 3.4; adduct- and formula-level accuracy were not independently benchmarked and are reserved for the prospective four-toolkit study.
+Following CASMI [12], four identification categories are considered in increasing importance: (1) adduct annotation, (2) elemental formula, (3) compound/structure class, and (4) 2D chemical structure—with 2D structure as the primary metric, scored **rank-independently** (a correct call means the true structure appears among a tool's top-k candidates). Here, the 2D-structure category maps to structural recovery and the structure-class category to biochemical taxonomy assignment; adduct- and formula-level accuracy were not independently benchmarked and are reserved for the prospective four-toolkit study.
 
-### 2.7 Software, report construction, and reproducibility
+### 2.7 Software and reproducibility
 
 The final delivered reports were produced with eight report-generation workers from four per-library rerank CSVs (3,897 generated; no failures; elapsed time 2,864.84 s). Evidence was subsequently enriched from observed-m/z, observed-MS2, synonym, Metabolon-Level, and WGCNA sidecars, followed by idempotent HTML patches for confidence, candidate-score labeling, and consensus-glyph spacing. Public reports exclude observed fragment-ion detail (audited leaks=0); internal reports retain aggregate MS2 evidence. Compact audit JSON/CSV artifacts, source hashes, and a one-command regeneration script accompany the manuscript. The complete inference environment and proprietary spectra/reference database require controlled-access deposition.
 
@@ -82,23 +80,11 @@ The final delivered reports were produced with eight report-generation workers f
 
 ### 3.1 Coverage
 
-The workflow produces an evidence report and a biochemical taxonomy assignment for all 3,897 features. It presents a specific structure for the 2,726 L1–L3 reports (70.0%) and withholds one for the 1,171 L4–L5 reports (30.0%). Pathway provenance is direct reference lookup for 1,459 and neighbor consensus for 2,438 reports. Assignment statuses are strong-similarity vote for 3,452 and weak-similarity backfill for 445; **pathway-confidence tiers** are high 1,788 / medium 666 / low 1,443. The best-reference similarity has median 0.721 (p10 0.375, p90 1.0). Evidence availability is summarized in Table 1.
+The workflow produces an evidence report and a biochemical taxonomy assignment for all 3,897 features. It presents a specific structure for the 2,726 L1–L3 reports (70.0%) and withholds one for the 1,171 L4–L5 reports (30.0%). Pathway provenance is direct reference lookup for 1,459 and neighbor consensus for 2,438 reports. Assignment statuses are strong-similarity vote for 3,452 and weak-similarity backfill for 445; **pathway-confidence tiers** are high 1,788 / medium 666 / low 1,443. The best-reference similarity has median 0.721 (p10 0.375, p90 1.0). Evidence availability is summarized in Supplementary Table S1.
 
-**Table 1. Evidence coverage across all 3,897 reports.**
+### 3.2 Structural recovery
 
-| Evidence | n / 3,897 (%) |
-|---|---:|
-| Rank-1 biochemical taxonomy assignment | 3,897 (100.0%) |
-| Observed parent m/z | 3,796 (97.4%) |
-| Metabolon Level (any) | 2,426 (62.3%) |
-| Observed MS2 spectrum | 1,700 (43.6%) |
-| Reference-database name resolved | 1,437 (36.9%) |
-| Top-candidate mass mismatch | 598 (15.4%) |
-| Public MS2-ion leaks (compliance) | 0 (0.0%) |
-
-### 3.2 Structural recovery on truth-verified controls
-
-On the 92 truth-verified controls, recovery at Tanimoto ≥0.70 is **47.8% at rank 1** (44/92; 95% CI 37.9–57.9%), **64.1% within the top 3** (59/92; 54.0–73.2%), and **73.9% within the top 10** (68/92; 64.1–81.8%; Figure 2). Rank-1 recovery is 38.1% for exact-catalog-source calls (16/42; 25.0–53.2%; median truth Tanimoto 0.506) and 56.0% for predicted-source calls (28/50; 42.3–68.8%; median 0.811). The intervals overlap, and no formal equivalence claim is made. An exact catalog source is therefore provenance, not independent confirmation. Threshold-sensitivity results are provided in Supplementary Table S1.
+On the 92 truth-verified controls, recovery at Tanimoto ≥0.70 is **47.8% at rank 1** (44/92; 95% CI 37.9–57.9%), **64.1% within the top 3** (59/92; 54.0–73.2%), and **73.9% within the top 10** (68/92; 64.1–81.8%; Figure 2). Rank-1 recovery is 38.1% for exact-catalog-source calls (16/42; 25.0–53.2%; median truth Tanimoto 0.506) and 56.0% for predicted-source calls (28/50; 42.3–68.8%; median 0.811). The intervals overlap, and no formal equivalence claim is made. An exact catalog source is therefore provenance, not independent confirmation. Threshold-sensitivity results are provided in Supplementary Table S3.
 
 ![Figure 2. Structural recovery at rank 1, top 3, and top 10, including rank-1 source subgroups.](figures/fig2_structure_accuracy.svg)
 
@@ -112,21 +98,11 @@ The in-sample aggregate confidence has median 0.432 (p10 0.372, p90 0.585), but 
 
 *Figure 3. Mean leave-one-out predicted probability versus observed structural correctness in five equal-count bins (n=92). Error bars are Wilson 95% confidence intervals; the dashed line is perfect calibration.*
 
-The **identification-confidence tier** distribution is Confirmed 44 / High 0 / Moderate 1,416 / Low 1,344 / Tentative 1,093. Separately, the MSI-style reporting distribution is L1 44 / L2 193 / L3 2,489 / L4 1,165 / L5 6 (Figure 4). L4–L5 withhold a specific structure. These custom thresholds require external validation; Table 2 shows their relationship to the identification-confidence tiers.
+The **identification-confidence tier** distribution is Confirmed 44 / High 0 / Moderate 1,416 / Low 1,344 / Tentative 1,093. Separately, the MSI-style reporting distribution is L1 44 / L2 193 / L3 2,489 / L4 1,165 / L5 6 (Figure 4). L4–L5 withhold a specific structure. These custom thresholds require external validation; their cross-tabulation is reported in Supplementary Table S2.
 
 ![Figure 4. MSI-style reporting levels and identification-confidence tiers.](figures/fig4_identification_distributions.svg)
 
 *Figure 4. Counts and percentages across all 3,897 reports. A square-root count scale preserves small categories; the “High” identification-confidence tier is explicitly shown as empty.*
-
-**Table 2. MSI level x identification-confidence tier (report counts).**
-
-| MSI level | Confirmed | Moderate | Low | Tentative |
-|---|---|---|---|---|
-| L1 confirmed | 44 | – | – | – |
-| L2 probable | – | 172 | 21 | – |
-| L3 tentative | – | 1,244 | 1,063 | 182 |
-| L4 formula | – | – | 260 | 905 |
-| L5 mass | – | – | – | 6 |
 
 ### 3.4 Biochemical taxonomy assignment
 
@@ -136,9 +112,9 @@ The delivered reports use two assignment routes that must be evaluated separatel
 
 *Figure 5. Super-pathway and subpathway results by evaluation context. Direct lookup measures taxonomy consistency; `known_X` is an independent but discordant label source; LOO validates only the neighbor-vote mechanism. Error bars are Wilson 95% confidence intervals.*
 
-**Interpreting the independent-label comparison.** Across all 909 controls with `known_X` labels, super-pathway agreement is 55.3% (503/909; 95% CI 52.1–58.5%) and subpathway agreement is 23.5% (214/909; 20.9–26.4%). This includes both direct lookups and neighbor assignments. On 267 controls whose structure is identical to a reference entry, `known_X` and the reference-database taxonomy themselves agree only **62.5%** (95% CI 56.6–68.1%); examples include dipeptides labeled "Amino Acid" in one taxonomy and "Peptide" in the other. The independent-label score therefore reflects both model error and annotation disagreement. Agreement remains monotonic by pathway-confidence tier (high 70.3%, medium 61.4%, low 36.9%; Supplementary Figure S1). Table 3 separates the evaluation contexts.
+**Interpreting the independent-label comparison.** Across all 909 controls with `known_X` labels, super-pathway agreement is 55.3% (503/909; 95% CI 52.1–58.5%) and subpathway agreement is 23.5% (214/909; 20.9–26.4%). This includes both direct lookups and neighbor assignments. On 267 controls whose structure is identical to a reference entry, `known_X` and the reference-database taxonomy themselves agree only **62.5%** (95% CI 56.6–68.1%); examples include dipeptides labeled "Amino Acid" in one taxonomy and "Peptide" in the other. The independent-label score therefore reflects both model error and annotation disagreement. Agreement remains monotonic by pathway-confidence tier (high 70.3%, medium 61.4%, low 36.9%; Supplementary Figure S1). Table 1 separates the evaluation contexts.
 
-**Table 3. Pathway and subpathway results by evaluation context.**
+**Table 1. Pathway and subpathway results by evaluation context.**
 
 | Evaluation | n | Super (95% CI) | Sub (95% CI) |
 |---|---|---|---|
@@ -147,9 +123,9 @@ The delivered reports use two assignment routes that must be evaluated separatel
 | All assignments vs independent `known_X` | 909 | 55.3% (52.1–58.5%) | 23.5% (20.9–26.4%) |
 | Neighbor-vote leave-one-out mechanism | 5,095 | 86.7% (85.7–87.6%) | 71.1% (69.9–72.3%) |
 
-Within the 909-control independent-label cohort, predicted super-pathway frequencies broadly track `known_X`, while the dominant confusions are chemically adjacent (Peptide↔Amino Acid and Lipid↔Peptide/Xenobiotics). Full distributions and the confusion matrix are reported as Supplementary Tables S4–S5.
+Within the 909-control independent-label cohort, predicted super-pathway frequencies broadly track `known_X`, while the dominant confusions are chemically adjacent (Peptide↔Amino Acid and Lipid↔Peptide/Xenobiotics). Full distributions and the confusion matrix are reported as Supplementary Tables S6–S7.
 
-### 3.5 Failure modes and a quantified refinement
+### 3.5 Mass-mismatch failure mode
 
 There are **598/3,897 (15.4%)** rank-1 mass mismatches. Of these, 590 fall into the historical MSI-L4 deep-audit subset; the remaining eight are outside L4. A lower-ranked, strongly mass-consistent candidate exists for 523/598 overall and 519/590 in the L4 subset. This identifies a reranking opportunity, **not 523 proven-correct recovered structures**: the alternatives have not undergone post-gate truth validation. Rank-1 errors are often chemically meaningful (median nonzero error ~176 Da), and 248/590 L4 cases lack a computable rank-1 formula. Detailed counts appear in Supplementary Section S5.
 
