@@ -11,6 +11,10 @@ figures, and Supplementary Information.
 - `data/` — compact pathway, structure, presentation, and LOO audit artifacts.
 - `figures/` — main and supplementary SVG figures generated from `data/`.
 
+A separate customer-facing summary of the same work lives in `docs/public_brief/`.
+It shares this folder's audited data but deliberately withholds all methodology;
+see that folder's README before editing either document.
+
 ## Verify from a clean checkout
 
 ```bash
@@ -18,9 +22,10 @@ python3 tools/rebuild_paper_artifacts.py --verify-only
 ```
 
 This validates the abstract word count, required files, audited counts, stale
-claims, citations, figure links/order, and SVG syntax. Human-supplied submission
-fields (authors, email, funding, disclosures, ethics, repository DOI) are reported
-as warnings unless `tools/verify_paper_package.py --strict-human-inputs` is used.
+claims, citations, figure links/order, and SVG syntax, then runs the public
+brief's release gate. Human-supplied submission fields (authors, email, funding,
+disclosures, ethics, repository DOI) are reported as warnings unless
+`tools/verify_paper_package.py --strict-human-inputs` is used.
 
 ## Fully regenerate with controlled inputs
 
