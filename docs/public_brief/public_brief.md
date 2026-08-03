@@ -54,7 +54,7 @@ The capability has been evaluated against a set of internal controls whose true 
 
 *Figure 2. How often the correct structure appears at the top of the candidate list, and within the top three and top ten, across 92 controls with independently known structures.*
 
-Two points of context matter when reading those figures. The control set is modest in size at 92 compounds and was assembled from the material available rather than sampled at random, so the percentages describe performance on that set rather than a guaranteed rate on new data. And the results are ranked lists: a top-ten result is genuinely useful, because it reduces a boundless chemical space to a short list a chemist can work through, but it is not the same as a single confirmed answer.
+Two points of context matter when reading those figures. The control set is modest in size at 92 compounds and was assembled from the material available rather than sampled at random, so the percentages describe performance on that set rather than a rate that can be assumed for new data. And the results are ranked lists: a top-ten result is genuinely useful, because it reduces a boundless chemical space to a short list a chemist can work through, but it is not the same as a single confirmed answer.
 
 Pathway assignment was evaluated separately. A leave-one-out test of the pathway assignment mechanism across 5,095 reference metabolites recovered the correct super-pathway 86.7% of the time. Assignment at the finer subpathway level is substantially harder, and agreement between independent biochemical taxonomies is itself imperfect, so pathway context is best used to orient and prioritize rather than as a settled classification.
 
@@ -92,7 +92,7 @@ For the same reason, the confidence output is used to rank and to limit claims, 
 
 ## Where this fits
 
-This capability complements, rather than replaces, standard-confirmed identification. It is designed for three situations.
+This capability complements, rather than replaces, authentic-standard confirmation. It is designed for three situations.
 
 - **Prioritizing discovery.** When a study points to unnamed features, the capability turns them into a ranked, chemically specific shortlist so that confirmation effort goes to the most promising targets.
 - **Extending reference coverage.** Well-supported hypotheses provide a defensible starting point for adding compounds to a reference library.
