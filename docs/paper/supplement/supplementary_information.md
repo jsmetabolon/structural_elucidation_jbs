@@ -18,9 +18,31 @@ The earlier internal study design compares MS2Query, SIRIUS, Spec2Mol, and MSNov
 | Identification-confidence tier | Confirmed / High / Moderate / Low / Tentative | exploratory Platt score |
 | MSI reporting level | evidence-derived L1–L5 rubric | custom; not externally validated |
 
+**Table S1. Evidence coverage across all delivered reports.**
+
+| Evidence | n / 3,897 (%) |
+|---|---:|
+| Biochemical taxonomy assignment | 3,897 (100.0%) |
+| Observed parent m/z | 3,796 (97.4%) |
+| Metabolon Level (any) | 2,426 (62.3%) |
+| Observed MS2 spectrum | 1,700 (43.6%) |
+| Reference-database name resolved | 1,437 (36.9%) |
+| Top-candidate mass mismatch | 598 (15.3%) |
+| Public MS2-ion leaks | 0 (0.0%) |
+
+**Table S2. MSI-style reporting level × identification-confidence tier (counts).**
+
+| MSI level | Confirmed | High | Moderate | Low | Tentative |
+|---|---:|---:|---:|---:|---:|
+| L1 | 44 | 0 | 0 | 0 | 0 |
+| L2 | 0 | 0 | 172 | 21 | 0 |
+| L3 | 0 | 0 | 1244 | 1063 | 182 |
+| L4 | 0 | 0 | 0 | 260 | 905 |
+| L5 | 0 | 0 | 0 | 0 | 6 |
+
 ## S3. Structural recovery and threshold sensitivity
 
-**Table S1. Cumulative structural recovery on n=92 truth controls (Wilson 95% confidence intervals).**
+**Table S3. Cumulative structural recovery on n=92 truth controls (Wilson 95% confidence intervals).**
 
 | Truth threshold | Rank 1 | Top 3 | Top 10 |
 |---|---:|---:|---:|
@@ -29,7 +51,7 @@ The earlier internal study design compares MS2Query, SIRIUS, Spec2Mol, and MSNov
 | Tanimoto ≥ 0.85 | 40.2% (30.8–50.4%) | 56.5% (46.3–66.2%) | 65.2% (55.0–74.2%) |
 | Exact 2D | 38.0% (28.8–48.2%) | 55.4% (45.3–65.2%) | 64.1% (53.9–73.2%) |
 
-**Table S2. Rank-1 recovery by provenance.**
+**Table S4. Rank-1 recovery by provenance.**
 
 | Source | n | Accuracy (95% CI) | Median truth Tanimoto (bootstrap 95% CI) |
 |---|---:|---:|---:|
@@ -44,7 +66,7 @@ Full model leave-one-out Brier score: **0.2546**; calibration slope 0.056, inter
 
 ## S4. Pathway evaluation details
 
-**Table S3. Independent-label agreement by assignment status.**
+**Table S5. Independent-label agreement by assignment status.**
 
 | Status | Super-pathway (95% CI) | Subpathway (95% CI) |
 |---|---:|---:|
@@ -58,7 +80,7 @@ Leave-one-out uses k=10, similarity floor=0.3, and similarity exponent=2.0. It e
 
 ![Figure S3. Independent-label agreement by assignment status.](../figures/figS3_pathway_status.svg)
 
-**Table S4. Predicted vs independent `known_X` super-pathway distribution (n=909).**
+**Table S6. Predicted vs independent `known_X` super-pathway distribution (n=909).**
 
 | Super-pathway | Predicted | Independent label |
 |---|---:|---:|
@@ -72,7 +94,7 @@ Leave-one-out uses k=10, similarity floor=0.3, and similarity exponent=2.0. It e
 | Energy | 5 | 1 |
 | Partially Characterized Molecules | 3 | 0 |
 
-**Table S5. Independent-label super-pathway confusion for the four most common classes.**
+**Table S7. Independent-label super-pathway confusion for the four most common classes.**
 
 | Independent label | Lipid | Peptide | Xenobiotics | Amino Acid | Other |
 |---|---:|---:|---:|---:|---:|

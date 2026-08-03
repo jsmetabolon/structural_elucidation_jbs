@@ -3,7 +3,8 @@
 This folder holds the manuscript, committed aggregate audit artifacts, vector
 figures, and Supplementary Information.
 
-- `manuscript.md` — main manuscript.
+- `manuscript.docx` — primary Nature initial-submission manuscript (figures embedded).
+- `manuscript.md` — editable source.
 - `supplement/supplementary_information.md` — cohort glossary, extended tables,
   calibration, pathway, and mass-mismatch details.
 - `supplement/claim_evidence.csv` / `baseline_claims.json` — claim-to-source ledger.
@@ -41,18 +42,22 @@ Authoritative P0/P1 results are intentionally absent until
 `models/p1_reference_v1/` are supplied; the 92-control calibration set is not
 substituted for those cohorts.
 
-## Build a PDF / Word document
+## Build the Nature Word manuscript
 
-The manuscript is Markdown and renders directly on GitHub. PDF requires
-`pandoc` plus a TeX engine; DOCX requires `pandoc`.
+The Word generator enforces the Nature-oriented title/summary/display-item limits,
+uses 12-point Times New Roman with double spacing, adds page and continuous line
+numbers, converts SVGs to high-resolution embedded PNGs, and preserves Word-native
+tables and references.
 
 ```bash
-pandoc docs/paper/manuscript.md -o manuscript.pdf --pdf-engine=tectonic --resource-path=docs/paper
-pandoc docs/paper/manuscript.md -o manuscript.docx --resource-path=docs/paper
+python3 tools/build_manuscript_docx.py \
+  --source docs/paper/manuscript.md \
+  --output docs/paper/manuscript.docx
 ```
 
-For engines without SVG support, convert figures first (for example with
-`rsvg-convert -f pdf`).
+The initial-submission DOCX contains the five main figures inline and one main
+table (six display items total). Detailed evidence/MSI tables remain in
+Supplementary Information.
 
 ## Current audited results
 

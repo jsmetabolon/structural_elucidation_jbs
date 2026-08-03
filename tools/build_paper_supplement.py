@@ -36,6 +36,10 @@ def main() -> None:
     presentation = json.loads(args.presentation.read_text())
     claims = claim_map(args.claims)
     known = pathway["accuracy"]
+    n_reports = int(presentation["n_reports"])
+    coverage = presentation["evidence_coverage"]
+    gaps = presentation["presentation_gaps"]
+    msi_by_tier = presentation["msi_by_tier"]
 
     lines = [
         "# Supplementary Information",
@@ -65,9 +69,42 @@ def main() -> None:
         "| Identification-confidence tier | Confirmed / High / Moderate / Low / Tentative | exploratory Platt score |",
         "| MSI reporting level | evidence-derived L1–L5 rubric | custom; not externally validated |",
         "",
+        "**Table S1. Evidence coverage across all delivered reports.**",
+        "",
+        "| Evidence | n / 3,897 (%) |",
+        "|---|---:|",
+        f"| Biochemical taxonomy assignment | {n_reports:,} (100.0%) |",
+        f"| Observed parent m/z | {round(n_reports * coverage['observed_mz_available']):,} "
+        f"({100 * coverage['observed_mz_available']:.1f}%) |",
+        f"| Metabolon Level (any) | {round(n_reports * gaps['has_metabolon_level']):,} "
+        f"({100 * gaps['has_metabolon_level']:.1f}%) |",
+        f"| Observed MS2 spectrum | {round(n_reports * coverage['ms2_spectrum_present']):,} "
+        f"({100 * coverage['ms2_spectrum_present']:.1f}%) |",
+        f"| Reference-database name resolved | {round(n_reports * gaps['name_resolved_from_db']):,} "
+        f"({100 * gaps['name_resolved_from_db']:.1f}%) |",
+        f"| Top-candidate mass mismatch | {round(n_reports * coverage['mass_mismatch']):,} "
+        f"({100 * coverage['mass_mismatch']:.1f}%) |",
+        f"| Public MS2-ion leaks | {presentation['compliance']['public_ms2_leaks']} (0.0%) |",
+        "",
+        "**Table S2. MSI-style reporting level × identification-confidence tier (counts).**",
+        "",
+        "| MSI level | Confirmed | High | Moderate | Low | Tentative |",
+        "|---|---:|---:|---:|---:|---:|",
+        *[
+            "| L{level} | {confirmed} | {high} | {moderate} | {low} | {tentative} |".format(
+                level=level,
+                confirmed=msi_by_tier.get(f"L{level}|Confirmed", 0),
+                high=msi_by_tier.get(f"L{level}|High", 0),
+                moderate=msi_by_tier.get(f"L{level}|Moderate", 0),
+                low=msi_by_tier.get(f"L{level}|Low", 0),
+                tentative=msi_by_tier.get(f"L{level}|Tentative", 0),
+            )
+            for level in range(1, 6)
+        ],
+        "",
         "## S3. Structural recovery and threshold sensitivity",
         "",
-        "**Table S1. Cumulative structural recovery on n=92 truth controls "
+        "**Table S3. Cumulative structural recovery on n=92 truth controls "
         "(Wilson 95% confidence intervals).**",
         "",
         "| Truth threshold | Rank 1 | Top 3 | Top 10 |",
@@ -80,7 +117,7 @@ def main() -> None:
         )
     lines += [
         "",
-        "**Table S2. Rank-1 recovery by provenance.**",
+        "**Table S4. Rank-1 recovery by provenance.**",
         "",
         "| Source | n | Accuracy (95% CI) | Median truth Tanimoto (bootstrap 95% CI) |",
         "|---|---:|---:|---:|",
@@ -108,7 +145,7 @@ def main() -> None:
         "",
         "## S4. Pathway evaluation details",
         "",
-        "**Table S3. Independent-label agreement by assignment status.**",
+        "**Table S5. Independent-label agreement by assignment status.**",
         "",
         "| Status | Super-pathway (95% CI) | Subpathway (95% CI) |",
         "|---|---:|---:|",
@@ -125,7 +162,7 @@ def main() -> None:
         "",
         "![Figure S3. Independent-label agreement by assignment status.](../figures/figS3_pathway_status.svg)",
         "",
-        "**Table S4. Predicted vs independent `known_X` super-pathway distribution (n=909).**",
+        "**Table S6. Predicted vs independent `known_X` super-pathway distribution (n=909).**",
         "",
         "| Super-pathway | Predicted | Independent label |",
         "|---|---:|---:|",
@@ -136,7 +173,7 @@ def main() -> None:
         lines.append(f"| {label} | {predicted.get(label, 0)} | {truth.get(label, 0)} |")
     lines += [
         "",
-        "**Table S5. Independent-label super-pathway confusion for the four most common classes.**",
+        "**Table S7. Independent-label super-pathway confusion for the four most common classes.**",
         "",
         "| Independent label | Lipid | Peptide | Xenobiotics | Amino Acid | Other |",
         "|---|---:|---:|---:|---:|---:|",
