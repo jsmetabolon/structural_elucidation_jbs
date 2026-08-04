@@ -99,9 +99,21 @@ mechanism, 86.7% and 71.1%, which is the friendlier of the two available measure
 now also reports agreement measured on the inferred path alone against a separate internal
 label source: 52.2% super-pathway and 18.8% subpathway across 644 controls. Presenting the
 mechanism while quoting only the flattering figure would have breached the second rule the
-document exists under. The mitigating context sits beside it, since two expert taxonomies
-agree only 62.5% of the time on identical structures, so part of the gap is annotation
-disagreement rather than model error.
+document exists under.
+
+*Found while doing so — a missing denominator.* Reporting those figures raised the question
+of why the two measurements differ so much, and the answer turned out to be partly
+arithmetic. They are scored against different biochemical vocabularies, and the audit
+already recorded how far those vocabularies agree with each other on identical structures:
+62.5% at the super-pathway level, which both documents carried, and 34.8% at the subpathway
+level, which neither did. Those rates bound what any predictor targeting the reference
+taxonomy can score against the independent labels. Against the bound, the inferred path
+reaches roughly 83% of the achievable super-pathway rate and 54% of the achievable
+subpathway rate, so the apparent collapse at the finer level is substantially a vocabulary
+mismatch. Both documents now carry both bounds; the manuscript also states the assumption
+the normalization rests on, namely that the disagreement rate measured on reference
+structures transfers to the non-reference cohort, which is untested. The missing figure was
+added to the claim ledger so the brief could cite it at all.
 
 That addition also amended the document's governing disclosure rule from "never how" to
 "the conceptual how, never the parameters". The rationale, and the deliberate asymmetry

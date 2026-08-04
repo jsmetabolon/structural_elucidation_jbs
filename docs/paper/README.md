@@ -79,7 +79,11 @@ Supplementary Information.
 - Direct pathway lookups (n=1,459): 100% reference consistency by construction,
   not independent prediction accuracy.
 - Neighbor consensus vs independent labels (n=644): super-pathway 52.2%,
-  subpathway 18.8%.
+  subpathway 18.8%. Read against the annotation ceiling below, that is roughly 83%
+  and 54% of the achievable rates.
+- Annotation harmonization ceiling (n=267 identical structures): the reference
+  database and the independent labels agree only 62.5% at super-pathway and 34.8%
+  at subpathway, which bounds any independently scored pathway result.
 - Neighbor-vote mechanism LOO (n=5,095): super-pathway 86.7%, subpathway 71.1%.
 - Leave-one-out identification-confidence Brier score 0.255; the aggregate score
   is exploratory rather than externally calibrated.

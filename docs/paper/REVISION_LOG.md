@@ -23,6 +23,14 @@ from the coverage reconciliation recorded below.
 
 ## Material claim changes
 
+- **Subpathway annotation ceiling reported.** The manuscript gave the super-pathway
+  harmonization ceiling, 62.5% on 267 identical structures, but not the subpathway
+  one, although the same audit block already carried it: the reference database and
+  `known_X` agree only 34.8% (93/267) at that level. Without the bound, the 18.8%
+  neighbor-consensus subpathway agreement read as model error alone. Results,
+  Discussion and Limitations now carry both bounds and note that agreement
+  corresponds to roughly 83% and 54% of the achievable rates, with the assumption
+  behind that normalization stated rather than assumed.
 - **Pathway coverage counts reconciled with the audit artifact.** Results
   previously reported assignment statuses as 3,452 strong-similarity vote and 445
   weak-similarity backfill, pathway-confidence tiers of high 1,788 / medium 666 /
@@ -72,4 +80,7 @@ from the coverage reconciliation recorded below.
   the best-reference similarity median against
   `data/pathway/audit_pathway_summary.json`. This is the check that would have
   caught the drift recorded above.
+- Added a `reference_db_vs_known_x_agreement_sub` row to the claim ledger and to
+  `tools/build_paper_claim_audit.py`, drawn from the same audited cohort as the
+  existing super-pathway ceiling, so the bound is citable in both documents.
 

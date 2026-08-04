@@ -123,6 +123,15 @@
       "interpretation": "Annotation harmonization ceiling for known_X comparisons."
     },
     {
+      "claim_id": "reference_db_vs_known_x_agreement_sub",
+      "value": 0.3483,
+      "cohort": "identical structures with both taxonomy labels",
+      "n": 267,
+      "metric": "reference-DB subpathway equals known_X label",
+      "source": "docs/paper/data/pathway/audit_pathway_summary.json",
+      "interpretation": "Annotation harmonization ceiling at the subpathway level; without it the subpathway agreement figure reads as model error alone."
+    },
+    {
       "claim_id": "pathway_neighbor_vote_loo_super",
       "value": 0.8669,
       "cohort": "reference metabolites under leave-one-out neighbor voting",
