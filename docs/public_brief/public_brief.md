@@ -63,7 +63,7 @@ The value is concentrated in the third and fourth stages. Proposing plausible mo
 
 ## Evidence that it works
 
-**What was done.** The capability was evaluated against a set of internal controls whose true structures are known independently, so that each proposal could be scored against a known answer rather than against another prediction.
+**What was done.** The capability was evaluated against a set of internal controls whose true structures are known independently, so that each proposal could be scored against a known answer rather than against another prediction. A proposal counts as correct when it matches that answer within a fixed structural-similarity threshold.
 
 **What was observed.** On those controls, the correct structure was the single top-ranked proposal 47.8% of the time, appeared within the top three proposals 64.1% of the time, and appeared within the top ten 73.9% of the time.
 
@@ -71,11 +71,11 @@ The value is concentrated in the third and fourth stages. Proposing plausible mo
 
 *Figure 2. The correct structure is usually near the top of a short ranked list, across 92 controls with independently known structures. That is what converts an unbounded chemical space into a shortlist a chemist can work through.*
 
-**What it means.** Two points of context matter when reading those figures. The control set is modest at 92 compounds and was assembled from the material available rather than sampled at random, so the percentages describe performance on that set rather than a rate that can be assumed for new data. And the results are ranked lists: a top-ten result is genuinely useful because it reduces a boundless chemical space to a short list, but it is not the same as a single settled answer.
+**What it means.** Two points of context matter when reading those percentages. The control set is modest at 92 compounds and was assembled from the material available rather than sampled at random, so the percentages describe performance on that set rather than a rate that can be assumed for new data. And the results are ranked lists: a top-ten result is genuinely useful because it reduces a boundless chemical space to a short list, but it is not the same as a single settled answer.
 
 **Why it matters to you.** A shortlist that usually contains the right molecule changes the economics of confirmation. Rather than committing chemistry time to a feature chosen on intuition, a team can work through a small ranked set whose hit rate has been measured.
 
-Pathway assignment was evaluated separately. A leave-one-out test of the assignment mechanism across 5,095 reference metabolites recovered the correct super-pathway 86.7% of the time, and the finer subpathway level, which is substantially harder, 71.1% of the time. Independent biochemical taxonomies also disagree with one another: on identical structures, two reference taxonomies agree only 62.5% of the time. Pathway context is therefore best used to orient and prioritize rather than as a settled classification, and it is reported that way.
+Pathway assignment was evaluated separately, by hiding a reference metabolite's own biochemical labels and asking the capability to recover them. Across 5,095 reference metabolites it recovered the correct broad biochemical class, the super-pathway, 86.7% of the time, and the finer subpathway, which is substantially harder, 71.1% of the time. Independent biochemical taxonomies also disagree with one another: on identical structures, two reference taxonomies agree only 62.5% of the time. Pathway context is therefore best used to orient and prioritize rather than as a settled classification, and it is reported that way.
 
 ## What you receive
 
@@ -105,7 +105,7 @@ Results are graded on the confidence-level framework the metabolomics community 
 | Formula-level only | Composition supported; no structure claimed | Treat as an unnamed but characterized feature |
 | Mass-level only | The feature is real and quantifiable | Track across studies |
 
-The most important line in that table is the fourth. When the capability cannot support a structure, it does not offer one. Withholding is a designed behaviour rather than a gap in coverage, and it is what makes the results that are shown worth acting on.
+The most important lines in that table are the last two. When the capability cannot support a structure, it does not offer one. Withholding is a designed behaviour rather than a gap in coverage, and it is the reason a structure that is shown carries weight.
 
 For the same reason, the confidence output is used to rank results and to limit claims, not to state the probability that a structure is correct. Reporting a hypothesis as a hypothesis is a more useful and more honest product than reporting it as a number that implies more certainty than the underlying evidence can support.
 
@@ -114,7 +114,7 @@ For the same reason, the confidence output is used to rank results and to limit 
 This capability complements authentic-standard confirmation rather than replacing it. It is designed for three situations.
 
 - **Prioritizing discovery.** When a study points to unnamed features, the capability turns them into a ranked, chemically specific shortlist, so that confirmation effort goes to the most promising targets.
-- **Extending reference coverage.** Well-supported hypotheses give a defensible starting point for adding compounds to a reference library, which compounds the value of every future study measured against it.
+- **Extending reference coverage.** Well-supported hypotheses give a defensible starting point for adding compounds to a reference library, and every addition raises the share of future studies that can be named outright.
 - **Interpreting the unnamed fraction.** Pathway context for every feature, including those without a structure, keeps the unnamed portion of the data inside the biological narrative instead of outside it.
 
 Set against a library-only search, the capability provides additional evidence and reduces dependence on a single evidence source. Set against manual interpretation, it enables consistent application at scale. It has not been benchmarked head to head against other computational approaches, and no such comparison is claimed here.
@@ -125,7 +125,7 @@ A proposed structure is a hypothesis to be tested, and the reporting is built so
 
 The unnamed fraction of an untargeted dataset is not a reporting inconvenience. It is unexamined biology, and this capability makes it examinable.
 
-Three points carry the argument. Every unnamed feature receives a documented, graded result, so nothing is silently dropped. What the workflow declines to claim matters as much as what it proposes, because withholding is what makes the shown results worth acting on. And the output is an instrument for prioritization rather than a substitute for confirmation: it does not remove the final experiment, it tells you which one to run.
+Three points carry the argument. Every unnamed feature receives a documented, graded result, so nothing is silently dropped. What the workflow declines to claim matters as much as what it proposes, because restraint is what gives the remaining calls their credibility. And the output is an instrument for prioritization rather than a substitute for confirmation: it does not remove the final experiment, it tells you which one to run.
 
 The practical consequence is that the part of a dataset previously written off becomes a ranked, pathway-placed, evidence-graded set of hypotheses that can be scrutinized, followed up, and published.
 
