@@ -7,8 +7,31 @@ pathway evaluation, missing uncertainty, in-sample confidence calibration, and
 incomplete reproducibility. This revision prioritizes validity over preserving
 earlier headline claims.
 
+## Editorial revision (white-paper writing guidance)
+
+A later editorial pass applied the internal white-paper writing guidance to both
+publication surfaces. In this manuscript the changes are presentational rather
+than evidentiary: the summary was reshaped into problem, approach, evidence and
+consequence; figure captions now lead with the message each figure supports;
+Applications states what an analyst can do that was previously impractical, with
+the supporting result and the bounding limitation named alongside it; and a
+terminology paragraph in Methods fixes recovery, accuracy, agreement and
+consistency as distinct terms. Comparative statements are limited to defensible
+wording because no head-to-head benchmark has been run. Section order, figure
+count, table count, citations and audited values are otherwise unchanged, apart
+from the coverage reconciliation recorded below.
+
 ## Material claim changes
 
+- **Pathway coverage counts reconciled with the audit artifact.** Results
+  previously reported assignment statuses as 3,452 strong-similarity vote and 445
+  weak-similarity backfill, pathway-confidence tiers of high 1,788 / medium 666 /
+  low 1,443, and a best-reference similarity median of 0.721. The committed audit
+  summary gives exact reference match 1,459, strong-similarity vote 1,995 and
+  weak-similarity backfill 443; tiers high 1,863 / medium 616 / low 1,418; and a
+  median of 0.733. The manuscript now states the audited values and reports the
+  three assignment statuses separately rather than folding exact matches into the
+  strong-similarity count.
 - **Pathway 94.5%/89.7% headline removed.** In the delivered reports, 1,459
   exact-structure cases are direct reference-taxonomy lookups. They are 100%
   internally consistent by construction and are no longer described as prediction
@@ -45,4 +68,8 @@ earlier headline claims.
   figures plus one main table, and Nature-ordered References/Methods/declarations.
 - Added explicit required human inputs for authorship, funding, disclosures,
   ethics, run-environment provenance, and data-access details.
+- Extended the package verifier to assert the Results pathway coverage counts and
+  the best-reference similarity median against
+  `data/pathway/audit_pathway_summary.json`. This is the check that would have
+  caught the drift recorded above.
 

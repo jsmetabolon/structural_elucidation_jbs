@@ -144,6 +144,24 @@ def main() -> None:
         if direct["super"]["accuracy"] != 1.0:
             errors.append("unexpected direct-lookup consistency value")
 
+        # Coverage counts are quoted verbatim in Results and have drifted from the
+        # audit artifact before; assert each one is still present in the prose.
+        coverage = pathway["coverage"]
+        quoted = {
+            "exact reference match": coverage["status_counts"]["exact_reference_match"],
+            "strong-similarity vote": coverage["status_counts"]["strong_similarity_vote"],
+            "weak-similarity backfill": coverage["status_counts"]["weak_similarity_backfill"],
+            "high pathway-confidence tier": coverage["tier_counts"]["high"],
+            "medium pathway-confidence tier": coverage["tier_counts"]["medium"],
+            "low pathway-confidence tier": coverage["tier_counts"]["low"],
+        }
+        for label, count in quoted.items():
+            if f"{count:,}" not in manuscript:
+                errors.append(f"{label} count drifted from the audit artifact: expected {count:,}")
+        median = coverage["best_similarity_pctiles"]["p50"]
+        if f"median {median}" not in manuscript:
+            errors.append(f"best-reference similarity median drifted from the audit artifact: expected {median}")
+
     print(f"[paper-verify] abstract words: {abstract_words}")
     print(f"[paper-verify] main figures: {len(figure_links)}")
     for warning in warnings:
