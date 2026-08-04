@@ -98,8 +98,15 @@ from the coverage reconciliation recorded below.
   separating vocabulary disagreement from prediction error by applying the same
   correction to the predictor and to the annotation ceiling. Both new analyses are
   wired into the full rebuild.
-- Supplementary Information now states both annotation ceilings in section S4 and
-  carries the two new analyses as section S8.
+- Added `tools/analyze_library_stratification.py` and Supplementary Table S9,
+  measuring the library-imbalance limitation the manuscript states but never
+  quantified. Inferred agreement is consistent across the three libraries with
+  enough controls to score, with every interval overlapping at both levels. The
+  structural cohort cannot be stratified: two libraries contribute fewer than ten
+  truth-verified controls each.
+- Supplementary Information now states both annotation ceilings in section S4,
+  carries the selective-prediction and harmonization analyses as section S8, and the
+  library stratification as section S9.
 - Fixed a nondeterministic sort in the Supplementary Table S6 generator that
   reordered equal-count rows between runs and produced spurious diffs.
 
