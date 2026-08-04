@@ -61,21 +61,37 @@ The value is concentrated in the third and fourth stages. Proposing plausible mo
 | Pathway context on every feature | Extends the biological usefulness of features that fall short of confirmation |
 | The same criteria applied to every feature | Enables consistent application at scale, so grades stay comparable across a study and between studies |
 
+## How biochemical context is assigned
+
+Every feature is placed in a biochemical pathway and subpathway, including the features where no structure is shown. That context arrives by one of two paths, and the two carry very different weight.
+
+![Figure 2. The two paths to a biochemical assignment.](figures/fig_pathway_public.svg)
+
+*Figure 2. Biochemical context reaches a feature either by lookup against a catalogued compound or by inference from chemically similar ones. The two are not equally strong, which is why every report says which of them produced the call.*
+
+**When the proposed structure is already catalogued.** The classification already established for that compound is carried across unchanged. This is what happened for 1,459 of the delivered features. It is a lookup rather than a prediction, so it is exactly as dependable as the reference catalogue itself and no more, and it is reported as such rather than as an achievement of the workflow.
+
+**When the proposed structure is new to the catalogue.** For the remaining features there is nothing to look up, so the classification is taken from the consensus of the catalogued compounds most chemically similar to the proposal, weighted toward the closest matches. This works because molecules that are chemically alike usually take part in similar biochemistry. It is also why the approach is more dependable for the broad class than for the fine one, since fine distinctions often turn on exactly the small differences that similarity smooths over.
+
+Each assignment carries its own confidence grade, and that grade describes the biochemistry rather than the structure: a feature can have a well-supported pathway placement and no structure at all. The report keeps the two grades separate so that neither is mistaken for the other.
+
+**How well the inferred path holds up.** Hiding a reference metabolite's own biochemical labels and asking the capability to recover them, across 5,095 reference metabolites, it recovered the correct broad class, the super-pathway, 86.7% of the time and the finer subpathway 71.1% of the time. Measured a harder way, against a separate internal label source and only on features whose classification was inferred rather than looked up, agreement is 52.2% at the super-pathway level and 18.8% at the subpathway level across 644 controls.
+
+**What to make of that gap.** Part of it is genuine error, and part of it is that expert biochemical taxonomies disagree with one another. On identical structures, two reference taxonomies agree only 62.5% of the time, with the same dipeptide filed under "Amino Acid" in one scheme and "Peptide" in the other. The honest reading is that the broad class is usually right and worth acting on, the finer subpathway is a lead rather than a determination, and a looked-up assignment is firmer than an inferred one. Pathway context is built to orient and prioritize, and each report tells you which kind of assignment you are looking at so that you can weight it accordingly.
+
 ## Evidence that it works
 
 **What was done.** The capability was evaluated against a set of internal controls whose true structures are known independently, so that each proposal could be scored against a known answer rather than against another prediction. A proposal counts as correct when it matches that answer within a fixed structural-similarity threshold.
 
 **What was observed.** On those controls, the correct structure was the single top-ranked proposal 47.8% of the time, appeared within the top three proposals 64.1% of the time, and appeared within the top ten 73.9% of the time.
 
-![Figure 2. Structural recovery on truth-verified controls.](figures/fig_recovery_public.svg)
+![Figure 3. Structural recovery on truth-verified controls.](figures/fig_recovery_public.svg)
 
-*Figure 2. The correct structure is usually near the top of a short ranked list, across 92 controls with independently known structures. That is what converts an unbounded chemical space into a shortlist a chemist can work through.*
+*Figure 3. The correct structure is usually near the top of a short ranked list, across 92 controls with independently known structures. That is what converts an unbounded chemical space into a shortlist a chemist can work through.*
 
 **What it means.** Two points of context matter when reading those percentages. The control set is modest at 92 compounds and was assembled from the material available rather than sampled at random, so the percentages describe performance on that set rather than a rate that can be assumed for new data. And the results are ranked lists: a top-ten result is genuinely useful because it reduces a boundless chemical space to a short list, but it is not the same as a single settled answer.
 
 **Why it matters to you.** A shortlist that usually contains the right molecule changes the economics of confirmation. Rather than committing chemistry time to a feature chosen on intuition, a team can work through a small ranked set whose hit rate has been measured.
-
-Pathway assignment was evaluated separately, by hiding a reference metabolite's own biochemical labels and asking the capability to recover them. Across 5,095 reference metabolites it recovered the correct broad biochemical class, the super-pathway, 86.7% of the time, and the finer subpathway, which is substantially harder, 71.1% of the time. Independent biochemical taxonomies also disagree with one another: on identical structures, two reference taxonomies agree only 62.5% of the time. Pathway context is therefore best used to orient and prioritize rather than as a settled classification, and it is reported that way.
 
 ## What you receive
 
@@ -87,9 +103,9 @@ Each feature is delivered as a self-contained report, with a searchable index ac
 - **An identification level** together with a plain-language statement of what that level does and does not assert.
 - **Cross-references** to the independently assigned Metabolon Level, so the new output can be read alongside existing deliverables.
 
-![Figure 3. Reporting coverage across the delivered set.](figures/fig_coverage_public.svg)
+![Figure 4. Reporting coverage across the delivered set.](figures/fig_coverage_public.svg)
 
-*Figure 3. Across 3,897 delivered features, every one receives a report and pathway context while a specific structure appears only where the evidence supports it. Completeness and restraint arrive together rather than being traded against each other.*
+*Figure 4. Across 3,897 delivered features, every one receives a report and pathway context while a specific structure appears only where the evidence supports it. Completeness and restraint arrive together rather than being traded against each other.*
 
 ## How to read a result
 
@@ -119,7 +135,7 @@ This capability complements authentic-standard confirmation rather than replacin
 
 Set against a library-only search, the capability provides additional evidence and reduces dependence on a single evidence source. Set against manual interpretation, it enables consistent application at scale. It has not been benchmarked head to head against other computational approaches, and no such comparison is claimed here.
 
-A proposed structure is a hypothesis to be tested, and the reporting is built so that the distinction between a tested identity and a proposed one is never blurred. Teams that need a settled identity should continue to treat confirmation as the final step. What changes is the cost of that step, because it can now be aimed at the right molecules.
+A proposed structure is a hypothesis to be tested, and the reporting is built so that the distinction between a tested identity and a proposed one is never blurred.
 
 ## Conclusion
 
