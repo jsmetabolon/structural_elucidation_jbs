@@ -12,7 +12,7 @@ Untargeted metabolomics detects far more molecules than any laboratory can name.
 
 Metabolon's structural elucidation capability closes that gap. It turns unnamed features into documented structure hypotheses, each carrying an explicit, graded statement of how much evidence stands behind it. Applied to a delivered set of 3,897 unnamed features, it produced a complete evidence report for every feature, proposed a specific structure for 2,726 of them, and deliberately withheld a structure for the remaining 1,171 where the evidence did not justify one.
 
-Three consequences follow for a research team. Nothing is silently dropped from the deliverable, so the unnamed fraction stays inside the biological interpretation. What the workflow declines to claim is as informative as what it proposes, which is what makes the results that are shown worth acting on. And because every feature is graded against the same criteria, confirmation effort can be aimed at the molecules most likely to reward it.
+Three consequences follow for a research team. Nothing is silently dropped from the deliverable, so the unnamed fraction stays inside the biological interpretation. What the workflow declines to claim is as informative as what it proposes, which is what makes the results that are shown worth acting on. And because every feature is graded against the same criteria, results stay comparable across a study, so decisions about where to spend confirmation effort rest on a consistent basis.
 
 ## The unnamed fraction of an untargeted dataset
 
@@ -127,27 +127,23 @@ Results are graded on the confidence-level framework the metabolomics community 
 
 The most important lines in that table are the last two. When the capability cannot support a structure, it does not offer one. Withholding is a designed behaviour rather than a gap in coverage, and it is the reason a structure that is shown carries weight.
 
-For the same reason, the confidence output is used to rank results and to limit claims, not to state the probability that a structure is correct. Reporting a hypothesis as a hypothesis is a more useful and more honest product than reporting it as a number that implies more certainty than the underlying evidence can support.
+For the same reason, the confidence output limits what each report claims rather than stating the probability that a structure is correct. It is worth being precise about the ordering it supports. Within a feature the candidate list is genuinely ordered, which is why working down a short list pays. Between features, the structural grade does not reliably indicate which will turn out to be right, so it should not be the sole basis for choosing what to chase. Biochemical confidence, described earlier, behaves differently and does separate the stronger assignments from the weaker ones. Reporting a hypothesis as a hypothesis is a more useful and more honest product than reporting it as a number that implies more certainty than the underlying evidence can support.
 
 ## Where this fits
 
-This capability complements authentic-standard confirmation rather than replacing it. It is designed for three situations.
+This capability complements authentic-standard confirmation rather than replacing it. It is designed for two situations in particular.
 
-- **Prioritizing discovery.** When a study points to unnamed features, the capability turns them into a ranked, chemically specific shortlist, so that confirmation effort goes to the most promising targets.
+- **Prioritizing discovery.** When a study points to unnamed features, the capability turns each of them into a short, chemically specific candidate list, so confirmation effort is spent working through a handful of named possibilities rather than starting from nothing.
 - **Extending reference coverage.** Well-supported hypotheses give a defensible starting point for adding compounds to a reference library, and every addition raises the share of future studies that can be named outright.
-- **Interpreting the unnamed fraction.** Pathway context for every feature, including those without a structure, keeps the unnamed portion of the data inside the biological narrative instead of outside it.
-
 Set against a library-only search, the capability provides additional evidence and reduces dependence on a single evidence source. Set against manual interpretation, it enables consistent application at scale. It has not been benchmarked head to head against other computational approaches, and no such comparison is claimed here.
-
-A proposed structure is a hypothesis to be tested, and the reporting is built so that the distinction between a tested identity and a proposed one is never blurred.
 
 ## Conclusion
 
 The unnamed fraction of an untargeted dataset is not a reporting inconvenience. It is unexamined biology, and this capability makes it examinable.
 
-Three points carry the argument. Every unnamed feature receives a documented, graded result, so nothing is silently dropped. What the workflow declines to claim matters as much as what it proposes, because restraint is what gives the remaining calls their credibility. And the output is an instrument for prioritization rather than a substitute for confirmation: it does not remove the final experiment, it tells you which one to run.
+Three points carry the argument. Every unnamed feature receives a documented, graded result. What the workflow declines to claim matters as much as what it proposes, because restraint is what gives the remaining calls their credibility. And the output is an instrument for prioritization rather than a substitute for confirmation: it does not remove the final experiment, it tells you which one to run.
 
-The practical consequence is that the part of a dataset previously written off becomes a ranked, pathway-placed, evidence-graded set of hypotheses that can be scrutinized, followed up, and published.
+The part of a dataset previously written off becomes a pathway-placed, evidence-graded set of hypotheses that can be scrutinized, followed up, and published.
 
 ## Availability
 
