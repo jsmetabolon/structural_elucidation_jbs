@@ -91,6 +91,7 @@ plainly*.
 | Introduction | Establish the unnamed-feature problem and price it in both directions: biologically, discarded features often carry the differentiating signal; operationally, the conventional route to naming one is too slow to apply at scale. |
 | Background | Explain how identification confidence is communicated in the field today, and why the two existing routes — library matching and manual expert interpretation — cannot close the gap. Ends by naming the requirement the rest of the paper answers. |
 | What the capability does | Describe the four stages so a non-specialist can follow the logic, with each paragraph ending on the consequence for the reader rather than on the mechanism. Carries the capability-to-value table. |
+| How biochemical context is assigned | Explain the two paths by which a feature gets its pathway and subpathway, at a level a non-specialist can follow, and attach to each path the evidence that actually bounds it. A reader cannot judge a pathway call without knowing whether it was looked up or inferred. |
 | Validation and evidence | Keep what was done, what was observed, what it means, and why it matters as four distinct moves, and state the limits of the evidence in the same breath as the result. |
 | What you receive | Turn the deliverable into something concrete a reader can picture, and show that coverage and restraint arrive together. |
 | How to read a result | Give the reader an operating manual: what each reporting outcome asserts and what the reasonable next step is. |
@@ -119,8 +120,9 @@ correctness; and pathway context orients rather than settles a classification.
 
 ## 5. Figure plan
 
-Three figures in the white paper, five in the manuscript. Each entry completes the
-sentence the guidance asks for.
+Four figures in the white paper, five in the manuscript. Each entry completes the
+sentence the guidance asks for, and the white-paper entries are listed in the order
+they appear.
 
 **White paper.**
 
@@ -128,6 +130,11 @@ sentence the guidance asks for.
   kind of evidence and the final stage decides how much may responsibly be claimed*,
   which matters because *it shows the confidence grade is a product of the workflow
   rather than a label attached at the end*.
+- `fig_pathway_public.svg` — This figure demonstrates that *biochemical context reaches a
+  feature by one of two paths, one a lookup against a catalogued compound and the other
+  an inference from chemically similar ones*, which matters because *the two carry very
+  different weight, and a reader who cannot tell them apart cannot tell which pathway
+  calls to lean on*.
 - `fig_recovery_public.svg` — This figure demonstrates that *the correct structure is
   usually near the top of a short ranked list on controls with independently known
   structures*, which matters because *it converts an unbounded chemical space into a
@@ -194,10 +201,13 @@ than a style guide. Three constraints change how sentences get written:
   does not trace to `claim_evidence.csv` fails the build, and there is no exemption for
   years or ordinary counts. Everything that is not an audited statistic is spelled out
   in words.
-- **Methodology is not disclosable.** Model families, descriptors, scoring parameters,
-  thresholds, internal library numbers, pipeline versions, and infrastructure names are
-  blocked by a scanner. Existing approaches are therefore described as classes rather
-  than named tools.
+- **Parameters are not disclosable; the conceptual approach is.** Model families,
+  descriptors, scoring parameters, thresholds, internal library numbers, pipeline
+  versions, and infrastructure names are blocked by a scanner, and existing approaches
+  are described as classes rather than named tools. What each stage does in concept may
+  be stated, and for pathway assignment it is, because a customer cannot judge a pathway
+  call without knowing whether the label was looked up or inferred. Nothing that would
+  let a reader reproduce the workflow appears.
 - **Overclaim language is blocked**, and budgets cap the document at 2,600 words, four
   figures, two tables, and ten pages.
 
