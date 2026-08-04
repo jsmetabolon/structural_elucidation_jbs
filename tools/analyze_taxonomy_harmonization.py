@@ -166,8 +166,9 @@ def main() -> None:
             "rejected_maximal_collapse": {
                 "classes_merged": [sorted(group) for group in MAXIMAL_COLLAPSE],
                 "reason": (
-                    "Merges four of the eight super-pathways, including an origin-based class "
-                    "that overlaps every structural one. Reported as an upper bound only."
+                    "That collapse merges four of the eight super-pathways, including an "
+                    "origin-based class that overlaps every structural one, so it is reported "
+                    "as an upper bound and not adopted."
                 ),
                 **super_block(MAXIMAL_COLLAPSE),
             },
