@@ -15,6 +15,12 @@ A separate customer-facing summary of the same work lives in `docs/public_brief/
 It shares this folder's audited data but deliberately withholds all methodology;
 see that folder's README before editing either document.
 
+Both documents follow the internal white-paper writing guidance. The outline that
+governs their structure and figure messages is `docs/publication_outline.md`, and
+the record of the four review passes is `docs/publication_review.md`. Read the
+outline before restructuring either document, since the two are meant to stay
+consistent with each other.
+
 ## Verify from a clean checkout
 
 ```bash
@@ -67,6 +73,8 @@ Supplementary Information.
 ## Current audited results
 
 - 3,897 delivered reports; 2,726 show a structure (L1–L3), 1,171 withhold it.
+- Pathway assignment statuses: exact reference match 1,459, strong-similarity vote
+  1,995, weak-similarity backfill 443; tiers high 1,863 / medium 616 / low 1,418.
 - Structure truth set (n=92): rank 1 47.8%, top 3 64.1%, top 10 73.9%.
 - Direct pathway lookups (n=1,459): 100% reference consistency by construction,
   not independent prediction accuracy.

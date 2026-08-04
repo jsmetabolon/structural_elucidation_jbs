@@ -14,5 +14,11 @@ openpyxl
 matplotlib
 psutil
 
+# Documentation tooling: the manuscript and white-paper DOCX builders and the
+# release gates under tools/ import these, so a plain checkout can run
+# rebuild_paper_artifacts.py without the Poetry dev group.
+python-docx
+cairosvg
+
 # Optional extras for second-stage IUPAC naming (heavy: pulls TensorFlow):
 # pip install STOUT-pypi>=2.0.5
