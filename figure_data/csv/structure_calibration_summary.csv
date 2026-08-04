@@ -1,3 +1,0 @@
-calibration,method,n,brier_score,intercept,slope
-calibration_full,leave-one-out Platt scaling,92,0.2546,-0.0823,0.0556
-calibration_without_pathway,leave-one-out Platt scaling,92,0.2528,-0.0637,0.2738

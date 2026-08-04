@@ -1,2 +1,0 @@
-truth_definition,n_truth_verified,p0_p1_status,p0_p1_reason,p0_p1_required_inputs,p0_p1_missing
-truth_tanimoto > 0 labels a control; correct if Tanimoto >= threshold,92,not_evaluated,Authoritative P0/P1 cohort inputs are not available; the 92-control set is not substituted.,models/v21_all_library_updated_summary/v20_all_libraries_top10_predictions_with_p0_flags.csv | models/p1_reference_v1/p1_cohort.csv + p1_truth_audit.csv (and verified_plus_2c_resolved_v2),None | None
