@@ -205,6 +205,99 @@ def reliability_chart(path: Path, full: dict[str, Any], ablated: dict[str, Any])
     path.write_text("\n".join(svg) + "\n")
 
 
+def selective_prediction_chart(path: Path, selective: dict[str, Any]) -> None:
+    """Accuracy against the fraction of each cohort retained, most confident first.
+
+    Plotted on one axis because the contrast is the point: two of the three signals
+    rank usefully and one does not.
+    """
+
+    width, height = 760, 600
+    left, top, plot_w, plot_h = 85, 100, 620, 380
+    series = (
+        ("Pathway super-pathway (by similarity)", selective["pathway_super"], COLORS[0]),
+        ("Pathway subpathway (by similarity)", selective["pathway_sub"], COLORS[1]),
+        ("Structure rank 1 (by confidence)", selective["structure_rank1"], COLORS[2]),
+    )
+    grid = [float(value) for value in selective["coverage_grid"]]
+    span = max(grid) - min(grid) or 1.0
+
+    def x_of(coverage: float) -> float:
+        return left + (coverage - min(grid)) / span * plot_w
+
+    def y_of(fraction: float) -> float:
+        return top + plot_h - fraction * plot_h
+
+    svg = [
+        f"<svg xmlns='http://www.w3.org/2000/svg' width='{width}' height='{height}' "
+        f"viewBox='0 0 {width} {height}' font-family='Arial, Helvetica, sans-serif'>",
+        f"<rect width='{width}' height='{height}' fill='white'/>",
+        text(left, 30, "Accuracy against the fraction of calls retained", size=18, anchor="start", bold=True),
+        text(
+            left,
+            52,
+            "Each cohort sorted most to least confident and scored over cumulative prefixes.",
+            size=11,
+            anchor="start",
+        ),
+        text(
+            left,
+            70,
+            "A falling curve means confidence ranks usefully; a flat curve means it does not.",
+            size=11,
+            anchor="start",
+        ),
+    ]
+    for tick in range(0, 101, 20):
+        y = y_of(tick / 100)
+        svg += [
+            f"<line x1='{left}' y1='{y:.1f}' x2='{left + plot_w}' y2='{y:.1f}' stroke='{GRID}'/>",
+            text(left - 12, y + 4, tick, size=10, anchor="end"),
+        ]
+    for coverage in grid:
+        x = x_of(coverage)
+        svg.append(text(x, top + plot_h + 22, f"{coverage:.0%}", size=10))
+    for index, (name, block, color) in enumerate(series):
+        points = []
+        for row in block["points"]:
+            if row["accuracy"] is None:
+                continue
+            x = x_of(float(row["coverage"]))
+            y = y_of(float(row["accuracy"]))
+            points.append((x, y))
+            svg += [
+                f"<line x1='{x:.1f}' y1='{y_of(float(row['ci95'][1])):.1f}' x2='{x:.1f}' "
+                f"y2='{y_of(float(row['ci95'][0])):.1f}' stroke='{color}' stroke-width='1.4'/>",
+                f"<circle cx='{x:.1f}' cy='{y:.1f}' r='4.5' fill='{color}'/>",
+            ]
+        if len(points) > 1:
+            coords = " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
+            svg.append(f"<polyline points='{coords}' fill='none' stroke='{color}' stroke-width='2'/>")
+    for index, (name, block, color) in enumerate(series):
+        swatch_y = top + plot_h + 56 + index * 21
+        svg += [
+            f"<rect x='{left}' y='{swatch_y - 9}' width='11' height='11' fill='{color}'/>",
+            text(
+                left + 18,
+                swatch_y,
+                f"{name}, n={block['n']} \u2014 {block['discrimination']:+.0%} "
+                "from the most confident fifth to the whole cohort",
+                size=11,
+                anchor="start",
+            ),
+        ]
+    svg += [
+        text(left + plot_w / 2, top + plot_h + 40, "Fraction of the cohort retained", size=12),
+        (
+            f"<text x='24' y='{top + plot_h / 2:.1f}' font-size='12' fill='{MUTED}' "
+            f"text-anchor='middle' transform='rotate(-90 24 {top + plot_h / 2:.1f})'>"
+            "Accuracy or agreement (%)</text>"
+        ),
+        "</svg>",
+    ]
+    path.write_text("\n".join(svg) + "\n")
+
+
 def distribution_chart(path: Path, presentation: dict[str, Any]) -> None:
     width, height = 960, 500
     svg = [
@@ -289,8 +382,11 @@ def main() -> None:
     parser.add_argument("--loo", type=Path, required=True)
     parser.add_argument("--presentation", type=Path, required=True)
     parser.add_argument("--claims", type=Path, required=True)
+    parser.add_argument("--selective", type=Path, default=Path("docs/paper/data/selective_prediction.json"))
     parser.add_argument("--out-dir", type=Path, default=Path("docs/paper/figures"))
     args = parser.parse_args()
+    if not args.selective.exists():
+        raise SystemExit(f"missing {args.selective}; run tools/analyze_selective_prediction.py first")
     args.out_dir.mkdir(parents=True, exist_ok=True)
     structure = json.loads(args.structure.read_text())
     pathway = json.loads(args.pathway.read_text())
@@ -390,6 +486,10 @@ def main() -> None:
         ],
     )
     mass_mismatch_chart(args.out_dir / "figS4_mass_mismatch.svg", claims)
+    selective_prediction_chart(
+        args.out_dir / "figS5_selective_prediction.svg",
+        json.loads(args.selective.read_text()),
+    )
     print(f"[paper-figures] wrote publication + supplementary SVGs to {args.out_dir}")
 
 

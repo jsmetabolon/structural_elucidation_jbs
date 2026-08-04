@@ -117,6 +117,7 @@ def main() -> None:
     loo = data / "pathway/audit_pathway_loo.json"
     structure = data / "structure/audit_structure_summary.json"
     claims = supplement / "baseline_claims.json"
+    selective = data / "selective_prediction.json"
 
     run(
         [
@@ -176,6 +177,19 @@ def main() -> None:
     run(
         [
             python,
+            "tools/analyze_selective_prediction.py",
+            "--structure-controls",
+            str(data / "structure/audit_structure_controls.csv"),
+            "--pathway-accuracy",
+            str(data / "pathway/audit_pathway_accuracy.csv"),
+            "--out",
+            str(selective),
+        ],
+        dry_run=args.dry_run,
+    )
+    run(
+        [
+            python,
             "tools/paper_figures.py",
             "--structure",
             str(structure),
@@ -187,6 +201,8 @@ def main() -> None:
             str(presentation),
             "--claims",
             str(claims),
+            "--selective",
+            str(selective),
             "--out-dir",
             str(figures),
         ],
