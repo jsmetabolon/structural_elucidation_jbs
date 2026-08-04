@@ -12,10 +12,22 @@ from docx import Document
 from docx.enum.text import WD_LINE_SPACING
 from docx.oxml.ns import qn
 
+# Documents whose job is to record what was withdrawn, and which therefore have to
+# quote the withdrawn wording. Matched by filename so the exemption survives being
+# pointed at a copied tree.
+STALE_EXEMPT_NAMES = frozenset(
+    {
+        "REVISION_LOG.md",
+        "pathway_audit_findings.md",
+        "publication_review.md",
+    }
+)
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--paper-dir", type=Path, default=Path("docs/paper"))
+    parser.add_argument("--docs-dir", type=Path, default=Path("docs"))
     parser.add_argument("--strict-human-inputs", action="store_true")
     args = parser.parse_args()
     paper = args.paper_dir
@@ -55,22 +67,25 @@ def main() -> None:
         "NMD on the Fly": "internal commercial language",
         "fee-for-service": "internal commercial language",
     }
-    for phrase, reason in stale.items():
-        if phrase in manuscript:
-            errors.append(f"stale phrase '{phrase}': {reason}")
-
-    # Figures carry their own text, and an unreferenced one is invisible to the link
-    # checks below, so a retracted headline can survive in the directory indefinitely.
-    for figure_path in sorted((paper / "figures").glob("*")):
-        if not figure_path.is_file():
+    # Retracted claims have twice survived in files nothing checked: an unreferenced
+    # figure, and an internal findings document that still led with the withdrawn
+    # headline. Scan the whole docs tree and every figure, not just the manuscript.
+    scan_targets = {manuscript_path}
+    scan_targets.update(path for path in (paper / "figures").glob("*") if path.is_file())
+    if args.docs_dir.exists():
+        scan_targets.update(args.docs_dir.rglob("*.md"))
+    for path in sorted(scan_targets):
+        # These records have to quote the retracted numbers in order to document the
+        # retraction, so scanning them would fire on the audit trail itself.
+        if path.name in STALE_EXEMPT_NAMES:
             continue
         try:
-            figure_text = figure_path.read_text()
+            content = path.read_text()
         except (OSError, UnicodeDecodeError):
             continue
         for phrase, reason in stale.items():
-            if phrase in figure_text:
-                errors.append(f"stale phrase '{phrase}' in {figure_path.name}: {reason}")
+            if phrase in content:
+                errors.append(f"stale phrase '{phrase}' in {path}: {reason}")
 
     expected_claims = (
         "44/92",
