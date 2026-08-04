@@ -1,0 +1,98 @@
+name: Publication checks
+
+# The manuscript and the public brief are guarded by verifiers under tools/, but
+# nothing ran them automatically, so every guard was opt-in. These checks need only
+# the documentation dependencies, not the inference stack.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "docs/**"
+      - "tools/**"
+      - "tests/**"
+      - "requirements.txt"
+      - ".github/workflows/publication-checks.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install cairo
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libcairo2
+
+      - name: Install documentation dependencies
+        run: python -m pip install --upgrade pip python-docx cairosvg pytest pandas
+
+      - name: Verify the manuscript package and the public brief
+        run: python3 tools/rebuild_paper_artifacts.py --verify-only
+
+      - name: Confirm derived artifacts are current
+        # Everything below reproduces byte-identically from committed inputs, so a diff
+        # means an audit artifact changed without its dependants being regenerated.
+        # The DOCX builders are excluded: python-docx embeds timestamps, so their output
+        # is not byte-reproducible and would fail this check spuriously.
+        run: |
+          python3 tools/analyze_taxonomy_harmonization.py
+          python3 tools/analyze_selective_prediction.py
+          python3 tools/paper_figures.py \
+            --structure docs/paper/data/structure/audit_structure_summary.json \
+            --pathway docs/paper/data/pathway/audit_pathway_summary.json \
+            --loo docs/paper/data/pathway/audit_pathway_loo.json \
+            --presentation docs/paper/data/presentation/audit_presentation_summary.json \
+            --claims docs/paper/supplement/baseline_claims.json \
+            --out-dir docs/paper/figures
+          python3 tools/public_brief_figures.py \
+            --structure docs/paper/data/structure/audit_structure_summary.json \
+            --presentation docs/paper/data/presentation/audit_presentation_summary.json \
+            --out-dir docs/public_brief/figures
+          python3 tools/build_paper_supplement.py \
+            --structure docs/paper/data/structure/audit_structure_summary.json \
+            --pathway docs/paper/data/pathway/audit_pathway_summary.json \
+            --loo docs/paper/data/pathway/audit_pathway_loo.json \
+            --presentation docs/paper/data/presentation/audit_presentation_summary.json \
+            --claims docs/paper/supplement/baseline_claims.json
+          git diff --exit-code
+
+      - name: Run the document tests
+        run: |
+          python3 -m pytest -q \
+            tests/test_public_brief.py \
+            tests/test_manuscript_docx.py \
+            tests/test_x_compound_overview.py \
+            tests/test_paper_audits.py
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: python -m pip install --upgrade pip ruff
+
+      # Scoped to the publication tooling. The wider tools/ tree has pre-existing
+      # findings that are out of scope for these checks.
+      - name: Lint the publication tooling
+        run: |
+          ruff check \
+            tools/analyze_selective_prediction.py \
+            tools/analyze_taxonomy_harmonization.py \
+            tools/build_paper_claim_audit.py \
+            tools/build_paper_supplement.py \
+            tools/paper_figures.py \
+            tools/public_brief_figures.py \
+            tools/rebuild_paper_artifacts.py \
+            tools/verify_paper_package.py \
+            tools/verify_public_brief.py

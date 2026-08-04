@@ -33,6 +33,16 @@ brief's release gate. Human-supplied submission fields (authors, email, funding,
 disclosures, ethics, repository DOI) are reported as warnings unless
 `tools/verify_paper_package.py --strict-human-inputs` is used.
 
+`.github/workflows/publication-checks.yml` runs this on every pull request that
+touches `docs/`, `tools/` or `tests/`, together with the document tests and a check
+that the derived artifacts still reproduce from their committed inputs. The page
+count is not in CI: `--check-pages` needs LibreOffice, which is too large to install
+on every run, so it stays a manual check before release.
+
+The stale-claim scan covers every markdown file under `docs/` and every figure.
+Three records are exempt because their purpose is to document what was withdrawn:
+`REVISION_LOG.md`, `pathway_audit_findings.md`, and `publication_review.md`.
+
 ## Fully regenerate with controlled inputs
 
 ```bash
