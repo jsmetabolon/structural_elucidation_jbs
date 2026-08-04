@@ -1,5 +1,26 @@
 # Pathway / subpathway prediction audit - findings
 
+> **Superseded. Retained as a record of the original investigation, not as current
+> results.** Several headline claims below were withdrawn by the scientific revision
+> recorded in `docs/paper/REVISION_LOG.md`, and several counts predate a later audit
+> run. The authoritative figures are in `docs/paper/manuscript.md` and the committed
+> artifacts under `docs/paper/data/`. Read the corrections here before the body.
+>
+> | Claim below | Status |
+> |---|---|
+> | "Super-pathway accuracy: 94.5% (sub-pathway 89.7%)" | **Withdrawn.** These were reference-taxonomy *consistency* on exact-structure matches, where the label is copied from the same database it is scored against. That is circular as an accuracy test. The manuscript now reports it as 100% consistency by construction for the 1,459 direct lookups and does not present it as prediction accuracy. |
+> | Coverage statuses 3452 / 445 | **Stale.** Current audit: exact reference match 1,459, strong-similarity vote 1,995, weak-similarity backfill 443. |
+> | Confidence tiers 1788 / 666 / 1443 | **Stale.** Current audit: high 1,863, medium 616, low 1,418. |
+> | Similarity p50 = 0.721 | **Stale.** Current audit: 0.733. |
+> | known_X super agreement 56.2% | **Stale.** Current audit: 55.3% (503/909). |
+> | Tier accuracies 71.8 / 62.9 / 37.7 | **Stale.** Current audit: high 70.3%, medium 61.4%, low 36.9%. |
+> | "treat `high` as reliable" | **Overstated.** Agreement is monotonic by tier, which supports prioritization, but the top tier still agrees with the independent labels only about seven times in ten. |
+>
+> One conclusion below held up and was later confirmed: the 62.5% agreement between
+> the two taxonomies on identical structures is a genuine ceiling on any
+> `known_X`-scored result. The manuscript now carries it, along with the subpathway
+> equivalent of 34.8%, which this document did not measure.
+
 Audit of the neighbor-consensus pathway predictions (`predicted_pathway` /
 `predicted_subpathway` + confidence tier / status / similarity) that feed the
 compound reports. Tool: `tools/audit_pathway_predictions.py` (raw outputs under
