@@ -5,7 +5,8 @@ A customer-facing, high-level companion to the scientific manuscript in
 without describing how it works.
 
 - `public_brief.md` — editable source.
-- `public_brief.docx` — the distributable Word file.
+- `public_brief.docx` — the distributable Word file (currently seven pages,
+  against a ten-page budget).
 - `figures/` — three SVGs: a hand-authored workflow diagram plus two charts
   regenerated from the same audited JSON the manuscript uses.
 
