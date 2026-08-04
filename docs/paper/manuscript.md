@@ -84,7 +84,7 @@ The final delivered reports were produced with eight report-generation workers f
 
 ### 3.1 Coverage
 
-The workflow produces an evidence report and a biochemical taxonomy assignment for all 3,897 features. It presents a specific structure for the 2,726 L1–L3 reports (70.0%) and withholds one for the 1,171 L4–L5 reports (30.0%). Pathway provenance is direct reference lookup for 1,459 and neighbor consensus for 2,438 reports. Assignment statuses are exact reference match for 1,459, strong-similarity vote for 1,995, and weak-similarity backfill for 443; **pathway-confidence tiers** are high 1,863 / medium 616 / low 1,418. The best-reference similarity has median 0.733 (p10 0.375, p90 1.0). Evidence availability is summarized in Supplementary Table S1. Coverage is therefore complete by construction: what differs between features is not whether a result exists but how much that result claims.
+The workflow produces an evidence report and a biochemical taxonomy assignment for all 3,897 features. It presents a specific structure for the 2,726 L1–L3 reports (70.0%) and withholds one for the 1,171 L4–L5 reports (30.0%). Pathway provenance is direct reference lookup for 1,459 reports and neighbor consensus for 2,438. Resolving that split by assignment status gives exact reference match 1,459, strong-similarity vote 1,995, and weak-similarity backfill 443; **pathway-confidence tiers** are high 1,863 / medium 616 / low 1,418. The best-reference similarity has median 0.733 (p10 0.375, p90 1.0). Evidence availability is summarized in Supplementary Table S1. Coverage is therefore complete by construction: what differs between features is not whether a result exists but how much that result claims.
 
 ### 3.2 Structural recovery
 
