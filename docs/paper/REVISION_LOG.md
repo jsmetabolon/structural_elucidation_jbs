@@ -94,4 +94,12 @@ from the coverage reconciliation recorded below.
 - Added `tools/analyze_selective_prediction.py` and Supplementary Figure S5,
   measuring accuracy against the fraction of each cohort retained. It runs from the
   committed per-control audit outputs and needs no controlled bundle.
+- Added `tools/analyze_taxonomy_harmonization.py` and Supplementary Table S8,
+  separating vocabulary disagreement from prediction error by applying the same
+  correction to the predictor and to the annotation ceiling. Both new analyses are
+  wired into the full rebuild.
+- Supplementary Information now states both annotation ceilings in section S4 and
+  carries the two new analyses as section S8.
+- Fixed a nondeterministic sort in the Supplementary Table S6 generator that
+  reordered equal-count rows between runs and produced spurious diffs.
 
