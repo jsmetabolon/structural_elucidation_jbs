@@ -1,0 +1,81 @@
+{
+  "method": "Inferred pathway assignments stratified by chromatographic library. Direct lookups are excluded because they copy a reference label rather than predict one. Libraries contributing fewer than 30 controls are listed as underpowered rather than scored.",
+  "min_cohort": 30,
+  "pathway_inferred_by_library": {
+    "209": {
+      "super": {
+        "n": 464,
+        "correct": 247,
+        "accuracy": 0.5323,
+        "ci95": [
+          0.4868,
+          0.5773
+        ]
+      },
+      "sub": {
+        "n": 464,
+        "correct": 82,
+        "accuracy": 0.1767,
+        "ci95": [
+          0.1447,
+          0.214
+        ]
+      }
+    },
+    "400": {
+      "super": {
+        "n": 80,
+        "correct": 35,
+        "accuracy": 0.4375,
+        "ci95": [
+          0.3341,
+          0.5466
+        ]
+      },
+      "sub": {
+        "n": 80,
+        "correct": 18,
+        "accuracy": 0.225,
+        "ci95": [
+          0.1473,
+          0.3279
+        ]
+      }
+    },
+    "402": {
+      "super": {
+        "n": 84,
+        "correct": 42,
+        "accuracy": 0.5,
+        "ci95": [
+          0.3954,
+          0.6046
+        ]
+      },
+      "sub": {
+        "n": 84,
+        "correct": 15,
+        "accuracy": 0.1786,
+        "ci95": [
+          0.1113,
+          0.2739
+        ]
+      }
+    }
+  },
+  "underpowered_cohorts": {
+    "305": 13,
+    "unlabelled": 3
+  },
+  "super_intervals_overlap": true,
+  "sub_intervals_overlap": true,
+  "structure_truth_controls_by_library": {
+    "209": 52,
+    "305": 6,
+    "400": 26,
+    "402": 2,
+    "unlabelled": 6
+  },
+  "structure_stratification_supported": false,
+  "scope_note": "Consistency across libraries speaks to chromatographic method, not to chemical class. The libraries differ in ion mode and size, and all of them are scored against the same independent label source, so they share its annotation ceiling."
+}

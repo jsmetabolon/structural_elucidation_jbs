@@ -28,6 +28,7 @@ def main() -> None:
     parser.add_argument("--claims", type=Path, required=True)
     parser.add_argument("--harmonization", type=Path, default=Path("docs/paper/data/taxonomy_harmonization.json"))
     parser.add_argument("--selective", type=Path, default=Path("docs/paper/data/selective_prediction.json"))
+    parser.add_argument("--library", type=Path, default=Path("docs/paper/data/library_stratification.json"))
     parser.add_argument("--out", type=Path, default=Path("docs/paper/supplement/supplementary_information.md"))
     args = parser.parse_args()
     args.out.parent.mkdir(parents=True, exist_ok=True)
@@ -39,6 +40,7 @@ def main() -> None:
     claims = claim_map(args.claims)
     harmonization = json.loads(args.harmonization.read_text()) if args.harmonization.exists() else None
     selective = json.loads(args.selective.read_text()) if args.selective.exists() else None
+    library = json.loads(args.library.read_text()) if args.library.exists() else None
     known = pathway["accuracy"]
     reference_cohort = known["by_reference_membership"]["reference_structure"]
     n_reports = int(presentation["n_reports"])
@@ -294,6 +296,51 @@ def main() -> None:
             "",
             "![Figure S5. Accuracy against the fraction of calls retained.]"
             "(../figures/figS5_selective_prediction.svg)",
+        ]
+
+    if library is not None:
+        by_library = library["pathway_inferred_by_library"]
+        lines += [
+            "",
+            "## S9. Agreement by chromatographic library",
+            "",
+            "Inferred assignments only, since direct lookups copy a reference label rather "
+            "than predict one. This tests whether the pooled figures average over "
+            "dissimilar populations.",
+            "",
+            "**Table S9. Independent-label agreement by library.**",
+            "",
+            "| Library | n | Super-pathway (95% CI) | Subpathway (95% CI) |",
+            "|---|---:|---:|---:|",
+        ]
+        for name, block in by_library.items():
+            lines.append(
+                f"| {name} | {block['super']['n']} | {pct(block['super'])} | {pct(block['sub'])} |"
+            )
+        overlap = library["super_intervals_overlap"] and library["sub_intervals_overlap"]
+        underpowered = ", ".join(
+            f"{name} (n={count})" for name, count in library["underpowered_cohorts"].items()
+        )
+        lines += [
+            "",
+            (
+                "Every interval overlaps at both levels, so agreement does not vary "
+                "detectably by library and the pooled figures are not an average over "
+                "dissimilar populations."
+                if overlap
+                else "Intervals do not all overlap, so the pooled figures average over "
+                "libraries that differ detectably."
+            )
+            + (f" Excluded as underpowered: {underpowered}." if underpowered else ""),
+            "",
+            "Structural recovery cannot be stratified the same way. The truth-verified "
+            "cohort splits across libraries as "
+            + ", ".join(
+                f"{name} n={count}"
+                for name, count in library["structure_truth_controls_by_library"].items()
+            )
+            + ", so a per-library recovery rate would be noise. That imbalance is the "
+            "evidence for the cohort-selection caveat in Limitations.",
         ]
     args.out.write_text("\n".join(lines) + "\n")
     print(f"[paper-supplement] wrote {args.out}")

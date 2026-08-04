@@ -43,6 +43,7 @@ jobs:
         run: |
           python3 tools/analyze_taxonomy_harmonization.py
           python3 tools/analyze_selective_prediction.py
+          python3 tools/analyze_library_stratification.py
           python3 tools/paper_figures.py \
             --structure docs/paper/data/structure/audit_structure_summary.json \
             --pathway docs/paper/data/pathway/audit_pathway_summary.json \
@@ -88,6 +89,7 @@ jobs:
       - name: Lint the publication tooling
         run: |
           ruff check \
+            tools/analyze_library_stratification.py \
             tools/analyze_selective_prediction.py \
             tools/analyze_taxonomy_harmonization.py \
             tools/build_paper_claim_audit.py \

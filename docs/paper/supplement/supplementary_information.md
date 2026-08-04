@@ -151,3 +151,19 @@ Merging every commonly confused class would reach 93.3% (91.1–95.0%) on the in
 Selective prediction asks whether confidence orders calls at all. Each cohort is sorted from most to least confident and scored over cumulative prefixes. Pathway assignments ranked by best-reference similarity gain 28 percentage points of super-pathway agreement between the whole cohort and its most confident fifth, whereas structural calls ranked by identification confidence gain 2 and do not order features at all.
 
 ![Figure S5. Accuracy against the fraction of calls retained.](../figures/figS5_selective_prediction.svg)
+
+## S9. Agreement by chromatographic library
+
+Inferred assignments only, since direct lookups copy a reference label rather than predict one. This tests whether the pooled figures average over dissimilar populations.
+
+**Table S9. Independent-label agreement by library.**
+
+| Library | n | Super-pathway (95% CI) | Subpathway (95% CI) |
+|---|---:|---:|---:|
+| 209 | 464 | 53.2% (48.7–57.7%) | 17.7% (14.5–21.4%) |
+| 400 | 80 | 43.8% (33.4–54.7%) | 22.5% (14.7–32.8%) |
+| 402 | 84 | 50.0% (39.5–60.5%) | 17.9% (11.1–27.4%) |
+
+Every interval overlaps at both levels, so agreement does not vary detectably by library and the pooled figures are not an average over dissimilar populations. Excluded as underpowered: 305 (n=13), unlabelled (n=3).
+
+Structural recovery cannot be stratified the same way. The truth-verified cohort splits across libraries as 209 n=52, 305 n=6, 400 n=26, 402 n=2, unlabelled n=6, so a per-library recovery rate would be noise. That imbalance is the evidence for the cohort-selection caveat in Limitations.
