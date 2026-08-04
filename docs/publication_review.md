@@ -92,6 +92,21 @@ corrected.
 correct when it matches the known answer within a fixed structural-similarity threshold
 — with the precise definition carried by the manuscript.
 
+*Later addition — disclosing the pathway mechanism.* The brief was subsequently extended
+to describe how biochemical context is assigned, and doing so changed what the evidence
+owed the reader. The brief had reported only the held-out validation of the inference
+mechanism, 86.7% and 71.1%, which is the friendlier of the two available measurements. It
+now also reports agreement measured on the inferred path alone against a separate internal
+label source: 52.2% super-pathway and 18.8% subpathway across 644 controls. Presenting the
+mechanism while quoting only the flattering figure would have breached the second rule the
+document exists under. The mitigating context sits beside it, since two expert taxonomies
+agree only 62.5% of the time on identical structures, so part of the gap is annotation
+disagreement rather than model error.
+
+That addition also amended the document's governing disclosure rule from "never how" to
+"the conceptual how, never the parameters". The rationale, and the deliberate asymmetry
+with candidate ranking, are recorded in `docs/public_brief/README.md`.
+
 ## Review 4 — Style
 
 *Sentence length, repetition, transitions, figures and captions, final polish.*
@@ -101,13 +116,14 @@ correct when it matches the known answer within a fixed structural-similarity th
   once; the other two make the same point differently.
 - **Polish.** "Adding compounds to a reference library, which compounds the value" put a
   noun and a verb sense of the same word in adjacent clauses; rewritten. "Two points of
-  context matter when reading those figures" sat directly beneath Figure 2 and read as a
-  reference to the figure rather than to the percentages; changed to "percentages".
+  context matter when reading those figures" sat directly beneath the recovery figure and
+  read as a reference to the figure rather than to the percentages; changed to
+  "percentages".
 - **Fragile cross-reference.** "The most important line in that table is the fourth"
   pointed at a row by position and would silently become wrong if a row were added. It
   now refers to the last two rows, which is also more accurate, since both withhold a
   structure.
-- **Captions.** All eight captions across the two documents now lead with the message the
+- **Captions.** All nine captions across the two documents now lead with the message the
   figure supports and follow with the methodological detail, rather than describing
   content only.
 
