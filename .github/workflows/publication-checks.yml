@@ -68,7 +68,8 @@ jobs:
             tests/test_public_brief.py \
             tests/test_manuscript_docx.py \
             tests/test_x_compound_overview.py \
-            tests/test_paper_audits.py
+            tests/test_paper_audits.py \
+            tests/test_publication_analyses.py
 
   lint:
     runs-on: ubuntu-latest
