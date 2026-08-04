@@ -87,8 +87,16 @@ def discrimination(points: list[dict[str, Any]]) -> float | None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--structure-controls", type=Path, default=Path("docs/paper/data/structure/audit_structure_controls.csv"))
-    parser.add_argument("--pathway-accuracy", type=Path, default=Path("docs/paper/data/pathway/audit_pathway_accuracy.csv"))
+    parser.add_argument(
+        "--structure-controls",
+        type=Path,
+        default=Path("docs/paper/data/structure/audit_structure_controls.csv"),
+    )
+    parser.add_argument(
+        "--pathway-accuracy",
+        type=Path,
+        default=Path("docs/paper/data/pathway/audit_pathway_accuracy.csv"),
+    )
     parser.add_argument("--out", type=Path, default=Path("docs/paper/data/selective_prediction.json"))
     args = parser.parse_args()
 
