@@ -118,6 +118,7 @@ def main() -> None:
     structure = data / "structure/audit_structure_summary.json"
     claims = supplement / "baseline_claims.json"
     selective = data / "selective_prediction.json"
+    harmonization = data / "taxonomy_harmonization.json"
 
     run(
         [
@@ -171,6 +172,17 @@ def main() -> None:
             str(loo),
             "--out-dir",
             str(supplement),
+        ],
+        dry_run=args.dry_run,
+    )
+    run(
+        [
+            python,
+            "tools/analyze_taxonomy_harmonization.py",
+            "--pathway-accuracy",
+            str(data / "pathway/audit_pathway_accuracy.csv"),
+            "--out",
+            str(harmonization),
         ],
         dry_run=args.dry_run,
     )
