@@ -59,6 +59,19 @@ def main() -> None:
         if phrase in manuscript:
             errors.append(f"stale phrase '{phrase}': {reason}")
 
+    # Figures carry their own text, and an unreferenced one is invisible to the link
+    # checks below, so a retracted headline can survive in the directory indefinitely.
+    for figure_path in sorted((paper / "figures").glob("*")):
+        if not figure_path.is_file():
+            continue
+        try:
+            figure_text = figure_path.read_text()
+        except (OSError, UnicodeDecodeError):
+            continue
+        for phrase, reason in stale.items():
+            if phrase in figure_text:
+                errors.append(f"stale phrase '{phrase}' in {figure_path.name}: {reason}")
+
     expected_claims = (
         "44/92",
         "59/92",

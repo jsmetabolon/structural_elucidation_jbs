@@ -84,11 +84,12 @@ as a platform enhancement, but no platform positioning is documented in this
 repository, and whether existing deliverables may be named externally is a
 marketing decision rather than a technical one.
 
-Watch the page budget while filling these in. The document renders to nine pages
-of ten, and the last page currently holds only the closing lines, so replacing
-the placeholders with real text should absorb that page rather than add one. The
-margin is about a page in total, so long legal boilerplate may require trimming
-elsewhere. Re-run the gate with `--check-pages` afterwards.
+Watch the budgets while filling these in, because words bind before pages do. The
+document renders to nine pages of ten, but the last page holds only the closing
+lines, so replacing the placeholders should absorb that page rather than add one.
+The word count is the tighter constraint at roughly 2,490 of 2,600, which leaves
+about a hundred words. Long legal or availability text will need trimming
+elsewhere to fit. Re-run the gate with `--check-pages` afterwards.
 
 Automated checks cannot clear brand, trademark, or claim-substantiation review.
 Marketing and legal sign-off is still required.
