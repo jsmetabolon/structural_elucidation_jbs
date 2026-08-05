@@ -47,6 +47,7 @@ import structural_elucidation.utils.wgcna as wgcna
 from structural_elucidation.nce.evidence import ri_proxy_from_smiles
 from structural_elucidation.paths import REPO_ROOT, resolve
 from structural_elucidation.reports import confidence as confmod
+from structural_elucidation.reports import pathway_explain as pathmod
 from structural_elucidation.reports import tentative_naming as tnmod
 from structural_elucidation.reports.tentative_naming_ext import default_extended_context
 from structural_elucidation.utils.denovo import exact_mass_from_smiles, formula_from_smiles, inchikey_from_smiles
@@ -77,6 +78,9 @@ DEFAULT_DB = REPO_ROOT / "vendor/metabolite_synonyms.sqlite"
 DEFAULT_KNOWN_X = REPO_ROOT / "data/known_X.csv"
 DEFAULT_KNOWN_X_ALL = REPO_ROOT / "data/known_X_all_available_structures_simple.csv"
 DEFAULT_CURATION_LEDGER = REPO_ROOT / "data/curation_ledger.csv"
+# Shared by the renderer and by the guides index, which is built separately and
+# derives its anchors from the heading text.
+PATHWAY_SECTION_TITLE = "Pathway And Subpathway Assignment"
 OBABEL_PATH_CANDIDATES = [
     Path.home() / "Downloads" / "ADFRsuite_x86_64Darwin_1.0" / "bin" / "obabel",
 ]
@@ -2151,7 +2155,12 @@ def build_extended_similarity_network(
     }
 
 
-def resolve_pathway_display(db_detail: dict[str, Any], rank1: Any) -> dict[str, Any]:
+def resolve_pathway_display(
+    db_detail: dict[str, Any],
+    rank1: Any,
+    *,
+    chemical_id_basis: str = pathmod.BASIS_NONE,
+) -> dict[str, Any]:
     """Resolve super/sub pathway for the report.
 
     Prefers an exact metabolite-DB record; otherwise falls back to the neighbor
@@ -2160,6 +2169,11 @@ def resolve_pathway_display(db_detail: dict[str, Any], rank1: Any) -> dict[str, 
     ``pathway_best_reference_similarity``, produced by the pathway enrichment).
     Returns super/sub plus the provenance so the report can label predicted vs
     exact honestly.
+
+    ``chemical_id_basis`` records how the catalogue record was found. Three
+    routes reach the same "exact reference match" - a structure match, a name
+    match, and a curator label - and only the first is structural evidence, so
+    the basis travels with the assignment rather than being collapsed into it.
     """
 
     def clean(value: Any) -> str:
@@ -2176,6 +2190,7 @@ def resolve_pathway_display(db_detail: dict[str, Any], rank1: Any) -> dict[str, 
             "tier": "high",
             "similarity": 1.0,
             "status": "exact_reference_match",
+            "basis": chemical_id_basis or pathmod.BASIS_NONE,
             "note": "From reference DB record",
         }
 
@@ -2203,6 +2218,7 @@ def resolve_pathway_display(db_detail: dict[str, Any], rank1: Any) -> dict[str, 
             "tier": tier,
             "similarity": similarity,
             "status": status,
+            "basis": pathmod.BASIS_NEIGHBOR_VOTE,
             "note": f"Predicted ({sim_txt})",
         }
 
@@ -2213,6 +2229,7 @@ def resolve_pathway_display(db_detail: dict[str, Any], rank1: Any) -> dict[str, 
         "tier": "",
         "similarity": 0.0,
         "status": clean(rank1.get("pathway_assignment_status")) or "no_reference_match",
+        "basis": pathmod.BASIS_NONE,
         "note": "No reference match above similarity threshold",
     }
 
@@ -2248,6 +2265,7 @@ def render_html(
     correlation_blocker: str | None,
     variant: str,
     public_candidate_n: int = confmod.PUBLIC_CANDIDATE_N,
+    pathway_vote: pathmod.PathwayVote | None = None,
 ) -> str:
     """Assemble full HTML report page for public or internal ``variant``."""
 
@@ -2428,6 +2446,19 @@ def render_html(
             for row in library_neighbors
         )
         or f"<tr><td colspan='{'4' if public_mode else '5'}'>No library matches available.</td></tr>"
+    )
+    # The candidate-list agreement is already computed for the pathway metric
+    # card and then discarded into a one-line note; the explainer reuses it as a
+    # second factor rather than recomputing it.
+    pathway_agreement_note = confmod.candidate_pathway_agreement_note(
+        candidate_scores, pathway_super, "predicted_pathway", "Pathway"
+    )
+    pathway_section_html = pathmod.pathway_section_html(
+        pathway_info,
+        pathway_vote if pathway_vote is not None else pathmod.PathwayVote(),
+        public=public_mode,
+        msi_level=int(getattr(confidence, "msi_level", 3)),
+        candidate_agreement=pathway_agreement_note,
     )
     n_displayed = len(displayed_candidates)
     if public_mode:
@@ -2831,6 +2862,11 @@ def render_html(
     </section>
 
     <section class="section">
+      {heading_with_info("h2", PATHWAY_SECTION_TITLE)}
+      {pathway_section_html}
+    </section>
+
+    <section class="section">
       {heading_with_info("h2", fragment_title)}
       <p class="note">Metabolon’s elucidation pipeline uses diagnostic spectral information including adducts and biotransformations to help with elucidation and confidence in the identification.</p>
       <div class="table-wrap">
@@ -3125,21 +3161,26 @@ def lookup_known_x_row(known_x: pd.DataFrame, control_id: str) -> dict[str, Any]
     return rows.iloc[0].to_dict() if not rows.empty else {}
 
 
-def resolve_chemical_id(db_path: Path, known_x_row: dict[str, Any], target_name: str) -> str:
-    """Resolve metabolite DB chemical_id from known_X or canonical name lookup."""
+def resolve_chemical_id(db_path: Path, known_x_row: dict[str, Any], target_name: str) -> tuple[str, str]:
+    """Resolve a metabolite DB chemical_id, and say which route found it.
+
+    Returns ``(chemical_id, basis)``. The basis matters downstream because a
+    curator label and a name match are not structural evidence, and the pathway
+    section must not let either read as "this structure is that compound".
+    """
 
     if known_x_row.get("KNOWN"):
-        return str(known_x_row["KNOWN"]).strip()
+        return str(known_x_row["KNOWN"]).strip(), pathmod.BASIS_KNOWN_X_LABEL
     if not db_path.exists():
-        return ""
+        return "", pathmod.BASIS_NONE
     df = query_df(
         db_path,
         "SELECT chemical_id FROM metabolites WHERE lower(canonical_name) = lower(?) LIMIT 1",
         (target_name,),
     )
     if not df.empty:
-        return str(df.iloc[0]["chemical_id"])
-    return ""
+        return str(df.iloc[0]["chemical_id"]), pathmod.BASIS_CANONICAL_NAME
+    return "", pathmod.BASIS_NONE
 
 
 def is_real_chemical_id(db_path: Path, chemical_id: str) -> bool:
@@ -3327,7 +3368,12 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     if target_name.lower() in {"", "nan", "none"}:
         target_name = control_id
     kx_row = lookup_known_x_row(known_x, control_id)
-    chemical_id = str(args.chemical_id or resolve_chemical_id(db_path, kx_row, target_name) or "").strip()
+    if args.chemical_id:
+        chemical_id = str(args.chemical_id).strip()
+        chemical_id_basis = pathmod.BASIS_OPERATOR_SUPPLIED
+    else:
+        chemical_id, chemical_id_basis = resolve_chemical_id(db_path, kx_row, target_name)
+    chemical_id = chemical_id.strip()
 
     target_inchikey = inchikey_from_smiles(target_smiles)
     db_identity = resolve_db_identity_by_inchikey(db_path, target_inchikey)
@@ -3336,6 +3382,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         resolved_chem_id, resolved_name = db_identity
         if not is_real_chemical_id(db_path, chemical_id):
             chemical_id = resolved_chem_id
+            chemical_id_basis = pathmod.BASIS_INCHIKEY
         if target_name == control_id and resolved_name:
             target_name = resolved_name
 
@@ -3447,20 +3494,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         )
         syn_df.to_csv(data_dir / "metabolite_db_synonyms.csv", index=False)
 
-    pathway_info = resolve_pathway_display(db_detail, rank1)
-    pd.DataFrame(
-        [
-            {
-                "control_id": control_id,
-                "predicted_pathway": pathway_info["super"],
-                "predicted_subpathway": pathway_info["sub"],
-                "pathway_source": pathway_info["source"],
-                "pathway_confidence_tier": pathway_info["tier"],
-                "pathway_best_reference_similarity": pathway_info["similarity"],
-                "pathway_assignment_status": pathway_info["status"],
-            }
-        ]
-    ).to_csv(data_dir / f"{slug}_pathway_prediction.csv", index=False)
+    pathway_info = resolve_pathway_display(db_detail, rank1, chemical_id_basis=chemical_id_basis)
 
     correlation_rows, correlation_blocker = load_real_correlation_rows(control_id, chemical_id, target_name)
 
@@ -3499,20 +3533,63 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         json.dumps({"nodes": extended["render_nodes"], "edges": extended["render_edges"]}, indent=2)
     )
 
-    rows: list[dict[str, Any]] = []
+    scored_reference_rows: list[dict[str, Any]] = []
     _, target_fp = mol_fp(target_smiles)
+    # Keep every reference the vote could use, even when the display threshold is
+    # set higher: how many neighbors to show is a presentation choice, but the
+    # vote floor is part of the mechanism and must not move with it.
+    collect_floor = min(float(args.min_similarity), pathmod.VOTE_SIMILARITY_FLOOR)
     for _, row in all_structured.iterrows():
         smiles = str(row.get("smiles") or "").split("|")[0].strip()
         mol, fp = mol_fp(smiles)
         if mol is None or fp is None or target_fp is None:
             continue
         sim = float(TanimotoSimilarity(target_fp, fp))
-        if sim < float(args.min_similarity):
+        if sim < collect_floor:
             continue
         item = row.to_dict()
         item["smiles"] = smiles
         item["similarity_to_target"] = sim
-        rows.append(item)
+        scored_reference_rows.append(item)
+
+    # Reconstruct the neighbor vote from the same scored references, before the
+    # list is trimmed for display.
+    pathway_vote_result = pathmod.pathway_vote(pathmod.reference_rows_from_frame(scored_reference_rows))
+    write_csv(data_dir / f"{slug}_pathway_vote.csv", pathmod.vote_rows(pathway_vote_result))
+    pathway_agreement = pathmod.vote_agrees_with_delivered(
+        pathway_vote_result, pathway_info["super"], pathway_info["sub"]
+    )
+    # Written here rather than beside resolve_pathway_display so the row can carry
+    # the vote share. The confidence model has always looked for that field and
+    # never found it, and has been falling back to the coarse tier map instead.
+    pd.DataFrame(
+        [
+            {
+                "control_id": control_id,
+                "predicted_pathway": pathway_info["super"],
+                "predicted_subpathway": pathway_info["sub"],
+                "pathway_source": pathway_info["source"],
+                "pathway_confidence_tier": pathway_info["tier"],
+                "pathway_best_reference_similarity": pathway_info["similarity"],
+                "pathway_assignment_status": pathway_info["status"],
+                "pathway_basis": pathway_info.get("basis", pathmod.BASIS_NONE),
+                "pathway_vote_share": (
+                    round(pathway_vote_result.super_share, 4) if pathway_vote_result.available else ""
+                ),
+                "pathway_vote_super": pathway_vote_result.winning_super,
+                "pathway_vote_sub": pathway_vote_result.winning_sub,
+                "pathway_vote_n_voters": len(pathway_vote_result.voters),
+                "pathway_vote_agrees_super": int(pathway_agreement["super"]),
+                "pathway_vote_agrees_sub": int(pathway_agreement["sub"]),
+            }
+        ]
+    ).to_csv(data_dir / f"{slug}_pathway_prediction.csv", index=False)
+
+    rows = [
+        item
+        for item in scored_reference_rows
+        if float(item["similarity_to_target"]) >= float(args.min_similarity)
+    ]
     sim_df = pd.DataFrame(rows)
     if not sim_df.empty:
         sim_df = sim_df.sort_values("similarity_to_target", ascending=False, kind="mergesort").head(
@@ -3614,7 +3691,12 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         {
             "pathway_source": pathway_info.get("source", ""),
             "pathway_best_reference_similarity": pathway_info.get("similarity"),
-            "pathway_vote_share": pathway_info.get("vote_share"),
+            # The reconstructed vote finally gives the pathway axis a real share
+            # to score. Until now this key was always absent and the axis fell
+            # back to the three-valued tier map.
+            "pathway_vote_share": (
+                pathway_vote_result.super_share if pathway_vote_result.available else None
+            ),
             "pathway_confidence_tier": pathway_info.get("tier", ""),
         },
         observed_mz_available=_observed_mz is not None and _observed_mz > 0,
@@ -3739,6 +3821,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         public_candidate_n=int(
             getattr(args, "public_candidate_n", confmod.PUBLIC_CANDIDATE_N)
         ),
+        pathway_vote=pathway_vote_result,
     )
     public_html = render_html(**render_kwargs, variant="public")
     internal_html = render_html(**render_kwargs, variant="internal")
@@ -3749,6 +3832,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "Parameters Contributing to ID Confidence",
             "Top 10 potential structures",
             "Top 10 Metabolon Library Matches",
+            PATHWAY_SECTION_TITLE,
             "Fragment Scores",
             "Mass Match Scores",
             "MS Fit Scores",

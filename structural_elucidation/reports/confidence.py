@@ -362,6 +362,20 @@ def load_retention_calibration(path: Path | str | None = None) -> dict[str, dict
     return _RETENTION_CALIBRATION_CACHE[key]
 
 
+def _library_id_text(value: Any) -> str:
+    """Render a library id as the bare digits the calibration is keyed by.
+
+    Libraries arrive as ``209``, ``209.0`` or ``"209"`` depending on whether they
+    came through pandas, so they are normalized once here rather than at each
+    comparison.
+    """
+    text = str("" if value is None else value).strip()
+    if text.lower() in {"", "nan", "none", "null", "<na>"}:
+        return ""
+    number = _num(text)
+    return str(int(number)) if number is not None and float(number).is_integer() else text
+
+
 def retention_residual_z(fields: dict, calibration: dict[str, dict] | None = None) -> float | None:
     """Standardized retention residual for the top candidate, or None.
 
@@ -370,10 +384,10 @@ def retention_residual_z(fields: dict, calibration: dict[str, dict] | None = Non
     clear the audit.
     """
     calibration = load_retention_calibration() if calibration is None else calibration
-    lib_id = fields.get("lib_id")
-    if lib_id is None:
+    lib_id = _library_id_text(fields.get("lib_id"))
+    if not lib_id:
         return None
-    block = calibration.get(str(lib_id).strip().removesuffix(".0"))
+    block = calibration.get(lib_id)
     if not block:
         return None
     observed = _num(fields.get("observed_retention_index"))
@@ -1064,7 +1078,12 @@ def fields_from_parts(
         # Retention. The proxy is computed upstream because it needs RDKit and
         # this module stays standard-library only so the renderer and the patcher
         # can share one implementation.
-        "lib_id": lib_id,
+        #
+        # The library id is normalized to text on the way in. It arrives from a
+        # dataframe as a numpy integer, which is not JSON-serializable, and this
+        # dict is written straight out as the confidence sidecar. The lookup
+        # compares it as text anyway.
+        "lib_id": _library_id_text(lib_id),
         "observed_retention_index": _num(observed_retention_index),
         "candidate_retention_proxy": _num(candidate_retention_proxy),
     }
