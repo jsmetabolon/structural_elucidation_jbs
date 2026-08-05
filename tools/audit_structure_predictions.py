@@ -126,6 +126,16 @@ def calibration_slope_intercept(probabilities: np.ndarray, y: np.ndarray) -> dic
     return {"slope": round(slope, 4), "intercept": round(intercept, 4)}
 
 
+def _round_or_blank(value: float | None) -> str:
+    """Render an axis score, leaving unavailable axes empty rather than zero.
+
+    An unavailable axis is not a zero-scoring one, and writing 0 would make a
+    missing MS2 spectrum look like a spectrum the candidate failed to explain.
+    """
+
+    return "" if value is None else f"{round(float(value), 6)}"
+
+
 def raw_without_pathway(axes: list[C.Axis]) -> float:
     retained = [axis for axis in axes if axis.key != "pathway"]
     numerator = sum(axis.weight * float(axis.score) for axis in retained if axis.available and axis.score is not None)
@@ -159,6 +169,7 @@ def load_records(root: Path) -> list[dict[str, Any]]:
         similarities = [value if value is not None else 0.0 for value in similarities]
         axes = C.build_axes(fields)
         raw_full, completeness = C.raw_score(axes)
+        by_key = {axis.key: axis for axis in axes}
         records.append(
             {
                 "control_id": report_dir.name,
@@ -169,6 +180,13 @@ def load_records(root: Path) -> list[dict[str, Any]]:
                 "raw_full": raw_full,
                 "raw_without_pathway": raw_without_pathway(axes),
                 "completeness": completeness,
+                # Per-axis evidence, so tools/audit_thresholds.py can sweep the MSI
+                # boundaries from the committed cohort instead of needing the bundle.
+                "axis_structure": by_key["structure"].score,
+                "axis_mass": by_key["mass"].score if by_key["mass"].available else None,
+                "axis_ms2": by_key["ms2"].score if by_key["ms2"].available else None,
+                "axis_pathway": by_key["pathway"].score if by_key["pathway"].available else None,
+                "observed_mz_available": bool(fields.get("observed_mz_available")),
             }
         )
     return records
@@ -281,6 +299,11 @@ def main() -> None:
             "raw_without_pathway",
             "loo_probability_full",
             "loo_probability_without_pathway",
+            "axis_structure",
+            "axis_mass",
+            "axis_ms2",
+            "axis_pathway",
+            "observed_mz_available",
         ]
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
@@ -299,6 +322,11 @@ def main() -> None:
                     "raw_without_pathway": round(record["raw_without_pathway"], 6),
                     "loo_probability_full": full_predictions[record["control_id"]],
                     "loo_probability_without_pathway": ablated_predictions[record["control_id"]],
+                    "axis_structure": _round_or_blank(record["axis_structure"]),
+                    "axis_mass": _round_or_blank(record["axis_mass"]),
+                    "axis_ms2": _round_or_blank(record["axis_ms2"]),
+                    "axis_pathway": _round_or_blank(record["axis_pathway"]),
+                    "observed_mz_available": int(record["observed_mz_available"]),
                 }
             )
     print(f"[structure-audit] {len(records)} truth controls -> {summary_path} and {rows_path}")

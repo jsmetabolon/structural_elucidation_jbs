@@ -1,0 +1,237 @@
+{
+  "method": "Precision and coverage for each candidate cutoff, measured on the truth-verified controls, so a threshold can be chosen from an operating point rather than by hand.",
+  "inputs": {
+    "structure_controls": "docs/paper/data/structure/audit_structure_controls.csv",
+    "axis_source": null
+  },
+  "score_cutoff": {
+    "ranked_by": "leave-one-out identification-confidence probability",
+    "n": 92,
+    "base_rate": 0.4783,
+    "auc": 0.5137,
+    "auc_ci95": [
+      0.3933,
+      0.6365
+    ],
+    "grid": [
+      {
+        "n": 92,
+        "correct": 44,
+        "accuracy": 0.4783,
+        "ci95": [
+          0.3791,
+          0.5791
+        ],
+        "threshold": 0.1,
+        "coverage": 1.0,
+        "lift_over_base_rate": 0.0
+      },
+      {
+        "n": 92,
+        "correct": 44,
+        "accuracy": 0.4783,
+        "ci95": [
+          0.3791,
+          0.5791
+        ],
+        "threshold": 0.2,
+        "coverage": 1.0,
+        "lift_over_base_rate": 0.0
+      },
+      {
+        "n": 92,
+        "correct": 44,
+        "accuracy": 0.4783,
+        "ci95": [
+          0.3791,
+          0.5791
+        ],
+        "threshold": 0.3,
+        "coverage": 1.0,
+        "lift_over_base_rate": 0.0
+      },
+      {
+        "n": 86,
+        "correct": 41,
+        "accuracy": 0.4767,
+        "ci95": [
+          0.3745,
+          0.581
+        ],
+        "threshold": 0.38,
+        "coverage": 0.9348,
+        "lift_over_base_rate": -0.0016
+      },
+      {
+        "n": 49,
+        "correct": 27,
+        "accuracy": 0.551,
+        "ci95": [
+          0.4132,
+          0.6815
+        ],
+        "threshold": 0.45,
+        "coverage": 0.5326,
+        "lift_over_base_rate": 0.0727
+      },
+      {
+        "n": 44,
+        "correct": 22,
+        "accuracy": 0.5,
+        "ci95": [
+          0.3583,
+          0.6417
+        ],
+        "threshold": 0.48,
+        "coverage": 0.4783,
+        "lift_over_base_rate": 0.0217
+      },
+      {
+        "n": 21,
+        "correct": 11,
+        "accuracy": 0.5238,
+        "ci95": [
+          0.3237,
+          0.7166
+        ],
+        "threshold": 0.55,
+        "coverage": 0.2283,
+        "lift_over_base_rate": 0.0455
+      },
+      {
+        "n": 9,
+        "correct": 0,
+        "accuracy": 0.0,
+        "ci95": [
+          0.0,
+          0.2991
+        ],
+        "threshold": 0.6,
+        "coverage": 0.0978,
+        "lift_over_base_rate": -0.4783
+      },
+      {
+        "n": 0,
+        "correct": 0,
+        "accuracy": null,
+        "ci95": [
+          null,
+          null
+        ],
+        "threshold": 0.65,
+        "coverage": 0.0,
+        "lift_over_base_rate": null
+      },
+      {
+        "n": 0,
+        "correct": 0,
+        "accuracy": null,
+        "ci95": [
+          null,
+          null
+        ],
+        "threshold": 0.7,
+        "coverage": 0.0,
+        "lift_over_base_rate": null
+      }
+    ],
+    "named_operating_points": {
+      "proposed_0.10": {
+        "n": 92,
+        "correct": 44,
+        "accuracy": 0.4783,
+        "ci95": [
+          0.3791,
+          0.5791
+        ],
+        "threshold": 0.1,
+        "coverage": 1.0,
+        "lift_over_base_rate": 0.0
+      },
+      "tier_low_0.38": {
+        "n": 86,
+        "correct": 41,
+        "accuracy": 0.4767,
+        "ci95": [
+          0.3745,
+          0.581
+        ],
+        "threshold": 0.38,
+        "coverage": 0.9348,
+        "lift_over_base_rate": -0.0016
+      },
+      "tier_moderate_0.48": {
+        "n": 44,
+        "correct": 22,
+        "accuracy": 0.5,
+        "ci95": [
+          0.3583,
+          0.6417
+        ],
+        "threshold": 0.48,
+        "coverage": 0.4783,
+        "lift_over_base_rate": 0.0217
+      },
+      "tier_high_0.65": {
+        "n": 0,
+        "correct": 0,
+        "accuracy": null,
+        "ci95": [
+          null,
+          null
+        ],
+        "threshold": 0.65,
+        "coverage": 0.0,
+        "lift_over_base_rate": null
+      }
+    }
+  },
+  "candidate_depth": {
+    "correctness": "correct structure within the displayed list at truth Tanimoto >= 0.70",
+    "n": 92,
+    "points": [
+      {
+        "n": 92,
+        "correct": 44,
+        "ci95": [
+          0.3791,
+          0.5791
+        ],
+        "n_shown": 1,
+        "hit_rate": 0.4783,
+        "incorrect_shown_per_compound": 0.5217
+      },
+      {
+        "n": 92,
+        "correct": 59,
+        "ci95": [
+          0.5395,
+          0.7318
+        ],
+        "n_shown": 3,
+        "hit_rate": 0.6413,
+        "incorrect_shown_per_compound": 2.3587,
+        "hit_rate_gain_vs_previous": 0.163,
+        "incorrect_shown_per_additional_hit": 11.3
+      },
+      {
+        "n": 92,
+        "correct": 68,
+        "ci95": [
+          0.6411,
+          0.818
+        ],
+        "n_shown": 10,
+        "hit_rate": 0.7391,
+        "incorrect_shown_per_compound": 9.2609,
+        "hit_rate_gain_vs_previous": 0.0978,
+        "incorrect_shown_per_additional_hit": 70.6
+      }
+    ]
+  },
+  "msi_rule": {
+    "status": "not_evaluated",
+    "reason": "Axis-level evidence is unavailable. Run tools/audit_structure_predictions.py against a report bundle to add the axis_* columns to the controls CSV, or pass --reports-root."
+  },
+  "scope_note": "Retrospective operating curves on a 92-control cohort. Intervals are wide; they bound how confidently a cutoff can be placed, and a flat curve means no cutoff on that quantity is defensible at any value."
+}

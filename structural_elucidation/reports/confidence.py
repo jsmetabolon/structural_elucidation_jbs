@@ -92,6 +92,60 @@ IDENTITY_CONF_AUTO_NO_MS2 = 0.92       # auto-promoted, no observed MS2
 # (see CONFIRMED_OVERALL); a curator override can never reach the same ceiling.
 IDENTITY_PROMOTED_MAX = 0.99
 
+# --- Assurance: human / laboratory verdicts ----------------------------------
+# ``evidence_score`` is model-only and says nothing about human review. Human and
+# laboratory findings are a separate, discrete, auditable state so that a report
+# never presents a policy display value as if it were a fitted probability, and
+# so a *refuting* result has somewhere to live. Before this existed, a standard
+# run that came back negative could not be recorded at all: the only human inputs
+# were promotions.
+ASSURANCE_STANDARD_CONFIRMED = "standard_confirmed"
+ASSURANCE_STANDARD_REFUTED = "standard_refuted"
+ASSURANCE_CURATOR_KNOWN = "curator_known"
+ASSURANCE_CURATOR_REJECTED = "curator_rejected"
+ASSURANCE_NONE = "none"
+
+ASSURANCE_VERDICTS = (
+    ASSURANCE_STANDARD_CONFIRMED,
+    ASSURANCE_STANDARD_REFUTED,
+    ASSURANCE_CURATOR_KNOWN,
+    ASSURANCE_CURATOR_REJECTED,
+    ASSURANCE_NONE,
+)
+
+# Verdicts that argue against the proposed structure. These cap the MSI level and
+# suppress the name; no evidence score can override them.
+REFUTING_ASSURANCE = frozenset({ASSURANCE_STANDARD_REFUTED, ASSURANCE_CURATOR_REJECTED})
+# Verdicts that establish identity by means outside the model.
+SUPPORTING_ASSURANCE = frozenset({ASSURANCE_STANDARD_CONFIRMED, ASSURANCE_CURATOR_KNOWN})
+
+ASSURANCE_LABELS = {
+    ASSURANCE_STANDARD_CONFIRMED: "Confirmed against an authentic standard",
+    ASSURANCE_STANDARD_REFUTED: "Ruled out by an authentic-standard run",
+    ASSURANCE_CURATOR_KNOWN: "Curator-established identity (authentic standard pending)",
+    ASSURANCE_CURATOR_REJECTED: "Rejected on curator review",
+    ASSURANCE_NONE: "No human review recorded",
+}
+
+
+def assurance_of(fields: dict) -> str:
+    """Return the recorded human/laboratory verdict for a report.
+
+    Reads the explicit ``assurance`` field when the curation ledger supplied one,
+    and otherwise derives it from the legacy inputs so existing bundles keep
+    behaving as before: a Metabolon Level-1 control whose top candidate matches
+    the confirmed structure is ``standard_confirmed``, and an entry on the
+    curator allowlist is ``curator_known``.
+    """
+    explicit = str(fields.get("assurance", "") or "").strip().lower()
+    if explicit in ASSURANCE_VERDICTS:
+        return explicit
+    if str(fields.get("metabolon_level", "")).strip() == "1" and bool(fields.get("truth_match")):
+        return ASSURANCE_STANDARD_CONFIRMED
+    if fields.get("known_identity_override"):
+        return ASSURANCE_CURATOR_KNOWN
+    return ASSURANCE_NONE
+
 
 @dataclass
 class Axis:
@@ -331,27 +385,63 @@ MSI_LABELS = {
 }
 
 
-def assign_msi_level(fields: dict, conf: "Confidence") -> tuple[int, str, str]:
+@dataclass(frozen=True)
+class MsiThresholds:
+    """Boundary parameters for :func:`assign_msi_level`.
+
+    Exposed as a value object so tools/audit_thresholds.py can sweep the
+    boundaries against the truth set without re-implementing the rule. Drift
+    between a swept rule and the delivered rule would make the sweep useless.
+    """
+
+    struct_moderate: float = STRUCT_MODERATE
+    struct_weak: float = STRUCT_WEAK
+    mass_strong: float = MASS_STRONG
+    mass_weak: float = MASS_WEAK
+    ms2_present: float = MS2_PRESENT
+
+
+DEFAULT_MSI_THRESHOLDS = MsiThresholds()
+
+
+def assign_msi_level(
+    fields: dict,
+    conf: "Confidence",
+    thresholds: MsiThresholds = DEFAULT_MSI_THRESHOLDS,
+) -> tuple[int, str, str]:
     """Assign a Schymanski/MSI identification-confidence level (1-5) from evidence.
 
     L1 confirmed (authentic standard) / L2 probable structure (strong structure +
     observed MS2 + mass) / L3 tentative candidate structure (hypothesis) / L4
     molecular formula only (structure not supported or mass-rejected) / L5 exact
     mass only. Structures are only claimed at L1-L3; L4-L5 report formula/mass.
+
+    A refuting human verdict (a standard run that came back negative, or a
+    curator rejection) caps the level at 4 no matter what the evidence axes say:
+    a failed authentic-standard run is stronger evidence against the structure
+    than any model score is for it.
     """
     by = {a.key: a for a in conf.axes}
     struct = by["structure"].score or 0.0
     mass = by["mass"].score if by["mass"].available else None
-    ms2_ok = by["ms2"].available and (by["ms2"].score or 0.0) >= MS2_PRESENT
-    mass_ok = mass is not None and mass >= MASS_STRONG
-    mass_mismatch = mass is not None and mass < MASS_WEAK
+    ms2_ok = by["ms2"].available and (by["ms2"].score or 0.0) >= thresholds.ms2_present
+    mass_ok = mass is not None and mass >= thresholds.mass_strong
+    mass_mismatch = mass is not None and mass < thresholds.mass_weak
     observed = bool(fields.get("observed_mz_available"))
 
+    refuted = assurance_of(fields) in REFUTING_ASSURANCE
+    if refuted:
+        note = (
+            "An authentic-standard run ruled this structure out"
+            if assurance_of(fields) == ASSURANCE_STANDARD_REFUTED
+            else "A curator rejected this structure on review"
+        )
+        return 4, MSI_LABELS[4], f"{note} - reporting formula/mass only"
     if conf.tier == "Confirmed":
         return 1, MSI_LABELS[1], "Metabolon Level-1 standard match and the top candidate matches it"
-    if struct >= STRUCT_MODERATE and ms2_ok and mass_ok:
+    if struct >= thresholds.struct_moderate and ms2_ok and mass_ok:
         return 2, MSI_LABELS[2], "Strong structure similarity with observed-MS2 and mass corroboration"
-    if (not mass_mismatch) and struct >= STRUCT_WEAK:
+    if (not mass_mismatch) and struct >= thresholds.struct_weak:
         return 3, MSI_LABELS[3], "Structure candidate consistent with mass but not spectrally confirmed - a hypothesis"
     if observed or mass_ok:
         note = (
