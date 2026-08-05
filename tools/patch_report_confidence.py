@@ -275,7 +275,7 @@ def _report_context(data: Path, slug: str, fields: dict, conf: C.Confidence) -> 
     ), candidate_scores[:3]
 
 
-def patch_report(report_dir: Path, apply: bool, identity_overrides: dict | None = None) -> str:
+def patch_report(report_dir: Path, apply: bool, ledger: dict | None = None) -> str:
     data = report_dir / "data"
     if not data.is_dir():
         return "no_data"
@@ -283,13 +283,11 @@ def patch_report(report_dir: Path, apply: bool, identity_overrides: dict | None 
     fields = C.read_fields_from_sidecars(data, slug)
     if not fields:
         return "no_fields"
-    # Inject curated known-identity override (curator allowlist) so the library-
-    # identity metric can render >= 90% without rerunning enrichment. Never
-    # touches the calibrated ``overall`` P(correct) or its tier.
-    if identity_overrides:
-        override = identity_overrides.get(report_dir.name)
-        if override:
-            fields["known_identity_override"] = override
+    # Inject the reviewed verdict so the headline, MSI level and identity metric
+    # reflect it without rerunning enrichment. The model's evidence score is
+    # computed from the axes alone and is never touched by this.
+    if ledger:
+        C.apply_curation_entry(fields, ledger.get(report_dir.name))
     # Load persisted target mass before confidence computation so the mass card
     # can compare the observed neutral mass with the predicted candidate mass.
     evidence_path = data / f"{slug}_evidence_summary.json"
@@ -312,6 +310,10 @@ def patch_report(report_dir: Path, apply: bool, identity_overrides: dict | None 
                 sidecar["identity_confidence"] = conf.identity_confidence
                 sidecar["identity_basis"] = conf.identity_basis
                 sidecar["candidate_exact_mass"] = conf.candidate_exact_mass
+                sidecar["assurance"] = conf.assurance
+                sidecar["evidence_score"] = conf.evidence_score
+                if fields.get("assurance_reason"):
+                    sidecar["assurance_reason"] = fields["assurance_reason"]
                 if fields.get("known_identity_override"):
                     sidecar["known_identity_override"] = fields["known_identity_override"]
                 enriched.write_text(json.dumps(sidecar, indent=2))
@@ -345,8 +347,8 @@ def patch_report(report_dir: Path, apply: bool, identity_overrides: dict | None 
     return "patched" if changed else "unchanged"
 
 
-DEFAULT_IDENTITY_OVERRIDES = (
-    Path(__file__).resolve().parent.parent / "data" / "known_identity_overrides.csv"
+DEFAULT_CURATION_LEDGER = (
+    Path(__file__).resolve().parent.parent / "data" / "curation_ledger.csv"
 )
 
 
@@ -355,24 +357,29 @@ def main() -> None:
     ap.add_argument("reports_root", type=Path)
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument(
+        "--curation-ledger",
         "--identity-overrides",
+        dest="curation_ledger",
         type=Path,
-        default=DEFAULT_IDENTITY_OVERRIDES,
+        default=DEFAULT_CURATION_LEDGER,
         help=(
-            "CSV allowlist of curated known-identity control_ids "
-            "(columns: control_id, identity_confidence, reason). "
-            "Defaults to data/known_identity_overrides.csv; pass an empty path or "
-            "a missing file to disable."
+            "CSV of reviewed verdicts (columns: control_id, verdict, "
+            "identity_confidence, evidence_type, reviewer, date, standard_run_id, "
+            "reason). Defaults to data/curation_ledger.csv; pass a missing file to "
+            "disable. Allowlist files predating the ledger are read as curator_known."
         ),
     )
     args = ap.parse_args()
-    identity_overrides = C.load_identity_overrides(args.identity_overrides)
-    if identity_overrides:
-        print(f"[patch-confidence] loaded {len(identity_overrides)} known-identity overrides "
-              f"from {args.identity_overrides}", file=sys.stderr)
+    ledger = C.load_curation_ledger(args.curation_ledger)
+    if ledger:
+        verdicts: dict[str, int] = {}
+        for entry in ledger.values():
+            verdicts[entry.verdict] = verdicts.get(entry.verdict, 0) + 1
+        print(f"[patch-confidence] loaded {len(ledger)} reviewed verdicts "
+              f"from {args.curation_ledger}: {verdicts}", file=sys.stderr)
     counts: dict[str, int] = {}
     for d in sorted(p for p in args.reports_root.iterdir() if p.is_dir()):
-        st = patch_report(d, apply=not args.dry_run, identity_overrides=identity_overrides)
+        st = patch_report(d, apply=not args.dry_run, ledger=ledger)
         counts[st] = counts.get(st, 0) + 1
     print(f"[patch-confidence] {'(dry-run) ' if args.dry_run else ''}{counts}")
 

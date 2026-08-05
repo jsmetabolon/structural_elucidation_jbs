@@ -215,8 +215,8 @@ def test_msi_badge_and_card_render():
     assert "MSI identification level" in section
 
 
-def _baseline_conf(**over):
-    """Baseline conf with the exact + strong-mass profile used by the identity checks.
+def _baseline_fields(**over):
+    """Fields for the exact + strong-mass profile used by the identity checks.
 
     Later kwargs win, so callers can override any baseline field.
     """
@@ -226,7 +226,11 @@ def _baseline_conf(**over):
         ms2_spectrum_present=True, ms2_score=0.5,
     )
     baseline.update(over)
-    return C.compute_confidence(_fields(**baseline))
+    return _fields(**baseline)
+
+
+def _baseline_conf(**over):
+    return C.compute_confidence(_baseline_fields(**over))
 
 
 def test_identity_override_promotes_overall_confidence():
@@ -451,17 +455,161 @@ def test_identity_note_included_in_scored_params_section():
 def test_load_identity_overrides_missing_file_returns_empty():
     assert C.load_identity_overrides(None) == {}
     assert C.load_identity_overrides(Path("/nonexistent/path.csv")) == {}
+    assert C.load_curation_ledger(None) == {}
+    assert C.load_curation_ledger(Path("/nonexistent/path.csv")) == {}
 
 
-def test_load_identity_overrides_seeded_allowlist():
-    path = ROOT / "data" / "known_identity_overrides.csv"
-    if not path.exists():
-        pytest.skip("seeded allowlist not present")
-    overrides = C.load_identity_overrides(path)
-    assert "X-22834" in overrides  # glycodeoxycholate
-    assert overrides["X-22834"]["confidence"] >= 0.90
+def test_load_curation_ledger_seeded_verdicts():
+    ledger = C.load_curation_ledger(ROOT / "data" / "curation_ledger.csv")
+    assert ledger["X-22834"].verdict == C.ASSURANCE_CURATOR_KNOWN  # glycodeoxycholate
+    assert ledger["X-22834"].identity_confidence >= 0.90
     # Row with a comma in the reason must round-trip because it's quoted in the CSV.
-    assert "2,4-dichlorophenol" in overrides["X-21315"]["reason"]
+    assert "2,4-dichlorophenol" in ledger["X-21315"].reason
+
+
+def test_identity_override_view_of_the_ledger_keeps_the_old_shape():
+    overrides = C.load_identity_overrides(ROOT / "data" / "curation_ledger.csv")
+    assert overrides["X-22834"]["confidence"] >= 0.90
+    assert "glycodeoxycholate" in overrides["X-22834"]["reason"]
+
+
+def test_allowlist_without_a_verdict_column_reads_as_curator_known(tmp_path):
+    legacy = tmp_path / "known_identity_overrides.csv"
+    legacy.write_text(
+        "control_id,identity_confidence,reason\n"
+        "# a comment line\n"
+        "X-1,0.95,Named library metabolite\n"
+        "X-2,,No confidence recorded\n"
+    )
+    ledger = C.load_curation_ledger(legacy)
+    assert ledger["X-1"].verdict == C.ASSURANCE_CURATOR_KNOWN
+    assert ledger["X-1"].identity_confidence == 0.95
+    assert ledger["X-2"].identity_confidence == C.IDENTITY_CONF_OVERRIDE_DEFAULT
+
+
+def test_a_mistyped_verdict_is_an_error_not_a_silently_dropped_row(tmp_path):
+    path = tmp_path / "ledger.csv"
+    path.write_text("control_id,verdict\nX-1,standard_refuted\nX-2,standard_refuded\n")
+    with pytest.raises(ValueError, match="standard_refuded"):
+        C.load_curation_ledger(path)
+
+
+def test_ledger_note_carries_the_provenance_onto_the_report():
+    entry = C.CurationEntry(
+        control_id="X-1",
+        verdict=C.ASSURANCE_STANDARD_REFUTED,
+        evidence_type="authentic standard",
+        reviewer="A. Curator",
+        date="2026-08-05",
+        standard_run_id="RUN-42",
+        reason="Retention time and MS2 both disagree",
+    )
+    note = entry.note()
+    assert "Retention time and MS2 both disagree" in note
+    assert "standard run RUN-42" in note
+    assert "reviewed by A. Curator" in note
+
+
+def test_apply_curation_entry_only_grants_an_identity_override_to_curator_known():
+    known: dict = {}
+    C.apply_curation_entry(
+        known, C.CurationEntry("X-1", C.ASSURANCE_CURATOR_KNOWN, 0.97, reason="named library match")
+    )
+    assert known["assurance"] == C.ASSURANCE_CURATOR_KNOWN
+    assert known["known_identity_override"]["confidence"] == 0.97
+
+    refuted: dict = {}
+    C.apply_curation_entry(refuted, C.CurationEntry("X-2", C.ASSURANCE_STANDARD_REFUTED))
+    assert refuted["assurance"] == C.ASSURANCE_STANDARD_REFUTED
+    assert "known_identity_override" not in refuted
+
+
+# --- assurance: the human/laboratory verdict, kept apart from the model score ---
+
+
+def test_evidence_score_is_the_model_output_and_is_never_overwritten():
+    plain = C.compute_confidence(_fields())
+    confirmed = C.compute_confidence(_fields(metabolon_level="1", truth_match=True))
+    promoted = _baseline_conf(known_identity_override=True)
+    # The headline moves with the verdict; the model's own score does not.
+    assert confirmed.overall == 1.0
+    assert confirmed.evidence_score < 1.0
+    assert promoted.overall >= 0.90
+    assert promoted.evidence_score < 0.90
+    # A report with no human input shows one number twice, not two different ones.
+    assert plain.overall == plain.evidence_score
+    assert plain.assurance == C.ASSURANCE_NONE
+
+
+def test_a_failed_standard_run_rules_the_structure_out():
+    conf = C.compute_confidence(
+        _baseline_fields(assurance=C.ASSURANCE_STANDARD_REFUTED, assurance_reason="RT disagrees")
+    )
+    assert conf.tier == "Refuted"
+    assert conf.overall == 0.0
+    # The evidence itself is unchanged; only the claim built on it is withdrawn.
+    assert conf.evidence_score > 0.0
+    assert conf.msi_level == 4
+    assert conf.identity_status == C.IDENTITY_STATUS_UNKNOWN
+    assert any("ruled out" in flag for flag in conf.flags)
+
+
+def test_a_curator_rejection_demotes_the_same_way_a_failed_run_does():
+    conf = C.compute_confidence(_baseline_fields(assurance=C.ASSURANCE_CURATOR_REJECTED))
+    assert conf.tier == "Refuted"
+    assert conf.msi_level == 4
+    assert "curator" in conf.tier_note.lower()
+
+
+def test_a_refuting_verdict_outranks_a_curator_promotion():
+    """Contradictory inputs must resolve against the structure, not for it."""
+
+    conf = C.compute_confidence(
+        _baseline_fields(
+            assurance=C.ASSURANCE_STANDARD_REFUTED,
+            known_identity_override={"confidence": 0.98, "reason": "stale allowlist entry"},
+        )
+    )
+    assert conf.tier == "Refuted"
+    assert conf.overall == 0.0
+    assert conf.msi_level == 4
+
+
+def test_an_explicit_confirmed_verdict_needs_no_metabolon_level():
+    conf = C.compute_confidence(
+        _baseline_fields(assurance=C.ASSURANCE_STANDARD_CONFIRMED, assurance_reason="RUN-7")
+    )
+    assert conf.tier == "Confirmed"
+    assert conf.msi_level == 1
+    assert conf.overall == C.CONFIRMED_OVERALL
+
+
+def test_legacy_level1_truth_match_still_reads_as_a_confirmed_standard():
+    conf = C.compute_confidence(_fields(metabolon_level="1", truth_match=True))
+    assert conf.assurance == C.ASSURANCE_STANDARD_CONFIRMED
+    assert conf.tier == "Confirmed"
+
+
+def test_assurance_note_reports_both_numbers_when_they_disagree():
+    conf = _baseline_conf(known_identity_override=True)
+    note = C.assurance_note_html(conf)
+    assert "Human review" in note
+    assert "evidence score" in note
+    # A report with no verdict says nothing rather than saying "none".
+    assert C.assurance_note_html(C.compute_confidence(_fields())) == ""
+
+
+def test_refuting_verdict_gets_a_header_badge():
+    refuted = C.compute_confidence(_baseline_fields(assurance=C.ASSURANCE_STANDARD_REFUTED))
+    assert "Ruled out" in C.assurance_badge_html(refuted)
+    assert C.assurance_badge_html(C.compute_confidence(_fields())) == ""
+
+
+def test_confidence_dict_carries_the_split_for_downstream_consumers():
+    payload = _baseline_conf(known_identity_override=True).as_dict()
+    assert payload["evidence_score"] < payload["overall"]
+    assert payload["assurance"] == C.ASSURANCE_CURATOR_KNOWN
+    assert payload["assurance_label"]
 
 
 def test_consensus_decrowder_reduces_overlap():

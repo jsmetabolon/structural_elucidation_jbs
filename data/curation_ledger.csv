@@ -1,0 +1,43 @@
+control_id,verdict,identity_confidence,evidence_type,reviewer,date,standard_run_id,reason
+# Reviewed human and laboratory verdicts on X-compound identifications.
+#
+# This is the only place a human finding enters the confidence model. The model's
+# own evidence score is computed without it and is never overwritten; a verdict
+# recorded here moves the headline confidence, the MSI level, and whether the
+# report asserts a name. Both directions are recordable, which is the point: a
+# standard run that came back negative previously had nowhere to live.
+#
+# Columns:
+#   control_id           X-compound id, e.g. X-22834
+#   verdict              standard_confirmed | standard_refuted | curator_known
+#                        | curator_rejected | none
+#   identity_confidence  Rubric value in [0,1] for curator_known; blank -> 0.98.
+#                        Ignored for the other verdicts.
+#   evidence_type        What the verdict rests on, e.g. "authentic standard",
+#                        "library MS2 + accurate mass"
+#   reviewer             Who recorded it
+#   date                 ISO date the verdict was recorded
+#   standard_run_id      Run identifier when an authentic standard was run
+#   reason               Free-text rationale, shown on the report card
+#
+# Effect of each verdict:
+#   standard_confirmed   MSI Level 1, headline reads 100%, reference name asserted
+#   curator_known        Headline promoted to the rubric value (capped at 0.99),
+#                        MSI level unchanged - a curator knowing the compound is
+#                        not the same as having run a standard
+#   standard_refuted     MSI capped at Level 4, name suppressed, headline 0%
+#   curator_rejected     Same as standard_refuted, on curator review rather than a run
+#   none                 No human input; the model's evidence score stands alone
+#
+# Migrated from data/known_identity_overrides.csv, whose rows were all
+# curator-known bile acids, indoles and phenols from the Metabolon library.
+X-22834,curator_known,0.98,named library match,,,,Named Metabolon library bile acid (glycodeoxycholate); identity known
+X-17612,curator_known,0.98,named library match,,,,Named Metabolon library bile-acid conjugate (deoxycholic acid glucuronide); identity known
+X-24178,curator_known,0.98,named library match,,,,Named Metabolon library bile-acid conjugate (lithocholic acid glucuronide); identity known
+X-25458,curator_known,0.98,named library match,,,,Named Metabolon library bile-acid conjugate (lithocholic acid glucuronide); identity known
+X-21803,curator_known,0.98,named library match,,,,Named Metabolon library indole (6-hydroxyindole sulfate); identity known
+X-25318,curator_known,0.98,named library match,,,,Named Metabolon library indole (6-hydroxyindole sulfate); identity known
+X-23456,curator_known,0.98,named library match,,,,Named Metabolon library indole (indoleacetylaspartate); identity known
+X-24732,curator_known,0.98,named library match,,,,Named Metabolon library indole (2-oxindole-3-acetate); identity known
+X-24975,curator_known,0.98,named library match,,,,Named Metabolon library indole (1H-indole-7-acetic acid); identity known
+X-21315,curator_known,0.98,named library match,,,,"Named Metabolon library industrial phenol (2,4-dichlorophenol sulfate); identity known"

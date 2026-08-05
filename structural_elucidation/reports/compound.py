@@ -74,6 +74,7 @@ DEFAULT_OUT_DIR = REPO_ROOT / "output/reports"
 DEFAULT_DB = REPO_ROOT / "vendor/metabolite_synonyms.sqlite"
 DEFAULT_KNOWN_X = REPO_ROOT / "data/known_X.csv"
 DEFAULT_KNOWN_X_ALL = REPO_ROOT / "data/known_X_all_available_structures_simple.csv"
+DEFAULT_CURATION_LEDGER = REPO_ROOT / "data/curation_ledger.csv"
 OBABEL_PATH_CANDIDATES = [
     Path.home() / "Downloads" / "ADFRsuite_x86_64Darwin_1.0" / "bin" / "obabel",
 ]
@@ -3549,6 +3550,14 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "match": _n(rank1.get("ms2_match_score")),
     }
     _conf_fields["ms2_n_pairs"] = _n_peaks
+    # Reviewed verdict, matching the enrich -> patch flow so both delivery paths
+    # honor the same curation ledger.
+    confmod.apply_curation_entry(
+        _conf_fields,
+        confmod.load_curation_ledger(
+            resolve(getattr(args, "curation_ledger", DEFAULT_CURATION_LEDGER), repo_root)
+        ).get(control_id),
+    )
     confidence_obj = confmod.compute_confidence(_conf_fields)
     _conf_fields["smiles"] = target_smiles
     _conf_fields["display_name"] = target_name
@@ -3656,6 +3665,12 @@ def main() -> None:
     parser.add_argument("--db", type=Path, default=DEFAULT_DB)
     parser.add_argument("--known-x", type=Path, default=DEFAULT_KNOWN_X)
     parser.add_argument("--known-x-all", type=Path, default=DEFAULT_KNOWN_X_ALL)
+    parser.add_argument(
+        "--curation-ledger",
+        type=Path,
+        default=DEFAULT_CURATION_LEDGER,
+        help="Reviewed human/laboratory verdicts; see data/curation_ledger.csv.",
+    )
     parser.add_argument("--candidate-pool", type=Path, default=None)
     parser.add_argument("--hypotheses", type=Path, default=None)
     parser.add_argument("--peak-csv", type=Path, default=None)

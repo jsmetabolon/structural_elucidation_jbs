@@ -169,6 +169,17 @@ class Axis:
 
 @dataclass
 class Confidence:
+    """Identification confidence for one report.
+
+    ``evidence_score`` and ``overall`` are deliberately two numbers.
+    ``evidence_score`` is the model's own output and nothing is allowed to
+    change it: it is what the calibration was fitted on and what the audits
+    measure, so overwriting it would make every downstream statistic a
+    statement about policy rather than about evidence. ``overall`` is the
+    headline the report displays, which folds in ``assurance`` - the human or
+    laboratory verdict. When the two differ the report says so.
+    """
+
     overall: float
     tier: str
     tier_note: str
@@ -177,6 +188,12 @@ class Confidence:
     axes: list[Axis] = field(default_factory=list)
     flags: list[str] = field(default_factory=list)
     source: str = ""
+    # Model-only evidence score, never promoted, pinned, or otherwise overwritten.
+    evidence_score: float = 0.0
+    # Human / laboratory verdict; see ASSURANCE_VERDICTS.
+    assurance: str = ASSURANCE_NONE
+    assurance_label: str = ASSURANCE_LABELS[ASSURANCE_NONE]
+    assurance_basis: str = ""
     # display extras
     observed_mz: float | None = None
     observed_neutral_mass: float | None = None
@@ -195,6 +212,10 @@ class Confidence:
     def as_dict(self) -> dict:
         return {
             "overall": self.overall,
+            "evidence_score": self.evidence_score,
+            "assurance": self.assurance,
+            "assurance_label": self.assurance_label,
+            "assurance_basis": self.assurance_basis,
             "tier": self.tier,
             "tier_note": self.tier_note,
             "completeness": self.completeness,
@@ -478,6 +499,14 @@ def assign_identity(fields: dict, conf: "Confidence") -> tuple[str, float | None
     mass_mismatch = mass is not None and mass < MASS_WEAK
     ms2_ok = by["ms2"].available and (by["ms2"].score or 0.0) >= MS2_PRESENT
 
+    assurance = assurance_of(fields)
+    if assurance in REFUTING_ASSURANCE:
+        return (
+            IDENTITY_STATUS_UNKNOWN,
+            None,
+            "Structure ruled out on review; no identity is claimed",
+        )
+
     override = fields.get("known_identity_override")
     if override:
         # Accept truthy scalar (bool) or a dict {confidence, reason}
@@ -531,22 +560,22 @@ def assign_identity(fields: dict, conf: "Confidence") -> tuple[str, float | None
 
 
 def compute_confidence(fields: dict) -> Confidence:
-    """Compute the hybrid identification confidence from normalized ``fields``."""
+    """Compute the hybrid identification confidence from normalized ``fields``.
+
+    Order matters. The model score is computed first and then frozen. Human and
+    laboratory verdicts are folded into the headline afterwards, and only the
+    ones that come from an authentic-standard run are allowed to move the MSI
+    level: a curator saying "we know what this is" is grounds for a confident
+    headline but not for claiming Level 1, which means a standard was run.
+    """
     source = str(fields.get("source", "")).strip()
     axes = build_axes(fields)
     raw, completeness = raw_score(axes)
-    overall = _sigmoid(PLATT_A * raw + PLATT_B)
-    tier, tier_note = _tier(overall, axes, source)
-    # Authentic-standard override (gap 6): a Metabolon Level-1 control whose top
-    # candidate matches the confirmed structure is genuinely confirmable. Display
-    # policy: an authentic-standard-confirmed identification is the gold standard,
-    # so the headline overall reads 100% (CONFIRMED_OVERALL). The underlying
-    # exploratory calibrated evidence score is still shown in the scored-parameters
-    # section text; this is a policy display value, not a recalibrated probability.
-    if str(fields.get("metabolon_level", "")).strip() == "1" and bool(fields.get("truth_match")):
-        tier = "Confirmed"
-        tier_note = "Authentic-standard confirmed (Metabolon Level 1); top candidate matches the confirmed structure"
-        overall = max(overall, CONFIRMED_OVERALL)
+    # Model-only, and frozen from here on. Everything below adjusts the headline
+    # ``overall`` instead, so the audits keep measuring evidence rather than policy.
+    evidence = _sigmoid(PLATT_A * raw + PLATT_B)
+    assurance = assurance_of(fields)
+    tier, tier_note = _tier(evidence, axes, source)
     if source == "exact":
         descriptor = "Cataloged reference metabolite (exact structural match)"
     elif source == "predicted":
@@ -554,7 +583,7 @@ def compute_confidence(fields: dict) -> Confidence:
     else:
         descriptor = "Structure proposal"
     result = Confidence(
-        overall=round(overall, 4),
+        overall=round(evidence, 4),
         tier=tier,
         tier_note=tier_note,
         completeness=round(completeness, 4),
@@ -562,6 +591,10 @@ def compute_confidence(fields: dict) -> Confidence:
         axes=axes,
         flags=_flags(axes, fields),
         source=source,
+        evidence_score=round(evidence, 4),
+        assurance=assurance,
+        assurance_label=ASSURANCE_LABELS.get(assurance, ASSURANCE_LABELS[ASSURANCE_NONE]),
+        assurance_basis=str(fields.get("assurance_reason", "") or "").strip(),
         observed_mz=_num(fields.get("observed_mz")),
         observed_neutral_mass=_num(fields.get("observed_neutral_mass")),
         candidate_exact_mass=_num(fields.get("candidate_exact_mass")),
@@ -569,68 +602,193 @@ def compute_confidence(fields: dict) -> Confidence:
         metabolon_level=str(fields.get("metabolon_level", "") or ""),
         mass_alt=fields.get("mass_alt") if isinstance(fields.get("mass_alt"), dict) else None,
     )
+    _apply_standard_run(result)
     result.msi_level, result.msi_label, result.msi_rationale = assign_msi_level(fields, result)
     result.identity_status, result.identity_confidence, result.identity_basis = assign_identity(fields, result)
-    # Curator-known library identity: promote the headline overall confidence to the
-    # identity rubric value (>= 90%) so reports reflect "we know what it is,
-    # authentic standard pending" without upgrading to MSI Level 1 / Confirmed.
-    if (
-        result.identity_status == IDENTITY_STATUS_KNOWN
-        and result.identity_confidence is not None
-        and result.identity_confidence >= 0.90
-        and result.tier != "Confirmed"
-    ):
-        calibrated = result.overall
-        # Clamp below the authentic-standard-confirmed floor so a curator override
-        # can never match the Level 1 headline (100%).
-        promoted = min(float(result.identity_confidence), IDENTITY_PROMOTED_MAX)
-        result.overall = round(promoted, 4)
-        result.tier = "High"
-        result.tier_note = (
-            "This is a High Confidence probable structure based on corroborating "
-            "evidence derived from Metabolon\u2019s validated structural elucidation workflow."
-        )
-        if calibrated < result.overall - 0.05:
-            result.flags.append(
-                f"Overall confidence reflects curator-known library identity "
-                f"(underlying calibrated evidence score was {round(100 * calibrated)}%)."
-            )
+    _apply_curator_identity(result)
     return result
 
 
-def load_identity_overrides(path: Path | str | None) -> dict[str, dict]:
-    """Load the curated known-identity allowlist CSV.
+def _apply_standard_run(result: Confidence) -> None:
+    """Fold an authentic-standard outcome into the headline, before MSI is set.
 
-    Columns (case-insensitive): ``control_id`` (required),
-    ``identity_confidence`` (optional; defaults to ``IDENTITY_CONF_OVERRIDE_DEFAULT``),
-    ``reason`` (optional; free-text rationale). Returns a mapping
-    ``{control_id: {"confidence": float, "reason": str}}``. Missing / unreadable
-    files return an empty dict so callers can pass in an optional path.
+    Both directions run through here. A confirming standard is the gold standard
+    and reads 100%; a refuting one means the proposed structure is wrong, which
+    no evidence score should be allowed to soften.
+    """
+    if result.assurance == ASSURANCE_STANDARD_CONFIRMED:
+        result.tier = "Confirmed"
+        result.tier_note = (
+            "Authentic-standard confirmed (Metabolon Level 1); top candidate matches the confirmed structure"
+        )
+        # Display policy, not a recalibrated probability. ``evidence_score`` keeps
+        # the model's own value and the scored-parameters section reports it.
+        result.overall = max(result.overall, CONFIRMED_OVERALL)
+        if result.evidence_score < CONFIRMED_OVERALL - 0.05:
+            result.flags.append(
+                f"Headline confidence reflects authentic-standard confirmation "
+                f"(the model's own evidence score was {round(100 * result.evidence_score)}%)."
+            )
+    elif result.assurance in REFUTING_ASSURANCE:
+        result.tier = "Refuted"
+        result.tier_note = (
+            "An authentic-standard run ruled this structure out"
+            if result.assurance == ASSURANCE_STANDARD_REFUTED
+            else "A curator rejected this structure on review"
+        )
+        if result.assurance_basis:
+            result.tier_note += f" ({result.assurance_basis})"
+        result.overall = 0.0
+        result.flags.append(
+            "This structure has been ruled out by review; the report is limited to formula and mass."
+        )
+
+
+def _apply_curator_identity(result: Confidence) -> None:
+    """Promote the headline for a curator-established identity, after MSI is set.
+
+    Runs after :func:`assign_msi_level` on purpose: a curator knowing the
+    compound justifies a confident headline but not MSI Level 1, which asserts
+    that an authentic standard was run.
+    """
+    if result.tier == "Confirmed" or result.assurance in REFUTING_ASSURANCE:
+        return
+    if (
+        result.identity_status != IDENTITY_STATUS_KNOWN
+        or result.identity_confidence is None
+        or result.identity_confidence < 0.90
+    ):
+        return
+    # Clamp below the authentic-standard-confirmed floor so a curator override
+    # can never match the Level 1 headline (100%).
+    result.overall = round(min(float(result.identity_confidence), IDENTITY_PROMOTED_MAX), 4)
+    result.tier = "High"
+    result.tier_note = (
+        "This is a High Confidence probable structure based on corroborating "
+        "evidence derived from Metabolon\u2019s validated structural elucidation workflow."
+    )
+    if result.evidence_score < result.overall - 0.05:
+        result.flags.append(
+            f"Overall confidence reflects curator-known library identity "
+            f"(underlying calibrated evidence score was {round(100 * result.evidence_score)}%)."
+        )
+
+
+@dataclass(frozen=True)
+class CurationEntry:
+    """One reviewed verdict from the curation ledger."""
+
+    control_id: str
+    verdict: str
+    identity_confidence: float | None = None
+    evidence_type: str = ""
+    reviewer: str = ""
+    date: str = ""
+    standard_run_id: str = ""
+    reason: str = ""
+
+    def note(self) -> str:
+        """Human-readable provenance for the report card."""
+        bits = [bit for bit in (self.reason, self.evidence_type) if bit]
+        if self.standard_run_id:
+            bits.append(f"standard run {self.standard_run_id}")
+        if self.reviewer:
+            bits.append(f"reviewed by {self.reviewer}")
+        if self.date:
+            bits.append(self.date)
+        return "; ".join(bits)
+
+
+def load_curation_ledger(path: Path | str | None) -> dict[str, CurationEntry]:
+    """Load the reviewed verdicts keyed by control id.
+
+    Columns (case-insensitive): ``control_id`` (required), ``verdict`` (one of
+    :data:`ASSURANCE_VERDICTS`), and the optional ``identity_confidence``,
+    ``evidence_type``, ``reviewer``, ``date``, ``standard_run_id`` and ``reason``.
+
+    Files predating the ledger carried an allowlist with no ``verdict`` column;
+    every row in one of those means the same thing, so they are read as
+    ``curator_known``.
+
+    A missing file is not an error - callers pass an optional path - but an
+    unrecognized verdict is, because a mistyped verdict would silently discard a
+    refutation, which is the one input that must never be lost.
     """
     if path is None:
         return {}
-    p = Path(path)
-    if not p.exists():
+    source = Path(path)
+    if not source.exists():
         return {}
-    out: dict[str, dict] = {}
+    out: dict[str, CurationEntry] = {}
     try:
-        with p.open(newline="") as handle:
-            # Skip full-line comments starting with '#' (they must not appear inside quoted fields).
+        with source.open(newline="") as handle:
+            # Skip full-line comments (they must not appear inside quoted fields).
             filtered = (line for line in handle if not line.lstrip().startswith("#"))
-            reader = csv.DictReader(filtered)
-            for row in reader:
-                cid = str(row.get("control_id") or row.get("Control_ID") or "").strip()
-                if not cid or cid.startswith("#"):
-                    continue
-                cval = _num(row.get("identity_confidence") or row.get("confidence"))
-                reason = str(row.get("reason") or row.get("note") or "").strip()
-                out[cid] = {
-                    "confidence": cval if cval is not None else IDENTITY_CONF_OVERRIDE_DEFAULT,
-                    "reason": reason,
-                }
-    except (OSError, ValueError):
+            rows = list(csv.DictReader(filtered))
+    except OSError:
         return {}
+    for row in rows:
+        lowered = {str(key or "").strip().lower(): value for key, value in row.items()}
+        control_id = str(lowered.get("control_id") or "").strip()
+        if not control_id or control_id.startswith("#"):
+            continue
+        verdict = str(lowered.get("verdict") or "").strip().lower() or ASSURANCE_CURATOR_KNOWN
+        if verdict not in ASSURANCE_VERDICTS:
+            raise ValueError(
+                f"{source}: unrecognized verdict {verdict!r} for {control_id}; "
+                f"expected one of {', '.join(ASSURANCE_VERDICTS)}"
+            )
+        confidence = _num(lowered.get("identity_confidence") or lowered.get("confidence"))
+        if verdict == ASSURANCE_CURATOR_KNOWN and confidence is None:
+            confidence = IDENTITY_CONF_OVERRIDE_DEFAULT
+        out[control_id] = CurationEntry(
+            control_id=control_id,
+            verdict=verdict,
+            identity_confidence=confidence,
+            evidence_type=str(lowered.get("evidence_type") or "").strip(),
+            reviewer=str(lowered.get("reviewer") or "").strip(),
+            date=str(lowered.get("date") or "").strip(),
+            standard_run_id=str(lowered.get("standard_run_id") or "").strip(),
+            reason=str(lowered.get("reason") or lowered.get("note") or "").strip(),
+        )
     return out
+
+
+def apply_curation_entry(fields: dict, entry: CurationEntry | None) -> None:
+    """Fold a reviewed verdict into the confidence ``fields`` in place."""
+    if entry is None:
+        return
+    fields["assurance"] = entry.verdict
+    fields["assurance_reason"] = entry.note()
+    if entry.verdict == ASSURANCE_CURATOR_KNOWN:
+        fields["known_identity_override"] = {
+            "confidence": entry.identity_confidence
+            if entry.identity_confidence is not None
+            else IDENTITY_CONF_OVERRIDE_DEFAULT,
+            "reason": entry.reason,
+        }
+
+
+def load_identity_overrides(path: Path | str | None) -> dict[str, dict]:
+    """Known-identity allowlist view of the ledger, for callers that predate it.
+
+    Returns ``{control_id: {"confidence": float, "reason": str}}`` for the
+    ``curator_known`` entries only.
+    """
+    try:
+        ledger = load_curation_ledger(path)
+    except ValueError:
+        return {}
+    return {
+        control_id: {
+            "confidence": entry.identity_confidence
+            if entry.identity_confidence is not None
+            else IDENTITY_CONF_OVERRIDE_DEFAULT,
+            "reason": entry.reason,
+        }
+        for control_id, entry in ledger.items()
+        if entry.verdict == ASSURANCE_CURATOR_KNOWN
+    }
 
 
 # --- shared input normalization (renderer + patcher + audit + calibration) ---
@@ -685,7 +843,7 @@ def fields_from_parts(
 
 _TIER_CLASS = {
     "Confirmed": "badge ok", "High": "badge ok", "Moderate": "badge ok",
-    "Low": "badge", "Tentative": "badge",
+    "Low": "badge", "Tentative": "badge", "Refuted": "badge fail",
 }
 
 
@@ -704,6 +862,33 @@ def confidence_metric_card_html(conf: Confidence) -> str:
         f'<div class="metric-value">{_pct(conf.overall)} \u00b7 {html.escape(conf.tier)}</div>'
         f'<div class="metric-note">{html.escape(conf.tier_note)}</div></div>'
     )
+
+
+def assurance_note_html(conf: Confidence) -> str:
+    """State the human/laboratory verdict, and the model score whenever it differs.
+
+    The headline and the model's own score are allowed to disagree - that is the
+    point of recording a verdict - but a report that showed only the headline
+    would be presenting a policy decision as a measurement.
+    """
+    if conf.assurance == ASSURANCE_NONE:
+        return ""
+    label = html.escape(ASSURANCE_LABELS.get(conf.assurance, ""))
+    basis = f" {html.escape(conf.assurance_basis)}." if conf.assurance_basis else ""
+    note = f'<p class="note"><strong>Human review:</strong> {label}.{basis}'
+    if abs(conf.overall - conf.evidence_score) >= 0.005:
+        note += (
+            f" The headline confidence of {_pct(conf.overall)} reflects that review; "
+            f"the model's own evidence score for this feature is {_pct(conf.evidence_score)}."
+        )
+    return note + "</p>"
+
+
+def assurance_badge_html(conf: Confidence) -> str:
+    """Header badge for a refuting verdict, which a reader must not miss."""
+    if conf.assurance not in REFUTING_ASSURANCE:
+        return ""
+    return f'<span class="badge fail">{html.escape(ASSURANCE_LABELS[conf.assurance])}</span>'
 
 
 def msi_badge_html(conf: Confidence) -> str:
@@ -958,7 +1143,7 @@ def scored_parameters_section_html(conf: Confidence, *, public: bool) -> str:
         f"Proposed structure: <strong>{html.escape(conf.descriptor)}</strong>. "
         f"Assessment: <strong>{html.escape(conf.tier)}</strong> - "
         f"{html.escape(conf.tier_note.rstrip('.'))}.</p>"
-    ) + identity_note_html(conf, public=public)
+    ) + assurance_note_html(conf) + identity_note_html(conf, public=public)
     if public:
         tail = (
             '<p class="note">Additional MS2 spectral evidence is incorporated into the overall '

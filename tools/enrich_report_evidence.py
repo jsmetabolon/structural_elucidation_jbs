@@ -236,7 +236,7 @@ def fragment_candidate_fits(tc: list[dict], ms2_rec: dict) -> list[dict]:
     return out
 
 
-def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna, identity_overrides=None) -> str:
+def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna, ledger=None) -> str:
     data = report_dir / "data"
     if not data.is_dir():
         return "no_data"
@@ -293,11 +293,9 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna, identity_over
     fields["truth_match"] = truth_match
     fields["mass_alt"] = C.mass_consistent_alt(css)
     fields["candidate_evidence"] = candidate_evidence_rows(css, tc)
-    # Curated known-identity override (drives the "Library identity" metric).
-    if identity_overrides:
-        override = identity_overrides.get(cid)
-        if override:
-            fields["known_identity_override"] = override
+    # Reviewed verdict: drives the headline, the MSI level and the identity metric.
+    if ledger:
+        C.apply_curation_entry(fields, ledger.get(cid))
     # display name / synonyms (gap 2)
     ev = data / f"{slug}_evidence_summary.json"
     target = {}
@@ -347,8 +345,8 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna, identity_over
     return "enriched"
 
 
-DEFAULT_IDENTITY_OVERRIDES = (
-    Path(__file__).resolve().parent.parent / "data" / "known_identity_overrides.csv"
+DEFAULT_CURATION_LEDGER = (
+    Path(__file__).resolve().parent.parent / "data" / "curation_ledger.csv"
 )
 
 
@@ -356,19 +354,19 @@ def main() -> None:
     root = Path(sys.argv[1] if len(sys.argv) > 1 else "_audit_pull/reports")
     bundle = Path(sys.argv[2] if len(sys.argv) > 2 else "_bundle")
     known_x = Path(sys.argv[3] if len(sys.argv) > 3 else "data/known_X.csv")
-    identity_overrides_path = Path(sys.argv[4]) if len(sys.argv) > 4 else DEFAULT_IDENTITY_OVERRIDES
+    ledger_path = Path(sys.argv[4]) if len(sys.argv) > 4 else DEFAULT_CURATION_LEDGER
     obs_mz = load_observed_mz(bundle, known_x)
     ms2 = load_ms2(bundle)
     levels = load_levels(known_x)
     db_names = load_db_names(bundle)
     wgcna = load_wgcna(bundle)
-    identity_overrides = C.load_identity_overrides(identity_overrides_path)
+    ledger = C.load_curation_ledger(ledger_path)
     print(f"[enrich] m/z:{len(obs_mz)} ms2:{len(ms2)} levels:{len(levels)} "
-          f"db_names:{len(db_names)} wgcna:{len(wgcna)} identity_overrides:{len(identity_overrides)}",
+          f"db_names:{len(db_names)} wgcna:{len(wgcna)} reviewed_verdicts:{len(ledger)}",
           file=sys.stderr)
     counts: dict[str, int] = {}
     for d in sorted(p for p in root.iterdir() if p.is_dir()):
-        st = enrich(d, obs_mz, ms2, levels, db_names, wgcna, identity_overrides=identity_overrides)
+        st = enrich(d, obs_mz, ms2, levels, db_names, wgcna, ledger=ledger)
         counts[st] = counts.get(st, 0) + 1
     print(f"[enrich] {counts}", file=sys.stderr)
 
