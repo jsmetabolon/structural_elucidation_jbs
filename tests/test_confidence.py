@@ -28,8 +28,8 @@ def _fields(**over):
 def test_overall_in_unit_interval_and_axes():
     conf = C.compute_confidence(_fields())
     assert 0.0 <= conf.overall <= 1.0
-    assert conf.tier in {"Confirmed", "High", "Moderate", "Low", "Tentative"}
-    assert {a.key for a in conf.axes} == {"structure", "mass", "ms2", "pathway"}
+    assert conf.tier in {"Confirmed", "High", "Moderate", "Low", "Tentative", "Refuted"}
+    assert {a.key for a in conf.axes} == {"structure", "mass", "ms2", "pathway", "retention"}
     assert 0.0 <= conf.completeness <= 1.0
 
 
@@ -205,6 +205,84 @@ def test_msi_level_always_in_range():
         conf = C.compute_confidence(_fields(**over))
         assert conf.msi_level in {1, 2, 3, 4, 5}
         assert conf.msi_label == C.MSI_LABELS[conf.msi_level]
+
+
+# --- the retention axis: corroborating evidence that can only argue against ---
+
+
+def _retention_fields(z: float, **over):
+    """Fields whose top candidate misses its predicted retention index by ``z`` sigma."""
+
+    calibration = C.load_retention_calibration()
+    lib_id, block = next(iter(calibration.items()))
+    # A proxy value in the range the RDKit descriptors actually produce, so the
+    # predicted index lands somewhere a compound could have eluted.
+    proxy = 400.0
+    predicted = block["slope"] * proxy + block["intercept"]
+    base = dict(
+        source="predicted", structure_similarity=0.9, mass_match_score=0.99,
+        ms2_spectrum_present=True, ms2_score=0.8, pathway_vote_share=0.9,
+        lib_id=lib_id,
+        candidate_retention_proxy=proxy,
+        observed_retention_index=predicted + z * block["residual_rmse"],
+    )
+    base.update(over)
+    return _fields(**base)
+
+
+def test_retention_is_unavailable_without_a_calibrated_library():
+    axes = {axis.key: axis for axis in C.build_axes(_fields())}
+    assert axes["retention"].available is False
+    # An unaudited library gets no retention evidence rather than a zero score.
+    unaudited = C.build_axes(_retention_fields(0.0, lib_id="305"))
+    assert {a.key: a for a in unaudited}["retention"].available is False
+
+
+def test_a_well_fitting_retention_index_scores_high_and_a_missing_one_scores_low():
+    close = {a.key: a for a in C.build_axes(_retention_fields(0.0))}["retention"]
+    far = {a.key: a for a in C.build_axes(_retention_fields(4.0))}["retention"]
+    assert close.available and close.score == pytest.approx(1.0)
+    assert far.available and far.score < 0.01
+    assert "could not have eluted" in far.detail
+
+
+def test_retention_can_lower_the_evidence_score_and_never_raise_it():
+    """The model resolves to hundreds of index units on tens of controls.
+
+    That is enough to notice a candidate cannot have eluted where the feature
+    did, and not enough to argue that it did.
+    """
+
+    without = C.compute_confidence(_fields(structure_similarity=0.9, mass_match_score=0.99,
+                                           ms2_spectrum_present=True, ms2_score=0.8,
+                                           pathway_vote_share=0.9))
+    agreeing = C.compute_confidence(_retention_fields(0.0))
+    disagreeing = C.compute_confidence(_retention_fields(4.0))
+    assert agreeing.evidence_score == without.evidence_score
+    assert disagreeing.evidence_score < without.evidence_score
+
+
+def test_an_impossible_retention_demotes_the_tier_and_the_level():
+    conf = C.compute_confidence(_retention_fields(4.0))
+    assert conf.tier == "Tentative"
+    assert "could not have eluted" in conf.tier_note
+    assert conf.msi_level == 4
+    assert "retention" in conf.msi_rationale
+    assert any("retention" in flag for flag in conf.flags)
+    # The same evidence with a plausible retention keeps its level.
+    assert C.compute_confidence(_retention_fields(0.5)).msi_level == 2
+
+
+def test_retention_completeness_counts_the_axis_it_is_missing():
+    with_retention = C.compute_confidence(_retention_fields(0.5))
+    without = C.compute_confidence(_fields())
+    assert with_retention.completeness > without.completeness
+
+
+def test_a_missing_calibration_file_disables_retention_rather_than_failing():
+    assert C.load_retention_calibration(Path("/nonexistent/ri_calibration.json")) == {}
+    assert C.retention_residual_z({"lib_id": "209"}) is None
+    assert C.retention_score(None) is None
 
 
 def test_a_catalog_hit_needs_more_spectral_support_to_claim_a_probable_structure():

@@ -29,8 +29,11 @@ jobs:
       - name: Install cairo
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libcairo2
 
+      # RDKit is here for the retention audit, whose committed calibration feeds
+      # the delivered reports and so has to be shown to follow from committed
+      # inputs. The inference stack proper (torch, scikit-learn) is still out.
       - name: Install documentation dependencies
-        run: python -m pip install --upgrade pip python-docx cairosvg pytest pandas
+        run: python -m pip install --upgrade pip python-docx cairosvg pytest pandas rdkit
 
       - name: Verify the manuscript package and the public brief
         run: python3 tools/rebuild_paper_artifacts.py --verify-only
@@ -45,6 +48,7 @@ jobs:
           python3 tools/analyze_selective_prediction.py
           python3 tools/analyze_library_stratification.py
           python3 tools/audit_thresholds.py
+          python3 tools/audit_rt_feasibility.py
           python3 tools/paper_figures.py \
             --structure docs/paper/data/structure/audit_structure_summary.json \
             --pathway docs/paper/data/pathway/audit_pathway_summary.json \
@@ -72,7 +76,8 @@ jobs:
             tests/test_x_compound_overview.py \
             tests/test_paper_audits.py \
             tests/test_publication_analyses.py \
-            tests/test_threshold_audit.py
+            tests/test_threshold_audit.py \
+            tests/test_rt_feasibility.py
 
   lint:
     runs-on: ubuntu-latest
@@ -94,6 +99,7 @@ jobs:
             tools/analyze_library_stratification.py \
             tools/analyze_selective_prediction.py \
             tools/analyze_taxonomy_harmonization.py \
+            tools/audit_rt_feasibility.py \
             tools/audit_thresholds.py \
             tools/build_paper_claim_audit.py \
             tools/build_paper_supplement.py \

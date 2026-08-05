@@ -44,11 +44,13 @@ from urllib.parse import quote
 import pandas as pd
 
 import structural_elucidation.utils.wgcna as wgcna
+from structural_elucidation.nce.evidence import ri_proxy_from_smiles
 from structural_elucidation.paths import REPO_ROOT, resolve
 from structural_elucidation.reports import confidence as confmod
 from structural_elucidation.reports import tentative_naming as tnmod
 from structural_elucidation.reports.tentative_naming_ext import default_extended_context
 from structural_elucidation.utils.denovo import exact_mass_from_smiles, formula_from_smiles, inchikey_from_smiles
+from structural_elucidation.utils.domain import ri_from_feature_key
 
 try:
     from rdkit import Chem
@@ -3061,6 +3063,15 @@ def render_html(
 
 # ── Report assembly ────────────────────────────────────────────────────────────
 
+def _finite_or_none(value: Any) -> float | None:
+    """Coerce to float, treating NaN and the unparseable alike as absent."""
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return None if math.isnan(number) else number
+
+
 def control_slug(control_id: str) -> str:
     """Filesystem-safe slug from a control id (e.g. ``X-25003`` -> ``x-25003``)."""
 
@@ -3613,6 +3624,12 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             1 for nb in neighbors if float(nb.get("similarity_to_target", 0.0) or 0.0) >= 0.50
         ),
         correlations_real=not correlation_blocker,
+        # Retention. The observed index rides along in the feature key; the
+        # predicted one needs RDKit, which the confidence model deliberately
+        # does not depend on.
+        lib_id=rank1.get("lib_id"),
+        observed_retention_index=_finite_or_none(ri_from_feature_key(rank1.get("feature_key"))),
+        candidate_retention_proxy=_finite_or_none(ri_proxy_from_smiles(target_smiles)),
     )
     _conf_fields["observed_mz"] = _observed_mz
     _conf_fields["observed_neutral_mass"] = (

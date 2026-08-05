@@ -30,11 +30,17 @@ from pathlib import Path
 from typing import Any
 
 # --- calibration constants (from tools/calibrate_confidence.py) --------------
-WEIGHTS = {"structure": 0.40, "mass": 0.30, "ms2": 0.20, "pathway": 0.10}
+WEIGHTS = {"structure": 0.40, "mass": 0.30, "ms2": 0.20, "pathway": 0.10, "retention": 0.05}
 # Platt scaling of the completeness-weighted raw evidence score -> P(correct).
 # Fit in-sample by tools/calibrate_confidence.py on the 92 controls with known
 # structures.  The delivered evidence is weakly discriminative (MS2 coverage
 # 43.6%); leave-one-out publication validation shows poor absolute calibration.
+#
+# These predate the retention axis and have not been re-fitted against it, which
+# needs a report bundle that this checkout does not carry. Retention can only
+# lower the raw score and Platt scaling is monotone, so the direction is right in
+# the meantime: a candidate that elutes implausibly reads lower, not higher.
+# Re-run tools/calibrate_confidence.py on the next bundle.
 PLATT_A = 1.887084
 PLATT_B = -1.520154
 CALIBRATION_N = 92          # truth-verified controls used to fit/validate
@@ -57,7 +63,22 @@ AXIS_LABELS = {
     "mass": "Mass / formula match",
     "ms2": "MS2 fragment fit",
     "pathway": "Pathway consensus",
+    "retention": "Retention-index fit",
 }
+
+# --- Retention-index axis ----------------------------------------------------
+# Whether the candidate could plausibly have eluted where the feature did. The
+# per-library recalibration of the logP-derived proxy is loaded from data rather
+# than hard-coded, so the numbers stay traceable to the audit that fitted them
+# (tools/audit_rt_feasibility.py). Libraries absent from that file did not clear
+# the audit and get no retention evidence at all, which is reported as an
+# unavailable axis rather than as a zero score.
+RETENTION_CALIBRATION_PATH = (
+    Path(__file__).resolve().parents[2] / "docs" / "paper" / "data" / "retention" / "ri_calibration.json"
+)
+# A residual this many standard deviations out is not something a correct
+# structure produces, so it demotes the tier the way a mass mismatch does.
+RETENTION_IMPLAUSIBLE_Z = 3.0
 
 # Corroboration thresholds
 MASS_STRONG = 0.90
@@ -316,6 +337,70 @@ def _num(v) -> float | None:
     return None if math.isnan(f) else f
 
 
+_RETENTION_CALIBRATION_CACHE: dict[str, dict] = {}
+
+
+def load_retention_calibration(path: Path | str | None = None) -> dict[str, dict]:
+    """Per-library recalibration of the retention proxy, keyed by library id.
+
+    An unreadable or missing file disables the axis everywhere rather than
+    failing the render: retention is corroborating evidence, not a dependency.
+    """
+    source = Path(path) if path is not None else RETENTION_CALIBRATION_PATH
+    key = str(source)
+    if key not in _RETENTION_CALIBRATION_CACHE:
+        try:
+            payload = json.loads(source.read_text())
+            libraries = payload.get("libraries") or {}
+        except (OSError, ValueError, AttributeError):
+            libraries = {}
+        _RETENTION_CALIBRATION_CACHE[key] = {
+            str(lib_id): block
+            for lib_id, block in libraries.items()
+            if isinstance(block, dict) and _num(block.get("residual_rmse"))
+        }
+    return _RETENTION_CALIBRATION_CACHE[key]
+
+
+def retention_residual_z(fields: dict, calibration: dict[str, dict] | None = None) -> float | None:
+    """Standardized retention residual for the top candidate, or None.
+
+    Returns None whenever the evidence is not there to compute one: no observed
+    index, no proxy for the candidate structure, or a library whose fit did not
+    clear the audit.
+    """
+    calibration = load_retention_calibration() if calibration is None else calibration
+    lib_id = fields.get("lib_id")
+    if lib_id is None:
+        return None
+    block = calibration.get(str(lib_id).strip().removesuffix(".0"))
+    if not block:
+        return None
+    observed = _num(fields.get("observed_retention_index"))
+    proxy = _num(fields.get("candidate_retention_proxy"))
+    if observed is None or proxy is None or observed <= 0:
+        return None
+    slope = _num(block.get("slope"))
+    intercept = _num(block.get("intercept"))
+    rmse = _num(block.get("residual_rmse"))
+    if slope is None or intercept is None or not rmse:
+        return None
+    return (observed - (slope * proxy + intercept)) / rmse
+
+
+def retention_score(z: float | None) -> float | None:
+    """Map a standardized residual to 0..1.
+
+    The two-sided normal tail probability: how often a correct structure would
+    show a residual at least this large. Self-scaling, so it needs no invented
+    decay constant, and it falls away fast enough that a three-sigma miss scores
+    close to zero.
+    """
+    if z is None:
+        return None
+    return _clamp01(math.erfc(abs(z) / math.sqrt(2.0)))
+
+
 def _sigmoid(z: float) -> float:
     if z < -60:
         return 0.0
@@ -401,38 +486,81 @@ def build_axes(fields: dict) -> list[Axis]:
         )
     pathway_available = pathway is not None
 
+    # Retention: whether the candidate could plausibly have eluted where the
+    # feature did. Available only on libraries whose retention model cleared
+    # tools/audit_rt_feasibility.py, and only when both an observed index and a
+    # proxy for the candidate exist.
+    z = retention_residual_z(fields)
+    retention = retention_score(z)
+    if retention is None:
+        r_detail = "No calibrated retention model for this feature"
+    elif abs(z) >= RETENTION_IMPLAUSIBLE_Z:
+        r_detail = f"Candidate could not have eluted here ({abs(z):.1f} sigma from its predicted index)"
+    elif abs(z) >= 1.0:
+        r_detail = f"Retention is a loose fit ({abs(z):.1f} sigma from the predicted index)"
+    else:
+        r_detail = f"Retention is consistent with the candidate ({abs(z):.1f} sigma)"
+
     return [
         Axis("structure", AXIS_LABELS["structure"], struct, WEIGHTS["structure"], True, s_detail),
         Axis("mass", AXIS_LABELS["mass"], mass, WEIGHTS["mass"], mass_available, m_detail),
         Axis("ms2", AXIS_LABELS["ms2"], ms2, WEIGHTS["ms2"], ms2_available, m2_detail),
         Axis("pathway", AXIS_LABELS["pathway"], pathway, WEIGHTS["pathway"], pathway_available, p_detail),
+        Axis(
+            "retention",
+            AXIS_LABELS["retention"],
+            retention,
+            WEIGHTS["retention"],
+            retention is not None,
+            r_detail,
+        ),
     ]
 
 
 def raw_score(axes: list[Axis]) -> tuple[float, float]:
-    """Return (completeness-weighted raw score, completeness fraction)."""
-    num = den = avail = 0.0
+    """Return (completeness-weighted raw score, completeness fraction).
+
+    Retention is allowed to lower the score and not to raise it, so it is scored
+    as the minimum of the averages with and without it. The retention model is
+    fitted on tens of controls per library and resolves to hundreds of index
+    units, which is enough to notice that a candidate cannot have eluted where
+    the feature did and not enough to argue that it did.
+    """
+    def weighted(subset: list[Axis]) -> tuple[float, float]:
+        num = den = 0.0
+        for ax in subset:
+            if ax.available and ax.score is not None:
+                num += ax.weight * ax.score
+                den += ax.weight
+        return num, den
+
     total = sum(WEIGHTS.values())
-    for ax in axes:
-        if ax.available and ax.score is not None:
-            num += ax.weight * ax.score
-            den += ax.weight
-            avail += ax.weight
+    avail = sum(ax.weight for ax in axes if ax.available and ax.score is not None)
+    num, den = weighted(axes)
     raw = num / den if den else 0.0
+    without_num, without_den = weighted([ax for ax in axes if ax.key != "retention"])
+    if without_den:
+        raw = min(raw, without_num / without_den)
     return raw, (avail / total if total else 0.0)
 
 
-def _tier(prob: float, axes: list[Axis], source: str) -> tuple[str, str]:
-    """Tier from the exploratory Platt score, with a mass-mismatch override.
+def _tier(prob: float, axes: list[Axis], source: str, retention_z: float | None = None) -> tuple[str, str]:
+    """Tier from the exploratory Platt score, with two demote-only overrides.
 
     The tiers were monotonic on the small in-sample truth set but are not externally
     calibrated. A top candidate whose mass disagrees with the observed feature is
-    always demoted, regardless of score.
+    always demoted, regardless of score, and so is one that could not have eluted
+    where the feature did. Neither override can promote.
     """
     by = {a.key: a for a in axes}
     mass = by["mass"].score if by["mass"].available else None
     if mass is not None and mass < MASS_WEAK:
         return ("Tentative", "Top candidate mass does not match the observed feature - treat with caution")
+    if retention_z is not None and abs(retention_z) >= RETENTION_IMPLAUSIBLE_Z:
+        return (
+            "Tentative",
+            "Top candidate could not have eluted where this feature did - treat with caution",
+        )
     if prob >= TIER_HIGH:
         return ("High", "Strong, corroborated evidence across structure, mass, and MS2")
     if prob >= TIER_MODERATE:
@@ -451,6 +579,11 @@ def _flags(axes: list[Axis], fields: dict) -> list[str]:
         flags.append("No matched MS2 fragments; independent spectral confirmation is unavailable.")
     if by["mass"].available and (by["mass"].score or 0.0) < MASS_WEAK:
         flags.append("Top candidate mass disagrees with the target neutral mass.")
+    retention_z = retention_residual_z(fields)
+    if retention_z is not None and abs(retention_z) >= RETENTION_IMPLAUSIBLE_Z:
+        flags.append(
+            "Top candidate's predicted retention is inconsistent with where this feature eluted."
+        )
     if not fields.get("correlations_real", True):
         flags.append("Co-abundance correlations are proxy (nearest structural neighbors), not measured.")
     margin = _num(fields.get("candidate_margin"))
@@ -485,6 +618,7 @@ class MsiThresholds:
     mass_weak: float = MASS_WEAK
     ms2_present: float = MS2_PRESENT
     ms2_probable_exact: float = MS2_PROBABLE_EXACT
+    retention_implausible_z: float = RETENTION_IMPLAUSIBLE_Z
 
 
 DEFAULT_MSI_THRESHOLDS = MsiThresholds()
@@ -519,6 +653,10 @@ def assign_msi_level(
     mass_ok = mass is not None and mass >= thresholds.mass_strong
     mass_mismatch = mass is not None and mass < thresholds.mass_weak
     observed = bool(fields.get("observed_mz_available"))
+    retention_z = retention_residual_z(fields)
+    retention_implausible = (
+        retention_z is not None and abs(retention_z) >= thresholds.retention_implausible_z
+    )
     from_catalog = str(fields.get("source", "")).strip() == "exact"
     ms2_probable_bar = (
         thresholds.ms2_probable_exact if from_catalog else thresholds.ms2_present
@@ -534,19 +672,29 @@ def assign_msi_level(
         return 4, MSI_LABELS[4], f"{note} - reporting formula/mass only"
     if conf.tier == "Confirmed":
         return 1, MSI_LABELS[1], "Metabolon Level-1 standard match and the top candidate matches it"
-    if struct >= thresholds.struct_moderate and ms2_score is not None and ms2_score >= ms2_probable_bar and mass_ok:
+    if (
+        struct >= thresholds.struct_moderate
+        and ms2_score is not None
+        and ms2_score >= ms2_probable_bar
+        and mass_ok
+        and not retention_implausible
+    ):
         rationale = "Strong structure similarity with observed-MS2 and mass corroboration"
         if from_catalog:
             rationale += " that is independent of the catalog match"
         return 2, MSI_LABELS[2], rationale
-    if (not mass_mismatch) and struct >= thresholds.struct_weak:
+    if (not mass_mismatch) and (not retention_implausible) and struct >= thresholds.struct_weak:
         return 3, MSI_LABELS[3], "Structure candidate consistent with mass but not spectrally confirmed - a hypothesis"
     if observed or mass_ok:
-        note = (
-            "Observed mass is known but the top candidate mass does not fit - structure rejected"
-            if mass_mismatch
-            else "Observed mass/formula is supported but no structure is adequately supported"
-        )
+        if retention_implausible:
+            note = (
+                "The top candidate could not have eluted where this feature did - "
+                "structure rejected on retention"
+            )
+        elif mass_mismatch:
+            note = "Observed mass is known but the top candidate mass does not fit - structure rejected"
+        else:
+            note = "Observed mass/formula is supported but no structure is adequately supported"
         return 4, MSI_LABELS[4], note
     return 5, MSI_LABELS[5], "Only an exact mass is available; no confident formula or structure"
 
@@ -652,7 +800,7 @@ def compute_confidence(fields: dict) -> Confidence:
     # ``overall`` instead, so the audits keep measuring evidence rather than policy.
     evidence = _sigmoid(PLATT_A * raw + PLATT_B)
     assurance = assurance_of(fields)
-    tier, tier_note = _tier(evidence, axes, source)
+    tier, tier_note = _tier(evidence, axes, source, retention_residual_z(fields))
     if source == "exact":
         descriptor = "Cataloged reference metabolite (exact structural match)"
     elif source == "predicted":
@@ -880,6 +1028,9 @@ def fields_from_parts(
     ms2_score: float | None = None,
     library_neighbors_ge_050: int = 0,
     correlations_real: bool = True,
+    lib_id: Any = None,
+    observed_retention_index: float | None = None,
+    candidate_retention_proxy: float | None = None,
 ) -> dict:
     """Normalize a candidate-summary row + pathway row into confidence ``fields``.
 
@@ -910,6 +1061,12 @@ def fields_from_parts(
         "candidate_margin": margin,
         "library_neighbors_ge_050": library_neighbors_ge_050,
         "correlations_real": correlations_real,
+        # Retention. The proxy is computed upstream because it needs RDKit and
+        # this module stays standard-library only so the renderer and the patcher
+        # can share one implementation.
+        "lib_id": lib_id,
+        "observed_retention_index": _num(observed_retention_index),
+        "candidate_retention_proxy": _num(candidate_retention_proxy),
     }
 
 

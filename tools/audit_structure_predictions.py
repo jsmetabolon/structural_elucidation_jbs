@@ -186,6 +186,9 @@ def load_records(root: Path) -> list[dict[str, Any]]:
                 "axis_mass": by_key["mass"].score if by_key["mass"].available else None,
                 "axis_ms2": by_key["ms2"].score if by_key["ms2"].available else None,
                 "axis_pathway": by_key["pathway"].score if by_key["pathway"].available else None,
+                "axis_retention": (
+                    by_key["retention"].score if by_key["retention"].available else None
+                ),
                 "observed_mz_available": bool(fields.get("observed_mz_available")),
             }
         )
@@ -303,6 +306,7 @@ def main() -> None:
             "axis_mass",
             "axis_ms2",
             "axis_pathway",
+            "axis_retention",
             "observed_mz_available",
         ]
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
@@ -326,6 +330,7 @@ def main() -> None:
                     "axis_mass": _round_or_blank(record["axis_mass"]),
                     "axis_ms2": _round_or_blank(record["axis_ms2"]),
                     "axis_pathway": _round_or_blank(record["axis_pathway"]),
+                    "axis_retention": _round_or_blank(record["axis_retention"]),
                     "observed_mz_available": int(record["observed_mz_available"]),
                 }
             )

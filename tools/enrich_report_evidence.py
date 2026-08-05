@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import csv
 import json
+import re
 import sqlite3
 import sys
 from pathlib import Path
@@ -38,6 +39,10 @@ except ImportError:
     NCE_EVIDENCE = None
 
 LEVEL_JUNK = {"", "nan", "artifact", "exclude", "4?"}
+# Feature keys look like ..._mz100.0404_ri1248_X-23917. Mirrors
+# structural_elucidation.utils.domain.ri_from_feature_key, which this tool cannot
+# import without pulling in pandas.
+FEATURE_KEY_RI = re.compile(r"_ri(\d+)_")
 TRUTH_CORRECT = 0.70
 
 
@@ -236,6 +241,31 @@ def fragment_candidate_fits(tc: list[dict], ms2_rec: dict) -> list[dict]:
     return out
 
 
+def retention_inputs(rank1: dict, candidate_summary: dict) -> tuple[Any, float | None, float | None]:
+    """Recover the retention evidence for the top candidate.
+
+    The observed index is not a column in any sidecar; it is embedded in the
+    feature key, which the reranker carries through. The predicted index needs
+    RDKit, so it is computed here rather than in the confidence model.
+    """
+    lib_id = rank1.get("lib_id") or candidate_summary.get("lib_id")
+    observed = _ri_from_feature_key(rank1.get("feature_key") or candidate_summary.get("feature_key"))
+    smiles = str(rank1.get("predicted_smiles") or candidate_summary.get("predicted_smiles") or "").strip()
+    proxy = None
+    if smiles and NCE_EVIDENCE is not None:
+        value = NCE_EVIDENCE.ri_proxy_from_smiles(smiles)
+        proxy = float(value) if value == value else None  # NaN check without importing math
+    return lib_id, observed, proxy
+
+
+def _ri_from_feature_key(value: Any) -> float | None:
+    match = FEATURE_KEY_RI.search(str(value or ""))
+    if not match:
+        return None
+    ri = float(match.group(1))
+    return ri if ri > 0 else None
+
+
 def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna, ledger=None) -> str:
     data = report_dir / "data"
     if not data.is_dir():
@@ -269,11 +299,15 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna, ledger=None) 
         except (ValueError, OSError):
             correlations_real = True
 
+    lib_id, observed_ri, retention_proxy = retention_inputs(r1, css[0] if css else {})
     fields = C.fields_from_parts(
         css[0] if css else {}, css[1] if len(css) > 1 else None, pw[0] if pw else {},
         observed_mz_available=observed_mz is not None,
         ms2_spectrum_present=ms2_present, ms2_score=ms2_score,
         library_neighbors_ge_050=neigh, correlations_real=correlations_real,
+        lib_id=lib_id,
+        observed_retention_index=observed_ri,
+        candidate_retention_proxy=retention_proxy,
     )
     # display + confidence extras
     fields["observed_mz"] = observed_mz
