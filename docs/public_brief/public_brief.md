@@ -89,14 +89,14 @@ Every feature is placed in a biochemical pathway and subpathway, including the f
 
 **What it means.** Two points of context matter when reading those percentages. The control set is modest at 92 compounds and was assembled from the material available rather than sampled at random, so the percentages describe performance on that set rather than a rate that can be assumed for new data. And the results are ranked lists: a top-ten result is genuinely useful because it reduces a boundless chemical space to a short list, but it is not the same as a single settled answer.
 
-**Why it matters to you.** A shortlist that usually contains the right molecule changes the economics of confirmation. Rather than committing chemistry time to a feature chosen on intuition, a team can work through a small ranked set whose hit rate has been measured.
+**Why it matters to you.** A shortlist that usually contains the right molecule changes the arithmetic of following a feature up. Rather than committing chemistry time to a feature chosen on intuition, a team can work through a small ranked set whose hit rate has been measured.
 
 ## What you receive
 
 Each feature is delivered as a self-contained report, with a searchable index across the full set, so the deliverable can be browsed by a biologist and audited by a chemist.
 
 - **The proposed structure and a short list of alternatives**, so that a reviewer sees the runners-up rather than only the winner.
-- **The supporting evidence**, including how well the candidate accounts for the observed mass and fragmentation behaviour, so a call can be checked rather than taken on trust.
+- **The supporting evidence**, including how well the candidate accounts for the observed mass and fragmentation behaviour, so a call can be checked, not taken on trust.
 - **Biochemical pathway and subpathway context**, including for features where no structure is shown.
 - **An identification level** together with a plain-language statement of what that level does and does not assert.
 - **Cross-references** to the independently assigned Metabolon Level, so the new output can be read alongside existing deliverables.
@@ -127,7 +127,7 @@ For the same reason, the confidence output limits what each report claims rather
 
 This capability complements authentic-standard confirmation rather than replacing it. It is designed for two situations in particular.
 
-- **Prioritizing discovery.** When a study points to unnamed features, the capability turns each of them into a short, chemically specific candidate list, so confirmation effort is spent working through a handful of named possibilities rather than starting from nothing.
+- **Prioritizing discovery.** When a study points to unnamed features, the capability turns each of them into a short, chemically specific candidate list, so the work goes into a handful of named possibilities rather than starting from nothing.
 - **Extending reference coverage.** Well-supported hypotheses give a defensible starting point for adding compounds to a reference library, and every addition raises the share of future studies that can be named outright.
 Set against a library-only search, the capability provides additional evidence and reduces dependence on a single evidence source. Set against manual interpretation, it enables consistent application at scale. It has not been benchmarked head to head against other computational approaches, and no such comparison is claimed here.
 
