@@ -179,6 +179,7 @@ def passthrough_args(args: argparse.Namespace, lib: str) -> list[str]:
         "--max-neighbors": args.max_neighbors,
         "--candidate-tab-n": args.candidate_tab_n,
         "--consensus-top-n": args.consensus_top_n,
+        "--public-candidate-n": args.public_candidate_n,
         "--extended-known-render-limit": args.extended_known_render_limit,
         "--extended-known-min-similarity": args.extended_known_min_similarity,
         "--extended-x-min-similarity": args.extended_x_min_similarity,
@@ -500,6 +501,11 @@ def build_parser() -> argparse.ArgumentParser:
     fwd.add_argument("--max-neighbors", default=None)
     fwd.add_argument("--candidate-tab-n", default=None)
     fwd.add_argument("--consensus-top-n", default=None)
+    fwd.add_argument(
+        "--public-candidate-n",
+        default=None,
+        help="Candidate structures the public reports may display at MSI Level 3.",
+    )
     fwd.add_argument("--extended-known-render-limit", default=None)
     fwd.add_argument("--extended-known-min-similarity", default=None)
     fwd.add_argument("--extended-x-min-similarity", default=None)

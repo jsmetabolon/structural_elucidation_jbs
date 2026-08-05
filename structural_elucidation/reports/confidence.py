@@ -158,6 +158,59 @@ def assurance_of(fields: dict) -> str:
     return ASSURANCE_NONE
 
 
+# --- how many candidate structures a report may display ----------------------
+# A ten-deep list was shown to every reader. On the truth-verified cohort that
+# depth surfaces the correct structure for 73.9% of compounds against 64.1% at
+# three, and buys those 9.8 points by displaying 70.6 additional incorrect
+# structures for each compound it helps (docs/paper/data/thresholds/). Ten
+# near-tied isomers also imply a resolution the evidence does not support, so the
+# public list is short and the internal one stays deep for triage.
+PUBLIC_CANDIDATE_N = 3
+INTERNAL_CANDIDATE_N = 10
+# Public reports at Level 1-2 assert one structure; showing alternates alongside
+# an asserted identification contradicts the claim.
+ASSERTED_CANDIDATE_N = 1
+# Relative, not absolute. The rank score is an ordering value whose rank-1 median
+# is about 0.035 across the delivered set, so any fixed cutoff - 0.1 included -
+# would discard most rank-1 candidates. A candidate an order of magnitude below
+# rank 1 is not a live alternative and only pads the list.
+CANDIDATE_MARGIN_RATIO = 0.10
+
+
+def candidates_to_display(
+    candidates: list,
+    *,
+    msi_level: int,
+    public: bool,
+    limit: int | None = None,
+    score_key: str = "candidate_report_score",
+) -> list:
+    """Return the candidate structures this report variant may show.
+
+    Levels 4 and 5 return nothing: those reports withhold the structure, and a
+    list of candidate structures is a structural claim whatever it is captioned.
+    """
+    if msi_level >= 4:
+        return []
+    if limit is None:
+        limit = PUBLIC_CANDIDATE_N if public else INTERNAL_CANDIDATE_N
+    if public and msi_level <= 2:
+        limit = min(limit, ASSERTED_CANDIDATE_N)
+    kept = list(candidates)[: max(0, int(limit))]
+    if len(kept) <= 1:
+        return kept
+    lead = _num(kept[0].get(score_key) if isinstance(kept[0], dict) else None)
+    if lead is None or lead <= 0:
+        return kept
+    floor = CANDIDATE_MARGIN_RATIO * lead
+    out = [kept[0]]
+    for row in kept[1:]:
+        score = _num(row.get(score_key)) if isinstance(row, dict) else None
+        if score is None or score >= floor:
+            out.append(row)
+    return out
+
+
 @dataclass
 class Axis:
     key: str
@@ -888,6 +941,25 @@ def confidence_metric_card_html(conf: Confidence) -> str:
     )
 
 
+def withheld_structures_note(conf: Confidence) -> str:
+    """Explain why a Level 4-5 report shows no candidate structures."""
+    if conf.assurance in REFUTING_ASSURANCE:
+        return (
+            "The proposed structure was ruled out on review, so no candidate structure "
+            "is shown. The molecular formula and observed mass below stand on their own."
+        )
+    if conf.msi_level >= 5:
+        return (
+            "Only an exact mass is established for this feature (MSI Level 5). No formula "
+            "or structure is supported well enough to show."
+        )
+    return (
+        "This feature is reported at the level of its molecular formula (MSI Level 4). "
+        "No candidate structure is supported well enough to show; "
+        f"{conf.msi_rationale[:1].lower()}{conf.msi_rationale[1:]}."
+    )
+
+
 def assurance_note_html(conf: Confidence) -> str:
     """State the human/laboratory verdict, and the model score whenever it differs.
 
@@ -1203,6 +1275,10 @@ def scored_parameters_section_html(conf: Confidence, *, public: bool) -> str:
             fit_bits.append(f"\u0394 {err:.4g} Da")
         fit_txt = (" (" + ", ".join(fit_bits) + ")") if fit_bits else ""
         smiles = str(alt.get("smiles", "")).strip()
+        # A public report that withholds the structure cannot name an alternative
+        # one either; the formula and rank still point a curator at the fix.
+        if public and conf.msi_level >= 4:
+            smiles = ""
         smiles_txt = f" SMILES <code>{html.escape(smiles)}</code>." if smiles else ""
         extra += (
             '<p class="note"><strong>Mass-consistent alternative (recoverable structure):</strong> '
@@ -1342,8 +1418,14 @@ def fragment_summary_section_html(
     *,
     public: bool,
     top_n: int = 3,
+    structures_withheld: bool = False,
 ) -> str:
-    """Non-raw MS2 fragment summary for the MS Fit / Feature Match section."""
+    """Non-raw MS2 fragment summary for the MS Fit / Feature Match section.
+
+    ``structures_withheld`` only changes what the empty table says. A Level 4-5
+    report has no candidates to score, which is different from having candidates
+    whose scores went missing, and saying the wrong one invites a bug report.
+    """
 
     detail = fields.get("ms2_detail") or {}
     present = bool(detail.get("present"))
@@ -1416,6 +1498,11 @@ def fragment_summary_section_html(
             "<th>Matched loss bins</th></tr></thead><tbody>"
             + "".join(candidate_body)
             + "</tbody></table></div>"
+        )
+    elif structures_withheld:
+        parts.append(
+            '<p class="note">No candidate structure is reported for this feature, so there '
+            "are no per-candidate spectral fits to show.</p>"
         )
     elif present:
         parts.append('<p class="note">Per-candidate spectral fit scores were not available for this report.</p>')

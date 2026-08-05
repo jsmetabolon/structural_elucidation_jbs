@@ -2245,6 +2245,7 @@ def render_html(
     correlation_rows: list[dict[str, Any]],
     correlation_blocker: str | None,
     variant: str,
+    public_candidate_n: int = confmod.PUBLIC_CANDIDATE_N,
 ) -> str:
     """Assemble full HTML report page for public or internal ``variant``."""
 
@@ -2252,8 +2253,17 @@ def render_html(
     variant_label = "Public" if variant == "public" else "Internal"
     control_id = str(target.get("control_id", "")).strip() or "compound"
     tentative_descriptor = target.get("tentative_descriptor") or {}
-    report_title = str(tentative_descriptor.get("label") or control_id)
-    descriptor_confidence = str(tentative_descriptor.get("confidence") or "").strip().title()
+    # The page title is the loudest structural claim on the report, so it follows
+    # the same rule as the rest: withheld at MSI Levels 4-5.
+    withholding_structure = int(getattr(confidence, "msi_level", 5)) >= 4
+    report_title = (
+        control_id if withholding_structure else str(tentative_descriptor.get("label") or control_id)
+    )
+    descriptor_confidence = (
+        ""
+        if withholding_structure
+        else str(tentative_descriptor.get("confidence") or "").strip().title()
+    )
     descriptor_badge_html = ""
     if descriptor_confidence:
         descriptor_badge_html = (
@@ -2296,7 +2306,12 @@ def render_html(
         top_similarity=top_similarity,
         neighbor_count=len(neighbors),
     )
-    top10_candidates = candidate_scores[:10]
+    displayed_candidates = confmod.candidates_to_display(
+        candidate_scores,
+        msi_level=confidence.msi_level,
+        public=public_mode,
+        limit=public_candidate_n if public_mode else confmod.INTERNAL_CANDIDATE_N,
+    )
     default_rank = (
         default_consensus_rank
         if default_consensus_rank in candidate_consensus_maps
@@ -2305,7 +2320,7 @@ def render_html(
     default_consensus_svg = candidate_consensus_maps.get(default_rank, consensus_svg)
     default_summary = candidate_consensus_summaries.get(default_rank, {})
     candidate_select_options = []
-    for row in top10_candidates:
+    for row in displayed_candidates:
         rank = int(pd.to_numeric(row.get("rank"), errors="coerce") or 0)
         if rank not in candidate_consensus_maps:
             continue
@@ -2334,8 +2349,18 @@ def render_html(
     substructure_rows = confmod.diagnostic_substructure_rows_html(top_candidate, evidence)
     fragment_summary_html = confmod.fragment_summary_section_html(
         conf_fields,
-        fragment_rows,
+        # The per-candidate fit table names formulas and SMILES, so it is subject
+        # to the same withholding as the structure panel it would otherwise
+        # contradict. Internal keeps the depth it needs for triage.
+        confmod.candidates_to_display(
+            fragment_rows,
+            msi_level=confidence.msi_level,
+            public=public_mode,
+            limit=None if public_mode else confmod.INTERNAL_CANDIDATE_N,
+            score_key="candidate_report_score",
+        ),
         public=public_mode,
+        structures_withheld=confidence.msi_level >= 4,
     )
     mass_rows = (
         "<tr>"
@@ -2402,7 +2427,13 @@ def render_html(
         )
         or f"<tr><td colspan='{'4' if public_mode else '5'}'>No library matches available.</td></tr>"
     )
-    top10_title = "Top 10 potential structures" if public_mode else "Top 10 Candidate Structures"
+    n_displayed = len(displayed_candidates)
+    if public_mode:
+        candidates_title = (
+            "Proposed structure" if n_displayed == 1 else f"Top {n_displayed} potential structures"
+        )
+    else:
+        candidates_title = f"Top {n_displayed} Candidate Structures"
     fragment_title = "Fragment Scores" if public_mode else "Substructure Scores"
     ms_fit_title = "MS Fit Scores" if public_mode else "Feature Match Scores"
     params_title = "Parameters Contributing to ID Confidence"
@@ -2434,10 +2465,91 @@ def render_html(
         <div class="metric-card"><div class="metric-label">Candidate rows</div><div class="metric-value">{len(candidate_scores)}</div><div class="metric-note">Displayed SMILES candidates</div></div>
         <div class="metric-card"><div class="metric-label">Known neighbors</div><div class="metric-value">{len(neighbors)}</div><div class="metric-note">Structured DB neighborhood</div></div>
         <div class="metric-card"><div class="metric-label">Mass error</div><div class="metric-value">{evidence['mass_error_da']:.6f}</div><div class="metric-note">Neutral mass Da</div></div>"""
-    top10_section = f"""
+    # Levels 4-5 report a formula or a mass, not a structure. The published
+    # description of the workflow has always said so, but the renderer drew the
+    # structure panel unconditionally, so nothing was actually withheld. A
+    # structure drawing, a SMILES, an InChIKey and a synonym list are all
+    # structural claims, and at these levels there is no structure to claim.
+    structures_withheld = confidence.msi_level >= 4
+    observed_mz_card = (
+        '<div class="metric-card copyable-card" tabindex="0" '
+        f'data-copy-value="{evidence["parent_mz"]:.4f}"><span class="copy-hint">Click to copy</span>'
+        '<div class="metric-label">Observed parent m/z</div>'
+        f'<div class="metric-value">{evidence["parent_mz"]:.4f}</div>'
+        f'<div class="metric-note">{html.escape(control_id)} feature</div></div>'
+    )
+    if structures_withheld:
+        formula_text = str(target.get("formula", "") or "not established")
+        call_grid_html = (
+            '<div class="call-grid"><div class="structure-card">'
+            + heading_with_info("h3", "Structure withheld", include_info=False)
+            + f'<p class="note">{html.escape(confmod.withheld_structures_note(confidence))}</p>'
+            + f"<p><strong>{html.escape(str(target['name']))}</strong></p></div></div>"
+        )
+        identification_cards_html = (
+            observed_mz_card
+            + '<div class="metric-card"><div class="metric-label">Molecular formula</div>'
+            + f'<div class="metric-value">{html.escape(formula_text)}</div>'
+            + '<div class="metric-note">Best-supported composition</div></div>'
+        )
+    else:
+        call_grid_html = f"""<div class="call-grid">
+        <div class="structure-card">
+          {heading_with_info("h3", "Most Likely Structure", include_info=False)}
+          {structure_panel_html}
+          <p><strong>{html.escape(target['name'])}</strong></p>
+          <p class="note">This is the top ranked candidate structure for this feature. Note that exact stereochemistry is not known from available evidence.</p>
+        </div>
+        <div class="structure-card">
+          {heading_with_info("h3", "Atom-position confidence mapped to top candidate", include_info=False)}
+          <div class="consensus-box">{consensus_svg}</div>
+          <div class="consensus-scale" aria-label="Consensus heatmap scale">
+            <div class="consensus-scale-bar"></div>
+            <div class="consensus-scale-labels">
+              <span>0.0 low support</span>
+              <span>0.5 mixed support</span>
+              <span>1.0 high support</span>
+            </div>
+          </div>
+          <p class="note">Sidecar: <a href="data/{slug}_consensus_atom_support.csv">{slug}_consensus_atom_support.csv</a>.</p>
+        </div>
+      </div>"""
+        identification_cards_html = (
+            observed_mz_card
+            + '<div class="metric-card copyable-card" tabindex="0" '
+            + f'data-copy-value="{target["exact_mass"]:.6f}"><span class="copy-hint">Click to copy</span>'
+            + '<div class="metric-label">Exact mass</div>'
+            + f'<div class="metric-value">{target["exact_mass"]:.6f}</div>'
+            + '<div class="metric-note">Candidate neutral mass</div></div>'
+            + '<div class="metric-card copyable-card" tabindex="0" '
+            + f'data-copy-value="{html.escape(target["smiles"], quote=True)}">'
+            + '<span class="copy-hint">Click to copy</span>'
+            + '<div class="metric-label">Top Candidate SMILES</div>'
+            + f'<div class="metric-value"><code>{html.escape(target["smiles"])}</code></div>'
+            + f'<div class="metric-note"><a href="{pubchem_link}">'
+            + "Other DB Links (PubChem of Top Candidate)</a></div></div>"
+            + '<div class="metric-card copyable-card" tabindex="0" '
+            + f'data-copy-value="{html.escape(target["inchikey"], quote=True)}">'
+            + '<span class="copy-hint">Click to copy</span>'
+            + '<div class="metric-label">InChIKey</div>'
+            + f'<div class="metric-value">{html.escape(target["inchikey"])}</div>'
+            + '<div class="metric-note">From candidate SMILES</div></div>'
+            + f'<div class="metric-card"><div class="metric-label">{synonyms_title}</div>'
+            + f'<div class="metric-list">{synonym_card_html}</div></div>'
+        )
+    if not displayed_candidates:
+        # Same reasoning as the structure panel: a list of candidate structures is
+        # a structural claim whatever it is captioned.
+        candidates_section = f"""
     <section class="section">
-      {heading_with_info("h2", top10_title)}
-      <p class="note">Select a candidate to view its consensus atom-position heatmap. The selected structure is the reference; atom circles show maximum-common-substructure retention across the top-10 candidate pool.</p>
+      {heading_with_info("h2", "Candidate structures")}
+      <p class="note">{html.escape(confmod.withheld_structures_note(confidence))}</p>
+    </section>"""
+    else:
+        candidates_section = f"""
+    <section class="section">
+      {heading_with_info("h2", candidates_title)}
+      <p class="note">Select a candidate to view its consensus atom-position heatmap. The selected structure is the reference; atom circles show maximum-common-substructure retention across the displayed candidate pool.</p>
       <p class="note"><strong>Reading the scores:</strong> "Evidence confidence" (library + mass + spectral corroboration) and "Mass match" are the identification signals. The "Rank score (relative)" is a small, uncalibrated value the reranker uses only to order otherwise-equivalent candidates (e.g. mass-consistent isomers), so a low absolute value does not indicate a poor match.</p>
       <div class="candidate-picker">
         <label for="candidate-consensus-select">Candidate</label>
@@ -2666,8 +2778,9 @@ def render_html(
           The most likely candidate structure is shown below.
         </p>
         <p>
-          <span class="badge ok">top-1 candidate</span>
+          {'' if structures_withheld else '<span class="badge ok">top-1 candidate</span>'}
           {descriptor_badge_html}
+          {confmod.assurance_badge_html(confidence)}
           {confmod.confidence_badge_html(confidence)}
           {confmod.msi_badge_html(confidence)}
           {confmod.identity_badge_html(confidence)}
@@ -2684,27 +2797,7 @@ def render_html(
       <p class="note">
         On average, 80% of compounds identified in Metabolon data sets meet Level 1 criteria through fingerprint matching to an authentic reference standard analyzed with the same experimental methods. The remaining compounds are identified through Metabolon’s structural elucidation workflow; the evidence stack below follows that dashboard structure.
       </p>
-      <div class="call-grid">
-        <div class="structure-card">
-          {heading_with_info("h3", "Most Likely Structure", include_info=False)}
-          {structure_panel_html}
-          <p><strong>{html.escape(target['name'])}</strong></p>
-          <p class="note">This is the top ranked candidate structure for this feature. Note that exact stereochemistry is not known from available evidence.</p>
-        </div>
-        <div class="structure-card">
-          {heading_with_info("h3", "Atom-position confidence mapped to top candidate", include_info=False)}
-          <div class="consensus-box">{consensus_svg}</div>
-          <div class="consensus-scale" aria-label="Consensus heatmap scale">
-            <div class="consensus-scale-bar"></div>
-            <div class="consensus-scale-labels">
-              <span>0.0 low support</span>
-              <span>0.5 mixed support</span>
-              <span>1.0 high support</span>
-            </div>
-          </div>
-          <p class="note">Sidecar: <a href="data/{slug}_consensus_atom_support.csv">{slug}_consensus_atom_support.csv</a>.</p>
-        </div>
-      </div>
+      {call_grid_html}
       <div class="metrics">
         {confmod.confidence_metric_card_html(confidence)}
         {confmod.msi_metric_card_html(confidence)}
@@ -2712,13 +2805,7 @@ def render_html(
       </div>
       <div class="structure-card" style="margin-top:18px;">
         {heading_with_info("h3", "Identification Evidence", include_info=False)}
-        <div class="metrics">
-          <div class="metric-card copyable-card" tabindex="0" data-copy-value="{evidence['parent_mz']:.4f}"><span class="copy-hint">Click to copy</span><div class="metric-label">Observed parent m/z</div><div class="metric-value">{evidence['parent_mz']:.4f}</div><div class="metric-note">{html.escape(control_id)} feature</div></div>
-          <div class="metric-card copyable-card" tabindex="0" data-copy-value="{target['exact_mass']:.6f}"><span class="copy-hint">Click to copy</span><div class="metric-label">Exact mass</div><div class="metric-value">{target['exact_mass']:.6f}</div><div class="metric-note">Candidate neutral mass</div></div>
-          <div class="metric-card copyable-card" tabindex="0" data-copy-value="{html.escape(target['smiles'], quote=True)}"><span class="copy-hint">Click to copy</span><div class="metric-label">Top Candidate SMILES</div><div class="metric-value"><code>{html.escape(target['smiles'])}</code></div><div class="metric-note"><a href="{pubchem_link}">Other DB Links (PubChem of Top Candidate)</a></div></div>
-          <div class="metric-card copyable-card" tabindex="0" data-copy-value="{html.escape(target['inchikey'], quote=True)}"><span class="copy-hint">Click to copy</span><div class="metric-label">InChIKey</div><div class="metric-value">{html.escape(target['inchikey'])}</div><div class="metric-note">From candidate SMILES</div></div>
-          <div class="metric-card"><div class="metric-label">{synonyms_title}</div><div class="metric-list">{synonym_card_html}</div></div>
-        </div>
+        <div class="metrics">{identification_cards_html}</div>
       </div>
     </section>
 
@@ -2728,7 +2815,7 @@ def render_html(
       {confmod.scored_parameters_section_html(confidence, public=public_mode)}
     </section>
 
-    {top10_section}
+    {candidates_section}
 
     <section class="section">
       {heading_with_info("h2", "Top 10 Metabolon Library Matches")}
@@ -3632,6 +3719,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         },
         correlation_rows=correlation_rows,
         correlation_blocker=correlation_blocker,
+        public_candidate_n=int(
+            getattr(args, "public_candidate_n", confmod.PUBLIC_CANDIDATE_N)
+        ),
     )
     public_html = render_html(**render_kwargs, variant="public")
     internal_html = render_html(**render_kwargs, variant="internal")
@@ -3702,6 +3792,17 @@ def main() -> None:
     parser.add_argument("--max-neighbors", type=int, default=10)
     parser.add_argument("--candidate-tab-n", type=int, default=20)
     parser.add_argument("--consensus-top-n", type=int, default=20)
+    parser.add_argument(
+        "--public-candidate-n",
+        type=int,
+        default=confmod.PUBLIC_CANDIDATE_N,
+        help=(
+            "Candidate structures the public report may display at MSI Level 3. "
+            "Levels 1-2 assert a single structure and Levels 4-5 show none, "
+            "whatever this is set to. The internal report always keeps "
+            f"{confmod.INTERNAL_CANDIDATE_N}."
+        ),
+    )
     parser.add_argument("--extended-known-render-limit", type=int, default=120)
     parser.add_argument("--extended-known-min-similarity", type=float, default=0.30)
     parser.add_argument("--extended-x-min-similarity", type=float, default=0.0)
