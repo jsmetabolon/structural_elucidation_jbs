@@ -66,7 +66,12 @@ def default_extended_context(
     """Discover second-stage naming resources from standard workspace locations."""
 
     project_root = Path(__file__).resolve().parents[2]
-    workspace_root = project_root.parents[1]
+    # Every resource below is optional, so a checkout too shallow to have the
+    # sibling workspace directories should degrade to "found nothing" rather than
+    # raise. It used to raise IndexError whenever the repo sat near the
+    # filesystem root, which took the whole report build down with it.
+    parents = project_root.parents
+    workspace_root = parents[1] if len(parents) > 1 else project_root
     reports_root = reports_root or (workspace_root / "reports 4")
     external_db = project_root / "reference_data" / "external_name_index.sqlite"
     classyfire_db = project_root / "reference_data" / "classyfire_hmdb.sqlite"

@@ -242,3 +242,22 @@ def test_load_iupac_cache_round_trip(tmp_path: Path) -> None:
     )
     loaded = load_iupac_cache(cache_path)
     assert loaded["CCO"]["iupac_name"] == "ethanol"
+
+
+@pytest.mark.parametrize(
+    "module_path",
+    [
+        "/repo/structural_elucidation/reports/tentative_naming_ext.py",
+        "/a/b/c/structural_elucidation/reports/tentative_naming_ext.py",
+    ],
+)
+def test_default_context_does_not_index_past_the_filesystem_root(monkeypatch, module_path):
+    """Every resource this discovers is optional, so finding none is not an error.
+
+    It used to index two levels above the project root unconditionally. For a
+    checkout at depth one - which is where the repository sits in CI and in the
+    cloud VM - that raised IndexError and took the whole report build with it.
+    """
+
+    monkeypatch.setattr(tentative_naming_ext, "__file__", module_path)
+    assert tentative_naming_ext.default_extended_context() is None

@@ -152,4 +152,18 @@ What changed, and what it will move:
   display policy; `evidence_score` is the quantity to calibrate and to report.
   The committed structure audit already uses the raw axis score, so its numbers
   are unaffected, but anything new should read `evidence_score`.
+- **The pathway axis now scores a real vote share.** `pathway_vote_share` was in
+  the confidence model's input contract from the start, but nothing ever wrote
+  it, so the axis had been falling back to a three-valued tier map of 0.90 /
+  0.60 / 0.30 for every report. The reports now reconstruct the neighbor vote
+  and supply the actual share. The effect is bounded: the axis carries weight
+  0.10 of 1.05, so moving it across its full range shifts `evidence_score` by
+  0.047, and the largest single change is roughly 0.04 for a report whose tier
+  said high while its vote was in fact split. That is a correction rather than
+  drift, since the tier was only ever a proxy for the share. It is one more
+  reason `PLATT_A`/`PLATT_B` need re-fitting on the next bundle.
+- **The pathway audit's `vote_share_pctiles` were all NaN** for the delivered
+  set, because the report sidecar never carried the field the audit reads. They
+  will populate on the next regeneration, so that block of
+  `audit_pathway_summary.json` becomes reportable for the first time.
 

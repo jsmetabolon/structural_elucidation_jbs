@@ -230,6 +230,30 @@ def _retention_fields(z: float, **over):
     return _fields(**base)
 
 
+def test_fields_are_json_serializable_whatever_the_dataframe_hands_over():
+    """The fields dict is written straight out as the confidence sidecar.
+
+    A library id arrives from a dataframe as a numpy integer, which json refuses,
+    so it is normalized to text on the way in.
+    """
+
+    import json
+
+    numpy = pytest.importorskip("numpy")
+    fields = C.fields_from_parts(
+        {}, None, {}, observed_mz_available=True, lib_id=numpy.int64(209)
+    )
+    assert fields["lib_id"] == "209"
+    json.dumps(fields)
+
+
+@pytest.mark.parametrize(
+    "raw,expected", [(209, "209"), ("209", "209"), (209.0, "209"), ("209.0", "209"), (None, ""), ("", "")]
+)
+def test_library_ids_normalize_to_the_key_the_calibration_uses(raw, expected):
+    assert C._library_id_text(raw) == expected
+
+
 def test_retention_is_unavailable_without_a_calibrated_library():
     axes = {axis.key: axis for axis in C.build_axes(_fields())}
     assert axes["retention"].available is False
