@@ -1,0 +1,23 @@
+{
+  "note": "Per-library recalibration of the logP-derived retention-index proxy, fitted by tools/audit_rt_feasibility.py. Only libraries that cleared the audit gate appear here; a library that is absent gets no retention axis, which the confidence model reports as unavailable evidence rather than as a zero score.",
+  "proxy": "structural_elucidation.nce.evidence.ri_proxy_from_smiles",
+  "predicted_ri": "slope * proxy_ri + intercept",
+  "libraries": {
+    "209": {
+      "ion_mode": "negative",
+      "slope": 5.1967,
+      "intercept": -590.7,
+      "residual_rmse": 599.9,
+      "n_controls": 51,
+      "decoy_auc": 0.6824
+    },
+    "400": {
+      "ion_mode": "positive",
+      "slope": 3.1212,
+      "intercept": 704.8,
+      "residual_rmse": 519.6,
+      "n_controls": 30,
+      "decoy_auc": 0.6168
+    }
+  }
+}

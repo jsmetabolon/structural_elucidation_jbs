@@ -1,0 +1,1692 @@
+{
+  "question": "Can a logP-derived retention model eliminate chromatographically infeasible candidates?",
+  "proxy": "structural_elucidation.nce.evidence.ri_proxy_from_smiles: a linear combination of exact mass, MolLogP, ring count and TPSA",
+  "cohort": {
+    "n_measurements": 96,
+    "n_controls": 81,
+    "source": "observed retention index parsed from the feature key; true structures from the known-X structure set"
+  },
+  "calibration": {
+    "209": {
+      "n": 51,
+      "ion_mode": "negative",
+      "observed_ri_range": [
+        877.0,
+        5528.0
+      ],
+      "pearson_r": 0.8629,
+      "raw_rmse": 2119.0,
+      "recalibrated_loo_rmse": 599.9,
+      "fit": {
+        "slope": 5.1967,
+        "intercept": -590.7
+      },
+      "sufficient_controls": true
+    },
+    "305": {
+      "n": 13,
+      "ion_mode": "negative",
+      "observed_ri_range": [
+        689.0,
+        3088.0
+      ],
+      "pearson_r": -0.7647,
+      "raw_rmse": 1462.6,
+      "recalibrated_loo_rmse": 661.0,
+      "fit": {
+        "slope": -3.9402,
+        "intercept": 3248.9
+      },
+      "sufficient_controls": true
+    },
+    "400": {
+      "n": 30,
+      "ion_mode": "positive",
+      "observed_ri_range": [
+        886.0,
+        3074.0
+      ],
+      "pearson_r": 0.5562,
+      "raw_rmse": 1687.5,
+      "recalibrated_loo_rmse": 519.6,
+      "fit": {
+        "slope": 3.1212,
+        "intercept": 704.8
+      },
+      "sufficient_controls": true
+    },
+    "402": {
+      "n": 2,
+      "ion_mode": "positive",
+      "observed_ri_range": [
+        2816.0,
+        2850.0
+      ],
+      "pearson_r": null,
+      "raw_rmse": 1291.1,
+      "recalibrated_loo_rmse": null,
+      "fit": null,
+      "sufficient_controls": false
+    }
+  },
+  "decoy_recalibrated": {
+    "scored_by": "-|observed RI - recalibrated proxy RI|",
+    "mass_tolerance_da": 50.0,
+    "n_controls": 94,
+    "n_comparisons": 1352,
+    "auc": 0.651,
+    "controls_beating_median_decoy": 74,
+    "controls_beating_median_decoy_share": 0.7872,
+    "by_library": {
+      "209": {
+        "n_controls": 51,
+        "n_comparisons": 841,
+        "auc": 0.6824
+      },
+      "305": {
+        "n_controls": 13,
+        "n_comparisons": 97,
+        "auc": 0.5897
+      },
+      "400": {
+        "n_controls": 30,
+        "n_comparisons": 414,
+        "auc": 0.6168
+      }
+    },
+    "per_control": [
+      {
+        "control_id": "X-12111",
+        "lib_id": 209,
+        "n_decoys": 8,
+        "true_residual": 655.0,
+        "median_decoy_residual": 714.7,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-12462",
+        "lib_id": 209,
+        "n_decoys": 9,
+        "true_residual": 236.3,
+        "median_decoy_residual": 166.7,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-12680",
+        "lib_id": 209,
+        "n_decoys": 22,
+        "true_residual": 492.1,
+        "median_decoy_residual": 1050.8,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-12811",
+        "lib_id": 209,
+        "n_decoys": 3,
+        "true_residual": 811.2,
+        "median_decoy_residual": 2498.2,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-15136",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 1499.2,
+        "median_decoy_residual": 1965.9,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-15503",
+        "lib_id": 209,
+        "n_decoys": 20,
+        "true_residual": 29.9,
+        "median_decoy_residual": 301.5,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-15853",
+        "lib_id": 209,
+        "n_decoys": 15,
+        "true_residual": 623.6,
+        "median_decoy_residual": 751.0,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-16124",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 295.9,
+        "median_decoy_residual": 560.3,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-17146",
+        "lib_id": 209,
+        "n_decoys": 7,
+        "true_residual": 1264.0,
+        "median_decoy_residual": 1622.3,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-17325",
+        "lib_id": 209,
+        "n_decoys": 21,
+        "true_residual": 763.2,
+        "median_decoy_residual": 912.4,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-17348",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 542.3,
+        "median_decoy_residual": 380.9,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-17676",
+        "lib_id": 209,
+        "n_decoys": 17,
+        "true_residual": 106.7,
+        "median_decoy_residual": 470.6,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-17689",
+        "lib_id": 209,
+        "n_decoys": 12,
+        "true_residual": 367.2,
+        "median_decoy_residual": 673.3,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-17855",
+        "lib_id": 209,
+        "n_decoys": 10,
+        "true_residual": 54.0,
+        "median_decoy_residual": 181.4,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-17861",
+        "lib_id": 209,
+        "n_decoys": 10,
+        "true_residual": 45.1,
+        "median_decoy_residual": 195.9,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-17919",
+        "lib_id": 209,
+        "n_decoys": 11,
+        "true_residual": 139.3,
+        "median_decoy_residual": 943.0,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-18345",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 380.0,
+        "median_decoy_residual": 863.4,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-18887",
+        "lib_id": 209,
+        "n_decoys": 10,
+        "true_residual": 96.3,
+        "median_decoy_residual": 182.9,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-21410",
+        "lib_id": 209,
+        "n_decoys": 7,
+        "true_residual": 116.9,
+        "median_decoy_residual": 692.3,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-21470",
+        "lib_id": 209,
+        "n_decoys": 3,
+        "true_residual": 1493.1,
+        "median_decoy_residual": 1699.2,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-21788",
+        "lib_id": 209,
+        "n_decoys": 21,
+        "true_residual": 378.5,
+        "median_decoy_residual": 791.6,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-21821",
+        "lib_id": 209,
+        "n_decoys": 23,
+        "true_residual": 189.0,
+        "median_decoy_residual": 911.9,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-23332",
+        "lib_id": 209,
+        "n_decoys": 15,
+        "true_residual": 144.1,
+        "median_decoy_residual": 362.0,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-23437",
+        "lib_id": 209,
+        "n_decoys": 23,
+        "true_residual": 904.0,
+        "median_decoy_residual": 867.1,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-24137",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 167.8,
+        "median_decoy_residual": 394.5,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-24576",
+        "lib_id": 209,
+        "n_decoys": 22,
+        "true_residual": 569.9,
+        "median_decoy_residual": 1171.8,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-24616",
+        "lib_id": 209,
+        "n_decoys": 3,
+        "true_residual": 417.2,
+        "median_decoy_residual": 816.0,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-24762",
+        "lib_id": 209,
+        "n_decoys": 22,
+        "true_residual": 23.6,
+        "median_decoy_residual": 554.8,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-24972",
+        "lib_id": 209,
+        "n_decoys": 7,
+        "true_residual": 160.9,
+        "median_decoy_residual": 721.4,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25003",
+        "lib_id": 209,
+        "n_decoys": 16,
+        "true_residual": 166.7,
+        "median_decoy_residual": 910.6,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25279",
+        "lib_id": 209,
+        "n_decoys": 22,
+        "true_residual": 728.1,
+        "median_decoy_residual": 1584.8,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25318",
+        "lib_id": 209,
+        "n_decoys": 23,
+        "true_residual": 636.8,
+        "median_decoy_residual": 913.8,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25323",
+        "lib_id": 209,
+        "n_decoys": 9,
+        "true_residual": 158.7,
+        "median_decoy_residual": 596.7,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25406",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 1070.5,
+        "median_decoy_residual": 1642.3,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25459",
+        "lib_id": 209,
+        "n_decoys": 7,
+        "true_residual": 940.1,
+        "median_decoy_residual": 1884.0,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25495",
+        "lib_id": 209,
+        "n_decoys": 8,
+        "true_residual": 240.3,
+        "median_decoy_residual": 205.7,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25523",
+        "lib_id": 209,
+        "n_decoys": 7,
+        "true_residual": 661.7,
+        "median_decoy_residual": 1020.0,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25539",
+        "lib_id": 209,
+        "n_decoys": 7,
+        "true_residual": 559.4,
+        "median_decoy_residual": 813.3,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25603",
+        "lib_id": 209,
+        "n_decoys": 15,
+        "true_residual": 699.1,
+        "median_decoy_residual": 676.6,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25610",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 122.7,
+        "median_decoy_residual": 937.4,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25737",
+        "lib_id": 209,
+        "n_decoys": 10,
+        "true_residual": 327.6,
+        "median_decoy_residual": 449.4,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25744",
+        "lib_id": 209,
+        "n_decoys": 11,
+        "true_residual": 145.9,
+        "median_decoy_residual": 673.7,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-26062",
+        "lib_id": 209,
+        "n_decoys": 6,
+        "true_residual": 427.3,
+        "median_decoy_residual": 689.7,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-26064",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 541.1,
+        "median_decoy_residual": 535.2,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-26093",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 301.3,
+        "median_decoy_residual": 403.8,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-26094",
+        "lib_id": 209,
+        "n_decoys": 22,
+        "true_residual": 540.0,
+        "median_decoy_residual": 1082.8,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-26099",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 83.4,
+        "median_decoy_residual": 448.3,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-26101",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 124.4,
+        "median_decoy_residual": 475.0,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-26103",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 238.9,
+        "median_decoy_residual": 381.1,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-26218",
+        "lib_id": 209,
+        "n_decoys": 15,
+        "true_residual": 1462.7,
+        "median_decoy_residual": 3386.4,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-26517",
+        "lib_id": 209,
+        "n_decoys": 3,
+        "true_residual": 310.0,
+        "median_decoy_residual": 294.9,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-12111",
+        "lib_id": 305,
+        "n_decoys": 7,
+        "true_residual": 133.0,
+        "median_decoy_residual": 361.3,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-15503",
+        "lib_id": 305,
+        "n_decoys": 8,
+        "true_residual": 245.5,
+        "median_decoy_residual": 653.9,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-21788",
+        "lib_id": 305,
+        "n_decoys": 8,
+        "true_residual": 632.7,
+        "median_decoy_residual": 611.0,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-21928",
+        "lib_id": 305,
+        "n_decoys": 6,
+        "true_residual": 904.4,
+        "median_decoy_residual": 561.9,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-22504",
+        "lib_id": 305,
+        "n_decoys": 8,
+        "true_residual": 294.3,
+        "median_decoy_residual": 630.9,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-23076",
+        "lib_id": 305,
+        "n_decoys": 3,
+        "true_residual": 1407.3,
+        "median_decoy_residual": 1333.6,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-23080",
+        "lib_id": 305,
+        "n_decoys": 8,
+        "true_residual": 340.2,
+        "median_decoy_residual": 1038.9,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-24576",
+        "lib_id": 305,
+        "n_decoys": 5,
+        "true_residual": 153.8,
+        "median_decoy_residual": 1333.3,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25003",
+        "lib_id": 305,
+        "n_decoys": 8,
+        "true_residual": 500.8,
+        "median_decoy_residual": 282.8,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25323",
+        "lib_id": 305,
+        "n_decoys": 8,
+        "true_residual": 343.7,
+        "median_decoy_residual": 572.0,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25549",
+        "lib_id": 305,
+        "n_decoys": 4,
+        "true_residual": 543.4,
+        "median_decoy_residual": 1797.2,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25560",
+        "lib_id": 305,
+        "n_decoys": 3,
+        "true_residual": 948.4,
+        "median_decoy_residual": 2245.2,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-26008",
+        "lib_id": 305,
+        "n_decoys": 8,
+        "true_residual": 783.1,
+        "median_decoy_residual": 967.0,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-11677",
+        "lib_id": 400,
+        "n_decoys": 13,
+        "true_residual": 407.4,
+        "median_decoy_residual": 247.8,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-12111",
+        "lib_id": 400,
+        "n_decoys": 13,
+        "true_residual": 657.3,
+        "median_decoy_residual": 485.0,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-12127",
+        "lib_id": 400,
+        "n_decoys": 15,
+        "true_residual": 161.2,
+        "median_decoy_residual": 282.4,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-12283",
+        "lib_id": 400,
+        "n_decoys": 12,
+        "true_residual": 76.3,
+        "median_decoy_residual": 645.1,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-12462",
+        "lib_id": 400,
+        "n_decoys": 15,
+        "true_residual": 316.7,
+        "median_decoy_residual": 197.3,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-12680",
+        "lib_id": 400,
+        "n_decoys": 14,
+        "true_residual": 929.6,
+        "median_decoy_residual": 853.3,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-13504",
+        "lib_id": 400,
+        "n_decoys": 14,
+        "true_residual": 32.3,
+        "median_decoy_residual": 316.8,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-15136",
+        "lib_id": 400,
+        "n_decoys": 13,
+        "true_residual": 578.7,
+        "median_decoy_residual": 1052.3,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-15503",
+        "lib_id": 400,
+        "n_decoys": 17,
+        "true_residual": 155.7,
+        "median_decoy_residual": 299.1,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-17325",
+        "lib_id": 400,
+        "n_decoys": 15,
+        "true_residual": 391.1,
+        "median_decoy_residual": 701.2,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-21283",
+        "lib_id": 400,
+        "n_decoys": 10,
+        "true_residual": 343.1,
+        "median_decoy_residual": 286.9,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-23583",
+        "lib_id": 400,
+        "n_decoys": 9,
+        "true_residual": 703.0,
+        "median_decoy_residual": 840.9,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-23593",
+        "lib_id": 400,
+        "n_decoys": 17,
+        "true_residual": 189.0,
+        "median_decoy_residual": 469.9,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-23662",
+        "lib_id": 400,
+        "n_decoys": 15,
+        "true_residual": 447.4,
+        "median_decoy_residual": 784.9,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-23739",
+        "lib_id": 400,
+        "n_decoys": 13,
+        "true_residual": 451.2,
+        "median_decoy_residual": 983.2,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-24246",
+        "lib_id": 400,
+        "n_decoys": 14,
+        "true_residual": 460.2,
+        "median_decoy_residual": 682.0,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-24470",
+        "lib_id": 400,
+        "n_decoys": 4,
+        "true_residual": 30.8,
+        "median_decoy_residual": 190.4,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-24728",
+        "lib_id": 400,
+        "n_decoys": 14,
+        "true_residual": 567.0,
+        "median_decoy_residual": 713.3,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-24812",
+        "lib_id": 400,
+        "n_decoys": 14,
+        "true_residual": 380.8,
+        "median_decoy_residual": 649.1,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25164",
+        "lib_id": 400,
+        "n_decoys": 14,
+        "true_residual": 651.9,
+        "median_decoy_residual": 795.3,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25273",
+        "lib_id": 400,
+        "n_decoys": 13,
+        "true_residual": 1495.8,
+        "median_decoy_residual": 778.2,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25303",
+        "lib_id": 400,
+        "n_decoys": 10,
+        "true_residual": 562.9,
+        "median_decoy_residual": 447.1,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25323",
+        "lib_id": 400,
+        "n_decoys": 15,
+        "true_residual": 914.6,
+        "median_decoy_residual": 1066.9,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25419",
+        "lib_id": 400,
+        "n_decoys": 11,
+        "true_residual": 208.1,
+        "median_decoy_residual": 323.9,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25422",
+        "lib_id": 400,
+        "n_decoys": 14,
+        "true_residual": 311.8,
+        "median_decoy_residual": 306.8,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25551",
+        "lib_id": 400,
+        "n_decoys": 4,
+        "true_residual": 57.5,
+        "median_decoy_residual": 81.4,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25563",
+        "lib_id": 400,
+        "n_decoys": 11,
+        "true_residual": 398.9,
+        "median_decoy_residual": 248.7,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25603",
+        "lib_id": 400,
+        "n_decoys": 9,
+        "true_residual": 297.2,
+        "median_decoy_residual": 335.8,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-26008",
+        "lib_id": 400,
+        "n_decoys": 15,
+        "true_residual": 95.7,
+        "median_decoy_residual": 331.3,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-26298",
+        "lib_id": 400,
+        "n_decoys": 17,
+        "true_residual": 211.3,
+        "median_decoy_residual": 690.1,
+        "beats_median_decoy": true
+      }
+    ]
+  },
+  "decoy_raw": {
+    "scored_by": "-|observed RI - raw proxy RI|",
+    "mass_tolerance_da": 50.0,
+    "n_controls": 94,
+    "n_comparisons": 1352,
+    "auc": 0.5004,
+    "controls_beating_median_decoy": 48,
+    "controls_beating_median_decoy_share": 0.5106,
+    "by_library": {
+      "209": {
+        "n_controls": 51,
+        "n_comparisons": 841,
+        "auc": 0.4789
+      },
+      "305": {
+        "n_controls": 13,
+        "n_comparisons": 97,
+        "auc": 0.4936
+      },
+      "400": {
+        "n_controls": 30,
+        "n_comparisons": 414,
+        "auc": 0.5062
+      }
+    },
+    "per_control": [
+      {
+        "control_id": "X-12111",
+        "lib_id": 209,
+        "n_decoys": 8,
+        "true_residual": 473.4,
+        "median_decoy_residual": 469.1,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-12462",
+        "lib_id": 209,
+        "n_decoys": 9,
+        "true_residual": 1050.4,
+        "median_decoy_residual": 1088.1,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-12680",
+        "lib_id": 209,
+        "n_decoys": 22,
+        "true_residual": 646.4,
+        "median_decoy_residual": 552.4,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-12811",
+        "lib_id": 209,
+        "n_decoys": 3,
+        "true_residual": 1713.7,
+        "median_decoy_residual": 1395.4,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-15136",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 3386.5,
+        "median_decoy_residual": 3482.4,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-15503",
+        "lib_id": 209,
+        "n_decoys": 20,
+        "true_residual": 1381.9,
+        "median_decoy_residual": 1346.5,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-15853",
+        "lib_id": 209,
+        "n_decoys": 15,
+        "true_residual": 2335.3,
+        "median_decoy_residual": 2362.5,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-16124",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 2011.9,
+        "median_decoy_residual": 2063.5,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-17146",
+        "lib_id": 209,
+        "n_decoys": 7,
+        "true_residual": 4035.4,
+        "median_decoy_residual": 4120.0,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-17325",
+        "lib_id": 209,
+        "n_decoys": 21,
+        "true_residual": 2346.1,
+        "median_decoy_residual": 2377.4,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-17348",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 2043.5,
+        "median_decoy_residual": 2011.5,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-17676",
+        "lib_id": 209,
+        "n_decoys": 17,
+        "true_residual": 1065.8,
+        "median_decoy_residual": 994.4,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-17689",
+        "lib_id": 209,
+        "n_decoys": 12,
+        "true_residual": 2221.6,
+        "median_decoy_residual": 2281.5,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-17855",
+        "lib_id": 209,
+        "n_decoys": 10,
+        "true_residual": 1557.5,
+        "median_decoy_residual": 1554.8,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-17861",
+        "lib_id": 209,
+        "n_decoys": 10,
+        "true_residual": 1654.5,
+        "median_decoy_residual": 1651.8,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-17919",
+        "lib_id": 209,
+        "n_decoys": 11,
+        "true_residual": 2399.0,
+        "median_decoy_residual": 2460.4,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-18345",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 946.0,
+        "median_decoy_residual": 866.5,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-18887",
+        "lib_id": 209,
+        "n_decoys": 10,
+        "true_residual": 1704.5,
+        "median_decoy_residual": 1701.8,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-21410",
+        "lib_id": 209,
+        "n_decoys": 7,
+        "true_residual": 3031.9,
+        "median_decoy_residual": 3190.0,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-21470",
+        "lib_id": 209,
+        "n_decoys": 3,
+        "true_residual": 2254.6,
+        "median_decoy_residual": 2194.4,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-21788",
+        "lib_id": 209,
+        "n_decoys": 21,
+        "true_residual": 757.1,
+        "median_decoy_residual": 674.4,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-21821",
+        "lib_id": 209,
+        "n_decoys": 23,
+        "true_residual": 2288.1,
+        "median_decoy_residual": 2402.8,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-23332",
+        "lib_id": 209,
+        "n_decoys": 15,
+        "true_residual": 1344.4,
+        "median_decoy_residual": 1311.8,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-23437",
+        "lib_id": 209,
+        "n_decoys": 23,
+        "true_residual": 763.5,
+        "median_decoy_residual": 769.8,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-24137",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 1678.4,
+        "median_decoy_residual": 1680.5,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-24576",
+        "lib_id": 209,
+        "n_decoys": 22,
+        "true_residual": 2565.1,
+        "median_decoy_residual": 2682.5,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-24616",
+        "lib_id": 209,
+        "n_decoys": 3,
+        "true_residual": 3476.4,
+        "median_decoy_residual": 3536.6,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-24762",
+        "lib_id": 209,
+        "n_decoys": 22,
+        "true_residual": 1133.7,
+        "median_decoy_residual": 1048.4,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-24972",
+        "lib_id": 209,
+        "n_decoys": 7,
+        "true_residual": 2990.9,
+        "median_decoy_residual": 3149.0,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25003",
+        "lib_id": 209,
+        "n_decoys": 16,
+        "true_residual": 699.9,
+        "median_decoy_residual": 581.9,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25279",
+        "lib_id": 209,
+        "n_decoys": 22,
+        "true_residual": 2928.0,
+        "median_decoy_residual": 3095.5,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25318",
+        "lib_id": 209,
+        "n_decoys": 23,
+        "true_residual": 2369.3,
+        "median_decoy_residual": 2424.5,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25323",
+        "lib_id": 209,
+        "n_decoys": 9,
+        "true_residual": 661.0,
+        "median_decoy_residual": 575.8,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25406",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 3031.8,
+        "median_decoy_residual": 3145.5,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25459",
+        "lib_id": 209,
+        "n_decoys": 7,
+        "true_residual": 1084.4,
+        "median_decoy_residual": 887.4,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25495",
+        "lib_id": 209,
+        "n_decoys": 8,
+        "true_residual": 961.0,
+        "median_decoy_residual": 982.4,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25523",
+        "lib_id": 209,
+        "n_decoys": 7,
+        "true_residual": 1836.0,
+        "median_decoy_residual": 1751.4,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25539",
+        "lib_id": 209,
+        "n_decoys": 7,
+        "true_residual": 3054.5,
+        "median_decoy_residual": 3311.0,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25603",
+        "lib_id": 209,
+        "n_decoys": 15,
+        "true_residual": 937.8,
+        "median_decoy_residual": 940.5,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25610",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 979.6,
+        "median_decoy_residual": 792.5,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25737",
+        "lib_id": 209,
+        "n_decoys": 10,
+        "true_residual": 1289.6,
+        "median_decoy_residual": 1286.8,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25744",
+        "lib_id": 209,
+        "n_decoys": 11,
+        "true_residual": 1688.8,
+        "median_decoy_residual": 1586.0,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-26062",
+        "lib_id": 209,
+        "n_decoys": 6,
+        "true_residual": 536.4,
+        "median_decoy_residual": 498.4,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-26064",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 977.5,
+        "median_decoy_residual": 975.5,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-26093",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 1780.7,
+        "median_decoy_residual": 1888.8,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-26094",
+        "lib_id": 209,
+        "n_decoys": 22,
+        "true_residual": 2487.6,
+        "median_decoy_residual": 2593.5,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-26099",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 1549.4,
+        "median_decoy_residual": 1538.5,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-26101",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 1589.4,
+        "median_decoy_residual": 1578.5,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-26103",
+        "lib_id": 209,
+        "n_decoys": 24,
+        "true_residual": 1734.5,
+        "median_decoy_residual": 1731.5,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-26218",
+        "lib_id": 209,
+        "n_decoys": 15,
+        "true_residual": 4609.6,
+        "median_decoy_residual": 5003.5,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-26517",
+        "lib_id": 209,
+        "n_decoys": 3,
+        "true_residual": 3905.3,
+        "median_decoy_residual": 4042.6,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-12111",
+        "lib_id": 305,
+        "n_decoys": 7,
+        "true_residual": 1132.4,
+        "median_decoy_residual": 1190.9,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-15503",
+        "lib_id": 305,
+        "n_decoys": 8,
+        "true_residual": 735.9,
+        "median_decoy_residual": 853.9,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-21788",
+        "lib_id": 305,
+        "n_decoys": 8,
+        "true_residual": 650.1,
+        "median_decoy_residual": 654.4,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-21928",
+        "lib_id": 305,
+        "n_decoys": 6,
+        "true_residual": 993.6,
+        "median_decoy_residual": 945.9,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-22504",
+        "lib_id": 305,
+        "n_decoys": 8,
+        "true_residual": 776.4,
+        "median_decoy_residual": 876.9,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-23076",
+        "lib_id": 305,
+        "n_decoys": 3,
+        "true_residual": 28.5,
+        "median_decoy_residual": 492.1,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-23080",
+        "lib_id": 305,
+        "n_decoys": 8,
+        "true_residual": 271.4,
+        "median_decoy_residual": 468.9,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-24576",
+        "lib_id": 305,
+        "n_decoys": 5,
+        "true_residual": 70.1,
+        "median_decoy_residual": 281.1,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25003",
+        "lib_id": 305,
+        "n_decoys": 8,
+        "true_residual": 1091.9,
+        "median_decoy_residual": 1033.4,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25323",
+        "lib_id": 305,
+        "n_decoys": 8,
+        "true_residual": 1907.0,
+        "median_decoy_residual": 1837.4,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25549",
+        "lib_id": 305,
+        "n_decoys": 4,
+        "true_residual": 2369.1,
+        "median_decoy_residual": 2176.9,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25560",
+        "lib_id": 305,
+        "n_decoys": 3,
+        "true_residual": 2854.8,
+        "median_decoy_residual": 2469.1,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-26008",
+        "lib_id": 305,
+        "n_decoys": 8,
+        "true_residual": 2302.4,
+        "median_decoy_residual": 2232.4,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-11677",
+        "lib_id": 400,
+        "n_decoys": 13,
+        "true_residual": 1488.8,
+        "median_decoy_residual": 1612.7,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-12111",
+        "lib_id": 400,
+        "n_decoys": 13,
+        "true_residual": 926.4,
+        "median_decoy_residual": 979.7,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-12127",
+        "lib_id": 400,
+        "n_decoys": 15,
+        "true_residual": 1743.7,
+        "median_decoy_residual": 1737.7,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-12283",
+        "lib_id": 400,
+        "n_decoys": 12,
+        "true_residual": 2004.1,
+        "median_decoy_residual": 2229.7,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-12462",
+        "lib_id": 400,
+        "n_decoys": 15,
+        "true_residual": 1344.4,
+        "median_decoy_residual": 1430.3,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-12680",
+        "lib_id": 400,
+        "n_decoys": 14,
+        "true_residual": 2467.4,
+        "median_decoy_residual": 2452.7,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-13504",
+        "lib_id": 400,
+        "n_decoys": 14,
+        "true_residual": 1631.7,
+        "median_decoy_residual": 1637.7,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-15136",
+        "lib_id": 400,
+        "n_decoys": 13,
+        "true_residual": 2476.5,
+        "median_decoy_residual": 2651.7,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-15503",
+        "lib_id": 400,
+        "n_decoys": 17,
+        "true_residual": 1836.9,
+        "median_decoy_residual": 1883.7,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-17325",
+        "lib_id": 400,
+        "n_decoys": 15,
+        "true_residual": 2178.1,
+        "median_decoy_residual": 2283.7,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-21283",
+        "lib_id": 400,
+        "n_decoys": 10,
+        "true_residual": 1773.7,
+        "median_decoy_residual": 1764.3,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-23583",
+        "lib_id": 400,
+        "n_decoys": 9,
+        "true_residual": 768.3,
+        "median_decoy_residual": 718.7,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-23593",
+        "lib_id": 400,
+        "n_decoys": 17,
+        "true_residual": 1209.8,
+        "median_decoy_residual": 1114.7,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-23662",
+        "lib_id": 400,
+        "n_decoys": 15,
+        "true_residual": 2145.0,
+        "median_decoy_residual": 2262.3,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-23739",
+        "lib_id": 400,
+        "n_decoys": 13,
+        "true_residual": 964.8,
+        "median_decoy_residual": 781.0,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-24246",
+        "lib_id": 400,
+        "n_decoys": 14,
+        "true_residual": 2065.3,
+        "median_decoy_residual": 2146.7,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-24470",
+        "lib_id": 400,
+        "n_decoys": 4,
+        "true_residual": 1747.0,
+        "median_decoy_residual": 1738.7,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-24728",
+        "lib_id": 400,
+        "n_decoys": 14,
+        "true_residual": 1022.9,
+        "median_decoy_residual": 1008.7,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-24812",
+        "lib_id": 400,
+        "n_decoys": 14,
+        "true_residual": 2142.0,
+        "median_decoy_residual": 2233.7,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25164",
+        "lib_id": 400,
+        "n_decoys": 14,
+        "true_residual": 940.9,
+        "median_decoy_residual": 926.7,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25273",
+        "lib_id": 400,
+        "n_decoys": 13,
+        "true_residual": 2529.7,
+        "median_decoy_residual": 2360.7,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25303",
+        "lib_id": 400,
+        "n_decoys": 10,
+        "true_residual": 996.7,
+        "median_decoy_residual": 1039.7,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25323",
+        "lib_id": 400,
+        "n_decoys": 15,
+        "true_residual": 552.0,
+        "median_decoy_residual": 492.7,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25419",
+        "lib_id": 400,
+        "n_decoys": 11,
+        "true_residual": 1269.3,
+        "median_decoy_residual": 1278.7,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25422",
+        "lib_id": 400,
+        "n_decoys": 14,
+        "true_residual": 1487.8,
+        "median_decoy_residual": 1336.7,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25551",
+        "lib_id": 400,
+        "n_decoys": 4,
+        "true_residual": 1847.7,
+        "median_decoy_residual": 1856.0,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-25563",
+        "lib_id": 400,
+        "n_decoys": 11,
+        "true_residual": 1539.8,
+        "median_decoy_residual": 1350.7,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-25603",
+        "lib_id": 400,
+        "n_decoys": 9,
+        "true_residual": 1545.8,
+        "median_decoy_residual": 1568.0,
+        "beats_median_decoy": true
+      },
+      {
+        "control_id": "X-26008",
+        "lib_id": 400,
+        "n_decoys": 15,
+        "true_residual": 1322.4,
+        "median_decoy_residual": 1262.7,
+        "beats_median_decoy": false
+      },
+      {
+        "control_id": "X-26298",
+        "lib_id": 400,
+        "n_decoys": 17,
+        "true_residual": 2115.1,
+        "median_decoy_residual": 2274.7,
+        "beats_median_decoy": true
+      }
+    ]
+  },
+  "libraries": {
+    "209": {
+      "ion_mode": "negative",
+      "n": 51,
+      "decoy_auc": 0.6824,
+      "slope": 5.1967,
+      "intercept": -590.7,
+      "residual_rmse": 599.9,
+      "qualifies": true,
+      "excluded_because": []
+    },
+    "305": {
+      "ion_mode": "negative",
+      "n": 13,
+      "decoy_auc": 0.5897,
+      "slope": -3.9402,
+      "intercept": 3248.9,
+      "residual_rmse": 661.0,
+      "qualifies": false,
+      "excluded_because": [
+        "fitted slope -3.9402 is negative, which reverses the expected relationship between lipophilicity and retention",
+        "decoy AUC 0.5897 is below the 0.6 bar"
+      ]
+    },
+    "400": {
+      "ion_mode": "positive",
+      "n": 30,
+      "decoy_auc": 0.6168,
+      "slope": 3.1212,
+      "intercept": 704.8,
+      "residual_rmse": 519.6,
+      "qualifies": true,
+      "excluded_because": []
+    },
+    "402": {
+      "ion_mode": "positive",
+      "n": 2,
+      "decoy_auc": null,
+      "slope": null,
+      "intercept": null,
+      "residual_rmse": null,
+      "qualifies": false,
+      "excluded_because": [
+        "only 2 labeled controls",
+        "no fit could be made",
+        "no decoy comparisons available"
+      ]
+    }
+  },
+  "gate": {
+    "threshold": 0.6,
+    "best_auc": 0.651,
+    "verdict": "PASS",
+    "qualifying_libraries": [
+      "209",
+      "400"
+    ],
+    "reasoning": "The residual separates true structures from mass-matched decoys well enough on libraries 209 and 400 to justify a retention axis there. It carries no information at all before recalibration, so the published proxy constants cannot be used as they stand, and the axis is soft and demote-only: retention can withdraw support from a candidate but never supply it."
+  },
+  "scope_note": "Decoys are other controls' true structures, which are real metabolites of similar mass on the same column but not the actual candidate pool. This bounds the discrimination a retention filter could have; it does not measure the filter in place."
+}

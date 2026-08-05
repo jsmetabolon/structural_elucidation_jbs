@@ -81,6 +81,26 @@ def xid_from_feature_key(value: Any) -> str:
     return match.group(1) if match else ""
 
 
+FEATURE_KEY_RI = re.compile(r"_ri(\d+)_")
+
+
+def ri_from_feature_key(value: Any) -> float:
+    """Extract the observed retention index from a feature key.
+
+    Feature keys embed it as ``..._mz100.0404_ri1248_X-23917``. This is the only
+    place the observed RI survives into the reranked output, so parsing it back
+    out avoids needing the full ion table to reason about chromatography.
+
+    Returns NaN when there is no RI or when it is recorded as zero, which the
+    upstream tables use for "not measured" rather than "eluted at index zero".
+    """
+    match = FEATURE_KEY_RI.search(str(value or ""))
+    if not match:
+        return math.nan
+    ri = float(match.group(1))
+    return ri if ri > 0 else math.nan
+
+
 UNKNOWN_LABEL_TO_XNUM = re.compile(r"Unknown\s*-\s*(\d+)", re.I)
 UNKNOWN_LABEL_SUFFIX = re.compile(r"Unknown\s*-\s*\d+\s*[-_]", re.I)
 NMD_NAME_PREFIX = re.compile(r"^NMD", re.I)
