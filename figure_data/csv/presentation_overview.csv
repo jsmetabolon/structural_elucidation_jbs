@@ -1,2 +1,0 @@
-n_reports,msi_level_coverage,confidence_completeness_median,overall_confidence_median,overall_confidence_p10,overall_confidence_p90,public_ms2_leaks
-3897,1.0,0.8,0.4322,0.3715,0.585,0

@@ -131,6 +131,9 @@ def build(args: argparse.Namespace) -> tuple[list[dict[str, Any]], dict[str, Any
     independent = pathway["accuracy"]
     direct = ref.get("by_assignment_source", {}).get("exact_reference_lookup")
     neighbor = independent.get("by_assignment_source", {}).get("neighbor_consensus")
+    # Same cohort the super-pathway ceiling is drawn from: controls whose structure is
+    # identical to a reference entry, so the assignment is a copy of the reference label.
+    reference_cohort = independent.get("by_reference_membership", {}).get("reference_structure")
     msi = presentation["msi_level_distribution"]
     tiers = presentation["tier_distribution"]
     claims = [
@@ -250,6 +253,24 @@ def build(args: argparse.Namespace) -> tuple[list[dict[str, Any]], dict[str, Any
             metric="reference-DB super-pathway equals known_X label",
             source=str(pathway_path),
             interpretation="Annotation harmonization ceiling for known_X comparisons.",
+        ),
+        *(
+            [
+                _claim(
+                    "reference_db_vs_known_x_agreement_sub",
+                    reference_cohort["sub"]["accuracy"],
+                    cohort="identical structures with both taxonomy labels",
+                    n=reference_cohort["sub"]["n"],
+                    metric="reference-DB subpathway equals known_X label",
+                    source=str(pathway_path),
+                    interpretation=(
+                        "Annotation harmonization ceiling at the subpathway level; without it the "
+                        "subpathway agreement figure reads as model error alone."
+                    ),
+                ),
+            ]
+            if reference_cohort
+            else []
         ),
         *(
             [

@@ -26,6 +26,9 @@ def main() -> None:
     parser.add_argument("--loo", type=Path, required=True)
     parser.add_argument("--presentation", type=Path, required=True)
     parser.add_argument("--claims", type=Path, required=True)
+    parser.add_argument("--harmonization", type=Path, default=Path("docs/paper/data/taxonomy_harmonization.json"))
+    parser.add_argument("--selective", type=Path, default=Path("docs/paper/data/selective_prediction.json"))
+    parser.add_argument("--library", type=Path, default=Path("docs/paper/data/library_stratification.json"))
     parser.add_argument("--out", type=Path, default=Path("docs/paper/supplement/supplementary_information.md"))
     args = parser.parse_args()
     args.out.parent.mkdir(parents=True, exist_ok=True)
@@ -35,7 +38,11 @@ def main() -> None:
     loo = json.loads(args.loo.read_text())
     presentation = json.loads(args.presentation.read_text())
     claims = claim_map(args.claims)
+    harmonization = json.loads(args.harmonization.read_text()) if args.harmonization.exists() else None
+    selective = json.loads(args.selective.read_text()) if args.selective.exists() else None
+    library = json.loads(args.library.read_text()) if args.library.exists() else None
     known = pathway["accuracy"]
+    reference_cohort = known["by_reference_membership"]["reference_structure"]
     n_reports = int(presentation["n_reports"])
     coverage = presentation["evidence_coverage"]
     gaps = presentation["presentation_gaps"]
@@ -158,6 +165,13 @@ def main() -> None:
         f"and similarity exponent={loo['similarity_power']}. It evaluates the neighbor-vote "
         "mechanism only, not the complete production predictor.",
         "",
+        f"**Annotation ceiling.** On the {reference_cohort['super']['n']} controls whose structure "
+        "is identical to a reference entry, the assignment is a copy of the reference label, so its "
+        "agreement with `known_X` is the highest any predictor targeting the reference taxonomy "
+        f"could score: {pct(reference_cohort['super'])} at super-pathway and "
+        f"{pct(reference_cohort['sub'])} at subpathway. Every `known_X`-scored figure in this "
+        "document should be read against those bounds rather than against 100%.",
+        "",
         "![Figure S2. Neighbor-vote leave-one-out accuracy by similarity.](../figures/figS2_loo_similarity.svg)",
         "",
         "![Figure S3. Independent-label agreement by assignment status.](../figures/figS3_pathway_status.svg)",
@@ -169,7 +183,8 @@ def main() -> None:
     ]
     predicted = pathway["bias"]["predicted_super_distribution"]
     truth = pathway["bias"]["truth_super_distribution"]
-    for label in sorted(set(predicted) | set(truth), key=lambda key: -(truth.get(key, 0))):
+    # Tie-break by name so regeneration does not reorder equal-count rows.
+    for label in sorted(set(predicted) | set(truth), key=lambda key: (-(truth.get(key, 0)), key)):
         lines.append(f"| {label} | {predicted.get(label, 0)} | {truth.get(label, 0)} |")
     lines += [
         "",
@@ -224,6 +239,109 @@ def main() -> None:
         f"Full-set identification-confidence median: {presentation['overall_confidence']['median']:.4f}; "
         f"MSI coverage: {presentation['msi_level_coverage']:.1%}.",
     ]
+
+    if harmonization is not None:
+        super_block = harmonization["super_pathway"]
+        sub_block = harmonization["subpathway"]
+        rejected = super_block["rejected_maximal_collapse"]
+        lines += [
+            "",
+            "## S8. Taxonomy harmonization and selective prediction",
+            "",
+            "Corrections are applied identically to the predictor and to the annotation ceiling. "
+            "The final column is the comparable one: a correction that lifts both has exposed a "
+            "measurement artefact rather than a better predictor.",
+            "",
+            "**Table S8. Independent-label agreement under vocabulary corrections.**",
+            "",
+            "| Scenario | Inferred assignments | Annotation ceiling | Share of ceiling |",
+            "|---|---:|---:|---:|",
+        ]
+        scenarios = [
+            ("Super-pathway, as scored", super_block["raw"]),
+            ("Super-pathway, amino acid = peptide", super_block["harmonized"]),
+            ("Subpathway, as scored", sub_block["raw"]),
+            ("Subpathway, scoreable labels only", sub_block["scoreable_only"]),
+        ]
+        for label, block in scenarios:
+            share = block["inferred_share_of_ceiling"]
+            share_text = "NA" if share is None else f"{100 * share:.1f}%"
+            lines.append(
+                f"| {label} | {pct(block['inferred_only'])} | "
+                f"{pct(block['reference_ceiling'])} | {share_text} |"
+            )
+        lines += [
+            "",
+            f"{sub_block['excluded_rows']} of the independent subpathway labels are internal "
+            "review notes or explicit non-answers rather than taxonomy terms, against which no "
+            "prediction can score; those rows are the difference between the two subpathway "
+            "scenarios.",
+            "",
+            "Merging every commonly confused class would reach "
+            f"{pct(rejected['inferred_only'])} on the inferred assignments. "
+            f"{rejected['reason']}",
+        ]
+
+    if selective is not None:
+        lines += [
+            "",
+            "Selective prediction asks whether confidence orders calls at all. Each cohort is "
+            "sorted from most to least confident and scored over cumulative prefixes. Pathway "
+            "assignments ranked by best-reference similarity gain "
+            f"{100 * selective['pathway_super']['discrimination']:.0f} percentage points of "
+            "super-pathway agreement between the whole cohort and its most confident fifth, "
+            "whereas structural calls ranked by identification confidence gain "
+            f"{100 * selective['structure_rank1']['discrimination']:.0f} and do not order "
+            "features at all.",
+            "",
+            "![Figure S5. Accuracy against the fraction of calls retained.]"
+            "(../figures/figS5_selective_prediction.svg)",
+        ]
+
+    if library is not None:
+        by_library = library["pathway_inferred_by_library"]
+        lines += [
+            "",
+            "## S9. Agreement by chromatographic library",
+            "",
+            "Inferred assignments only, since direct lookups copy a reference label rather "
+            "than predict one. This tests whether the pooled figures average over "
+            "dissimilar populations.",
+            "",
+            "**Table S9. Independent-label agreement by library.**",
+            "",
+            "| Library | n | Super-pathway (95% CI) | Subpathway (95% CI) |",
+            "|---|---:|---:|---:|",
+        ]
+        for name, block in by_library.items():
+            lines.append(
+                f"| {name} | {block['super']['n']} | {pct(block['super'])} | {pct(block['sub'])} |"
+            )
+        overlap = library["super_intervals_overlap"] and library["sub_intervals_overlap"]
+        underpowered = ", ".join(
+            f"{name} (n={count})" for name, count in library["underpowered_cohorts"].items()
+        )
+        lines += [
+            "",
+            (
+                "Every interval overlaps at both levels, so agreement does not vary "
+                "detectably by library and the pooled figures are not an average over "
+                "dissimilar populations."
+                if overlap
+                else "Intervals do not all overlap, so the pooled figures average over "
+                "libraries that differ detectably."
+            )
+            + (f" Excluded as underpowered: {underpowered}." if underpowered else ""),
+            "",
+            "Structural recovery cannot be stratified the same way. The truth-verified "
+            "cohort splits across libraries as "
+            + ", ".join(
+                f"{name} n={count}"
+                for name, count in library["structure_truth_controls_by_library"].items()
+            )
+            + ", so a per-library recovery rate would be noise. That imbalance is the "
+            "evidence for the cohort-selection caveat in Limitations.",
+        ]
     args.out.write_text("\n".join(lines) + "\n")
     print(f"[paper-supplement] wrote {args.out}")
 

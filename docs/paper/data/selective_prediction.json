@@ -1,0 +1,188 @@
+{
+  "method": "Each cohort is sorted from most to least confident and scored over cumulative prefixes. A rising curve means the confidence signal ranks usefully; a flat curve means it does not, whatever its absolute accuracy.",
+  "coverage_grid": [
+    0.2,
+    0.4,
+    0.6,
+    0.8,
+    1.0
+  ],
+  "structure_rank1": {
+    "cohort": "truth-verified controls",
+    "ranked_by": "leave-one-out identification-confidence probability",
+    "correctness": "rank-1 truth Tanimoto >= 0.70",
+    "n": 92,
+    "points": [
+      {
+        "n": 18,
+        "correct": 9,
+        "accuracy": 0.5,
+        "ci95": [
+          0.2903,
+          0.7097
+        ],
+        "coverage": 0.2
+      },
+      {
+        "n": 37,
+        "correct": 17,
+        "accuracy": 0.4595,
+        "ci95": [
+          0.3104,
+          0.6162
+        ],
+        "coverage": 0.4
+      },
+      {
+        "n": 55,
+        "correct": 30,
+        "accuracy": 0.5455,
+        "ci95": [
+          0.4152,
+          0.6697
+        ],
+        "coverage": 0.6
+      },
+      {
+        "n": 74,
+        "correct": 36,
+        "accuracy": 0.4865,
+        "ci95": [
+          0.3761,
+          0.5982
+        ],
+        "coverage": 0.8
+      },
+      {
+        "n": 92,
+        "correct": 44,
+        "accuracy": 0.4783,
+        "ci95": [
+          0.3791,
+          0.5791
+        ],
+        "coverage": 1.0
+      }
+    ],
+    "discrimination": 0.0217
+  },
+  "pathway_super": {
+    "cohort": "neighbor-consensus controls with independent known_X labels",
+    "ranked_by": "best-reference structural similarity",
+    "correctness": "predicted super-pathway equals known_X label",
+    "n": 644,
+    "points": [
+      {
+        "n": 129,
+        "correct": 104,
+        "accuracy": 0.8062,
+        "ci95": [
+          0.7295,
+          0.8651
+        ],
+        "coverage": 0.2
+      },
+      {
+        "n": 258,
+        "correct": 183,
+        "accuracy": 0.7093,
+        "ci95": [
+          0.6511,
+          0.7613
+        ],
+        "coverage": 0.4
+      },
+      {
+        "n": 386,
+        "correct": 238,
+        "accuracy": 0.6166,
+        "ci95": [
+          0.5672,
+          0.6637
+        ],
+        "coverage": 0.6
+      },
+      {
+        "n": 515,
+        "correct": 295,
+        "accuracy": 0.5728,
+        "ci95": [
+          0.5297,
+          0.6148
+        ],
+        "coverage": 0.8
+      },
+      {
+        "n": 644,
+        "correct": 336,
+        "accuracy": 0.5217,
+        "ci95": [
+          0.4831,
+          0.5601
+        ],
+        "coverage": 1.0
+      }
+    ],
+    "discrimination": 0.2845
+  },
+  "pathway_sub": {
+    "cohort": "neighbor-consensus controls with independent known_X labels",
+    "ranked_by": "best-reference structural similarity",
+    "correctness": "predicted subpathway equals known_X label",
+    "n": 644,
+    "points": [
+      {
+        "n": 129,
+        "correct": 44,
+        "accuracy": 0.3411,
+        "ci95": [
+          0.2649,
+          0.4264
+        ],
+        "coverage": 0.2
+      },
+      {
+        "n": 258,
+        "correct": 68,
+        "accuracy": 0.2636,
+        "ci95": [
+          0.2136,
+          0.3205
+        ],
+        "coverage": 0.4
+      },
+      {
+        "n": 386,
+        "correct": 93,
+        "accuracy": 0.2409,
+        "ci95": [
+          0.201,
+          0.286
+        ],
+        "coverage": 0.6
+      },
+      {
+        "n": 515,
+        "correct": 108,
+        "accuracy": 0.2097,
+        "ci95": [
+          0.1768,
+          0.247
+        ],
+        "coverage": 0.8
+      },
+      {
+        "n": 644,
+        "correct": 121,
+        "accuracy": 0.1879,
+        "ci95": [
+          0.1596,
+          0.2199
+        ],
+        "coverage": 1.0
+      }
+    ],
+    "discrimination": 0.1532
+  },
+  "scope_note": "Retrospective selective prediction on fixed cohorts. It shows how accuracy would change if low-confidence calls were withheld, not the accuracy of a deployed abstention rule, which would need a prospectively chosen threshold."
+}

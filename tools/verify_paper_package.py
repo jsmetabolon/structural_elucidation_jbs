@@ -7,15 +7,57 @@ import json
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from typing import Any
 
 from docx import Document
 from docx.enum.text import WD_LINE_SPACING
 from docx.oxml.ns import qn
 
+# Documents whose job is to record what was withdrawn, and which therefore have to
+# quote the withdrawn wording. Matched by filename so the exemption survives being
+# pointed at a copied tree.
+STALE_EXEMPT_NAMES = frozenset(
+    {
+        "REVISION_LOG.md",
+        "pathway_audit_findings.md",
+        "publication_review.md",
+    }
+)
+
+
+def audit_statistics(
+    structure: dict[str, Any],
+    pathway: dict[str, Any],
+    loo: dict[str, Any],
+    presentation: dict[str, Any],
+) -> dict[str, str]:
+    """Headline values as documents render them, derived from the audit artifacts."""
+
+    rank = structure["rank_k"]["0.70"]
+    neighbor = pathway["accuracy"]["by_assignment_source"]["neighbor_consensus"]
+    ceiling = pathway["accuracy"]["by_reference_membership"]["reference_structure"]
+    msi = {key: int(value) for key, value in presentation["msi_level_distribution"].items()}
+    shown = sum(msi[key] for key in ("1", "2", "3"))
+    withheld = sum(msi[key] for key in ("4", "5"))
+    return {
+        "rank-1 recovery": f"{100 * rank['top1']['accuracy']:.1f}%",
+        "top-3 recovery": f"{100 * rank['top3']['accuracy']:.1f}%",
+        "top-10 recovery": f"{100 * rank['top10']['accuracy']:.1f}%",
+        "reports showing a structure": f"{shown:,}",
+        "reports withholding a structure": f"{withheld:,}",
+        "neighbor-consensus super-pathway agreement": f"{100 * neighbor['super']['accuracy']:.1f}%",
+        "neighbor-consensus subpathway agreement": f"{100 * neighbor['sub']['accuracy']:.1f}%",
+        "leave-one-out super-pathway accuracy": f"{100 * loo['super']['accuracy']:.1f}%",
+        "leave-one-out subpathway accuracy": f"{100 * loo['sub']['accuracy']:.1f}%",
+        "super-pathway annotation ceiling": f"{100 * ceiling['super']['accuracy']:.1f}%",
+        "subpathway annotation ceiling": f"{100 * ceiling['sub']['accuracy']:.1f}%",
+    }
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--paper-dir", type=Path, default=Path("docs/paper"))
+    parser.add_argument("--docs-dir", type=Path, default=Path("docs"))
     parser.add_argument("--strict-human-inputs", action="store_true")
     args = parser.parse_args()
     paper = args.paper_dir
@@ -55,9 +97,25 @@ def main() -> None:
         "NMD on the Fly": "internal commercial language",
         "fee-for-service": "internal commercial language",
     }
-    for phrase, reason in stale.items():
-        if phrase in manuscript:
-            errors.append(f"stale phrase '{phrase}': {reason}")
+    # Retracted claims have twice survived in files nothing checked: an unreferenced
+    # figure, and an internal findings document that still led with the withdrawn
+    # headline. Scan the whole docs tree and every figure, not just the manuscript.
+    scan_targets = {manuscript_path}
+    scan_targets.update(path for path in (paper / "figures").glob("*") if path.is_file())
+    if args.docs_dir.exists():
+        scan_targets.update(args.docs_dir.rglob("*.md"))
+    for path in sorted(scan_targets):
+        # These records have to quote the retracted numbers in order to document the
+        # retraction, so scanning them would fire on the audit trail itself.
+        if path.name in STALE_EXEMPT_NAMES:
+            continue
+        try:
+            content = path.read_text()
+        except (OSError, UnicodeDecodeError):
+            continue
+        for phrase, reason in stale.items():
+            if phrase in content:
+                errors.append(f"stale phrase '{phrase}' in {path}: {reason}")
 
     expected_claims = (
         "44/92",
@@ -143,6 +201,49 @@ def main() -> None:
         direct = pathway["reference_db_evaluation"]["by_assignment_source"]["exact_reference_lookup"]
         if direct["super"]["accuracy"] != 1.0:
             errors.append("unexpected direct-lookup consistency value")
+
+        # Coverage counts are quoted verbatim in Results and have drifted from the
+        # audit artifact before; assert each one is still present in the prose.
+        coverage = pathway["coverage"]
+        quoted = {
+            "exact reference match": coverage["status_counts"]["exact_reference_match"],
+            "strong-similarity vote": coverage["status_counts"]["strong_similarity_vote"],
+            "weak-similarity backfill": coverage["status_counts"]["weak_similarity_backfill"],
+            "high pathway-confidence tier": coverage["tier_counts"]["high"],
+            "medium pathway-confidence tier": coverage["tier_counts"]["medium"],
+            "low pathway-confidence tier": coverage["tier_counts"]["low"],
+        }
+        for label, count in quoted.items():
+            if f"{count:,}" not in manuscript:
+                errors.append(f"{label} count drifted from the audit artifact: expected {count:,}")
+        median = coverage["best_similarity_pctiles"]["p50"]
+        if f"median {median}" not in manuscript:
+            errors.append(f"best-reference similarity median drifted from the audit artifact: expected {median}")
+
+    # Three documents quote the same headline statistics, and all three have to move
+    # when the audit moves. Only the manuscript was checked before, so the paper README
+    # and the operations overview could diverge from it without anything noticing.
+    loo_path = paper / "data/pathway/audit_pathway_loo.json"
+    presentation_path = paper / "data/presentation/audit_presentation_summary.json"
+    if all(path.exists() for path in (structure_path, pathway_path, loo_path, presentation_path)):
+        statistics = audit_statistics(
+            json.loads(structure_path.read_text()),
+            json.loads(pathway_path.read_text()),
+            json.loads(loo_path.read_text()),
+            json.loads(presentation_path.read_text()),
+        )
+        quoting_documents = [
+            manuscript_path,
+            paper / "README.md",
+            args.docs_dir / "x_compound_prediction_overview.md",
+        ]
+        for document in quoting_documents:
+            if not document.exists():
+                continue
+            content = document.read_text()
+            for label, value in statistics.items():
+                if value not in content:
+                    errors.append(f"{document} does not carry the current {label} ({value})")
 
     print(f"[paper-verify] abstract words: {abstract_words}")
     print(f"[paper-verify] main figures: {len(figure_links)}")

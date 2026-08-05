@@ -76,6 +76,8 @@ Full model leave-one-out Brier score: **0.2546**; calibration slope 0.056, inter
 
 Leave-one-out uses k=10, similarity floor=0.3, and similarity exponent=2.0. It evaluates the neighbor-vote mechanism only, not the complete production predictor.
 
+**Annotation ceiling.** On the 267 controls whose structure is identical to a reference entry, the assignment is a copy of the reference label, so its agreement with `known_X` is the highest any predictor targeting the reference taxonomy could score: 62.5% (56.6–68.1%) at super-pathway and 34.8% (29.4–40.7%) at subpathway. Every `known_X`-scored figure in this document should be read against those bounds rather than against 100%.
+
 ![Figure S2. Neighbor-vote leave-one-out accuracy by similarity.](../figures/figS2_loo_similarity.svg)
 
 ![Figure S3. Independent-label agreement by assignment status.](../figures/figS3_pathway_status.svg)
@@ -128,3 +130,40 @@ There are **598** rank-1 mass mismatches among 3897 reports. **590** are in the 
 - Immutable repository release/DOI and controlled-access data instructions.
 
 Full-set identification-confidence median: 0.4322; MSI coverage: 100.0%.
+
+## S8. Taxonomy harmonization and selective prediction
+
+Corrections are applied identically to the predictor and to the annotation ceiling. The final column is the comparable one: a correction that lifts both has exposed a measurement artefact rather than a better predictor.
+
+**Table S8. Independent-label agreement under vocabulary corrections.**
+
+| Scenario | Inferred assignments | Annotation ceiling | Share of ceiling |
+|---|---:|---:|---:|
+| Super-pathway, as scored | 52.2% (48.3–56.0%) | 62.5% (56.6–68.1%) | 83.4% |
+| Super-pathway, amino acid = peptide | 59.5% (55.6–63.2%) | 71.5% (65.8–76.6%) | 83.1% |
+| Subpathway, as scored | 18.8% (16.0–22.0%) | 34.8% (29.4–40.7%) | 53.9% |
+| Subpathway, scoreable labels only | 23.6% (20.2–27.5%) | 42.7% (36.3–49.3%) | 55.4% |
+
+181 of the independent subpathway labels are internal review notes or explicit non-answers rather than taxonomy terms, against which no prediction can score; those rows are the difference between the two subpathway scenarios.
+
+Merging every commonly confused class would reach 93.3% (91.1–95.0%) on the inferred assignments. That collapse merges four of the eight super-pathways, including an origin-based class that overlaps every structural one, so it is reported as an upper bound and not adopted.
+
+Selective prediction asks whether confidence orders calls at all. Each cohort is sorted from most to least confident and scored over cumulative prefixes. Pathway assignments ranked by best-reference similarity gain 28 percentage points of super-pathway agreement between the whole cohort and its most confident fifth, whereas structural calls ranked by identification confidence gain 2 and do not order features at all.
+
+![Figure S5. Accuracy against the fraction of calls retained.](../figures/figS5_selective_prediction.svg)
+
+## S9. Agreement by chromatographic library
+
+Inferred assignments only, since direct lookups copy a reference label rather than predict one. This tests whether the pooled figures average over dissimilar populations.
+
+**Table S9. Independent-label agreement by library.**
+
+| Library | n | Super-pathway (95% CI) | Subpathway (95% CI) |
+|---|---:|---:|---:|
+| 209 | 464 | 53.2% (48.7–57.7%) | 17.7% (14.5–21.4%) |
+| 400 | 80 | 43.8% (33.4–54.7%) | 22.5% (14.7–32.8%) |
+| 402 | 84 | 50.0% (39.5–60.5%) | 17.9% (11.1–27.4%) |
+
+Every interval overlaps at both levels, so agreement does not vary detectably by library and the pooled figures are not an average over dissimilar populations. Excluded as underpowered: 305 (n=13), unlabelled (n=3).
+
+Structural recovery cannot be stratified the same way. The truth-verified cohort splits across libraries as 209 n=52, 305 n=6, 400 n=26, 402 n=2, unlabelled n=6, so a per-library recovery rate would be noise. That imbalance is the evidence for the cohort-selection caveat in Limitations.

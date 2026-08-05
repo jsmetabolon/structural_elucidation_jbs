@@ -1,2 +1,0 @@
-n_reference_labeled,n_evaluated,n_sub_evaluable,k,similarity_floor,similarity_power,super_n,super_correct,super_accuracy,super_ci95_low,super_ci95_high,sub_n,sub_correct,sub_accuracy,sub_ci95_low,sub_ci95_high,scope_note
-5233,5095,5095,10,0.3,2.0,5095,4417,0.8669,0.8573,0.876,5095,3623,0.7111,0.6985,0.7234,"Intrinsic leave-one-out validation of the neighbor-consensus mechanism only; does not include production MW priors, SMARTS overrides, or other rules."

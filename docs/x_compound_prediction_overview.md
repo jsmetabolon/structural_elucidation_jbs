@@ -202,7 +202,7 @@ On the available 92 truth-verified controls, structural recovery at Tanimoto ≥
 
 Across the delivered 3,897-report set, 2,726 reports (70.0%) present a structure at MSI-style L1–L3 and 1,171 (30.0%) withhold one at L4–L5. The exploratory confidence model has leave-one-out Brier score 0.255 and should not be interpreted as an externally calibrated probability.
 
-For biochemical taxonomy, 1,459 exact-reference cases are direct lookups and are not independent accuracy tests. Among 644 neighbor-consensus assignments with independent labels, agreement is 52.2% for super-pathway and 18.8% for subpathway. Intrinsic leave-one-out validation of the neighbor-vote mechanism is 86.7% super-pathway and 71.1% subpathway, but does not include all production priors and overrides.
+For biochemical taxonomy, 1,459 exact-reference cases are direct lookups and are not independent accuracy tests. Among 644 neighbor-consensus assignments with independent labels, agreement is 52.2% for super-pathway and 18.8% for subpathway. Read those against the annotation ceiling rather than against a perfect score: on 267 controls whose structure is identical to a reference entry, where the label is copied and the assignment is right by construction, the reference database and the independent labels agree only 62.5% at super-pathway and 34.8% at subpathway. Intrinsic leave-one-out validation of the neighbor-vote mechanism is 86.7% super-pathway and 71.1% subpathway, but does not include all production priors and overrides.
 
 The authoritative P0 and P1 cohort source files are separate from this 92-control set and must be evaluated independently when available.
 
