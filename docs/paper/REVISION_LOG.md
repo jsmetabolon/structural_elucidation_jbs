@@ -109,4 +109,47 @@ from the coverage reconciliation recorded below.
   library stratification as section S9.
 - Fixed a nondeterministic sort in the Supplementary Table S6 generator that
   reordered equal-count rows between runs and produced spurious diffs.
+- Added `tools/audit_thresholds.py` and `tools/audit_rt_feasibility.py` with their
+  committed artifacts under `data/thresholds/` and `data/retention/`. Both run
+  from committed inputs and are wired into the rebuild and CI, so the numbers the
+  reporting rules rest on are reproducible from this repository.
+
+## Reporting-rule changes awaiting a report bundle
+
+The reporting rules changed after the delivered set was produced. The manuscript
+and the Supplementary Information still describe the rules that generated the
+committed distributions, which keeps each document internally consistent, but
+both the rule descriptions and the distributions have to be updated together the
+next time the reports are regenerated. Whoever does that should re-read Methods
+(the MSI level definitions), Results (the tier and level distributions) and
+Supplementary Table S2 against the regenerated artifacts.
+
+What changed, and what it will move:
+
+- **Levels 4-5 now withhold the structure in the rendered HTML.** The published
+  description of the workflow already said they did, and the 2,726 shown against
+  1,171 withheld were counts of MSI assignment rather than of anything the
+  renderer did: it drew the structure panel unconditionally. The claim is now
+  true of the artifact as well as of the rubric. The counts themselves do not
+  change for this reason, but they will move for the ones below.
+- **A catalog hit needs observed-MS2 fit >= 0.50 to reach Level 2**, against 0.30
+  for a de novo prediction. Methods currently gives a single 0.30 bar. The
+  evidence is in the manuscript already: exact-source rank-1 recovery is 38.1%
+  against 56.0% for predicted, while a catalog hit pins the structure axis to
+  1.0. Expect some Level 2 reports to move to Level 3.
+- **A fifth evidence axis, retention-index fit, at weight 0.05.** It is available
+  only on libraries 209 and 400, whose retention models cleared
+  `tools/audit_rt_feasibility.py`, and it can lower the evidence score without
+  raising it. A three-sigma residual demotes the tier and blocks Levels 2 and 3.
+  This will move both distributions and makes `PLATT_A`/`PLATT_B` stale: re-run
+  `tools/calibrate_confidence.py` on the bundle before quoting confidence values.
+- **A new Refuted tier**, entered when the curation ledger records a failed
+  authentic-standard run or a curator rejection. No delivered report carries one
+  yet, so the tier distribution gains a category with a count of zero until such
+  a verdict is recorded.
+- **The headline confidence and the model's evidence score are now separate
+  fields.** Audits that read `overall` were measuring a blend of evidence and
+  display policy; `evidence_score` is the quantity to calibrate and to report.
+  The committed structure audit already uses the raw axis score, so its numbers
+  are unaffected, but anything new should read `evidence_score`.
 

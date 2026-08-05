@@ -148,7 +148,11 @@ python -m structural_elucidation.reports.compound \
 | `--known-x` | known_X table (default: `data/known_X.csv`) |
 | `--known-x-all` | All known X structures (default: `data/known_X_all_available_structures_simple.csv`) |
 
-**Tuning flags** (defaults match X-25003 template): `--spectrum-tolerance-da`, `--min-similarity`, `--max-neighbors`, `--candidate-tab-n`, `--consensus-top-n`, extended-network thresholds.
+**Tuning flags** (defaults match X-25003 template): `--spectrum-tolerance-da`, `--min-similarity`, `--max-neighbors`, `--candidate-tab-n`, `--consensus-top-n`, `--public-candidate-n`, `--curation-ledger`, extended-network thresholds.
+
+`--public-candidate-n` (default 3) caps the candidate structures a public report
+may display at MSI Level 3 only. Levels 1-2 assert a single structure and Levels
+4-5 show none whatever it is set to, and the internal variant always keeps ten.
 
 ---
 

@@ -74,6 +74,33 @@ report formula/mass only.
 - The externally-assigned **Metabolon Level** (present for 62%) is shown alongside
   as a cross-reference, not as the derived level.
 
+## Levels 4-5 now withhold the structure for real (2026-08-05)
+
+The paragraph above says Levels 4-5 hold back the specific structure. Until now
+that described the rubric and not the renderer, which built
+`structure_panel_html` unconditionally. The 2,726 shown against 1,171 withheld
+were counts of MSI assignment; nothing was withheld from the page.
+
+The level now governs every part of the report that makes a structural claim: the
+structure drawing, the consensus atom map, the candidate list and its consensus
+picker, the SMILES and InChIKey cards, the synonym list, the page title, the
+per-candidate spectral-fit table (which was listing candidate SMILES in the
+public variant), and the SMILES in the mass-consistent-alternative note. What
+survives at Level 4 is the observed m/z and the molecular formula, and at Level 5
+the mass alone. `tests/test_report_disclosure.py` renders the real page for each
+level rather than checking the policy helpers, because the helpers were never the
+problem.
+
+Two related changes land with it. Public reports show three candidate structures
+at Level 3 rather than ten and one at Levels 1-2, which
+`docs/paper/data/thresholds/` prices: ten-deep buys 9.8 points of recall over
+three-deep by displaying 70.6 more incorrect structures for each compound it
+helps. And the name follows the level, so a Level 3 report hedges a borrowed
+reference name instead of asserting it.
+
+The delivered distributions were produced under the old rules and will move once
+the reports are regenerated; `docs/paper/REVISION_LOG.md` records what to re-read.
+
 ## Prioritized scientific gaps -> pipeline refinements
 
 ### 1. Co-abundance correlations are 100% placeholder (highest impact)

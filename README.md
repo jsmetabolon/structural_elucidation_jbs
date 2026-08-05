@@ -101,9 +101,27 @@ python -m structural_elucidation.reports.compound \
   --out-dir output/reports/X-25003
 ```
 
-Optional flags: `--target-smiles`, `--target-name`, `--candidate-pool`, `--hypotheses`, `--peak-csv`, `--db`, `--known-x`.
+Optional flags: `--target-smiles`, `--target-name`, `--candidate-pool`, `--hypotheses`, `--peak-csv`, `--db`, `--known-x`, `--curation-ledger`, `--public-candidate-n`.
 
 Reports degrade gracefully when `vendor/metabolite_synonyms.sqlite` or WGCNA cohort files are missing (synonym/network/correlation sections use placeholders or are omitted).
+
+### What a report is allowed to claim
+
+The MSI level governs how much of a structure the report shows, so the same
+pipeline output produces a different page depending on what the evidence
+supports:
+
+| MSI level | Structure | Name | Public candidate list |
+|---|---|---|---|
+| 1-2 | shown | asserted | 1 |
+| 3 | shown as a hypothesis | hedged | 3 (`--public-candidate-n`) |
+| 4 | withheld | molecular formula | none |
+| 5 | withheld | observed mass | none |
+
+Internal reports keep ten candidates for triage at Levels 1-3. Human and
+laboratory verdicts come from `data/curation_ledger.csv`, the only place a
+reviewer's finding enters the model; a failed authentic-standard run recorded
+there caps the level at 4 and withdraws the name.
 
 ## Batch reports for all X compounds
 
