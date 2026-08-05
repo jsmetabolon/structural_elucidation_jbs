@@ -138,9 +138,15 @@ def test_committed_audit_still_reflects_the_committed_inputs():
         RT.load_truth_structures(ROOT / "data/known_X_all_available_structures_simple.csv"),
         RT.load_observed_ri(ROOT / "data/feature_rows"),
     )
+    # calibration_by_library writes the leave-one-out fit onto the records, so the
+    # decoy check has to follow it, as it does in the tool.
     assert RT.calibration_by_library(records) == committed["calibration"]
     assert (
         RT.decoy_discrimination(records, use_recalibrated=True) == committed["decoy_recalibrated"]
+    )
+    assert (
+        RT.decoy_discrimination(records, use_recalibrated=False, keep_per_control=False)
+        == committed["decoy_raw"]
     )
 
 

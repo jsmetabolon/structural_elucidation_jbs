@@ -194,7 +194,11 @@ def build_records(truth: dict[str, str], observed: list[dict[str, Any]]) -> list
 
 
 def calibration_by_library(records: list[dict[str, Any]]) -> dict[str, Any]:
-    """How well the proxy tracks the observed index, per chromatographic method."""
+    """How well the proxy tracks the observed index, per chromatographic method.
+
+    Also writes each record's leave-one-out ``recalibrated_ri`` back onto it, so
+    this has to run before :func:`decoy_discrimination` asks for one.
+    """
     out: dict[str, Any] = {}
     for lib_id in sorted({record["lib_id"] for record in records}):
         subset = [record for record in records if record["lib_id"] == lib_id]
@@ -230,6 +234,7 @@ def decoy_discrimination(
     *,
     mass_tolerance: float = DECOY_MASS_TOLERANCE_DA,
     use_recalibrated: bool = True,
+    keep_per_control: bool = True,
 ) -> dict[str, Any]:
     """Can the residual tell a control's true structure from a plausible impostor?
 
@@ -289,7 +294,7 @@ def decoy_discrimination(
         if per_control
         else None,
         "by_library": _decoy_by_library(scores, labels, per_control),
-        "per_control": per_control,
+        "per_control": per_control if keep_per_control else [],
     }
 
 
@@ -526,8 +531,14 @@ def main() -> None:
             recalibrated = decoy_discrimination(
                 records, mass_tolerance=args.mass_tolerance_da, use_recalibrated=True
             )
+            # The raw variant exists to show the published constants score at
+            # chance, which the aggregate says on its own; its per-control rows
+            # would only double the artifact.
             raw = decoy_discrimination(
-                records, mass_tolerance=args.mass_tolerance_da, use_recalibrated=False
+                records,
+                mass_tolerance=args.mass_tolerance_da,
+                use_recalibrated=False,
+                keep_per_control=False,
             )
             best = max(
                 (block["auc"] for block in (recalibrated, raw) if block["auc"] is not None),
