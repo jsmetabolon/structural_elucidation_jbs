@@ -207,6 +207,38 @@ def test_msi_level_always_in_range():
         assert conf.msi_label == C.MSI_LABELS[conf.msi_level]
 
 
+def test_a_catalog_hit_needs_more_spectral_support_to_claim_a_probable_structure():
+    """A catalog hit scores high and is right less often, so L2 costs it more.
+
+    Provenance pins the structure axis to 1.0 for an exact match, which on the
+    truth set is correct 38.1% of the time against 56.0% for de novo predictions.
+    The same MS2 fit therefore buys a de novo candidate Level 2 and an exact one
+    only Level 3.
+    """
+
+    middling_ms2 = dict(
+        structure_similarity=0.9, mass_match_score=0.99, ms2_spectrum_present=True, ms2_score=0.35
+    )
+    assert C.compute_confidence(_fields(source="predicted", **middling_ms2)).msi_level == 2
+    assert C.compute_confidence(_fields(source="exact", **middling_ms2)).msi_level == 3
+    # Clearing the higher bar gets the catalog hit to the same place.
+    strong = dict(middling_ms2, ms2_score=C.MS2_PROBABLE_EXACT)
+    assert C.compute_confidence(_fields(source="exact", **strong)).msi_level == 2
+
+
+def test_msi_thresholds_are_sweepable_without_touching_the_defaults():
+    fields = _fields(
+        source="predicted", structure_similarity=0.9, mass_match_score=0.99,
+        ms2_spectrum_present=True, ms2_score=0.35,
+    )
+    conf = C.compute_confidence(fields)
+    assert conf.msi_level == 2
+    strict = C.MsiThresholds(ms2_present=0.60)
+    assert C.assign_msi_level(fields, conf, strict)[0] == 3
+    # The default rule is unchanged by having swept a stricter one.
+    assert C.assign_msi_level(fields, conf)[0] == 2
+
+
 def test_msi_badge_and_card_render():
     conf = C.compute_confidence(_fields())
     assert "MSI Level" in C.msi_badge_html(conf)

@@ -80,7 +80,14 @@ def test_candidate_depth_counts_incorrect_structures_displayed():
 
 
 def _axis_record(**over) -> dict:
-    base = dict(structure=0.9, mass=0.95, ms2=0.5, observed_mz_available=True, correct=True)
+    base = dict(
+        structure=0.9,
+        mass=0.95,
+        ms2=0.5,
+        observed_mz_available=True,
+        source="predicted",
+        correct=True,
+    )
     base.update(over)
     return base
 
@@ -104,6 +111,7 @@ def test_msi_sweep_tightening_the_bar_names_fewer_compounds():
     by_rule = {
         (point["struct_moderate"], point["ms2_present"], point["mass_strong"]): point
         for point in sweep
+        if point["ms2_probable_exact"] == 0.50
     }
     loose = by_rule[(0.60, 0.30, 0.90)]
     tight = by_rule[(0.85, 0.30, 0.90)]
@@ -112,6 +120,35 @@ def test_msi_sweep_tightening_the_bar_names_fewer_compounds():
     assert tight["n"] == 1
     assert tight["accuracy"] == 1.0
     assert tight["incorrect_names"] == 0
+
+
+def test_msi_sweep_never_offers_a_catalog_hit_an_easier_bar():
+    sweep = T.msi_rule_sweep([_axis_record()])["sweep"]
+    assert sweep
+    assert all(point["ms2_probable_exact"] >= point["ms2_present"] for point in sweep)
+
+
+def test_source_stratification_finds_the_pooled_curve_is_confounded():
+    """Guard the finding behind the exact-source MSI bar.
+
+    A catalog hit scores high and is right less often than a de novo prediction,
+    so pooling the two inverts the signal. If that ever stops being true the
+    exact-source bar should be revisited.
+    """
+
+    import json
+
+    committed = json.loads(
+        (ROOT / "docs/paper/data/thresholds/audit_thresholds_summary.json").read_text()
+    )["source_stratification"]
+    assert committed["confounded"] is True
+    exact = committed["strata"]["exact"]["raw_full"]
+    predicted = committed["strata"]["predicted"]["raw_full"]
+    # Scores higher, correct less often.
+    assert exact["median_score"] > predicted["median_score"]
+    assert exact["base_rate"] < predicted["base_rate"]
+    # Yet within each source the raw score does order correctness.
+    assert min(exact["auc"], predicted["auc"]) > committed["pooled_auc"]
 
 
 def test_axis_records_are_skipped_when_the_controls_file_predates_them():
@@ -137,6 +174,7 @@ def test_committed_threshold_audit_matches_a_fresh_computation():
 
     assert T.score_cutoff_sweep(scores, labels) == committed["score_cutoff"]
     assert T.candidate_depth_sweep(rows) == committed["candidate_depth"]
+    assert T.source_stratification(rows) == committed["source_stratification"]
 
 
 def test_committed_audit_shows_the_score_does_not_order_correctness():

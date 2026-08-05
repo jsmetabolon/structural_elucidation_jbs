@@ -20,6 +20,16 @@ Cohort: 92 truth-verified controls, base rate 47.8%. Rank AUC 0.514 (95% CI 0.39
 | 0.65 | 0 | 0% | n/a | n/a | n/a |
 | 0.70 | 0 | 0% | n/a | n/a | n/a |
 
+## Why the pooled score is flat
+
+The pooled curve is flatter than either source on its own, so the score is ordering provenance rather than correctness. Calibrating per source is the fix; moving a threshold on the pooled score is not.
+
+| Cohort | n | Base rate | Median raw score | Raw AUC | Calibrated AUC |
+|---|---|---|---|---|---|
+| pooled | 92 | 47.8% | 0.763 | 0.591 | 0.514 |
+| exact | 42 | 38.1% | 0.902 | 0.672 | 0.517 |
+| predicted | 50 | 56.0% | 0.660 | 0.778 | 0.675 |
+
 ## How many candidates to display
 
 Each control has one correct structure, so a list of N puts `N - hit rate`

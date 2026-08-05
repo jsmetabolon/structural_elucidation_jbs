@@ -259,6 +259,75 @@ def _format_label(base: str) -> str:
     return " ".join(base.split())
 
 
+# --- MSI-consistent naming ---------------------------------------------------
+# What a report is allowed to call a compound follows from its MSI level, not
+# from the confidence score. The score does not order correctness well enough to
+# carry a naming decision (see docs/paper/data/thresholds/), whereas the level
+# already encodes what kind of identification the evidence supports: a name at
+# Levels 1-2, a hedged name at Level 3, formula at Level 4, mass at Level 5.
+
+HEDGE_SUFFIX = "(proposed structure)"
+FORMULA_ONLY_NOTE = "structure unresolved"
+FORMULA_ONLY_LABEL = "Molecular formula only; structure unresolved"
+MASS_ONLY_LABEL = "Exact mass of interest; unidentified"
+
+
+def msi_int(value: Any) -> int | None:
+    """Coerce an MSI level that may arrive as an int, a float, or ``"3"``."""
+
+    try:
+        level = int(float(str(value).strip()))
+    except (TypeError, ValueError):
+        return None
+    return level if 1 <= level <= 5 else None
+
+
+def hedged_label(label: str) -> str:
+    """Mark a name as a proposal, unless it already reads as one."""
+
+    text = _format_label(label)
+    if not text or HEDGE_SUFFIX in text:
+        return text
+    return f"{text} {HEDGE_SUFFIX}"
+
+
+def display_name_for_level(
+    name: str,
+    *,
+    msi_level: Any,
+    formula: str = "",
+    observed_mz: float | None = None,
+    name_is_reference: bool = False,
+) -> str:
+    """Return the name a report of this MSI level is entitled to display.
+
+    ``name_is_reference`` distinguishes a name copied from the reference database
+    from a descriptor the pipeline synthesized. Only the former needs hedging at
+    Level 3: a synthesized descriptor such as "Steroid glucuronide" already
+    states its own uncertainty, and appending a hedge to it would be noise.
+
+    Levels 4 and 5 withhold the structure entirely, so they discard the name
+    rather than qualify it. A name that survives to the reader implies a
+    structural claim, and at those levels there is none to make.
+    """
+
+    text = _format_label(name)
+    level = msi_int(msi_level)
+    if level is None or level <= 2:
+        return text
+    if level == 3:
+        return hedged_label(text) if name_is_reference else text
+    if level == 4:
+        formula_text = _format_label(formula)
+        return f"{formula_text}; {FORMULA_ONLY_NOTE}" if formula_text else FORMULA_ONLY_LABEL
+    if observed_mz is not None:
+        try:
+            return f"Exact mass {float(observed_mz):.4f}; unidentified"
+        except (TypeError, ValueError):
+            pass
+    return MASS_ONLY_LABEL
+
+
 def _sentence_case_label(base: str) -> str:
     label = _format_label(base)
     if label and label[0].isalpha():
@@ -598,7 +667,19 @@ def _try_known_x_conjugate(
 
 
 def _format_candidate_label(name: str, *, msi_level: str, truth_match: bool) -> str:
-    return _format_label(name)
+    """Hedge a borrowed reference name the evidence does not support asserting.
+
+    A rank-1 ``candidate_name`` or a known_X row supplies a real compound name,
+    which reads as an assertion. At Level 3 the structure is a hypothesis, so the
+    name has to say so; a control whose top candidate matches its confirmed
+    structure is exempt, because there the name is not a hypothesis.
+    """
+
+    label = _format_label(name)
+    if truth_match:
+        return label
+    level = msi_int(msi_level)
+    return hedged_label(label) if level is not None and level >= 3 else label
 
 
 def _try_candidate_name(

@@ -3559,13 +3559,30 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         ).get(control_id),
     )
     confidence_obj = confmod.compute_confidence(_conf_fields)
+    # The MSI level decides what the compound may be called. Levels 4-5 withhold
+    # the structure, so they cannot carry a structural name however well it
+    # resolved; Level 3 must read as a hypothesis rather than an assertion.
+    unqualified_name = target_name
+    target_name = tnmod.display_name_for_level(
+        unqualified_name,
+        msi_level=confidence_obj.msi_level,
+        formula=target_formula,
+        observed_mz=_observed_mz,
+        name_is_reference=name_resolved,
+    )
+    target["name"] = target_name
     _conf_fields["smiles"] = target_smiles
+    _conf_fields["resolved_name"] = unqualified_name
     _conf_fields["display_name"] = target_name
-    _conf_fields["synonyms"] = [
-        str(value).strip()
-        for value in syn_df.get("synonym", pd.Series(dtype=str)).tolist()
-        if str(value).strip()
-    ][:8]
+    _conf_fields["synonyms"] = (
+        []
+        if confidence_obj.msi_level >= 4
+        else [
+            str(value).strip()
+            for value in syn_df.get("synonym", pd.Series(dtype=str)).tolist()
+            if str(value).strip()
+        ][:8]
+    )
     _conf_fields["name_resolved"] = name_resolved
     _conf_fields.update(tnmod.descriptor_fields(tentative))
     _conf_fields["msi_level"] = confidence_obj.msi_level
@@ -3587,7 +3604,10 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         confidence=confidence_obj,
         conf_fields=_conf_fields,
         pathway_info=pathway_info,
-        synonyms=syn_df.fillna("").to_dict(orient="records"),
+        # Synonyms name a structure, so they go with it: withheld at Levels 4-5.
+        synonyms=(
+            [] if confidence_obj.msi_level >= 4 else syn_df.fillna("").to_dict(orient="records")
+        ),
         neighbors=neighbors,
         nodes=nodes,
         edges=edges,

@@ -322,14 +322,10 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna, ledger=None) 
         control_id=cid,
     )
     if dbn:
-        fields["display_name"] = dbn["name"]
+        resolved_name = dbn["name"]
         fields["synonyms"] = dbn["synonyms"]
     else:
-        fields["display_name"] = (
-            tentative.label
-            if tentative
-            else "De novo structure"
-        )
+        resolved_name = tentative.label if tentative else "De novo structure"
         fields["synonyms"] = []
     fields["smiles"] = smiles
     fields["name_resolved"] = name_resolved
@@ -341,6 +337,18 @@ def enrich(report_dir: Path, obs_mz, ms2, levels, db_names, wgcna, ledger=None) 
     fields["msi_level"] = conf.msi_level
     fields["msi_label"] = conf.msi_label
     fields["msi_rationale"] = conf.msi_rationale
+    # The level decides what the compound may be called. Levels 4-5 withhold the
+    # structure, so they cannot carry a structural name however well it resolved.
+    fields["resolved_name"] = resolved_name
+    fields["display_name"] = TN.display_name_for_level(
+        resolved_name,
+        msi_level=conf.msi_level,
+        formula=formula,
+        observed_mz=fields.get("observed_mz"),
+        name_is_reference=name_resolved,
+    )
+    if conf.msi_level >= 4:
+        fields["synonyms"] = []
     (data / f"{slug}_confidence_inputs.json").write_text(json.dumps(fields, indent=2))
     return "enriched"
 

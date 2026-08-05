@@ -66,6 +66,17 @@ STRUCT_STRONG = 0.85
 STRUCT_MODERATE = 0.70
 STRUCT_WEAK = 0.45
 MS2_PRESENT = 0.30
+# Bar an exact catalog hit must clear to claim a probable structure (MSI L2).
+# A catalog hit pins both the structure axis and the pathway axis to 1.0, so half
+# the evidence weight rests on one observation - and that observation is correct
+# only 38.1% of the time on the truth set, against 56.0% for de novo predictions
+# (docs/paper/data/structure/audit_structure_summary.json, source_subgroups). The
+# tier rubric already refuses to call an exact match High for this reason; the
+# MSI rule needs the same guard, so an exact-source claim of "probable structure"
+# has to rest on spectral evidence the catalog did not supply. The value is
+# provisional: tools/audit_thresholds.py sweeps it once axis-level evidence for
+# the cohort is available.
+MS2_PROBABLE_EXACT = 0.50
 
 # --- Library identity ("authentic-standard pending") metric ------------------
 # Separate, clearly-labeled from the calibrated ``overall`` P(correct). Reflects
@@ -420,6 +431,7 @@ class MsiThresholds:
     mass_strong: float = MASS_STRONG
     mass_weak: float = MASS_WEAK
     ms2_present: float = MS2_PRESENT
+    ms2_probable_exact: float = MS2_PROBABLE_EXACT
 
 
 DEFAULT_MSI_THRESHOLDS = MsiThresholds()
@@ -441,14 +453,23 @@ def assign_msi_level(
     curator rejection) caps the level at 4 no matter what the evidence axes say:
     a failed authentic-standard run is stronger evidence against the structure
     than any model score is for it.
+
+    An exact catalog hit faces a higher spectral bar for L2 than a de novo
+    prediction does. Provenance pins the structure axis to 1.0 for those
+    candidates while predicting correctness worse than the de novo ones do, so
+    "probable structure" has to rest on evidence the catalog did not supply.
     """
     by = {a.key: a for a in conf.axes}
     struct = by["structure"].score or 0.0
     mass = by["mass"].score if by["mass"].available else None
-    ms2_ok = by["ms2"].available and (by["ms2"].score or 0.0) >= thresholds.ms2_present
+    ms2_score = (by["ms2"].score or 0.0) if by["ms2"].available else None
     mass_ok = mass is not None and mass >= thresholds.mass_strong
     mass_mismatch = mass is not None and mass < thresholds.mass_weak
     observed = bool(fields.get("observed_mz_available"))
+    from_catalog = str(fields.get("source", "")).strip() == "exact"
+    ms2_probable_bar = (
+        thresholds.ms2_probable_exact if from_catalog else thresholds.ms2_present
+    )
 
     refuted = assurance_of(fields) in REFUTING_ASSURANCE
     if refuted:
@@ -460,8 +481,11 @@ def assign_msi_level(
         return 4, MSI_LABELS[4], f"{note} - reporting formula/mass only"
     if conf.tier == "Confirmed":
         return 1, MSI_LABELS[1], "Metabolon Level-1 standard match and the top candidate matches it"
-    if struct >= thresholds.struct_moderate and ms2_ok and mass_ok:
-        return 2, MSI_LABELS[2], "Strong structure similarity with observed-MS2 and mass corroboration"
+    if struct >= thresholds.struct_moderate and ms2_score is not None and ms2_score >= ms2_probable_bar and mass_ok:
+        rationale = "Strong structure similarity with observed-MS2 and mass corroboration"
+        if from_catalog:
+            rationale += " that is independent of the catalog match"
+        return 2, MSI_LABELS[2], rationale
     if (not mass_mismatch) and struct >= thresholds.struct_weak:
         return 3, MSI_LABELS[3], "Structure candidate consistent with mass but not spectrally confirmed - a hypothesis"
     if observed or mass_ok:

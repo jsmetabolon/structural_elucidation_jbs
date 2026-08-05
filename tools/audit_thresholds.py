@@ -58,6 +58,7 @@ DEPTH_GRID = (1, 3, 10)
 # report asserts a reference name, so it is the rule worth sweeping.
 STRUCT_GRID = (0.60, 0.70, 0.80, 0.85)
 MS2_GRID = (0.30, 0.40, 0.50, 0.60)
+MS2_EXACT_GRID = (0.30, 0.40, 0.50, 0.60, 0.70)
 MASS_GRID = (0.90, 0.95)
 
 BOOTSTRAP_SEED = 20260805
@@ -174,6 +175,63 @@ def score_cutoff_sweep(
     }
 
 
+def source_stratification(rows: list[dict[str, str]]) -> dict[str, Any]:
+    """Test whether pooling the two candidate sources is what flattens the score.
+
+    Exact catalog hits and de novo predictions have opposite base rates, and the
+    evidence score pins both the structure and the pathway axis to 1.0 for a
+    catalog hit. If the pooled curve is flat while the within-source curves are
+    not, the score is ordering provenance rather than correctness, and the fix is
+    to calibrate per source rather than to move a threshold.
+    """
+
+    def measure(subset: list[dict[str, str]], column: str) -> dict[str, Any]:
+        scores = [float(row[column]) for row in subset if _float(row.get(column)) is not None]
+        labels = [
+            _truthy(row.get("top1_correct_0p70", ""))
+            for row in subset
+            if _float(row.get(column)) is not None
+        ]
+        area = auc(scores, labels)
+        ordered = sorted(scores)
+        middle = len(ordered) // 2
+        return {
+            "n": len(scores),
+            "base_rate": round(sum(labels) / len(labels), 4) if labels else None,
+            "auc": round(area, 4) if area is not None else None,
+            "median_score": round(
+                ordered[middle] if len(ordered) % 2 else (ordered[middle - 1] + ordered[middle]) / 2,
+                4,
+            )
+            if ordered
+            else None,
+        }
+
+    strata = {"pooled": rows}
+    for source in sorted({str(row.get("source", "")).strip() for row in rows} - {""}):
+        strata[source] = [row for row in rows if str(row.get("source", "")).strip() == source]
+    out = {
+        stratum: {column: measure(subset, column) for column in ("raw_full", "loo_probability_full")}
+        for stratum, subset in strata.items()
+    }
+    within = [
+        block["raw_full"]["auc"]
+        for stratum, block in out.items()
+        if stratum != "pooled" and block["raw_full"]["auc"] is not None
+    ]
+    pooled = out["pooled"]["raw_full"]["auc"]
+    return {
+        "method": (
+            "Rank AUC of the raw evidence score and of its calibrated probability, "
+            "pooled and within each candidate source."
+        ),
+        "strata": out,
+        "pooled_auc": pooled,
+        "within_source_auc_range": [min(within), max(within)] if within else None,
+        "confounded": bool(within and pooled is not None and pooled < min(within)),
+    }
+
+
 def candidate_depth_sweep(rows: list[dict[str, str]]) -> dict[str, Any]:
     """How often the correct structure is within the top N, and what N costs.
 
@@ -216,6 +274,7 @@ def _axis_record(fields: dict) -> dict[str, Any]:
         "mass": axes["mass"].score if axes["mass"].available else None,
         "ms2": axes["ms2"].score if axes["ms2"].available else None,
         "observed_mz_available": bool(fields.get("observed_mz_available")),
+        "source": str(fields.get("source", "")).strip(),
     }
 
 
@@ -226,7 +285,10 @@ def _msi_level(record: dict[str, Any], thresholds: C.MsiThresholds) -> int:
     reports cannot disagree about what a level means.
     """
 
-    fields = {"observed_mz_available": record["observed_mz_available"]}
+    fields = {
+        "observed_mz_available": record["observed_mz_available"],
+        "source": record.get("source", ""),
+    }
     axes = [
         C.Axis("structure", "", record["structure"], C.WEIGHTS["structure"], True),
         C.Axis("mass", "", record["mass"], C.WEIGHTS["mass"], record["mass"] is not None),
@@ -250,21 +312,30 @@ def msi_rule_sweep(records: list[dict[str, Any]]) -> dict[str, Any]:
     for struct in STRUCT_GRID:
         for ms2 in MS2_GRID:
             for mass in MASS_GRID:
-                thresholds = C.MsiThresholds(struct_moderate=struct, ms2_present=ms2, mass_strong=mass)
-                named = [
-                    record for record in records if _msi_level(record, thresholds) <= 2
-                ]
-                point = wilson(sum(1 for record in named if record["correct"]), len(named))
-                point.update(
-                    {
-                        "struct_moderate": struct,
-                        "ms2_present": ms2,
-                        "mass_strong": mass,
-                        "named_share": round(len(named) / len(records), 4) if records else None,
-                        "incorrect_names": len(named) - point["correct"],
-                    }
-                )
-                combinations.append(point)
+                for ms2_exact in MS2_EXACT_GRID:
+                    if ms2_exact < ms2:
+                        # A catalog hit is never allowed an easier bar than a de
+                        # novo prediction, so these combinations are not options.
+                        continue
+                    thresholds = C.MsiThresholds(
+                        struct_moderate=struct,
+                        ms2_present=ms2,
+                        mass_strong=mass,
+                        ms2_probable_exact=ms2_exact,
+                    )
+                    named = [record for record in records if _msi_level(record, thresholds) <= 2]
+                    point = wilson(sum(1 for record in named if record["correct"]), len(named))
+                    point.update(
+                        {
+                            "struct_moderate": struct,
+                            "ms2_present": ms2,
+                            "ms2_probable_exact": ms2_exact,
+                            "mass_strong": mass,
+                            "named_share": round(len(named) / len(records), 4) if records else None,
+                            "incorrect_names": len(named) - point["correct"],
+                        }
+                    )
+                    combinations.append(point)
     default = C.DEFAULT_MSI_THRESHOLDS
     level_counts: dict[str, int] = {}
     for record in records:
@@ -277,6 +348,7 @@ def msi_rule_sweep(records: list[dict[str, Any]]) -> dict[str, Any]:
         "current_rule": {
             "struct_moderate": default.struct_moderate,
             "ms2_present": default.ms2_present,
+            "ms2_probable_exact": default.ms2_probable_exact,
             "mass_strong": default.mass_strong,
             "level_distribution": dict(sorted(level_counts.items())),
         },
@@ -370,6 +442,27 @@ def render_markdown(summary: dict[str, Any]) -> str:
             f"| {point['threshold']:.2f} | {point['n']} | {point['coverage']:.0%} | "
             f"{accuracy} | {interval} | {lift} |"
         )
+    lines += ["", "## Why the pooled score is flat", ""]
+    strat = summary["source_stratification"]
+    if strat["confounded"]:
+        lines.append(
+            "The pooled curve is flatter than either source on its own, so the score "
+            "is ordering provenance rather than correctness. Calibrating per source is "
+            "the fix; moving a threshold on the pooled score is not."
+        )
+    else:
+        lines.append("Pooling does not cost discrimination on this cohort.")
+    lines += [
+        "",
+        "| Cohort | n | Base rate | Median raw score | Raw AUC | Calibrated AUC |",
+        "|---|---|---|---|---|---|",
+    ]
+    for stratum, block in strat["strata"].items():
+        raw, calibrated = block["raw_full"], block["loo_probability_full"]
+        lines.append(
+            f"| {stratum} | {raw['n']} | {raw['base_rate']:.1%} | {raw['median_score']:.3f} | "
+            f"{raw['auc']:.3f} | {calibrated['auc']:.3f} |"
+        )
     lines += ["", "## How many candidates to display", ""]
     depth = summary["candidate_depth"]
     lines += [
@@ -400,16 +493,19 @@ def render_markdown(summary: dict[str, Any]) -> str:
         current = msi["current_rule"]
         lines += [
             f"Cohort: {msi['n']} controls. Current rule: structure >= "
-            f"{current['struct_moderate']}, MS2 >= {current['ms2_present']}, mass >= "
+            f"{current['struct_moderate']}, MS2 >= {current['ms2_present']} "
+            f"({current['ms2_probable_exact']} for a catalog hit), mass >= "
             f"{current['mass_strong']}. Level distribution: {current['level_distribution']}.",
             "",
-            "| structure | MS2 | mass | Names asserted | Share | Name accuracy | Incorrect names |",
-            "|---|---|---|---|---|---|---|",
+            "| structure | MS2 | MS2 (catalog hit) | mass | Names asserted | Share "
+            "| Name accuracy | Incorrect names |",
+            "|---|---|---|---|---|---|---|---|",
         ]
         for point in msi["sweep"]:
             accuracy = "n/a" if point["accuracy"] is None else f"{point['accuracy']:.1%}"
             lines.append(
-                f"| {point['struct_moderate']} | {point['ms2_present']} | {point['mass_strong']} | "
+                f"| {point['struct_moderate']} | {point['ms2_present']} | "
+                f"{point['ms2_probable_exact']} | {point['mass_strong']} | "
                 f"{point['n']} | {point['named_share']:.0%} | {accuracy} | {point['incorrect_names']} |"
             )
     lines.append("")
@@ -455,6 +551,7 @@ def main() -> None:
             "axis_source": axis_source if records else None,
         },
         "score_cutoff": score_cutoff_sweep(scores, labels),
+        "source_stratification": source_stratification(rows),
         "candidate_depth": candidate_depth_sweep(rows),
         "msi_rule": msi_rule_sweep(records)
         if records

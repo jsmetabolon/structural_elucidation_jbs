@@ -1206,3 +1206,94 @@ def test_patcher_strips_legacy_tentative_suffix_idempotent(tmp_path: Path) -> No
 
     second = patcher.patch_report(report, {}, apply=True)
     assert second["changed"] is False
+
+
+# --- MSI-consistent naming: what each level lets a report call the compound ---
+
+
+def test_levels_one_and_two_assert_the_name():
+    for level in (1, 2):
+        assert (
+            TN.display_name_for_level(
+                "Glycodeoxycholate", msi_level=level, name_is_reference=True
+            )
+            == "Glycodeoxycholate"
+        )
+
+
+def test_level_three_hedges_a_borrowed_reference_name():
+    hedged = TN.display_name_for_level(
+        "Glycodeoxycholate", msi_level=3, name_is_reference=True
+    )
+    assert hedged == f"Glycodeoxycholate {TN.HEDGE_SUFFIX}"
+
+
+def test_level_three_leaves_a_synthesized_descriptor_alone():
+    # "Steroid glucuronide" already states its own uncertainty; hedging it twice
+    # would be noise.
+    label = TN.display_name_for_level(
+        "Steroid glucuronide", msi_level=3, name_is_reference=False
+    )
+    assert label == "Steroid glucuronide"
+
+
+def test_level_four_reports_the_formula_instead_of_a_structure():
+    label = TN.display_name_for_level(
+        "Glycodeoxycholate", msi_level=4, formula="C26H43NO5", name_is_reference=True
+    )
+    assert "Glycodeoxycholate" not in label
+    assert label.startswith("C26H43NO5")
+    assert TN.FORMULA_ONLY_NOTE in label
+    # With no formula resolved there is still no structure to name.
+    assert (
+        TN.display_name_for_level("Glycodeoxycholate", msi_level=4, name_is_reference=True)
+        == TN.FORMULA_ONLY_LABEL
+    )
+
+
+def test_level_five_reports_only_the_mass():
+    label = TN.display_name_for_level(
+        "Glycodeoxycholate",
+        msi_level=5,
+        formula="C26H43NO5",
+        observed_mz=464.3007,
+        name_is_reference=True,
+    )
+    assert "Glycodeoxycholate" not in label
+    assert "C26H43NO5" not in label
+    assert "464.3007" in label
+    assert (
+        TN.display_name_for_level("Anything", msi_level=5, name_is_reference=True)
+        == TN.MASS_ONLY_LABEL
+    )
+
+
+def test_an_unknown_level_leaves_the_name_untouched():
+    assert TN.display_name_for_level("Taurine", msi_level="", name_is_reference=True) == "Taurine"
+    assert TN.display_name_for_level("Taurine", msi_level=9, name_is_reference=True) == "Taurine"
+
+
+def test_hedging_is_idempotent():
+    once = TN.hedged_label("Taurine")
+    assert TN.hedged_label(once) == once
+
+
+def test_candidate_label_hedges_at_level_three_but_not_for_a_confirmed_match():
+    assert TN._format_candidate_label("Taurine", msi_level="3", truth_match=False) == (
+        f"Taurine {TN.HEDGE_SUFFIX}"
+    )
+    # A control whose top candidate matches its confirmed structure is not a hypothesis.
+    assert TN._format_candidate_label("Taurine", msi_level="3", truth_match=True) == "Taurine"
+    assert TN._format_candidate_label("Taurine", msi_level="2", truth_match=False) == "Taurine"
+    # No level supplied means no basis to hedge on.
+    assert TN._format_candidate_label("Taurine", msi_level="", truth_match=False) == "Taurine"
+
+
+def test_msi_int_accepts_the_shapes_the_sidecars_use():
+    assert TN.msi_int(3) == 3
+    assert TN.msi_int("3") == 3
+    assert TN.msi_int("3.0") == 3
+    assert TN.msi_int("") is None
+    assert TN.msi_int(None) is None
+    assert TN.msi_int(0) is None
+    assert TN.msi_int(6) is None

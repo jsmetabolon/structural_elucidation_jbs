@@ -186,6 +186,59 @@
       }
     }
   },
+  "source_stratification": {
+    "method": "Rank AUC of the raw evidence score and of its calibrated probability, pooled and within each candidate source.",
+    "strata": {
+      "pooled": {
+        "raw_full": {
+          "n": 92,
+          "base_rate": 0.4783,
+          "auc": 0.5914,
+          "median_score": 0.7629
+        },
+        "loo_probability_full": {
+          "n": 92,
+          "base_rate": 0.4783,
+          "auc": 0.5137,
+          "median_score": 0.4752
+        }
+      },
+      "exact": {
+        "raw_full": {
+          "n": 42,
+          "base_rate": 0.381,
+          "auc": 0.6719,
+          "median_score": 0.9024
+        },
+        "loo_probability_full": {
+          "n": 42,
+          "base_rate": 0.381,
+          "auc": 0.5168,
+          "median_score": 0.5525
+        }
+      },
+      "predicted": {
+        "raw_full": {
+          "n": 50,
+          "base_rate": 0.56,
+          "auc": 0.7784,
+          "median_score": 0.6603
+        },
+        "loo_probability_full": {
+          "n": 50,
+          "base_rate": 0.56,
+          "auc": 0.6753,
+          "median_score": 0.4301
+        }
+      }
+    },
+    "pooled_auc": 0.5914,
+    "within_source_auc_range": [
+      0.6719,
+      0.7784
+    ],
+    "confounded": true
+  },
   "candidate_depth": {
     "correctness": "correct structure within the displayed list at truth Tanimoto >= 0.70",
     "n": 92,
