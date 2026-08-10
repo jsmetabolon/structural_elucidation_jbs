@@ -9,7 +9,8 @@ figures, and Supplementary Information.
   calibration, pathway, and mass-mismatch details.
 - `supplement/claim_evidence.csv` / `baseline_claims.json` — claim-to-source ledger.
 - `data/` — compact pathway, structure, presentation, and LOO audit artifacts.
-- `figures/` — main and supplementary SVG figures generated from `data/`.
+- `figures/` — main and supplementary SVG figures generated from `data/`, plus
+  `fig6_report_example.png`, a screen capture of the rendered report.
 
 A separate customer-facing summary of the same work lives in `docs/public_brief/`.
 It shares this folder's audited data but deliberately withholds all methodology;
@@ -76,9 +77,26 @@ python3 tools/build_manuscript_docx.py \
   --output docs/paper/manuscript.docx
 ```
 
-The initial-submission DOCX contains the five main figures inline and one main
-table (six display items total). Detailed evidence/MSI tables remain in
-Supplementary Information.
+The initial-submission DOCX contains the six main figures inline and one main
+table (seven display items total). Detailed evidence/MSI tables remain in
+Supplementary Information. A figure taller than the page is scaled down rather
+than clipped, which matters only for the report capture.
+
+## Regenerate the report capture
+
+Figure 6 is a screenshot rather than a chart, so `tools/paper_figures.py` does
+not produce it and neither does CI: capture needs a headless browser that the
+documentation dependencies leave out. Regenerate it deliberately.
+
+```bash
+python3 -m pip install playwright pillow && python3 -m playwright install chromium
+python3 tools/capture_report_screens.py --demo
+```
+
+`--demo` builds its own report bundle from data committed here, so it works in
+any checkout. Point it at a delivered bundle with `--report-dir` when one is
+available. The same command rewrites the brief's capture, which is redacted and
+re-scanned with the brief's disclosure term list before it is written.
 
 ## Current audited results
 

@@ -139,6 +139,40 @@ with candidate ranking, are recorded in `docs/public_brief/README.md`.
   figure supports and follow with the methodological detail, rather than describing
   content only.
 
+## Review 5 — Fairness to the incumbent method
+
+*A later pass, prompted by how both documents treated spectral-library matching.*
+
+- **The finding.** Neither document said anything untrue about library matching, but the
+  cumulative framing was dismissive of it. The manuscript opened its second paragraph on
+  what library-retrieval-only workflows "cannot" do and called the route that follows a
+  "bottleneck"; it described MS2Query as "bounded by" its library while the generative
+  tools were "not restricted to database membership" and "independent of spectral
+  libraries", which reads as escape from a defect. The white paper's background section
+  was headed "Why the established routes fall short" and told the reader what a library
+  search "cannot see". Library matching produces the named fraction of every deliverable,
+  is the first step of this workflow, and supplies one of the evidence axes the reranker
+  reads, so the framing undersold a method the work depends on.
+- **The correction.** The boundary is now coverage rather than capability, stated once in
+  each document and not repeated. The two routes are described as answering different
+  questions. The Discussion and Where this fits both say that a library match remains the
+  most direct answer wherever the compound is catalogued, and that well-corroborated
+  hypotheses feed back into the library, so the two compound rather than compete.
+- **What was deliberately not softened.** Exact-source rank-1 recovery of 38.1% against
+  56.0% for predicted-source stays, with its overlapping intervals, and so does the
+  conclusion that catalog provenance is not confirmation. Two sentences were rescoped
+  rather than removed: Results no longer asserts that provenance "confers no recovery
+  advantage", which claimed more than 42 controls can support, and says instead that the
+  cohort does not resolve a difference in either direction. That is a narrower claim, not
+  a friendlier one, and it was checked against the standing ban on equivalence language.
+- **Vocabulary as part of the fix.** A neutral definition of catalog provenance,
+  retrieval, analogue search and de novo generation is what keeps "exact source" reading
+  as a record of where a candidate came from rather than as a verdict on the route. The
+  glossary in Methods and the key-terms table in the white paper carry that work.
+- **Captions.** Eleven captions now, with the two report screenshots following the same
+  message-first rule and each stating that the example is a demonstration rather than a
+  delivered customer result.
+
 ## Carried
 
 These need a human and are not closable by review or by the gates.
