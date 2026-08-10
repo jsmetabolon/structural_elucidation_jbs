@@ -21,6 +21,48 @@ wording because no head-to-head benchmark has been run. Section order, figure
 count, table count, citations and audited values are otherwise unchanged, apart
 from the coverage reconciliation recorded below.
 
+## Editorial revision (library-matching framing, report figure, glossary)
+
+A later pass addressed how both surfaces described spectral-library matching,
+added a figure showing the delivered report, and defined the vocabulary each
+document depends on.
+
+- **Library matching is described by its coverage rather than as a shortfall.**
+  The Introduction previously opened on "Library-retrieval-only workflows cannot
+  propose genuinely novel structures" and called the manual route that follows a
+  "bottleneck"; Section 1.1 said MS2Query was "bounded by its reference library"
+  and described the generative tools as "not restricted to database membership"
+  and "independent of spectral libraries". Read together, that framed the method
+  which produces the named fraction of every deliverable, and which this
+  workflow uses as an evidence axis, as a deficient one. The boundary is now
+  located in catalogue coverage rather than capability, the two routes are
+  described as answering different questions, and the Discussion states that a
+  library match remains the most direct route wherever the compound is
+  catalogued. The brief's background section, headed "Why the established routes
+  fall short", was renamed and reordered the same way.
+- **No audited value moved, and no equivalence claim was added.** Exact-source
+  rank-1 recovery of 38.1% (16/42) and predicted-source 56.0% (28/50) both
+  remain, with their overlapping intervals and the conclusion that catalog
+  provenance is not confirmation. Two sentences changed sense rather than
+  content: Results previously asserted that provenance "confers no recovery
+  advantage" and now says the cohort does not resolve a difference in either
+  direction, and the Discussion's "provenance is not confidence" is now
+  "provenance is not by itself confirmation", scoped to how this workflow's own
+  source field should be read. The retracted phrase "essentially
+  indistinguishable" was not reintroduced.
+- **Results gained Section 3.6 and Figure 6.** Claim control was described in
+  3.1 and 3.3 but never shown. The figure pairs the public and internal
+  renderings of one feature, which differ in how much of the candidate list each
+  may expose. It is a screen capture of a demonstration control built from data
+  committed here, labelled as such in the caption, and not a delivered customer
+  result. The brief carries the public panel alone.
+- **Methods gained Section 2.7 as a glossary**, and the former Section 2.7
+  became 2.8. The four evaluation senses moved there out of the Methods
+  paragraph that carried them, joined by the provenance vocabulary — reference
+  library, retrieval, analogue search, de novo generation, catalog provenance,
+  authentic standard. Supplementary S2 carries the same provenance terms. The
+  brief carries a plain-language key-terms table.
+
 ## Material claim changes
 
 - **Subpathway annotation ceiling reported.** The manuscript gave the super-pathway
@@ -113,6 +155,35 @@ from the coverage reconciliation recorded below.
   committed artifacts under `data/thresholds/` and `data/retention/`. Both run
   from committed inputs and are wired into the rebuild and CI, so the numbers the
   reporting rules rest on are reproducible from this repository.
+
+## Packaging changes for the report figure
+
+- Both verifiers parsed every linked figure as XML, which was right while every
+  figure was a generated SVG and made a screenshot impossible to reference. The
+  check now branches on format: SVGs still have to parse, and PNGs are validated
+  against their signature, IHDR dimensions and a minimum width, so renaming a
+  file's extension does not get it past the gate. `tools/figure_formats.py` holds
+  the shared check and `tests/test_figure_formats.py` asserts each way it fails.
+- Display-item budgets moved from five figures to six in the manuscript and from
+  four figures and two tables to five and three in the brief.
+- `tools/capture_report_screens.py` produces both figures. It can screenshot a
+  delivered bundle, and it can build a demonstration bundle from committed data,
+  so the figures are regenerable without the controlled report bundle or the
+  reference database. It is wired into neither `rebuild_paper_artifacts.py` nor
+  CI, because capture needs a headless browser that the documentation
+  dependencies leave out; `fig1_workflow.svg` and the two hand-authored brief
+  diagrams are the existing precedent for a figure the generators do not own.
+- The public capture is redacted with the brief's own disclosure term list and
+  then re-scanned before the image is written. `tools/verify_public_brief.py`
+  exposes that matching as `disclosed_terms()` so the guard and the gate cannot
+  drift apart.
+- The manuscript DOCX builder scales a figure down when its aspect ratio would
+  run it off the page, and the brief builder applies a much tighter height cap:
+  a report screenshot printed any taller cannot share a page, and the brief has
+  ten pages to hold everything including the legal text still to be written.
+- The report template gave inline `code` chips a near-white background while
+  they inherited the header's white text, so the molecular formula in every
+  report subtitle was invisible. Fixed in `structural_elucidation/reports/compound.py`.
 
 ## Reporting-rule changes awaiting a report bundle
 

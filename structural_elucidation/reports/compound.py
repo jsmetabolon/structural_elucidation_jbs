@@ -2748,7 +2748,7 @@ def render_html(
     table {{ border-collapse:collapse; width:100%; min-width:860px; background:#fff; }}
     th,td {{ padding:8px 10px; border-bottom:1px solid #e8edf1; text-align:left; vertical-align:top; font-size:13px; }}
     th {{ position:sticky; top:0; background:linear-gradient(180deg,#f7fbfc,#eef6f9); z-index:1; font-size:12px; color:var(--blue); }}
-    code {{ background:#eef6f9; border-radius:4px; padding:1px 4px; overflow-wrap:anywhere; }}
+    code {{ background:#eef6f9; color:var(--ink); border-radius:4px; padding:1px 4px; overflow-wrap:anywhere; }}
     .network-controls,.filters,.ext-filters,.legend {{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:12px 0; }}
     .filters button,.ext-filters button {{ border:1px solid var(--line); background:#fff; border-radius:6px; padding:7px 10px; cursor:pointer; }}
     .filters button.active,.ext-filters button.active {{ background:#17324d; color:#fff; border-color:#17324d; }}

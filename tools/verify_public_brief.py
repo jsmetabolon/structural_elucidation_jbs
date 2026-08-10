@@ -28,16 +28,20 @@ import json
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
-import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from docx import Document
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from tools.figure_formats import figure_error  # noqa: E402
+
 MAX_PAGES = 10
 MAX_WORDS = 2600
-MAX_FIGURES = 4
-MAX_TABLES = 2
+MAX_FIGURES = 5
+MAX_TABLES = 3
 
 # Recipe-level detail: publishing any of this would materially help a competitor
 # rebuild the pipeline. Matched case-insensitively on word boundaries.
@@ -123,6 +127,25 @@ OVERCLAIM_PHRASES = (
 
 # Ordered-list markers and figure/table numbering are not statistics.
 NUMBER_PATTERN = re.compile(r"\b\d[\d,]*(?:\.\d+)?%?")
+
+
+def term_pattern(term: str) -> str:
+    """Regex source matching one proprietary term, plural included.
+
+    Shared with ``tools/capture_report_screens.py``, which redacts the same
+    vocabulary out of a report screenshot before it can reach the brief. A
+    substring test would fire on ``nce`` inside ``confidence``, so the word
+    boundaries are the whole point.
+    """
+
+    return rf"(?<!\w){re.escape(term)}(?:e?s)?(?!\w)"
+
+
+def disclosed_terms(text: str) -> list[str]:
+    """Proprietary terms present in ``text``, in declaration order."""
+
+    lowered = text.lower()
+    return [term for term in PROPRIETARY_TERMS if re.search(term_pattern(term), lowered)]
 
 
 def load_ledger(path: Path) -> dict[str, dict[str, str]]:
@@ -240,10 +263,8 @@ def main() -> None:
     lowered = brief.lower()
 
     # 1. Disclosure.
-    for term in PROPRIETARY_TERMS:
-        # Trailing (e)s so a plural does not slip past the singular term.
-        if re.search(rf"(?<!\w){re.escape(term)}(?:e?s)?(?!\w)", lowered):
-            errors.append(f"proprietary term disclosed: '{term}'")
+    for term in disclosed_terms(brief):
+        errors.append(f"proprietary term disclosed: '{term}'")
     for pattern, reason in PROPRIETARY_PATTERNS:
         for hit in set(re.findall(pattern, brief, flags=re.IGNORECASE)):
             errors.append(f"proprietary detail disclosed: '{hit}' is {reason}")
@@ -282,10 +303,9 @@ def main() -> None:
         if not path.exists():
             errors.append(f"broken figure link: {link}")
             continue
-        try:
-            ET.parse(path)
-        except ET.ParseError as exc:
-            errors.append(f"invalid SVG {link}: {exc}")
+        problem = figure_error(path)
+        if problem:
+            errors.append(f"{link}: {problem}")
 
     if docx_path.exists():
         word = Document(docx_path)

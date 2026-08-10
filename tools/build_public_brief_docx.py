@@ -40,8 +40,15 @@ from tools.build_manuscript_docx import (  # noqa: E402
 
 # Budgets sized so the rendered brief stays well under the ten-page requirement.
 MAX_WORDS = 2600
-MAX_FIGURES = 4
-MAX_TABLES = 2
+MAX_FIGURES = 5
+MAX_TABLES = 3
+
+# Much tighter than the manuscript's cap, and the value matters: a report
+# screenshot printed any taller than this cannot share a page, so Word gives it
+# one of its own and the brief spends a tenth of its budget on white space. The
+# figure is an illustration of the deliverable rather than something to read
+# word by word, and the section around it states in prose everything it shows.
+MAX_FIGURE_HEIGHT_INCHES = 4.0
 
 BRAND = RGBColor(0x1F, 0x4E, 0x79)
 INK = RGBColor(0x1F, 0x29, 0x33)
@@ -165,7 +172,14 @@ def render(source: Path, output: Path) -> dict[str, int]:
                 continue
             figure = FIGURE.match(line)
             if figure:
-                add_figure(document, source_root, figure.group("path"), figure.group("alt"), temp_dir)
+                add_figure(
+                    document,
+                    source_root,
+                    figure.group("path"),
+                    figure.group("alt"),
+                    temp_dir,
+                    max_height_inches=MAX_FIGURE_HEIGHT_INCHES,
+                )
                 index += 1
                 continue
             if line.startswith("|") and index + 1 < len(lines) and TABLE_SEPARATOR.match(lines[index + 1].strip()):

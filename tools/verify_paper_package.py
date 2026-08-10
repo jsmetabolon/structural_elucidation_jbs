@@ -5,13 +5,17 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import xml.etree.ElementTree as ET
+import sys
 from pathlib import Path
 from typing import Any
 
 from docx import Document
 from docx.enum.text import WD_LINE_SPACING
 from docx.oxml.ns import qn
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from tools.figure_formats import figure_error  # noqa: E402
 
 # Documents whose job is to record what was withdrawn, and which therefore have to
 # quote the withdrawn wording. Matched by filename so the exemption survives being
@@ -151,10 +155,9 @@ def main() -> None:
         if not path.exists():
             errors.append(f"broken figure link: {link}")
             continue
-        try:
-            ET.parse(path)
-        except ET.ParseError as exc:
-            errors.append(f"invalid SVG {link}: {exc}")
+        problem = figure_error(path)
+        if problem:
+            errors.append(f"{link}: {problem}")
         match = re.search(r"fig(\d+)", path.name)
         if match:
             figure_numbers.append(int(match.group(1)))
@@ -172,7 +175,7 @@ def main() -> None:
             errors.append("Nature DOCX body is not 12 point")
         if word.styles["Normal"].paragraph_format.line_spacing_rule != WD_LINE_SPACING.DOUBLE:
             errors.append("Nature DOCX body is not double-spaced")
-        if len(word.inline_shapes) != 5 or len(word.tables) != 1:
+        if len(word.inline_shapes) != 6 or len(word.tables) != 1:
             errors.append(
                 f"Nature display-item packaging changed: {len(word.inline_shapes)} figures, "
                 f"{len(word.tables)} tables"

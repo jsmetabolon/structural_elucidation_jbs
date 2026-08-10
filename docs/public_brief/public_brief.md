@@ -22,15 +22,15 @@ Setting them aside is expensive in two directions. Biologically, the discarded f
 
 The alternative is not to guess. It is to produce a defensible hypothesis for every feature and to say plainly how strong each one is, so that a scientist can decide which are worth the cost of confirmation.
 
-## Why the established routes fall short
+## What the established routes cover, and what they leave
 
-Two routes exist today for putting a name to an unknown signal, and each stops short in a different place.
+Two routes put a name to a signal today. Both work, and what each one covers is what defines the gap between them.
 
-The first is matching an observed spectrum against a reference library. This is fast, well understood, and dependable within its range, but its range is the library. A molecule that has never been catalogued cannot be returned by a search over catalogued compounds, so precisely the novel and study-specific chemistry that makes a dataset interesting is the chemistry a library search cannot see.
+The first is matching an observed spectrum against a reference library. It is fast, well understood, and the most precise answer available short of a standard, which is why it produces the named part of every untargeted deliverable and why it is the first step here too. What bounds it is the size of the catalogue rather than the quality of the match: a molecule that has not been catalogued is outside the space such a search covers, and novel, study-specific chemistry is exactly the chemistry that tends to sit outside it.
 
 The second is expert manual interpretation, followed by acquisition of a candidate compound and confirmation against it. This remains the most authoritative answer available and the proper standard for a settled identity. It is also the scarcest resource in the workflow, which is why it reaches a few features rather than thousands.
 
-Neither route produces the thing a study actually needs in order to triage: a consistent, comparable statement of how much evidence supports each candidate identity. The metabolomics community communicates that through identification levels, which describe the kind of evidence behind a call, from an exact mass alone up to a structure confirmed against an authentic standard. Applying that vocabulary to every unnamed feature in a study, rather than to the few a chemist has time to examine, is the requirement this capability was built to meet.
+What neither route supplies on its own is the thing a study needs in order to triage: a consistent, comparable statement of how much evidence supports each candidate identity. The metabolomics community communicates that through identification levels, which describe the kind of evidence behind a call, from an exact mass alone up to a structure confirmed against an authentic standard. Applying that vocabulary to every unnamed feature in a study, rather than to the few a chemist has time to examine, is the requirement this capability was built to meet.
 
 ## What the capability does
 
@@ -43,7 +43,7 @@ Every unnamed feature receives a report. There are no silent omissions and no fe
 The capability runs in four conceptual stages.
 
 1. **Detect.** Reproducible features and their fragmentation evidence are extracted from the untargeted run, establishing that a signal is real and measurable before anything is claimed about its identity.
-2. **Propose.** For each feature, a set of candidate structures is assembled that is not limited to compounds already present in a reference library, which is what allows genuinely novel and study-specific molecules to be described rather than skipped.
+2. **Propose.** For each feature, a set of candidate structures is assembled that reaches beyond the compounds a reference library already contains, which is what allows genuinely novel and study-specific molecules to be described rather than skipped.
 3. **Weigh.** Candidates are ordered by how well several independent lines of evidence agree with one another rather than by any single measure, so a candidate that looks convincing on one axis alone does not reach the top of the list unchallenged.
 4. **Report.** Each result is graded, given biochemical pathway context, and rendered as a standalone report. Where the supporting evidence falls short, the structure is withheld and the report says so.
 
@@ -54,7 +54,7 @@ The value is concentrated in the third and fourth stages. Proposing plausible mo
 | Capability | Why it matters to you |
 |---|---|
 | A report for every unnamed feature | The unnamed fraction stays inside the biological interpretation instead of being written off |
-| Candidates not restricted to a reference library | Novel and study-specific molecules can be described, which is often where the differentiating biology sits |
+| Candidates that reach beyond the reference library | Novel and study-specific molecules can be described, which is often where the differentiating biology sits |
 | Several independent lines of evidence combined into one ordering | Reduces dependence on a single evidence source, so one flattering measure cannot carry a weak candidate |
 | Grading aligned to community identification levels | Increases transparency and supports more informed prioritization, with no bespoke vocabulary to learn |
 | A structure withheld when the evidence is insufficient | Confirmation effort is not spent chasing a structure the data never supported |
@@ -101,15 +101,34 @@ Each feature is delivered as a self-contained report, with a searchable index ac
 - **An identification level** together with a plain-language statement of what that level does and does not assert.
 - **Cross-references** to the independently assigned Metabolon Level, so the new output can be read alongside existing deliverables.
 
-![Figure 4. Reporting coverage across the delivered set.](figures/fig_coverage_public.svg)
+![Figure 4. A delivered report.](figures/fig_report_public.png)
 
-*Figure 4. Across 3,897 delivered features, every one receives a report and pathway context while a specific structure appears only where the evidence supports it. Completeness and restraint arrive together rather than being traded against each other.*
+*Figure 4. Every feature arrives as a page like this one, which states the proposed structure and the grade limiting it together, so what a result claims is visible rather than buried in a score. The panel is the top of one report; the evidence listed above continues below it. The example is a demonstration compound.*
+
+![Figure 5. Reporting coverage across the delivered set.](figures/fig_coverage_public.svg)
+
+*Figure 5. Across 3,897 delivered features, every one receives a report and pathway context while a specific structure appears only where the evidence supports it. Completeness and restraint arrive together rather than being traded against each other.*
 
 ## How to read a result
 
-Results are graded on the confidence-level framework the metabolomics community already uses, so the output is interpretable without learning a bespoke vocabulary.
+Results are graded on the confidence-level framework the metabolomics community already uses, so the output is interpretable without learning a bespoke vocabulary. The first table below fixes the handful of words that carry the most weight in a report; the second says what each grade asserts.
 
-**Table 2. What each reporting outcome asserts.**
+**Table 2. Key terms.**
+
+| Term | What it means here |
+|---|---|
+| Untargeted metabolomics | Measuring every molecule a method detects, rather than a predefined list |
+| Feature | One reproducible signal in the data, quantifiable whether or not it has a name |
+| Unnamed feature | A feature that has not been matched to a known compound |
+| Reference library | The catalogue of compounds already characterized, against which a signal can be matched |
+| Library match | Naming a feature by finding it in that catalogue: the most direct answer, available wherever the compound is catalogued |
+| Authentic standard | A pure sample of a compound, run the same way, used to confirm an identity outright |
+| Identification level | The community grade describing what kind of evidence stands behind a call |
+| Structure hypothesis | A specific proposed structure, offered as a lead rather than as a settled identity |
+| Withheld structure | A deliberate decision not to propose a structure the evidence does not support |
+| Pathway and subpathway | The area of biochemistry a feature belongs to, from broad class down to a narrower grouping |
+
+**Table 3. What each reporting outcome asserts.**
 
 | Reporting outcome | What it means | Reasonable next step |
 |---|---|---|
@@ -125,11 +144,12 @@ For the same reason, the confidence output limits what each report claims rather
 
 ## Where this fits
 
-This capability complements authentic-standard confirmation rather than replacing it. It is designed for two situations in particular.
+This capability complements library matching and authentic-standard confirmation rather than replacing either. Matching against the reference library stays the first step and the most direct answer wherever a feature corresponds to a catalogued compound; what this adds is a graded result for the features that fall outside that coverage. It is designed for two situations in particular.
 
 - **Prioritizing discovery.** When a study points to unnamed features, the capability turns each of them into a short, chemically specific candidate list, so the work goes into a handful of named possibilities rather than starting from nothing.
-- **Extending reference coverage.** Well-supported hypotheses give a defensible starting point for adding compounds to a reference library, and every addition raises the share of future studies that can be named outright.
-Set against a library-only search, the capability provides additional evidence and reduces dependence on a single evidence source. Set against manual interpretation, it enables consistent application at scale. It has not been benchmarked head to head against other computational approaches, and no such comparison is claimed here.
+- **Extending reference coverage.** Well-supported hypotheses give a defensible starting point for adding compounds to a reference library, and every addition raises the share of future studies that can be named outright, so the two routes reinforce each other rather than compete.
+
+Used alongside a reference-library search, the capability contributes additional evidence and reduces dependence on a single evidence source. Used alongside manual interpretation, it enables consistent application at scale. It has not been benchmarked head to head against other computational approaches, and no such comparison is claimed here.
 
 ## Conclusion
 
