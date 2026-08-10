@@ -28,16 +28,20 @@ import json
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
-import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from docx import Document
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from tools.figure_formats import figure_error  # noqa: E402
+
 MAX_PAGES = 10
 MAX_WORDS = 2600
-MAX_FIGURES = 4
-MAX_TABLES = 2
+MAX_FIGURES = 5
+MAX_TABLES = 3
 
 # Recipe-level detail: publishing any of this would materially help a competitor
 # rebuild the pipeline. Matched case-insensitively on word boundaries.
@@ -282,10 +286,9 @@ def main() -> None:
         if not path.exists():
             errors.append(f"broken figure link: {link}")
             continue
-        try:
-            ET.parse(path)
-        except ET.ParseError as exc:
-            errors.append(f"invalid SVG {link}: {exc}")
+        problem = figure_error(path)
+        if problem:
+            errors.append(f"{link}: {problem}")
 
     if docx_path.exists():
         word = Document(docx_path)

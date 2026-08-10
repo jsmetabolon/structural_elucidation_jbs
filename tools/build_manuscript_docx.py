@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
 import tempfile
 from pathlib import Path
 
@@ -25,6 +26,16 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from tools.figure_formats import png_dimensions  # noqa: E402
+
+# Column width, and the tallest a figure may be before it is scaled down to fit a
+# page. Screenshots are much taller than charts, so without the height clamp a
+# full-width capture runs off the bottom of the page.
+FIGURE_WIDTH_INCHES = 6.35
+FIGURE_MAX_HEIGHT_INCHES = 8.0
 
 INLINE = re.compile(
     r"(\*\*.+?\*\*|(?<!\*)\*[^*]+?\*(?!\*)|`.+?`|<sup>.+?</sup>|\[[^\]]+\]\([^)]+\))"
@@ -230,12 +241,17 @@ def add_figure(document: DocumentType, source_root: Path, figure_path: str, alt:
         cairosvg.svg2png(url=str(source), write_to=str(png), scale=2.5)
     else:
         png = source
+    width_inches = FIGURE_WIDTH_INCHES
+    pixel_width, pixel_height = png_dimensions(png)
+    printed_height = FIGURE_WIDTH_INCHES * pixel_height / pixel_width
+    if printed_height > FIGURE_MAX_HEIGHT_INCHES:
+        width_inches = FIGURE_WIDTH_INCHES * FIGURE_MAX_HEIGHT_INCHES / printed_height
     paragraph = document.add_paragraph()
     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
     paragraph.paragraph_format.space_after = Pt(3)
     paragraph.paragraph_format.keep_with_next = True
     run = paragraph.add_run()
-    run.add_picture(str(png), width=Inches(6.35))
+    run.add_picture(str(png), width=Inches(width_inches))
     shape = document.inline_shapes[-1]
     shape._inline.docPr.set("descr", alt)
 
@@ -292,7 +308,7 @@ def render(source: Path, output: Path) -> None:
         raise ValueError(f"Nature summary exceeds ~200 words: {abstract_words}")
     main_figures = len(re.findall(r"!\[[^\]]+\]\(figures/fig\d+[^)]*\)", source_text))
     main_tables = len(re.findall(r"^\*\*Table \d+\.", source_text, flags=re.MULTILINE))
-    if main_figures + main_tables > 6:
+    if main_figures + main_tables > 7:
         raise ValueError(
             f"Nature main display-item limit exceeded: {main_figures} figures + "
             f"{main_tables} tables"

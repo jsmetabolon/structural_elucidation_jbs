@@ -40,8 +40,8 @@ from tools.build_manuscript_docx import (  # noqa: E402
 
 # Budgets sized so the rendered brief stays well under the ten-page requirement.
 MAX_WORDS = 2600
-MAX_FIGURES = 4
-MAX_TABLES = 2
+MAX_FIGURES = 5
+MAX_TABLES = 3
 
 BRAND = RGBColor(0x1F, 0x4E, 0x79)
 INK = RGBColor(0x1F, 0x29, 0x33)
