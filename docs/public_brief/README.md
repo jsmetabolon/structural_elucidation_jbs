@@ -5,7 +5,7 @@ A customer-facing, high-level companion to the scientific manuscript in
 and how it works only at the level of concept, never of parameters.
 
 - `public_brief.md` — editable source.
-- `public_brief.docx` — the distributable Word file (currently nine pages,
+- `public_brief.docx` — the distributable Word file (currently ten pages,
   against a ten-page budget).
 - `figures/` — four SVGs (two hand-authored diagrams plus two charts regenerated
   from the same audited JSON the manuscript uses) and one PNG screen capture of
@@ -108,16 +108,22 @@ as a platform enhancement, but no platform positioning is documented in this
 repository, and whether existing deliverables may be named externally is a
 marketing decision rather than a technical one.
 
-Watch the budgets while filling these in. The document renders to nine pages of
-ten, and the last page holds only the closing lines, so replacing the
-placeholders should absorb that page rather than add one. The word count is
-roughly 2,470 of 2,600, which leaves about a hundred words.
+Watch the budgets while filling these in. The word count is roughly 2,470 of
+2,600, which leaves about a hundred words, and that is the looser of the two
+constraints.
 
-Pages are now the constraint to watch rather than words, because the report
-capture sits close to the height at which it stops sharing a page: a caption
-gaining a line has been enough to cost a whole page. Long legal or availability
-text will need trimming elsewhere to fit. Re-run the gate with `--check-pages`
-afterwards, every time.
+Pages are the one to watch. The document renders to ten pages of ten, and the
+key-terms table is what takes it there: it needs a page and no amount of
+shrinking the report capture buys that page back, which was measured rather
+than assumed. What remains is roughly half of the last page, which is the room
+the availability and legal text has to fit into. Two things have each cost a
+whole page before, so re-run the gate with `--check-pages` after every edit,
+without exception: a caption gaining a single line, and the report capture
+being printed tall enough that Word stops letting it share a page.
+
+If the placeholder text will not fit, shorten the key-terms definitions before
+touching prose. Table rows cost no words at all, since the word counter skips
+lines beginning with a pipe, but they do cost lines.
 
 Automated checks cannot clear brand, trademark, or claim-substantiation review.
 Marketing and legal sign-off is still required.

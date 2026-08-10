@@ -111,24 +111,9 @@ Each feature is delivered as a self-contained report, with a searchable index ac
 
 ## How to read a result
 
-Results are graded on the confidence-level framework the metabolomics community already uses, so the output is interpretable without learning a bespoke vocabulary. The first table below fixes the handful of words that carry the most weight in a report; the second says what each grade asserts.
+Results are graded on the confidence-level framework the metabolomics community already uses, so the output is interpretable without learning a bespoke vocabulary. The words that carry the most weight in a report are defined in Key terms, at the back of this document.
 
-**Table 2. Key terms.**
-
-| Term | What it means here |
-|---|---|
-| Untargeted metabolomics | Measuring every molecule a method detects, rather than a predefined list |
-| Feature | One reproducible signal in the data, quantifiable whether or not it has a name |
-| Unnamed feature | A feature that has not been matched to a known compound |
-| Reference library | The catalogue of compounds already characterized, against which a signal can be matched |
-| Library match | Naming a feature by finding it in that catalogue: the most direct answer, available wherever the compound is catalogued |
-| Authentic standard | A pure sample of a compound, run the same way, used to confirm an identity outright |
-| Identification level | The community grade describing what kind of evidence stands behind a call |
-| Structure hypothesis | A specific proposed structure, offered as a lead rather than as a settled identity |
-| Withheld structure | A deliberate decision not to propose a structure the evidence does not support |
-| Pathway and subpathway | The area of biochemistry a feature belongs to, from broad class down to a narrower grouping |
-
-**Table 3. What each reporting outcome asserts.**
+**Table 2. What each reporting outcome asserts.**
 
 | Reporting outcome | What it means | Reasonable next step |
 |---|---|---|
@@ -158,6 +143,37 @@ The unnamed fraction of an untargeted dataset is not a reporting inconvenience. 
 Three points carry the argument. Every unnamed feature receives a documented, graded result. What the workflow declines to claim matters as much as what it proposes, because restraint is what gives the remaining calls their credibility. And the output is an instrument for prioritization rather than a substitute for confirmation: it does not remove the final experiment, it tells you which one to run.
 
 The part of a dataset previously written off becomes a pathway-placed, evidence-graded set of hypotheses that can be scrutinized, followed up, and published.
+
+## Key terms
+
+**Table 3. Key terms.**
+
+| Term | What it means here |
+|---|---|
+| Annotation | Any label attached to a feature, including its area of biochemistry, and not by itself a claim about which compound it is |
+| Authentic standard | A pure sample of a compound run the same way as the study samples, comparison against which settles an identity outright |
+| Candidate | One proposed structure for a feature. Each feature receives several, ordered by the evidence behind them |
+| Catalogued compound | A compound already characterized and present in the reference library, so a matching signal can be named by lookup |
+| Confidence grade | The report's statement of how much evidence stands behind a call. It limits what the report claims rather than giving the probability that a structure is correct |
+| Confirmation | The follow-up experiment that turns a proposed structure into a settled identity, normally by obtaining the compound and comparing against it |
+| Deliverable | One self-contained report per feature, plus a searchable index across the full set |
+| Evidence | The measurements bearing on whether a candidate is right, including how well it accounts for the observed mass and the fragmentation behaviour |
+| Feature | One reproducible signal in the data, quantifiable across samples whether or not it has a name |
+| Fragmentation | The pattern of pieces a molecule breaks into during measurement, carrying structural information beyond the mass alone |
+| Identification | A claim about which compound a feature is, carrying a grade that says what kind of evidence stands behind it |
+| Identification level | The community-standard grade for that evidence, from an exact mass alone up to a structure confirmed against an authentic standard |
+| Library match | Naming a feature by finding it in the reference library. It is the most direct answer wherever the compound is catalogued, and it produces the named part of every deliverable |
+| Metabolite | A small molecule produced or consumed by the biochemistry of a living system |
+| Molecular formula | The elemental composition of a compound, which is what a report presents when the evidence supports composition but not shape |
+| Observed mass | The mass measured for a feature, which constrains the structures chemically possible for it |
+| Pathway and subpathway | The area of biochemistry a feature belongs to, from a broad class down to a narrower grouping. Every feature receives both, including those with no structure |
+| Ranked shortlist | The ordered candidates for one feature. Working down the list is the intended use, because the correct structure is often present without being first |
+| Reference library | The catalogue of already-characterized compounds an observed signal is matched against. Its size bounds how much of a dataset can be named by matching |
+| Structure hypothesis | A specific proposed structure, offered as a lead rather than as a settled identity |
+| Triage | Deciding which features are worth following up. Grading every feature against the same criteria is what makes that decision comparable across a study |
+| Unnamed feature | A feature that has not been matched to a known compound, and so arrives with no structure attached |
+| Untargeted metabolomics | Measurement designed to detect every molecule a method can, rather than a predefined list of them |
+| Withheld structure | A deliberate decision not to propose a structure the evidence does not support. It is what gives the structures that are shown their weight |
 
 ## Availability
 
