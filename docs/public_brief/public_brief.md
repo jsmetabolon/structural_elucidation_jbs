@@ -101,9 +101,13 @@ Each feature is delivered as a self-contained report, with a searchable index ac
 - **An identification level** together with a plain-language statement of what that level does and does not assert.
 - **Cross-references** to the independently assigned Metabolon Level, so the new output can be read alongside existing deliverables.
 
-![Figure 4. Reporting coverage across the delivered set.](figures/fig_coverage_public.svg)
+![Figure 4. A delivered report.](figures/fig_report_public.png)
 
-*Figure 4. Across 3,897 delivered features, every one receives a report and pathway context while a specific structure appears only where the evidence supports it. Completeness and restraint arrive together rather than being traded against each other.*
+*Figure 4. Every feature arrives as a page like this one, where the proposed structure, the evidence behind it and the grade that limits it sit together, so a reviewer can weigh the call instead of taking it on trust. The example is a demonstration compound rather than a customer result.*
+
+![Figure 5. Reporting coverage across the delivered set.](figures/fig_coverage_public.svg)
+
+*Figure 5. Across 3,897 delivered features, every one receives a report and pathway context while a specific structure appears only where the evidence supports it. Completeness and restraint arrive together rather than being traded against each other.*
 
 ## How to read a result
 

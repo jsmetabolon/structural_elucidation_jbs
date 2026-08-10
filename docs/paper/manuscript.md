@@ -135,6 +135,14 @@ The delivered reports use two assignment routes that must be evaluated separatel
 
 There are **598/3,897 (15.4%)** rank-1 mass mismatches. Of these, 590 fall into the historical MSI-L4 deep-audit subset; the remaining eight are outside L4. A lower-ranked, strongly mass-consistent candidate exists for 523/598 overall and 519/590 in the L4 subset. This identifies a reranking opportunity, **not 523 proven-correct recovered structures**: the alternatives have not undergone post-gate truth validation. Rank-1 errors are often chemically meaningful (median nonzero error ~176 Da), and 248/590 L4 cases lack a computable rank-1 formula. Detailed counts appear in Supplementary Section S5.
 
+### 3.6 The delivered artifact
+
+The reporting rules described above are visible in the rendered output rather than only in the rubric (Figure 6). Each feature yields two pages built from one evidence set: a public page and an internal one. Both carry the same reporting level, the same identification-confidence tier and the same evidence cards, and they differ in how much of the candidate list each is allowed to expose — three structures against ten at Level 3, and none at all at Levels 4–5. The level therefore governs the artifact and not merely the metadata, which is what makes the withheld 1,171 reports a designed outcome rather than an absence.
+
+![Figure 6. Public and internal renderings of one delivered report.](figures/fig6_report_example.png)
+
+*Figure 6. The reporting level is enforced in the rendered page, so the difference between the two audiences is what may be shown rather than what was computed. Both panels are the same feature and the same evidence: **a**, the public page; **b**, the internal page, which adds triage metrics to the header and retains ten candidates where the public page shows three. The example is a demonstration control rendered by the report builder from data committed with this manuscript, not a delivered customer result; panels not populated by that reduced input are omitted.*
+
 ---
 
 ## 4. Discussion

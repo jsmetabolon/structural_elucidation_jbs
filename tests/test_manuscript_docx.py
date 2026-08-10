@@ -18,7 +18,7 @@ def test_nature_manuscript_docx(tmp_path: Path) -> None:
     assert document.styles["Normal"].font.name == "Times New Roman"
     assert document.styles["Normal"].font.size.pt == 12
     assert document.styles["Normal"].paragraph_format.line_spacing_rule == WD_LINE_SPACING.DOUBLE
-    assert len(document.inline_shapes) == 5
+    assert len(document.inline_shapes) == 6
     assert len(document.tables) == 1
     headings = [p.text for p in document.paragraphs if p.style.name == "Heading 1"]
     assert headings.index("Results") < headings.index("References") < headings.index("Methods")

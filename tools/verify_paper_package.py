@@ -175,7 +175,7 @@ def main() -> None:
             errors.append("Nature DOCX body is not 12 point")
         if word.styles["Normal"].paragraph_format.line_spacing_rule != WD_LINE_SPACING.DOUBLE:
             errors.append("Nature DOCX body is not double-spaced")
-        if len(word.inline_shapes) != 5 or len(word.tables) != 1:
+        if len(word.inline_shapes) != 6 or len(word.tables) != 1:
             errors.append(
                 f"Nature display-item packaging changed: {len(word.inline_shapes)} figures, "
                 f"{len(word.tables)} tables"
