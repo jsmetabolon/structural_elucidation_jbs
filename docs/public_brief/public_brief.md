@@ -103,7 +103,7 @@ Each feature is delivered as a self-contained report, with a searchable index ac
 
 ![Figure 4. A delivered report.](figures/fig_report_public.png)
 
-*Figure 4. Every feature arrives as a page like this one, where the proposed structure and the grade that limits it are stated together, so what the result claims is visible at a glance rather than buried in a score. The panel shows the top of one report; the supporting evidence listed above continues below it. The example is a demonstration compound rather than a customer result.*
+*Figure 4. Every feature arrives as a page like this one, which states the proposed structure and the grade limiting it together, so what a result claims is visible rather than buried in a score. The panel is the top of one report; the evidence listed above continues below it. The example is a demonstration compound.*
 
 ![Figure 5. Reporting coverage across the delivered set.](figures/fig_coverage_public.svg)
 
