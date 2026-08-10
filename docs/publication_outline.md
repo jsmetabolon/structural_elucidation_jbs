@@ -10,6 +10,13 @@ consistent with each other:
 Both draw their statistics from the same audited artifacts under `docs/paper/data/`
 and the claim ledger at `docs/paper/supplement/claim_evidence.csv`.
 
+This file is the shared outline, and it is deliberately the shorter record. Every
+prompt in the writing guidance is answered in full, once per surface, in
+`docs/writing_guidance_public_brief.md` and `docs/writing_guidance_manuscript.md`.
+Those two repeat some of what is here, which is the point: each is meant to be
+read on its own. Where they disagree with this file, this file is the one that
+drifted.
+
 ## 1. Pre-writing capture
 
 **The problem or unmet need.** A single untargeted LC-MS/MS study yields thousands of

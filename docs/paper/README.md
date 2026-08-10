@@ -18,9 +18,14 @@ see that folder's README before editing either document.
 
 Both documents follow the internal white-paper writing guidance. The outline that
 governs their structure and figure messages is `docs/publication_outline.md`, and
-the record of the four review passes is `docs/publication_review.md`. Read the
-outline before restructuring either document, since the two are meant to stay
-consistent with each other.
+the record of the review passes is `docs/publication_review.md`. Read the outline
+before restructuring either document, since the two are meant to stay consistent
+with each other.
+
+`docs/writing_guidance_manuscript.md` answers every prompt in that guidance for
+this manuscript, including how its IMRaD sections map onto the guidance's section
+names and why limitations are collected here rather than only distributed. It is
+built to Word by `tools/build_guidance_answers_docx.py`.
 
 ## Verify from a clean checkout
 

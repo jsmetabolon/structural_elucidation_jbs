@@ -20,9 +20,15 @@ evidence, what a customer receives, how to read a result, where it fits, and a
 conclusion. The outline governing that
 structure — including the message each figure must support and the
 capability-to-value pairs behind Table 1 — is `docs/publication_outline.md`, and
-the four review passes are recorded in `docs/publication_review.md`. Read the
-outline before restructuring this document or the manuscript, since the two are
-meant to stay consistent with each other.
+the review passes are recorded in `docs/publication_review.md`. Read the outline
+before restructuring this document or the manuscript, since the two are meant to
+stay consistent with each other.
+
+`docs/writing_guidance_public_brief.md` answers every prompt in that guidance for
+this brief. It is an internal working record rather than a release artifact: it
+names what the brief withholds and why, which is exactly the material this
+folder's release gate exists to keep out. It is built to Word by
+`tools/build_guidance_answers_docx.py`.
 
 Two habits from the guidance are load-bearing here and easy to undo by accident.
 Substantive paragraphs end on the consequence for the reader rather than on the
