@@ -3668,7 +3668,10 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     write_csv(data_dir / "similarity_network_edges.csv", edges)
     (data_dir / "similarity_network.json").write_text(json.dumps({"nodes": nodes, "edges": edges}, indent=2))
 
-    parent_mz = float(pd.to_numeric(rank1.get("parent_mz"), errors="coerce") or 0.0)
+    # NaN is truthy, so `to_numeric(...) or 0.0` yields NaN rather than the
+    # intended zero. That is what put "nan" in the observed-m/z card, and it
+    # would also swallow the fallback below.
+    parent_mz = _finite_or_none(pd.to_numeric(rank1.get("parent_mz"), errors="coerce")) or 0.0
     if not parent_mz:
         parent_mz = float(
             load_observed_mz(REPO_ROOT / "data" / "feature_rows", known_x_path).get(control_id, 0.0)
