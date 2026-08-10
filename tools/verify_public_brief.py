@@ -129,6 +129,25 @@ OVERCLAIM_PHRASES = (
 NUMBER_PATTERN = re.compile(r"\b\d[\d,]*(?:\.\d+)?%?")
 
 
+def term_pattern(term: str) -> str:
+    """Regex source matching one proprietary term, plural included.
+
+    Shared with ``tools/capture_report_screens.py``, which redacts the same
+    vocabulary out of a report screenshot before it can reach the brief. A
+    substring test would fire on ``nce`` inside ``confidence``, so the word
+    boundaries are the whole point.
+    """
+
+    return rf"(?<!\w){re.escape(term)}(?:e?s)?(?!\w)"
+
+
+def disclosed_terms(text: str) -> list[str]:
+    """Proprietary terms present in ``text``, in declaration order."""
+
+    lowered = text.lower()
+    return [term for term in PROPRIETARY_TERMS if re.search(term_pattern(term), lowered)]
+
+
 def load_ledger(path: Path) -> dict[str, dict[str, str]]:
     with path.open() as handle:
         return {row["claim_id"]: row for row in csv.DictReader(handle)}
@@ -244,10 +263,8 @@ def main() -> None:
     lowered = brief.lower()
 
     # 1. Disclosure.
-    for term in PROPRIETARY_TERMS:
-        # Trailing (e)s so a plural does not slip past the singular term.
-        if re.search(rf"(?<!\w){re.escape(term)}(?:e?s)?(?!\w)", lowered):
-            errors.append(f"proprietary term disclosed: '{term}'")
+    for term in disclosed_terms(brief):
+        errors.append(f"proprietary term disclosed: '{term}'")
     for pattern, reason in PROPRIETARY_PATTERNS:
         for hit in set(re.findall(pattern, brief, flags=re.IGNORECASE)):
             errors.append(f"proprietary detail disclosed: '{hit}' is {reason}")
