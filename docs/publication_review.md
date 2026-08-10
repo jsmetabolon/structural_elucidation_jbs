@@ -157,7 +157,8 @@ with candidate ranking, are recorded in `docs/public_brief/README.md`.
   each document and not repeated. The two routes are described as answering different
   questions. The Discussion and Where this fits both say that a library match remains the
   most direct answer wherever the compound is catalogued, and that well-corroborated
-  hypotheses feed back into the library, so the two compound rather than compete.
+  hypotheses feed back into the library, so the two reinforce each other rather than
+  compete.
 - **What was deliberately not softened.** Exact-source rank-1 recovery of 38.1% against
   56.0% for predicted-source stays, with its overlapping intervals, and so does the
   conclusion that catalog provenance is not confirmation. Two sentences were rescoped

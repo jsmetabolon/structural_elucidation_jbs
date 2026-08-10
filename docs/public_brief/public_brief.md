@@ -147,7 +147,7 @@ For the same reason, the confidence output limits what each report claims rather
 This capability complements library matching and authentic-standard confirmation rather than replacing either. Matching against the reference library stays the first step and the most direct answer wherever a feature corresponds to a catalogued compound; what this adds is a graded result for the features that fall outside that coverage. It is designed for two situations in particular.
 
 - **Prioritizing discovery.** When a study points to unnamed features, the capability turns each of them into a short, chemically specific candidate list, so the work goes into a handful of named possibilities rather than starting from nothing.
-- **Extending reference coverage.** Well-supported hypotheses give a defensible starting point for adding compounds to a reference library, and every addition raises the share of future studies that can be named outright, which is how the two routes compound rather than compete.
+- **Extending reference coverage.** Well-supported hypotheses give a defensible starting point for adding compounds to a reference library, and every addition raises the share of future studies that can be named outright, so the two routes reinforce each other rather than compete.
 
 Used alongside a reference-library search, the capability contributes additional evidence and reduces dependence on a single evidence source. Used alongside manual interpretation, it enables consistent application at scale. It has not been benchmarked head to head against other computational approaches, and no such comparison is claimed here.
 
