@@ -81,6 +81,11 @@ DEFAULT_CURATION_LEDGER = REPO_ROOT / "data/curation_ledger.csv"
 # Shared by the renderer and by the guides index, which is built separately and
 # derives its anchors from the heading text.
 PATHWAY_SECTION_TITLE = "Pathway And Subpathway Assignment"
+# Truth-similarity threshold at which a top candidate counts as matching the
+# independently known structure. Matches TRUTH_CORRECT in the enrich tool and in
+# tools/calibrate_confidence.py; all three must agree or the delivery paths will
+# disagree about which controls are authentic-standard confirmed.
+TRUTH_MATCH_TANIMOTO = 0.70
 OBABEL_PATH_CANDIDATES = [
     Path.home() / "Downloads" / "ADFRsuite_x86_64Darwin_1.0" / "bin" / "obabel",
 ]
@@ -3108,6 +3113,46 @@ def _finite_or_none(value: Any) -> float | None:
     return None if math.isnan(number) else number
 
 
+_OBSERVED_MZ_CACHE: dict[str, dict[str, float]] = {}
+
+
+def load_observed_mz(feature_rows_dir: Path, known_x_path: Path) -> dict[str, float]:
+    """Observed parent m/z per control, from feature rows then the known_X fallback.
+
+    The rerank rows only carry ``parent_mz`` for a minority of controls, so a
+    from-source build that trusted them alone reported no observed mass for most
+    compounds - which reads as a missing measurement, demotes the MSI level, and
+    renders "nan" on the page. The enrich path has always drawn on these two
+    sources to reach ~97% coverage; this is the same lookup so both delivery
+    paths agree about what was observed.
+    """
+    key = f"{feature_rows_dir}|{known_x_path}"
+    if key in _OBSERVED_MZ_CACHE:
+        return _OBSERVED_MZ_CACHE[key]
+    out: dict[str, float] = {}
+    for path in sorted(Path(feature_rows_dir).glob("*_feature_rows.csv")):
+        try:
+            with path.open(newline="") as handle:
+                for row in csv.DictReader(handle):
+                    control_id = str(row.get("control_id") or "").strip()
+                    value = _finite_or_none(row.get("parent_mz"))
+                    if control_id and control_id not in out and value is not None:
+                        out[control_id] = value
+        except OSError:
+            continue
+    try:
+        with Path(known_x_path).open(newline="") as handle:
+            for row in csv.DictReader(handle):
+                control_id = str(row.get("Unknown") or "").strip()
+                value = _finite_or_none(row.get("m/z"))
+                if control_id and control_id not in out and value is not None:
+                    out[control_id] = value
+    except OSError:
+        pass
+    _OBSERVED_MZ_CACHE[key] = out
+    return out
+
+
 def control_slug(control_id: str) -> str:
     """Filesystem-safe slug from a control id (e.g. ``X-25003`` -> ``x-25003``)."""
 
@@ -3624,6 +3669,10 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     (data_dir / "similarity_network.json").write_text(json.dumps({"nodes": nodes, "edges": edges}, indent=2))
 
     parent_mz = float(pd.to_numeric(rank1.get("parent_mz"), errors="coerce") or 0.0)
+    if not parent_mz:
+        parent_mz = float(
+            load_observed_mz(REPO_ROOT / "data" / "feature_rows", known_x_path).get(control_id, 0.0)
+        )
     evidence = {
         "nearest_reference_tanimoto": float(
             pd.to_numeric(pathway_info.get("similarity"), errors="coerce") or 0.0
@@ -3684,7 +3733,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     ]
     _ms2_candidates = [c for c in _ms2_candidates if c is not None]
     _ms2_score = max(_ms2_candidates) if _ms2_candidates else None
-    _observed_mz = _n(rank1.get("parent_mz"))
+    _observed_mz = _n(rank1.get("parent_mz")) or (parent_mz or None)
     _conf_fields = confmod.fields_from_parts(
         _css_records[0] if _css_records else {},
         _css_records[1] if len(_css_records) > 1 else None,
@@ -3722,6 +3771,12 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     # alternative, and observed-MS2 detail so the from-source render matches.
     _level = str(kx_row.get("Level", "") or "").strip()
     _conf_fields["metabolon_level"] = "" if _level.lower() in {"nan", "artifact", "exclude", "4?"} else _level
+    # Whether the top candidate matches the independently known structure. Without
+    # it a Level-1 control can never reach Confirmed, so a from-source build
+    # reported no authentic-standard confirmations at all. Same rule and threshold
+    # the enrich path applies.
+    _truth = _n(rank1.get("truth_tanimoto"))
+    _conf_fields["truth_match"] = _truth is not None and _truth >= TRUTH_MATCH_TANIMOTO
     _conf_fields["mass_alt"] = confmod.mass_consistent_alt(_css_records)
     _n_peaks = int(len(peaks)) if hasattr(peaks, "empty") and not peaks.empty else 0
     _conf_fields["ms2_detail"] = {
