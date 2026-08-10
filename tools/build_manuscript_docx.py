@@ -232,7 +232,15 @@ def add_table(document: DocumentType, rows: list[list[str]]) -> None:
     paragraph.paragraph_format.space_after = Pt(0)
 
 
-def add_figure(document: DocumentType, source_root: Path, figure_path: str, alt: str, temp_dir: Path) -> None:
+def add_figure(
+    document: DocumentType,
+    source_root: Path,
+    figure_path: str,
+    alt: str,
+    temp_dir: Path,
+    *,
+    max_height_inches: float = FIGURE_MAX_HEIGHT_INCHES,
+) -> None:
     source = source_root / figure_path
     if not source.exists():
         raise FileNotFoundError(f"figure not found: {source}")
@@ -244,8 +252,8 @@ def add_figure(document: DocumentType, source_root: Path, figure_path: str, alt:
     width_inches = FIGURE_WIDTH_INCHES
     pixel_width, pixel_height = png_dimensions(png)
     printed_height = FIGURE_WIDTH_INCHES * pixel_height / pixel_width
-    if printed_height > FIGURE_MAX_HEIGHT_INCHES:
-        width_inches = FIGURE_WIDTH_INCHES * FIGURE_MAX_HEIGHT_INCHES / printed_height
+    if printed_height > max_height_inches:
+        width_inches = FIGURE_WIDTH_INCHES * max_height_inches / printed_height
     paragraph = document.add_paragraph()
     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
     paragraph.paragraph_format.space_after = Pt(3)

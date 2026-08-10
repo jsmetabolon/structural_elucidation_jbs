@@ -4,7 +4,7 @@
 
 The earlier internal study design compares MS2Query, SIRIUS, Spec2Mol, and MSNovelist with the legacy workflow using CASMI categories: adduct, elemental formula, structure class, and 2D structure. Library 1 contains 2,091 known serum/plasma metabolites spanning 9 super-pathways and 135 subpathways. Library 2 contains 120 internally confirmed NMD/X-compounds plus 500 CASMI 2022 compounds. No comparative toolkit results were available for this manuscript; the design is prospective and its counts are not pooled with the 3,897-feature deployed evaluation.
 
-## S2. Cohorts and confidence vocabularies
+## S2. Cohorts, confidence vocabularies, and key terms
 
 | Term | Definition | Source / status |
 |---|---|---|
@@ -17,6 +17,17 @@ The earlier internal study design compares MS2Query, SIRIUS, Spec2Mol, and MSNov
 | Pathway-confidence tier | high / medium / low neighbor-vote confidence | not structure confidence |
 | Identification-confidence tier | Confirmed / High / Moderate / Low / Tentative | exploratory Platt score |
 | MSI reporting level | evidence-derived L1–L5 rubric | custom; not externally validated |
+
+The terms below name where a candidate came from. They are recorded per candidate and are reported throughout as provenance, which is a different quantity from corroboration; Methods Section 2.7 carries the full glossary.
+
+| Term | Definition | Source / status |
+|---|---|---|
+| Reference library | catalogue of compounds with measured spectra and curated metadata | proprietary; controlled access |
+| Retrieval (library matching) | candidates proposed by searching that catalogue | Track A of the inference stack |
+| Analogue search | relaxed match returning related catalogue entries | not used as a confirmation route |
+| De novo generation | candidates proposed without catalogue membership | Track B of the inference stack |
+| Catalog provenance (exact source) | the candidate was proposed by matching a catalogued structure | 42 of the 92 truth controls |
+| Authentic standard | reference compound run under the same conditions | the only basis for L1 here |
 
 **Table S1. Evidence coverage across all delivered reports.**
 

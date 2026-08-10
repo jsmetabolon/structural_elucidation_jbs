@@ -70,6 +70,18 @@ PROTON_MASS = 1.007276466812
 PAPER_SECTIONS = ("Top Candidate Compound", "potential structures", "candidate structures")
 BRIEF_SECTIONS = ("Top Candidate Compound",)
 
+# The brief has a ten-page budget and its figure has to share a page with text,
+# so its panel keeps only the graded call: the badge strip, the structure, and
+# the two cards that say how far the evidence goes. Everything the panel drops is
+# stated in words in the surrounding section.
+BRIEF_ELEMENT_TRIM_JS = """() => {
+  document.querySelectorAll('.structure-card').forEach(node => {
+    const heading = node.querySelector('h3');
+    if (heading && /identification evidence/i.test(heading.textContent || '')) node.remove();
+  });
+  return true;
+}"""
+
 # Redaction removes whole elements and never rewrites their text. Cropping a
 # screenshot is honest; editing the words inside one would make the figure a
 # drawing of a report rather than a picture of one.
@@ -408,12 +420,15 @@ def capture_variant(
     destination: Path,
     *,
     redact: bool,
+    extra_trim: str | None = None,
 ) -> None:
     """Render one report page trimmed to ``sections`` and screenshot it."""
 
     page.goto(html.resolve().as_uri())
     page.wait_for_load_state("networkidle")
     page.evaluate(PANEL_TRIM_JS)
+    if extra_trim:
+        page.evaluate(extra_trim)
     if redact:
         removed = page.evaluate(
             PUBLIC_REDACTION_JS,
@@ -560,7 +575,14 @@ def main() -> None:
                 )
                 capture_variant(page, public_html, PAPER_SECTIONS, shots / "paper_public.png", redact=False)
                 capture_variant(page, internal_html, PAPER_SECTIONS, shots / "paper_internal.png", redact=False)
-                capture_variant(page, public_html, BRIEF_SECTIONS, shots / "brief_public.png", redact=True)
+                capture_variant(
+                    page,
+                    public_html,
+                    BRIEF_SECTIONS,
+                    shots / "brief_public.png",
+                    redact=True,
+                    extra_trim=BRIEF_ELEMENT_TRIM_JS,
+                )
                 browser.close()
 
             compose_side_by_side(

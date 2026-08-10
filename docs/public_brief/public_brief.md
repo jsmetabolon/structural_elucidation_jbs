@@ -103,7 +103,7 @@ Each feature is delivered as a self-contained report, with a searchable index ac
 
 ![Figure 4. A delivered report.](figures/fig_report_public.png)
 
-*Figure 4. Every feature arrives as a page like this one, where the proposed structure, the evidence behind it and the grade that limits it sit together, so a reviewer can weigh the call instead of taking it on trust. The example is a demonstration compound rather than a customer result.*
+*Figure 4. Every feature arrives as a page like this one, where the proposed structure and the grade that limits it are stated together, so what the result claims is visible at a glance rather than buried in a score. The panel shows the top of one report; the supporting evidence listed above continues below it. The example is a demonstration compound rather than a customer result.*
 
 ![Figure 5. Reporting coverage across the delivered set.](figures/fig_coverage_public.svg)
 
@@ -111,9 +111,24 @@ Each feature is delivered as a self-contained report, with a searchable index ac
 
 ## How to read a result
 
-Results are graded on the confidence-level framework the metabolomics community already uses, so the output is interpretable without learning a bespoke vocabulary.
+Results are graded on the confidence-level framework the metabolomics community already uses, so the output is interpretable without learning a bespoke vocabulary. The first table below fixes the handful of words that carry the most weight in a report; the second says what each grade asserts.
 
-**Table 2. What each reporting outcome asserts.**
+**Table 2. Key terms.**
+
+| Term | What it means here |
+|---|---|
+| Untargeted metabolomics | Measuring every molecule a method detects, rather than a predefined list |
+| Feature | One reproducible signal in the data, quantifiable whether or not it has a name |
+| Unnamed feature | A feature that has not been matched to a known compound |
+| Reference library | The catalogue of compounds already characterized, against which a signal can be matched |
+| Library match | Naming a feature by finding it in that catalogue: the most direct answer, available wherever the compound is catalogued |
+| Authentic standard | A pure sample of a compound, run the same way, used to confirm an identity outright |
+| Identification level | The community grade describing what kind of evidence stands behind a call |
+| Structure hypothesis | A specific proposed structure, offered as a lead rather than as a settled identity |
+| Withheld structure | A deliberate decision not to propose a structure the evidence does not support |
+| Pathway and subpathway | The area of biochemistry a feature belongs to, from broad class down to a narrower grouping |
+
+**Table 3. What each reporting outcome asserts.**
 
 | Reporting outcome | What it means | Reasonable next step |
 |---|---|---|

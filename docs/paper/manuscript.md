@@ -66,7 +66,7 @@ Every report is assigned an evidence-derived Schymanski/MSI-style level (1–5):
 
 ### 2.6 Evaluation and reproducibility
 
-**Terminology.** Four evaluation terms are used in distinct senses throughout. *Recovery* is the rate at which a candidate meeting the truth-similarity threshold appears within the top k for a control whose structure is independently known. *Accuracy* is used only where a prediction is scored against a label withheld from the mechanism that produced it, as in the leave-one-out pathway evaluation. *Agreement* denotes concordance with an independent label source (`known_X`) that is itself imperfect. *Consistency* denotes concordance with the same reference database a value was copied from, which by construction cannot measure prediction. Separately, an *identification* is a claim about compound identity graded by an MSI-style level; an *annotation* is any label attached to a feature, including taxonomy; and a *structure hypothesis* is a proposed structure explicitly not asserted as confirmed. *Identification-confidence tiers* grade structural evidence and are not interchangeable with *pathway-confidence tiers*, which grade taxonomy assignment.
+Terms used in a specific sense here are defined in Section 2.7.
 
 Structural recovery is reported at rank 1, top 3, and top 10 for truth-Tanimoto thresholds 0.50, 0.70, 0.85, and exact 2D structure; Tanimoto ≥0.70 is the prespecified primary threshold. Binomial proportions use Wilson 95% confidence intervals, and subgroup median similarities use 2,000 deterministic bootstrap replicates. Calibration uses leave-one-control-out Platt fitting. Authoritative P0/P1 analyses are not reported because their cohort/truth files were unavailable.
 
@@ -74,7 +74,17 @@ Pathway outputs are evaluated separately as: (a) reference-taxonomy **consistenc
 
 Following CASMI [12], four identification categories are considered in increasing importance: (1) adduct annotation, (2) elemental formula, (3) compound/structure class, and (4) 2D chemical structure—with 2D structure as the primary metric, scored **rank-independently** (a correct call means the true structure appears among a tool's top-k candidates). Here, the 2D-structure category maps to structural recovery and the structure-class category to biochemical taxonomy assignment; adduct- and formula-level accuracy were not independently benchmarked and are reserved for the prospective four-toolkit study.
 
-### 2.7 Software and reproducibility
+### 2.7 Glossary of key terms
+
+Several words in this field are used loosely enough that a result can be misread without them being pinned down, and four of them are the difference between a validated claim and a circular one. This section fixes the sense each carries here.
+
+*Evaluation.* **Recovery** is the rate at which a candidate meeting the truth-similarity threshold appears within the top k for a control whose structure is independently known. **Accuracy** is used only where a prediction is scored against a label withheld from the mechanism that produced it, as in the leave-one-out pathway evaluation. **Agreement** denotes concordance with an independent label source (`known_X`) that is itself imperfect. **Consistency** denotes concordance with the same reference database a value was copied from, which by construction cannot measure prediction.
+
+*What a result claims.* An **identification** is a claim about compound identity graded by an MSI-style level. An **annotation** is any label attached to a feature, including taxonomy. A **structure hypothesis** is a proposed structure explicitly not asserted as confirmed. An **authentic standard** is a purchased or synthesized reference compound run under the same conditions, the evidence that settles an identity and the only basis for Level 1 here. **Identification-confidence tiers** grade structural evidence and are not interchangeable with **pathway-confidence tiers**, which grade taxonomy assignment.
+
+*Where a candidate comes from.* A **reference library** is a catalogue of compounds with measured spectra and curated metadata. **Retrieval**, or **library matching**, proposes candidates by searching that catalogue for the entries a spectrum most resembles; an **analogue search** relaxes the match so structurally related catalogue entries are returned when the compound itself is absent. **De novo generation** proposes structures without requiring catalogue membership, so its reach is set by the generator rather than by coverage. **Catalog provenance**, reported as an exact source, records that a candidate was proposed by matching a catalogued structure; it describes the route a candidate arrived by and is distinct from confirmation against an authentic standard.
+
+### 2.8 Software and reproducibility
 
 The final delivered reports were produced with eight report-generation workers from four per-library rerank CSVs (3,897 generated; no failures; elapsed time 2,864.84 s). Evidence was subsequently enriched from observed-m/z, observed-MS2, synonym, Metabolon-Level, and WGCNA sidecars, followed by idempotent HTML patches for confidence, candidate-score labeling, and consensus-glyph spacing. Public reports exclude observed fragment-ion detail (audited leaks=0); internal reports retain aggregate MS2 evidence. Compact audit JSON/CSV artifacts, source hashes, and a one-command regeneration script accompany the manuscript. The complete inference environment and proprietary spectra/reference database require controlled-access deposition.
 
