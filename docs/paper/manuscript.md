@@ -66,7 +66,7 @@ Every report is assigned an evidence-derived Schymanski/MSI-style level (1–5):
 
 ### 2.6 Evaluation and reproducibility
 
-Terms used in a specific sense here are defined in Section 2.7.
+Terms that carry a specific sense in this paper are defined in the Glossary, which closes the document. Four of them are load-bearing here: *recovery*, *accuracy*, *agreement*, and *consistency* name four different measurements, and the distinction between them is what separates a validated result below from a circular one.
 
 Structural recovery is reported at rank 1, top 3, and top 10 for truth-Tanimoto thresholds 0.50, 0.70, 0.85, and exact 2D structure; Tanimoto ≥0.70 is the prespecified primary threshold. Binomial proportions use Wilson 95% confidence intervals, and subgroup median similarities use 2,000 deterministic bootstrap replicates. Calibration uses leave-one-control-out Platt fitting. Authoritative P0/P1 analyses are not reported because their cohort/truth files were unavailable.
 
@@ -74,17 +74,7 @@ Pathway outputs are evaluated separately as: (a) reference-taxonomy **consistenc
 
 Following CASMI [12], four identification categories are considered in increasing importance: (1) adduct annotation, (2) elemental formula, (3) compound/structure class, and (4) 2D chemical structure—with 2D structure as the primary metric, scored **rank-independently** (a correct call means the true structure appears among a tool's top-k candidates). Here, the 2D-structure category maps to structural recovery and the structure-class category to biochemical taxonomy assignment; adduct- and formula-level accuracy were not independently benchmarked and are reserved for the prospective four-toolkit study.
 
-### 2.7 Glossary of key terms
-
-Several words in this field are used loosely enough that a result can be misread without them being pinned down, and four of them are the difference between a validated claim and a circular one. This section fixes the sense each carries here.
-
-*Evaluation.* **Recovery** is the rate at which a candidate meeting the truth-similarity threshold appears within the top k for a control whose structure is independently known. **Accuracy** is used only where a prediction is scored against a label withheld from the mechanism that produced it, as in the leave-one-out pathway evaluation. **Agreement** denotes concordance with an independent label source (`known_X`) that is itself imperfect. **Consistency** denotes concordance with the same reference database a value was copied from, which by construction cannot measure prediction.
-
-*What a result claims.* An **identification** is a claim about compound identity graded by an MSI-style level. An **annotation** is any label attached to a feature, including taxonomy. A **structure hypothesis** is a proposed structure explicitly not asserted as confirmed. An **authentic standard** is a purchased or synthesized reference compound run under the same conditions, the evidence that settles an identity and the only basis for Level 1 here. **Identification-confidence tiers** grade structural evidence and are not interchangeable with **pathway-confidence tiers**, which grade taxonomy assignment.
-
-*Where a candidate comes from.* A **reference library** is a catalogue of compounds with measured spectra and curated metadata. **Retrieval**, or **library matching**, proposes candidates by searching that catalogue for the entries a spectrum most resembles; an **analogue search** relaxes the match so structurally related catalogue entries are returned when the compound itself is absent. **De novo generation** proposes structures without requiring catalogue membership, so its reach is set by the generator rather than by coverage. **Catalog provenance**, reported as an exact source, records that a candidate was proposed by matching a catalogued structure; it describes the route a candidate arrived by and is distinct from confirmation against an authentic standard.
-
-### 2.8 Software and reproducibility
+### 2.7 Software and reproducibility
 
 The final delivered reports were produced with eight report-generation workers from four per-library rerank CSVs (3,897 generated; no failures; elapsed time 2,864.84 s). Evidence was subsequently enriched from observed-m/z, observed-MS2, synonym, Metabolon-Level, and WGCNA sidecars, followed by idempotent HTML patches for confidence, candidate-score labeling, and consensus-glyph spacing. Public reports exclude observed fragment-ion detail (audited leaks=0); internal reports retain aggregate MS2 evidence. Compact audit JSON/CSV artifacts, source hashes, and a one-command regeneration script accompany the manuscript. The complete inference environment and proprietary spectra/reference database require controlled-access deposition.
 
@@ -236,3 +226,81 @@ No new biospecimens were collected for this computational study. It reanalyzed d
 13. de Jonge NF, Mildau K, Meijer D, et al. Good practices and recommendations for using and benchmarking computational metabolomics metabolite annotation tools. *Metabolomics* 2022, 18:103.
 14. Chen L, Zhang Z, Liu H, et al. Metabolite discovery through global annotation of untargeted metabolomics data. *Nat. Methods* 2021, 18:1377–1385.
 15. van der Hooft JJJ, Wandy J, Barrett MP, Burgess KEV, Rogers S. Topic modeling for untargeted substructure exploration in metabolomics (MS2LDA). *Proc. Natl. Acad. Sci. USA* 2016, 113:13738–13743.
+
+## Glossary
+
+Several words in this field are used loosely enough that a result can be misread without them being pinned down. Four of them, grouped under evaluation below, are the difference between a validated claim and a circular one, and they are the reason this glossary exists rather than a list of abbreviations. Entries are grouped by what they describe and alphabetical within each group.
+
+### The measurement
+
+- **Adduct.** The ionized form in which a neutral molecule is detected, which sets the offset between the observed *m/z* and the neutral mass. A feature can support several adduct hypotheses, and each implies a different neutral mass.
+- **Consensus MS2 spectrum.** The fragmentation record for a feature, aggregated across the individual scans in which it was observed. Aggregation is what makes the spectrum reproducible enough to score a candidate against.
+- **Delivered set.** The 3,897 unique X-compound features evaluated here, drawn from four internal chromatographic libraries. A control appearing in more than one library was retained from the first, so the set contains no duplicates.
+- **Feature.** One reproducible chromatographic and mass-spectrometric signal, quantifiable across samples whether or not any structure is attached to it. A feature is the unit everything in this paper is reported per.
+- **Molecular formula.** The elemental composition of a candidate. It is a weaker claim than a structure and is what a Level 4 report presents in place of one.
+- **Neutral mass.** The mass of the uncharged molecule, inferred from the observed *m/z* under an adduct hypothesis. Mass-match scoring compares a candidate's exact mass against this rather than against the raw *m/z*.
+- **Precursor *m/z*.** The observed mass-to-charge ratio of the intact ion selected for fragmentation. Observed for 97.4% of the delivered set.
+- **Retention index.** A chromatographic position normalized so it can be compared across runs. It is available as a fifth evidence axis only on the libraries whose retention models cleared the feasibility audit.
+- **Unknown feature (X-compound).** A feature that has not been matched to a compound in the reference library and is therefore delivered unnamed. These are the inputs to this workflow.
+- **Untargeted metabolomics.** Measurement designed to detect every molecule a method can, rather than a predefined panel. It is what produces far more features than can be identified.
+
+### Where a candidate comes from
+
+- **Analogue search.** A relaxed retrieval that returns structurally related catalogue entries when the compound itself is absent from the catalogue. It widens reach at the cost of exactness.
+- **Candidate pool.** The merged set of structures proposed for one feature by all routes, before reranking. Up to ten structures per feature are retained for reporting.
+- **Catalog provenance (exact source).** A record that a candidate was proposed by matching a catalogued structure. It describes the route a candidate arrived by, and is distinct from confirmation against an authentic standard; rank-1 recovery for this group was 38.1% (16/42) on the truth set.
+- **De novo generation.** Proposal of structures without requiring catalogue membership, so the reachable chemistry is set by the generator rather than by the size of the catalogue.
+- **Predicted source.** A candidate proposed by generation rather than by matching a catalogued structure. Rank-1 recovery for this group was 56.0% (28/50); the interval overlaps the exact-source one, so this cohort does not resolve a difference between them.
+- **Reference library.** A catalogue of compounds with measured spectra and curated metadata. It is what a library match searches, and its size is what bounds the reach of matching.
+- **Reranking.** Reordering the pooled candidates for a feature using several evidence axes at once, rather than by the score of the route that proposed them. The displayed ordering score is not a probability of correctness.
+- **Retrieval (library matching).** Proposing candidates by searching the reference library for the entries an observed spectrum most resembles. It is the most direct route to an identification wherever the compound is catalogued, and the first step of this workflow.
+
+### Comparing structures
+
+- **Exact 2D structure.** The strictest correctness criterion used here, requiring the proposal and the truth to be the same molecule ignoring stereochemistry. Reported alongside the similarity thresholds in the sensitivity analysis.
+- **Morgan fingerprint.** A bit-vector encoding of the substructures around each atom, used as the input to similarity comparison. Radius-2 and 2,048 bits throughout.
+- **Rank 1 and top k.** Position within the ordered candidate list for one feature. Recovery is reported cumulatively at rank 1, top 3, and top 10, because a correct structure present but not first is a different outcome from one absent altogether.
+- **Structural similarity.** How alike two structures are, on a scale where identical structures score one. Similarity is used both to score a proposal against a known answer and to find the reference neighbours a pathway vote runs over.
+- **Tanimoto coefficient.** The similarity measure used here, computed between two fingerprints as the shared bits over the union.
+- **Truth Tanimoto.** The similarity between a proposal and the independently known structure of a control. A proposal counts as correct at the prespecified primary threshold of 0.70.
+
+### Evaluation vocabulary
+
+- **Accuracy.** Used only where a prediction is scored against a label withheld from the mechanism that produced it, as in the leave-one-out pathway evaluation. Applying the word anywhere else in this paper would overstate what was measured.
+- **Agreement.** Concordance with an independent label source that is itself imperfect. Agreement is bounded by how far the two sources agree on cases where both are right by construction, which is why an annotation ceiling is reported beside it.
+- **Cohort.** A named subset of features an analysis was run over. Three are distinguished here, and each was selected by the availability of truth or reference labels rather than sampled at random, which bounds what any of them can be generalized to.
+- **Consistency.** Concordance with the same reference database a value was copied from. By construction it cannot measure prediction, which is why the 1,459 direct lookups are reported as consistency and never as accuracy.
+- **Control.** A feature whose identity is known independently of the workflow, used to score it.
+- **Leave-one-out.** Validation in which each case is scored by a model or vote rebuilt without it. Used here for confidence calibration and for the intrinsic test of the neighbour-vote mechanism.
+- **Recovery.** The rate at which a candidate meeting the truth-similarity threshold appears within the top k, for a control whose structure is independently known. This is the word used for structural results throughout.
+- **Selective prediction.** Sorting a cohort from most to least confident and scoring cumulative prefixes, to test whether a confidence signal orders cases at all. It is how the paper distinguishes the pathway signal, which does order, from the structural one, which does not.
+- **Truth-verified control.** A control carrying a nonzero truth similarity in the delivered candidate files. There are 92, and they are the basis of every structural recovery figure here.
+- **Wilson confidence interval.** The interval used for every binomial proportion reported. It behaves better than the normal approximation at small cohort sizes, which matters at these.
+
+### What a result claims
+
+- **Annotation.** Any label attached to a feature, including biochemical taxonomy. An annotation is not necessarily a claim about identity.
+- **Authentic standard.** A purchased or synthesized reference compound run under the same conditions. It is the evidence that settles an identity, and the only basis for Level 1 here.
+- **Calibration.** How well a predicted probability matches the observed rate. Assessed by Brier score and calibration slope under leave-one-out fitting; the aggregate score here calibrates poorly, which is why it is presented as an ordering device.
+- **Evidence score.** The aggregate of the available evidence axes, weighted and normalized by the weights actually available for a feature. It is exploratory rather than an externally validated probability of correctness.
+- **Identification.** A claim about compound identity, graded by an MSI-style level.
+- **Identification-confidence tier.** A grade over structural evidence, running from Confirmed to Tentative. Not interchangeable with the pathway-confidence tier.
+- **Metabolon Level.** The independently assigned internal identification level, displayed in each report as a cross-reference so the new output can be read alongside existing deliverables.
+- **MSI level.** The evidence-derived reporting level, from an exact mass alone up to a standard-confirmed structure, following the Schymanski and Metabolomics Standards Initiative schemes [1,2]. The thresholds used here are a custom rubric and are not an externally validated classifier.
+- **Structure hypothesis.** A proposed structure explicitly not asserted as confirmed. Levels 1 to 3 present one; Levels 4 and 5 do not.
+- **Withheld structure.** The outcome when evidence does not meet the bar for presenting a structure. It is enforced in the rendered report rather than only recorded in metadata, and it is the designed result for 1,171 of the delivered features.
+
+### Biochemical taxonomy
+
+- **Annotation ceiling.** The highest agreement any predictor targeting the reference taxonomy could score against an independent label source, measured on structures where the assignment is right by construction. It is 62.5% at super-pathway and 34.8% at subpathway, and every independently scored pathway figure should be read against it rather than against a perfect score.
+- **Neighbour consensus.** Assignment of a pathway by a similarity-weighted vote over the catalogued compounds most structurally similar to a proposal. It is the route used when the proposal is not itself in the reference database.
+- **Pathway-confidence tier.** A high, medium, or low grade over a taxonomy assignment. It grades the biochemistry rather than the structure, and unlike identification confidence it does order one feature against another.
+- **Reference taxonomy.** The pathway and subpathway labels carried by the reference database. Copying a label from it is a lookup, not a prediction.
+- **Subpathway.** The finer biochemical grouping beneath a super-pathway. It is harder to assign than the broad class, partly because fine distinctions turn on exactly the small structural differences similarity smooths over, and partly because the two label vocabularies agree less at this level.
+- **Super-pathway.** The broad biochemical class a compound belongs to, such as Lipid or Peptide.
+- **Vote share.** The proportion of the weighted neighbour vote that backed the winning class. It is the quantity the pathway evidence axis scores.
+
+### Failure modes
+
+- **Mass mismatch.** A rank-1 candidate whose exact mass is inconsistent with the observed neutral mass. There are 598/3,897, and the rubric demotes them to Level 4 rather than presenting them.
+- **Sparse MS2.** The absence of an observed fragmentation spectrum, which caps the evidence available for a feature. MS2 is present for 43.6% of the delivered set, and it is the strongest independent corroboration when it is there.

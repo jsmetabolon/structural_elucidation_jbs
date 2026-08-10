@@ -10,6 +10,13 @@ consistent with each other:
 Both draw their statistics from the same audited artifacts under `docs/paper/data/`
 and the claim ledger at `docs/paper/supplement/claim_evidence.csv`.
 
+This file is the shared outline, and it is deliberately the shorter record. Every
+prompt in the writing guidance is answered in full, once per surface, in
+`docs/writing_guidance_public_brief.md` and `docs/writing_guidance_manuscript.md`.
+Those two repeat some of what is here, which is the point: each is meant to be
+read on its own. Where they disagree with this file, this file is the one that
+drifted.
+
 ## 1. Pre-writing capture
 
 **The problem or unmet need.** A single untargeted LC-MS/MS study yields thousands of
@@ -94,7 +101,8 @@ plainly*.
 | How biochemical context is assigned | Explain the two paths by which a feature gets its pathway and subpathway, at a level a non-specialist can follow, and attach to each path the evidence that actually bounds it. A reader cannot judge a pathway call without knowing whether it was looked up or inferred. |
 | Validation and evidence | Keep what was done, what was observed, what it means, and why it matters as four distinct moves, and state the limits of the evidence in the same breath as the result. |
 | What you receive | Turn the deliverable into something concrete a reader can picture, and show that coverage and restraint arrive together. |
-| How to read a result | Give the reader an operating manual: the key terms in plain language, then what each reporting outcome asserts and what the reasonable next step is. |
+| How to read a result | Give the reader an operating manual: what each reporting outcome asserts and what the reasonable next step is, pointing back to Key terms for the vocabulary it uses. |
+| Key terms | Define, in plain language and at the back where a reader can look one up, the words that decide how a result should be read, including the vocabulary of library matching. |
 | Conclusion | Restate the three takeaways as impact, define where the capability fits against authentic-standard confirmation, and avoid any comparative claim the evidence cannot carry. |
 | Availability | Carry the required commercial, legal, and contact placeholders through to marketing and legal review. |
 
@@ -203,11 +211,14 @@ within it. The specific edits:
 - **Terminology** — use *recovery*, *accuracy*, *agreement*, and *consistency* for
   distinct things and say which is which; keep *identification* separate from
   *annotation* and *structure hypothesis*; keep identification-confidence tiers
-  distinct from pathway-confidence tiers. These live in a Methods glossary rather than
-  in a paragraph, together with the provenance vocabulary — reference library,
-  retrieval, analogue search, de novo generation, catalog provenance, authentic
-  standard — which is defined neutrally so *exact source* reads as a record of where a
-  candidate came from rather than as a verdict on the route that produced it.
+  distinct from pathway-confidence tiers. These live in a Glossary that closes the
+  document, not in a Methods paragraph, because a reader looking a word up will not
+  think to search the middle of the Methods for it. The provenance vocabulary sits
+  there too — reference library, retrieval, analogue search, de novo generation,
+  catalog provenance, authentic standard — defined neutrally so *exact source* reads
+  as a record of where a candidate came from rather than as a verdict on the route
+  that produced it. Methods 2.6 keeps a pointer naming the four evaluation senses,
+  since that is where the distinction between them starts to matter.
 - **Coverage counts** — reconcile the pathway assignment counts in Results with
   `docs/paper/data/pathway/audit_pathway_summary.json`, which they had drifted from.
 
@@ -228,14 +239,27 @@ than a style guide. Three constraints change how sentences get written:
   call without knowing whether the label was looked up or inferred. Nothing that would
   let a reader reproduce the workflow appears.
 - **Overclaim language is blocked**, and budgets cap the document at 2,600 words, five
-  figures, three tables, and ten pages. Pages bind before words do once a screenshot is
-  in the document, so check `--check-pages` after any edit near a figure.
+  figures, three tables, and ten pages. Pages bind well before words do, and the
+  document now sits at ten of ten with roughly half of the last page free, so check
+  `--check-pages` after every edit rather than only near a figure. A table is the
+  cheap way to add content, since the word counter skips lines beginning with a pipe,
+  but rows still cost lines and lines are what is scarce.
 
 The manuscript is gated by `tools/verify_paper_package.py` and `tests/test_manuscript_docx.py`:
 a 200-word abstract limit, a 75-character title, exactly six figures and one table,
-ascending figure numbering, citation parity, and a fixed section order. No new
-top-level sections may be introduced. Linked figures must be SVG or PNG and are
-validated by format rather than by extension (`tools/figure_formats.py`).
+ascending figure numbering, citation parity, and a fixed section order. Linked figures
+must be SVG or PNG and are validated by format rather than by extension
+(`tools/figure_formats.py`).
+
+New top-level sections are avoided rather than forbidden. The Glossary is the one
+exception, and it is handled properly rather than tolerated: any heading the Word
+builder does not recognise is appended after the ordered set, so `Glossary` was added
+to the end of `SECTION_ORDER` to make that placement a decision. Anything else added
+this way needs the same treatment, and needs to survive the checks above, two of which
+are easy to trip from a glossary in particular. A numbered list anywhere in the
+manuscript is read as a reference entry by the citation-parity check, and a
+`**Table N.**` caption counts against the display-item budget while an extra Word
+table breaks the packaging assertion.
 
 ## 8. Review passes
 

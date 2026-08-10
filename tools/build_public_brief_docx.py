@@ -43,6 +43,9 @@ MAX_WORDS = 2600
 MAX_FIGURES = 5
 MAX_TABLES = 3
 
+# Page width less the narrower margins this document uses.
+TEXT_WIDTH_INCHES = 6.7
+
 # Much tighter than the manuscript's cap, and the value matters: a report
 # screenshot printed any taller than this cannot share a page, so Word gives it
 # one of its own and the brief spends a tenth of its budget on white space. The
@@ -188,7 +191,7 @@ def render(source: Path, output: Path) -> dict[str, int]:
                 while index < len(lines) and lines[index].strip().startswith("|"):
                     rows.append(split_table_row(lines[index]))
                     index += 1
-                add_table(document, rows)
+                add_table(document, rows, total_inches=TEXT_WIDTH_INCHES)
                 continue
             if line.startswith("**Table "):
                 paragraph = document.add_paragraph(style="Caption")

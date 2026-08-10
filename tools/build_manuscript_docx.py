@@ -58,6 +58,10 @@ SECTION_ORDER = (
     "Author contributions",
     "Competing interests",
     "Ethics and human subjects",
+    # Last on purpose. Unrecognised headings are appended after this tuple, so the
+    # glossary would land here anyway; naming it makes the placement a decision
+    # rather than a side effect of the fallback.
+    "Glossary",
 )
 
 
@@ -197,14 +201,41 @@ def repeat_table_header(row) -> None:
     tr_pr.append(header)
 
 
-def add_table(document: DocumentType, rows: list[list[str]]) -> None:
+def column_widths(rows: list[list[str]], columns: int, total_inches: float) -> list[float]:
+    """Split the table width in proportion to how much text each column holds.
+
+    Word's autofit gives a glossary's term column as much room as its definition
+    column, which wastes half the width and pushes every definition onto an extra
+    line. Sizing by content keeps a short first column short. The floor and
+    ceiling stop one long cell from collapsing its neighbours.
+    """
+
+    body = rows[1:] or rows
+    weights = []
+    for index in range(columns):
+        lengths = [len(row[index]) for row in body if index < len(row)]
+        weights.append(max(sum(lengths) / len(lengths), 1.0) if lengths else 1.0)
+    total = sum(weights)
+    # The floor is set by the longest label a narrow column has to hold on one
+    # line, not by aesthetics: below roughly a fifth of the width, glossary terms
+    # start wrapping and cost back the lines the resizing just saved.
+    floor, ceiling = 0.20, 0.72
+    shares = [min(max(weight / total, floor), ceiling) for weight in weights]
+    scale = sum(shares)
+    return [total_inches * share / scale for share in shares]
+
+
+def add_table(document: DocumentType, rows: list[list[str]], total_inches: float = 6.35) -> None:
     if not rows:
         return
     width = max(len(row) for row in rows)
     table = document.add_table(rows=len(rows), cols=width)
     table.style = "Table Grid"
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    table.autofit = True
+    table.autofit = False
+    widths = column_widths(rows, width, total_inches)
+    for column_index, inches in enumerate(widths):
+        table.columns[column_index].width = Inches(inches)
     for row_index, source_row in enumerate(rows):
         row = table.rows[row_index]
         row._tr.get_or_add_trPr()
@@ -212,6 +243,8 @@ def add_table(document: DocumentType, rows: list[list[str]]) -> None:
             repeat_table_header(row)
         for column_index in range(width):
             cell = row.cells[column_index]
+            # Word honours cell width over column width, so both are set.
+            cell.width = Inches(widths[column_index])
             cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
             value = source_row[column_index] if column_index < len(source_row) else ""
             paragraph = cell.paragraphs[0]
