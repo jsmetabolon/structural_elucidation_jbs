@@ -378,6 +378,9 @@ def axis_records_from_controls(rows: list[dict[str, str]]) -> list[dict[str, Any
                 "mass": _float(row.get("axis_mass")),
                 "ms2": _float(row.get("axis_ms2")),
                 "observed_mz_available": _truthy(row.get("observed_mz_available", "")),
+                # Without this the catalog-hit bar can never fire, and the sweep
+                # silently reports that raising it changes nothing.
+                "source": str(row.get("source", "") or "").strip(),
                 "correct": _truthy(row.get("top1_correct_0p70", "")),
             }
         )
