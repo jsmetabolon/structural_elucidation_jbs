@@ -61,7 +61,45 @@ document depends on.
   paragraph that carried them, joined by the provenance vocabulary — reference
   library, retrieval, analogue search, de novo generation, catalog provenance,
   authentic standard. Supplementary S2 carries the same provenance terms. The
-  brief carries a plain-language key-terms table.
+  brief carries a plain-language key-terms table. Both were subsequently moved
+  to the back of their documents and expanded; see below.
+
+## The glossaries moved to the back and grew
+
+Placing the definitions inside Methods 2.7 put them in the one section a reader
+looking up a word would not search, and the same was true of the brief's
+key-terms table inside How to read a result. Both are now sections in their own
+right at the back of their documents, and both were expanded from roughly a
+clause per term to a definition.
+
+- **Manuscript.** A `## Glossary` section closes the document, with 53 entries
+  in seven groups: the measurement, where a candidate comes from, comparing
+  structures, evaluation vocabulary, what a result claims, biochemical taxonomy,
+  and failure modes. Section 2.7 reverted to *Software and reproducibility*, and
+  the pointer in 2.6 now names the four evaluation senses rather than only citing
+  a section number. Entries carry their audited numbers where a term is
+  meaningless without them, so catalog provenance is defined next to its 38.1%
+  rank-1 recovery, the annotation ceiling next to the two rates that bound it,
+  and sparse MS2 next to its 43.6% coverage.
+- **Brief.** A `## Key terms` section sits between the conclusion and the
+  availability block, with 24 entries against the previous 10. The reporting
+  outcome table took the number the glossary vacated, so it is now Table 2 and
+  the glossary is Table 3.
+- **Two mechanical traps worth recording.** The citation-parity check reads any
+  line starting with a digit and a period as a reference entry, so the manuscript
+  glossary has to be bullets rather than a numbered list. In the brief, table
+  rows cost nothing against the word budget, because the word counter skips lines
+  beginning with a pipe, but the scanner that checks statistics against the claim
+  ledger does read them, so a glossary definition may not carry a bare numeral.
+- **The brief now runs to ten pages of ten.** The key-terms table needs a page.
+  Shrinking the report capture to recover it was measured at three heights and
+  does not work, so the figure keeps its size and roughly half of the last page
+  is what remains for the availability and legal text.
+- `Glossary` was added to the end of `SECTION_ORDER` in
+  `tools/build_manuscript_docx.py`. Unrecognised headings are appended after that
+  tuple, so the section would have landed in the same place regardless; naming it
+  makes the placement a decision. In the Word build it therefore follows the
+  declarations, which is worth the corresponding author confirming.
 
 ## Material claim changes
 

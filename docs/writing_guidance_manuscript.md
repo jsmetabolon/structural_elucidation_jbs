@@ -135,7 +135,7 @@ After reading this paper, the reader should understand **that every unidentified
 | Executive summary | Abstract | Deliver problem, approach, evidence, and consequence in under 200 words, and close on what the workflow is for rather than on what it computed. |
 | Introduction | 1. Introduction, with 1.1 Toolkit landscape | Establish the confidence-communication problem, describe what the established routes cover and where the coverage boundary falls, place the workflow in the published landscape without an accuracy comparison, and end the contributions list on the consequence for an analyst. |
 | Background | 1.1 Toolkit landscape (related work) | Describe each published approach factually and symmetrically, so the retrieval and generative ends read as answering different questions rather than as one superseding the other. |
-| Tool description | 2. Methods, 2.1 to 2.8 | Give dataset, workflow, pathway assignment, confidence model, level rubric, evaluation design, glossary, and reproducibility in enough detail to be assessed, and state explicitly what provenance was not preserved in the report bundle. |
+| Tool description | 2. Methods, 2.1 to 2.7 | Give dataset, workflow, pathway assignment, confidence model, level rubric, evaluation design, and reproducibility in enough detail to be assessed, and state explicitly what provenance was not preserved in the report bundle. |
 | Validation and evidence | 3. Results, 3.1 to 3.6 | Report the measurement first and interpret it second, cohort by cohort, with Wilson intervals and the evaluation context attached to every figure. |
 | Conclusion | 6. Conclusion | State what the workflow produces across the full set, name the central result as the reporting framework rather than accuracy, and end on the practical consequence. |
 | (additional) | 4. Discussion, with 4.1 Applications | Separate what was observed from what it means; state for each application what an analyst can now do, the result supporting it, and the limitation bounding it. |
@@ -206,12 +206,13 @@ Results reports the measurement and Discussion interprets it, and the split was 
 
 1. **Abstract.** Problem, approach, evidence, consequence, in under 200 words.
 2. **Introduction.** The confidence-communication problem, what the established routes cover, the toolkit landscape, and three contributions ending on what an analyst can do.
-3. **Methods.** Dataset and its three non-random evaluation subsets; the two-track workflow and the reranker; pathway assignment by lookup or neighbor consensus; the exploratory confidence model; the MSI-style level rubric; the evaluation design; a glossary; software and reproducibility, including what provenance was not preserved.
+3. **Methods.** Dataset and its three non-random evaluation subsets; the two-track workflow and the reranker; pathway assignment by lookup or neighbor consensus; the exploratory confidence model; the MSI-style level rubric; the evaluation design; software and reproducibility, including what provenance was not preserved.
 4. **Results.** Coverage; structural recovery with source stratification; confidence tiers and levels with the calibration result; taxonomy separated by evaluation context; the mass-mismatch failure mode; and the delivered artifact.
 5. **Discussion.** The two reframing results, how the two confidence signals differ in what they can order, and the positioning against published tools without an accuracy claim; then Applications, each with its supporting result and bounding limitation.
 6. **Limitations.** Seven structural limits, each tied to the analysis it bounds.
 7. **Conclusion.** What the workflow produces, what the central result is, and the practical consequence.
 8. **Future work.** External validation cohorts, a prospective hard mass gate, better MS2 coverage and scoring, real co-abundance evidence, and a formal CASMI-style benchmark.
+9. **Glossary.** A consultable reference for the vocabulary the paper depends on, closing the document. In the Word build it follows the declarations, which is unusual placement for Nature back matter and is flagged for the corresponding author below.
 
 ### Figures
 
@@ -243,7 +244,7 @@ Six main figures and one main table. Supplementary figures S1 to S5 and tables S
 
 **Can a broad scientific reader understand it?** Within the intended audience, yes. The paper assumes familiarity with LC-MS/MS identification and with the identification-level frameworks, and it does not assume familiarity with the specific model families, which are described in one place and then referred to by role.
 
-**Are terms defined?** Yes, and this is now a Methods subsection rather than a paragraph. The glossary fixes the four evaluation senses that a reader could otherwise conflate, separates identification from annotation and from structure hypothesis, keeps the two kinds of confidence tier apart, and defines the provenance vocabulary: reference library, retrieval, analogue search, de novo generation, catalog provenance, and authentic standard.
+**Are terms defined?** Yes, in a Glossary that closes the document: fifty-three entries in seven groups, covering the measurement, where a candidate comes from, how structures are compared, the evaluation vocabulary, what a result claims, biochemical taxonomy, and the failure modes. It fixes the four evaluation senses a reader could otherwise conflate, separates identification from annotation and from structure hypothesis, keeps the two kinds of confidence tier apart, and defines the provenance vocabulary neutrally. Entries carry their numbers where a term means nothing without them, so catalog provenance is defined alongside the recovery rate measured for it. The glossary moved out of Methods because a reader looking up a word does not search the middle of a Methods section for it; a pointer in 2.6 names the four evaluation senses at the point where the distinction between them starts to bite.
 
 **Is unnecessary detail removed?** Mostly. Extended tables, threshold sensitivity, harmonization scenarios, selective prediction, and library stratification all moved to Supplementary Information, leaving the main text to carry one figure per argument. What remains that a reader might call unnecessary is the record of provenance that was *not* preserved in the report bundle, which is kept because a reviewer needs it to judge reproducibility.
 
@@ -265,7 +266,7 @@ Six main figures and one main table. Supplementary figures S1 to S5 and tables S
 
 **Figures and captions.** All six captions lead with the message the figure supports and follow with the methodological detail. Four superseded figures were deleted rather than left unreferenced, after one of them was found still rendering a retracted headline that nothing was checking.
 
-**Final polish.** Section numbering was corrected when the glossary was inserted, and the verifier's figure-ordering check guards the numbering of display items.
+**Final polish.** Methods numbering was corrected twice, once when the glossary was inserted into that section and again when it was moved out to the back, and the verifier's figure-ordering check guards the numbering of display items. The glossary is written as bullets rather than a numbered list, because the citation-parity check reads any line beginning with a digit and a period as a reference entry.
 
 ### Review 5 — Fairness to the incumbent method
 
@@ -283,5 +284,6 @@ Added after a reader observed that the manuscript was dismissive of library matc
 
 - **Submission placeholders.** Eight `[REQUIRED: ...]` items remain, covering the author list, corresponding-author email, CRediT roles, funding, competing interests, ethics and consent determination, run-environment provenance, and the repository release or DOI. Run the verifier with `--strict-human-inputs` to make them blocking once filled.
 - **Display items.** Six figures and one table is a self-imposed budget rather than a journal rule. If the corresponding author would rather not spend a display item on the report capture, it can move to Supplementary Information at no cost to the argument.
+- **Where the glossary sits in the Word build.** It closes the document, which puts it after the declarations, since Nature order runs References, Methods, then the declarations. That is unusual back matter and is a placement decision rather than an accident: `Glossary` is the last entry in `SECTION_ORDER`. Moving it earlier, or into Supplementary Information, is a one-line change.
 - **Reporting rules ahead of the artifact.** The reporting rules changed after the delivered set was produced. The manuscript and Supplementary Information describe the rules that generated the committed distributions, which keeps each internally consistent, but both must be updated together the next time the reports are regenerated. `docs/paper/REVISION_LOG.md` lists what will move.
 - **Authoritative cohorts.** The P0 and P1 analyses remain absent until their source files are supplied, and the 92-control set must not be substituted for them.

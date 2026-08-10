@@ -153,7 +153,8 @@ The guidance names six sections. The brief has ten, so the mapping is given alon
 | Validation and evidence | Evidence that it works | Keep what was done, what was observed, what it means, and why it matters as four distinct moves, and state the limits of the evidence in the same breath as the result. |
 | Conclusion | Conclusion | Restate the three takeaways as impact, define where the capability fits against authentic-standard confirmation, and avoid any comparative claim the evidence cannot carry. |
 | (additional) | What you receive | Turn the deliverable into something concrete a reader can picture, and show that coverage and restraint arrive together. |
-| (additional) | How to read a result | Give the reader an operating manual: the key terms in plain language, then what each reporting outcome asserts and what the reasonable next step is. |
+| (additional) | How to read a result | Give the reader an operating manual: what each reporting outcome asserts and what the reasonable next step is, pointing back to Key terms for the vocabulary it uses. |
+| (additional) | Key terms | Define, in plain language and at the back where a reader can look one up, the words that decide how a result should be read, including the vocabulary of library matching. |
 | (additional) | Where this fits | Position the capability against the routes a customer already uses, without a comparative claim the evidence cannot carry. |
 | (additional) | Availability | Carry the required commercial, legal, and contact placeholders through to marketing and legal review. |
 
@@ -233,10 +234,11 @@ The revision does two things at once: it ends on the consequence rather than the
 5. **How biochemical context is assigned.** The two paths, the evidence bounding each, and what that means for using them.
 6. **Evidence that it works.** Done, observed, means, matters, as four distinct moves.
 7. **What you receive.** The deliverable made concrete, with a report shown rather than described.
-8. **How to read a result.** Key terms, then what each grade asserts and the reasonable next step.
+8. **How to read a result.** What each grade asserts and the reasonable next step, with the vocabulary it leans on defined at the back.
 9. **Where this fits.** Complementary positioning against library matching and standard confirmation.
 10. **Conclusion.** The takeaways restated as impact.
-11. **Availability.** Commercial, legal, and contact placeholders for marketing and legal review.
+11. **Key terms.** A consultable glossary of the vocabulary the document depends on, placed at the back rather than in the flow.
+12. **Availability.** Commercial, legal, and contact placeholders for marketing and legal review.
 
 ### Figures
 
@@ -266,7 +268,7 @@ Five figures, in the order they appear. Two are hand-authored diagrams, two are 
 
 **Can a broad scientific reader understand it?** Yes. The document assumes familiarity with untargeted metabolomics but not with mass-spectrometry method development, and it never requires the reader to hold a parameter or a threshold in mind.
 
-**Are terms defined?** Yes, and this was a gap until recently. A key-terms table now fixes the ten words that carry the most weight, including the vocabulary of library matching, before the reporting-outcome table uses them.
+**Are terms defined?** Yes, and this was a gap until recently. A Key terms section at the back now defines twenty-four words, including the vocabulary of library matching and the distinction between an identification and an annotation. It sits at the back deliberately: a glossary is consulted rather than read, and the first version was buried mid-document where nobody would look one up.
 
 **Is unnecessary detail removed?** Yes, and symmetrically. Model families, descriptors, scoring parameters, thresholds, internal library numbers, pipeline versions, and infrastructure names are all absent, and their absence is enforced by a scanner rather than by reviewer attention. Detail is dropped in both directions rather than keeping the flattering half.
 
@@ -298,7 +300,7 @@ Added after a reader observed that the brief was dismissive of library matching.
 
 **The correction.** The heading now describes what each route covers, the paragraph leads with library matching's strengths before locating its limit in catalogue size, and Where this fits says matching stays the first step, with well-supported hypotheses feeding back into the library so the two reinforce each other.
 
-**Vocabulary as part of the fix.** Defining reference library, library match, and authentic standard neutrally in the key-terms table is what keeps the rest of the document from implying a verdict on a route it relies on.
+**Vocabulary as part of the fix.** Defining reference library, library match, catalogued compound, and authentic standard neutrally in Key terms is what keeps the rest of the document from implying a verdict on a route it relies on.
 
 ---
 
