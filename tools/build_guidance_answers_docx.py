@@ -32,6 +32,7 @@ from tools.build_manuscript_docx import (  # noqa: E402
     add_markup,
     add_table,
     set_font,
+    set_theme_fonts,
     split_table_row,
 )
 
@@ -46,6 +47,8 @@ DEFAULT_SOURCES = (
 
 
 def configure(document: DocumentType) -> None:
+    set_theme_fonts(document)
+
     normal = document.styles["Normal"]
     set_font(normal)
     normal.font.size = Pt(10.5)

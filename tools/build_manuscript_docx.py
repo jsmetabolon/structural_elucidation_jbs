@@ -46,6 +46,7 @@ from tools.figure_formats import png_dimensions  # noqa: E402
 
 BODY_FONT = FAMILY
 CODE_FONT = "Consolas"
+THEME_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.theme+xml"
 
 # Word takes bare hex without the leading hash.
 TABLE_HEADER_FILL = DARK_MODE_BLUE.lstrip("#")
@@ -92,15 +93,41 @@ def set_font(target, name: str = BODY_FONT) -> None:
     ``w:cs`` and ``w:eastAsia`` for anything it classifies as complex-script or
     East Asian, so with only the first two set a document nominally in one face
     quietly renders parts of itself in the Word default instead.
+
+    The matching ``*Theme`` attributes are cleared rather than left alongside.
+    An explicit face wins over a theme reference, so leaving both is harmless
+    but says two different things about what the style is meant to be.
     """
 
     target.font.name = name
     fonts = target.element.get_or_add_rPr().get_or_add_rFonts()
-    for slot in ("w:ascii", "w:hAnsi", "w:cs", "w:eastAsia"):
-        fonts.set(qn(slot), name)
+    for slot in ("ascii", "hAnsi", "cs", "eastAsia"):
+        fonts.set(qn(f"w:{slot}"), name)
+    for slot in ("asciiTheme", "hAnsiTheme", "cstheme", "eastAsiaTheme"):
+        fonts.attrib.pop(qn(f"w:{slot}"), None)
+
+
+def set_theme_fonts(document: DocumentType, name: str = BODY_FONT) -> None:
+    """Point the document theme's major and minor Latin fonts at `name`.
+
+    Setting the styles a builder happens to use is not the same as setting the
+    document's font. python-docx's default template leaves around seventy other
+    styles referencing the theme, and the theme says Calibri and Cambria, so a
+    document whose every visible word is Montserrat still resolves to Calibri
+    the moment anyone adds a Heading 3, a footnote, or a quote. Redirecting the
+    theme closes that off at the root, and takes the document defaults with it.
+    """
+
+    for part in document.part.package.iter_parts():
+        if part.content_type != THEME_CONTENT_TYPE:
+            continue
+        blob = part.blob.decode("utf-8")
+        part._blob = re.sub(r'(<a:latin typeface=")[^"]*(")', rf"\g<1>{name}\g<2>", blob).encode("utf-8")
 
 
 def configure(document: DocumentType) -> None:
+    set_theme_fonts(document)
+
     section = document.sections[0]
     section.page_width = Inches(8.5)
     section.page_height = Inches(11)

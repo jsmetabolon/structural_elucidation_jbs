@@ -37,6 +37,7 @@ from tools.build_manuscript_docx import (  # noqa: E402
     add_markup,
     add_table,
     set_font,
+    set_theme_fonts,
     split_table_row,
 )
 
@@ -84,6 +85,8 @@ MUTED_INK = _rgb(MUTED)
 
 
 def configure(document: DocumentType) -> None:
+    set_theme_fonts(document)
+
     section = document.sections[0]
     section.page_width = Inches(8.5)
     section.page_height = Inches(11)

@@ -32,7 +32,7 @@ from docx.shared import Inches, Pt, RGBColor
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from tools.brand import MOLECULAR_BLUE  # noqa: E402
-from tools.build_manuscript_docx import set_font  # noqa: E402
+from tools.build_manuscript_docx import set_font, set_theme_fonts  # noqa: E402
 
 INLINE = re.compile(r"(\*\*.+?\*\*|`.+?`)")
 
@@ -48,6 +48,8 @@ def clear_body(document: DocumentType) -> None:
 
 def configure_document(document: DocumentType) -> None:
     """Apply the reference overview's page and typography settings."""
+
+    set_theme_fonts(document)
 
     section = document.sections[0]
     section.page_width = Inches(8.5)
