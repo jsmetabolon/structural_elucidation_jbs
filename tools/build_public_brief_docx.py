@@ -2,9 +2,9 @@
 """Build the public capability brief as a marketing-styled Word document.
 
 Markdown parsing is shared with the Nature manuscript builder; only the page
-setup, typography, and budget rules differ. The brief uses Calibri at reading
-size with single spacing, coloured headings, and no line numbering, and it caps
-its own length so the deliverable stays comfortably inside the ten-page limit.
+setup, typography, and budget rules differ. The brief uses the brand face at
+reading size with single spacing, coloured headings, and no line numbering, and
+it caps its own length so the deliverable stays inside the ten-page limit.
 
 Usage:
     python3 tools/build_public_brief_docx.py \
@@ -29,12 +29,14 @@ from docx.document import Document as DocumentType  # noqa: E402
 from docx.enum.text import WD_ALIGN_PARAGRAPH  # noqa: E402
 from docx.shared import Inches, Pt, RGBColor  # noqa: E402
 
+from tools.brand import DARK_MODE_BLUE, MUTED  # noqa: E402
 from tools.build_manuscript_docx import (  # noqa: E402
     FIGURE,
     TABLE_SEPARATOR,
     add_figure,
     add_markup,
     add_table,
+    set_font,
     split_table_row,
 )
 
@@ -46,6 +48,21 @@ MAX_TABLES = 3
 # Page width less the narrower margins this document uses.
 TEXT_WIDTH_INCHES = 6.7
 
+# Montserrat sets wider than the Calibri this document was budgeted against, and
+# the budget is pages rather than words, so the typeface change had to be paid for
+# somewhere. Half a point off the body covers it, and Montserrat's larger x-height
+# means the result does not read smaller than the Calibri it replaces. Nothing
+# else shrank: the headings and captions were measured at their original sizes and
+# did not cost a page.
+#
+# The value is measured rather than chosen. Rendering through LibreOffice, this
+# document turns 10 pages somewhere between 10 and 11 points and 11 pages at 12,
+# so 10 leaves a full point of headroom before the count moves at all. Absolute
+# counts drift between renderers — the environment behind the README's ten-page
+# note measures nine here — so keep the headroom rather than trusting any single
+# number, and re-run the gate with --check-pages after changing this.
+BODY_SIZE_PT = 10.0
+
 # Much tighter than the manuscript's cap, and the value matters: a report
 # screenshot printed any taller than this cannot share a page, so Word gives it
 # one of its own and the brief spends a tenth of its budget on white space. The
@@ -53,9 +70,17 @@ TEXT_WIDTH_INCHES = 6.7
 # word by word, and the section around it states in prose everything it shows.
 MAX_FIGURE_HEIGHT_INCHES = 4.0
 
-BRAND = RGBColor(0x1F, 0x4E, 0x79)
-INK = RGBColor(0x1F, 0x29, 0x33)
-MUTED = RGBColor(0x52, 0x60, 0x6D)
+
+def _rgb(value: str) -> RGBColor:
+    return RGBColor.from_string(value.lstrip("#").upper())
+
+
+# Dark Mode Blue carries both the brand accent and the body ink here. The brand
+# has no second dark tone, and setting headings and body in the same colour at
+# different weights is how the guide's own pages are laid out.
+BRAND = _rgb(DARK_MODE_BLUE)
+INK = _rgb(DARK_MODE_BLUE)
+MUTED_INK = _rgb(MUTED)
 
 
 def configure(document: DocumentType) -> None:
@@ -68,21 +93,21 @@ def configure(document: DocumentType) -> None:
     section.left_margin = Inches(0.9)
 
     normal = document.styles["Normal"]
-    normal.font.name = "Calibri"
-    normal.font.size = Pt(10.5)
+    set_font(normal)
+    normal.font.size = Pt(BODY_SIZE_PT)
     normal.font.color.rgb = INK
     normal.paragraph_format.space_after = Pt(7)
     normal.paragraph_format.line_spacing = 1.15
 
     title = document.styles["Title"]
-    title.font.name = "Calibri"
+    set_font(title)
     title.font.size = Pt(24)
     title.font.bold = True
     title.font.color.rgb = BRAND
     title.paragraph_format.space_after = Pt(4)
 
     heading1 = document.styles["Heading 1"]
-    heading1.font.name = "Calibri"
+    set_font(heading1)
     heading1.font.size = Pt(15)
     heading1.font.bold = True
     heading1.font.color.rgb = BRAND
@@ -91,16 +116,16 @@ def configure(document: DocumentType) -> None:
     heading1.paragraph_format.keep_with_next = True
 
     caption = document.styles["Caption"]
-    caption.font.name = "Calibri"
+    set_font(caption)
     caption.font.size = Pt(9)
     caption.font.italic = True
-    caption.font.color.rgb = MUTED
+    caption.font.color.rgb = MUTED_INK
     caption.paragraph_format.space_after = Pt(10)
 
     for style_name in ("List Bullet", "List Number"):
         style = document.styles[style_name]
-        style.font.name = "Calibri"
-        style.font.size = Pt(10.5)
+        set_font(style)
+        style.font.size = Pt(BODY_SIZE_PT)
         style.paragraph_format.space_after = Pt(4)
         style.paragraph_format.line_spacing = 1.15
 
@@ -111,7 +136,7 @@ def add_tagline(document: DocumentType, value: str) -> None:
     add_markup(paragraph, value)
     for run in paragraph.runs:
         run.font.size = Pt(12)
-        run.font.color.rgb = MUTED
+        run.font.color.rgb = MUTED_INK
 
 
 def body_word_count(source_text: str) -> int:

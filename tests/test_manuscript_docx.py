@@ -5,6 +5,7 @@ from docx import Document
 from docx.enum.text import WD_LINE_SPACING
 from docx.oxml.ns import qn
 
+from tools.brand import FAMILY
 from tools.build_manuscript_docx import render
 
 
@@ -15,7 +16,7 @@ def test_nature_manuscript_docx(tmp_path: Path) -> None:
 
     document = Document(output)
     assert len(document.core_properties.title) <= 75
-    assert document.styles["Normal"].font.name == "Times New Roman"
+    assert document.styles["Normal"].font.name == FAMILY
     assert document.styles["Normal"].font.size.pt == 12
     assert document.styles["Normal"].paragraph_format.line_spacing_rule == WD_LINE_SPACING.DOUBLE
     assert len(document.inline_shapes) == 6

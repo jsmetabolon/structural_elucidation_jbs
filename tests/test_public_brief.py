@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 from docx import Document
 
+from tools.brand import FAMILY
 from tools.build_public_brief_docx import MAX_FIGURES, MAX_TABLES, MAX_WORDS, render
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -47,7 +48,7 @@ def test_public_brief_docx(tmp_path: Path) -> None:
     assert counts["tables"] <= MAX_TABLES
 
     document = Document(output)
-    assert document.styles["Normal"].font.name == "Calibri"
+    assert document.styles["Normal"].font.name == FAMILY
     assert document.core_properties.category == "Public"
     assert len(document.inline_shapes) == counts["figures"]
     assert len(document.tables) == counts["tables"]
@@ -86,7 +87,7 @@ def test_scanner_catches_unsupported_statistics(brief_copy: Path) -> None:
     result = run_verifier(brief_copy)
     assert result.returncode == 1
     assert "99.4%" in result.stdout
-    assert "does not resolve" in result.stdout
+    assert "does not resolve to a row" in result.stdout
 
 
 def test_scanner_catches_overclaims(brief_copy: Path) -> None:

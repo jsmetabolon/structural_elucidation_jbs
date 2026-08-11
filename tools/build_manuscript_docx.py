@@ -5,6 +5,11 @@ Main SVG figures are rasterized at 2x resolution and embedded; Markdown tables,
 headings, lists, captions, emphasis, inline code, superscripts, page numbers, and
 line numbering are preserved in Word-native form.
 
+Body text is set in the brand face rather than a journal's serif default. The
+double spacing, 12-point body, and line numbering a Nature initial submission
+asks for are all still here; only the typeface differs, and a journal that
+objects will re-set the manuscript in its own template anyway.
+
 Usage:
     python3 tools/build_manuscript_docx.py \
         --source docs/paper/manuscript.md \
@@ -18,18 +23,33 @@ import sys
 import tempfile
 from pathlib import Path
 
-import cairosvg
-from docx import Document
-from docx.document import Document as DocumentType
-from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
-from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
-from docx.shared import Inches, Pt, RGBColor
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from tools.brand import DARK_MODE_BLUE, FAMILY, METABOLITE_WHITE, install_fonts  # noqa: E402
+
+# Before cairosvg, and the order is load-bearing. Fontconfig resolves once, when
+# it first initialises, and cairo initialises it on the first piece of text it
+# draws. Registering the vendored family any later is a race that loses quietly:
+# the figures still render, in the wrong typeface, and no gate notices.
+install_fonts()
+
+import cairosvg  # noqa: E402
+from docx import Document  # noqa: E402
+from docx.document import Document as DocumentType  # noqa: E402
+from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT  # noqa: E402
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING  # noqa: E402
+from docx.oxml import OxmlElement  # noqa: E402
+from docx.oxml.ns import qn  # noqa: E402
+from docx.shared import Inches, Pt, RGBColor  # noqa: E402
+
 from tools.figure_formats import png_dimensions  # noqa: E402
+
+BODY_FONT = FAMILY
+CODE_FONT = "Consolas"
+
+# Word takes bare hex without the leading hash.
+TABLE_HEADER_FILL = DARK_MODE_BLUE.lstrip("#")
+TABLE_BAND_FILL = METABOLITE_WHITE.lstrip("#")
 
 # Column width, and the tallest a figure may be before it is scaled down to fit a
 # page. Screenshots are much taller than charts, so without the height clamp a
@@ -65,6 +85,21 @@ SECTION_ORDER = (
 )
 
 
+def set_font(target, name: str = BODY_FONT) -> None:
+    """Name a font on every script slot of a style or a run.
+
+    python-docx writes ``w:ascii`` and ``w:hAnsi`` and stops. Word consults
+    ``w:cs`` and ``w:eastAsia`` for anything it classifies as complex-script or
+    East Asian, so with only the first two set a document nominally in one face
+    quietly renders parts of itself in the Word default instead.
+    """
+
+    target.font.name = name
+    fonts = target.element.get_or_add_rPr().get_or_add_rFonts()
+    for slot in ("w:ascii", "w:hAnsi", "w:cs", "w:eastAsia"):
+        fonts.set(qn(slot), name)
+
+
 def configure(document: DocumentType) -> None:
     section = document.sections[0]
     section.page_width = Inches(8.5)
@@ -75,20 +110,20 @@ def configure(document: DocumentType) -> None:
     section.left_margin = Inches(1)
 
     normal = document.styles["Normal"]
-    normal.font.name = "Times New Roman"
+    set_font(normal)
     normal.font.size = Pt(12)
     normal.paragraph_format.line_spacing_rule = WD_LINE_SPACING.DOUBLE
     normal.paragraph_format.space_after = Pt(0)
 
     title = document.styles["Title"]
-    title.font.name = "Times New Roman"
+    set_font(title)
     title.font.size = Pt(16)
     title.font.bold = True
     title.font.color.rgb = RGBColor(0, 0, 0)
     title.paragraph_format.space_after = Pt(12)
 
     heading1 = document.styles["Heading 1"]
-    heading1.font.name = "Times New Roman"
+    set_font(heading1)
     heading1.font.size = Pt(12)
     heading1.font.bold = True
     heading1.font.color.rgb = RGBColor(0, 0, 0)
@@ -97,7 +132,7 @@ def configure(document: DocumentType) -> None:
     heading1.paragraph_format.keep_with_next = True
 
     heading2 = document.styles["Heading 2"]
-    heading2.font.name = "Times New Roman"
+    set_font(heading2)
     heading2.font.size = Pt(12)
     heading2.font.bold = True
     heading2.font.italic = True
@@ -107,7 +142,7 @@ def configure(document: DocumentType) -> None:
     heading2.paragraph_format.keep_with_next = True
 
     caption = document.styles["Caption"]
-    caption.font.name = "Times New Roman"
+    set_font(caption)
     caption.font.size = Pt(9)
     caption.font.italic = True
     caption.font.color.rgb = RGBColor(0x33, 0x33, 0x33)
@@ -116,7 +151,7 @@ def configure(document: DocumentType) -> None:
 
     for style_name in ("List Bullet", "List Number"):
         style = document.styles[style_name]
-        style.font.name = "Times New Roman"
+        set_font(style)
         style.font.size = Pt(12)
         style.paragraph_format.line_spacing_rule = WD_LINE_SPACING.DOUBLE
         style.paragraph_format.space_after = Pt(3)
@@ -167,7 +202,7 @@ def add_markup(paragraph, value: str) -> None:
             run.italic = True
         elif token.startswith("`"):
             run = paragraph.add_run(token[1:-1])
-            run.font.name = "Consolas"
+            set_font(run, CODE_FONT)
             run.font.size = Pt(9)
         elif token.startswith("<sup>"):
             run = paragraph.add_run(token[5:-6])
@@ -252,15 +287,15 @@ def add_table(document: DocumentType, rows: list[list[str]], total_inches: float
             paragraph.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
             add_markup(paragraph, value)
             for run in paragraph.runs:
-                run.font.name = "Times New Roman"
+                set_font(run)
                 run.font.size = Pt(8.5)
                 if row_index == 0:
                     run.bold = True
                     run.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
             if row_index == 0:
-                shade_cell(cell, "1F4E79")
+                shade_cell(cell, TABLE_HEADER_FILL)
             elif row_index % 2 == 0:
-                shade_cell(cell, "EAF2F8")
+                shade_cell(cell, TABLE_BAND_FILL)
     paragraph = document.add_paragraph()
     paragraph.paragraph_format.space_after = Pt(0)
 

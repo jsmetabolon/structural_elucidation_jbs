@@ -15,6 +15,7 @@ from docx.oxml.ns import qn
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from tools.brand import FAMILY, font_is_resolvable  # noqa: E402
 from tools.figure_formats import figure_error  # noqa: E402
 
 # Documents whose job is to record what was withdrawn, and which therefore have to
@@ -164,13 +165,20 @@ def main() -> None:
     if figure_numbers != sorted(figure_numbers):
         errors.append(f"main figures are not in numeric order: {figure_numbers}")
 
+    # The figures name the brand face, but naming it is not having it. Word files
+    # are built by rasterising those SVGs, so a checkout where the family is
+    # missing produces a document whose figures are silently set in a fallback and
+    # whose every other check still passes.
+    if not font_is_resolvable():
+        errors.append(f"{FAMILY} is unavailable to the renderer; figures would rasterise in a fallback face")
+
     docx_path = paper / "manuscript.docx"
     if docx_path.exists():
         word = Document(docx_path)
         if len(word.core_properties.title) > 75:
             errors.append(f"Nature title exceeds 75 characters: {word.core_properties.title}")
-        if word.styles["Normal"].font.name != "Times New Roman":
-            errors.append("Nature DOCX body is not Times New Roman")
+        if word.styles["Normal"].font.name != FAMILY:
+            errors.append(f"Nature DOCX body is not {FAMILY}")
         if word.styles["Normal"].font.size.pt != 12:
             errors.append("Nature DOCX body is not 12 point")
         if word.styles["Normal"].paragraph_format.line_spacing_rule != WD_LINE_SPACING.DOUBLE:
