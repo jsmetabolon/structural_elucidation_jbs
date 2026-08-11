@@ -174,9 +174,51 @@ with candidate ranking, are recorded in `docs/public_brief/README.md`.
   message-first rule and each stating that the example is a demonstration rather than a
   delivered customer result.
 
+## Review 6 — Rigor against inflated annotation counts
+
+A commented pass over both surfaces, directing the competitive argument at a practice
+rather than a product.
+
+- **What the competitor is.** Matching every mass-spec signal against a broad reference
+  database and reporting many thousands of metabolites, including bad matches, and
+  including duplicates, adducts and isotopologues of the same compound. No company is
+  named in either document, and comparison to other workflows is confined to the
+  manuscript, where the named entries are cited academic software rather than products.
+- **Why it needed answering rather than ignoring.** A reader comparing deliverables sees
+  two numbers and no way to tell that one counts compounds and the other counts returns.
+  Both documents now say what the number means, and the answer is built only from the
+  audited record: features rather than raw signals, gating against the neutral mass so
+  ionized forms are not read as separate compounds, isotope agreement, one count per
+  feature across chromatographic methods, 598 mass mismatches demoted, and 1,171 of
+  3,897 features delivered with no structure.
+- **Restraint carries the argument.** The strongest evidence is the withheld count,
+  because it is coverage that could have been claimed and was not. That reframes the
+  limitations rather than removing any: the same facts, read the other way round, are
+  what distinguishes a graded set from a long list.
+- **Where the review was not followed.** The direction asked for the score to be called
+  validated. It is not, and saying so would contradict the Brier score this document
+  already reports. Both surfaces instead state that both confidence signals were tested,
+  what each supports, and what neither supports. This was the one departure, and it makes
+  a stronger claim than the literal instruction would have.
+- **Level.** The white paper was asked to sit higher. The pathway agreement figures and
+  the annotation ceiling went back to the manuscript where they belong, leaving the brief
+  to say what a reader should do with a broad class and a subpathway.
+- **Blocked.** Matrix-specific content and a coverage-improvement table need source-study
+  metadata and a baseline named fraction, neither of which exists in the bundle. Both are
+  `[REQUIRED: ...]` placeholders.
+
 ## Carried
 
 These need a human and are not closable by review or by the gates.
+
+- **The guidance worksheets are one pass behind.** `docs/writing_guidance_public_brief.md`
+  and `docs/writing_guidance_manuscript.md` answer the writing guidance for both surfaces,
+  and their review answers still describe the documents as they stood before review 6.
+  They were deliberately not edited in that pass, because a separate open change rewrites
+  the same passages into the guidance template's own structure and editing both at once
+  would have produced a conflict for no benefit. Refresh them once that change has landed:
+  the answers that go stale are the ones about existing approaches, technical
+  differentiation, and the rigor and audience reviews.
 
 - **Release placeholders.** The white paper carries seven `[REQUIRED: ...]` placeholders
   and the manuscript eight, covering contact details, commercial availability,
