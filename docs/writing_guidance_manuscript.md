@@ -102,7 +102,7 @@ Explain the problem with current approaches to metabolite ID and LC-MS feature u
 
 - Why existing approaches are insufficient
 
-  Matching an observed spectrum against a reference library is the established route and the most precise one short of an authentic standard, but what bounds it is coverage: a structure absent from the library is outside the space the search returns, so extending the named fraction has meant manual chemistry at a throughput that limits both library expansion and the discovery of dataset-specific metabolites. Published computational approaches span retrieval to de novo generation, but none has been benchmarked head to head against this workflow, so no accuracy comparison is made.
+  Two failure modes, running in opposite directions. Matching an observed spectrum against a reference library is the established route and the most precise one short of an authentic standard, but what bounds it is coverage: a structure absent from the library is outside the space the search returns, so extending the named fraction has meant manual chemistry at a throughput that limits both library expansion and the discovery of dataset-specific metabolites. The other is inflation. Matching every detected signal against a broad compound database and reporting the returned names grows an annotation list without adding identifications, through three compounding mechanisms: adducts and isotopologues of one compound annotated separately, the same compound counted again per chromatographic method, and matches admitted with no similarity floor. Annotation totals are therefore not comparable between workflows unless the redundancy and admission criteria behind them are stated. Published computational approaches span retrieval to de novo generation, but none has been benchmarked head to head against this workflow, so no accuracy comparison is made, and no company is named.
 
 - What the tool / GDP enhancement does
 
@@ -110,7 +110,7 @@ Explain the problem with current approaches to metabolite ID and LC-MS feature u
 
 - What is technically differentiated
 
-  Three contributions, and none of them is accuracy: rank-aware structural validation with uncertainty and source-stratified recovery; provenance-aware taxonomy evaluation that separates direct database lookup from neighbour consensus and from agreement with an independent label source; and evidence-limited reporting for every feature, with a rubric that presents a structure hypothesis only when minimum corroboration criteria are met.
+  Four contributions, and none of them is accuracy: rank-aware structural validation with uncertainty and source-stratified recovery; provenance-aware taxonomy evaluation that separates direct database lookup from neighbour consensus and from agreement with an independent label source; evidence-limited reporting for every feature, with a rubric that presents a structure hypothesis only when minimum corroboration criteria are met; and false-positive control stated as a system rather than left implicit, covering redundancy removal before scoring and evidence-bounded admission after it.
 
 - What evidence supports the claims
 
@@ -276,7 +276,7 @@ This figure demonstrates that ______, which matters because ______.
 
 - Is the solution differentiated?
 
-  Yes, but deliberately not on accuracy. The three contributions are evaluation design, provenance separation and claim control. The manuscript says outright that the contribution is not higher structural recovery, which is a stronger position than an unsupported comparison would be.
+  Yes, but deliberately not on accuracy. The contributions are evaluation design, provenance separation, claim control and false-positive control. The manuscript says outright that the contribution is not higher structural recovery, which is a stronger position than an unsupported comparison would be, and the differentiation against inflated annotation counts is argued as a property of method rather than as a claim about anyone's product.
 
 - Is the evidence sufficient?
 
@@ -308,7 +308,7 @@ This figure demonstrates that ______, which matters because ______.
 
 - Are limitations stated?
 
-  Yes, both distributed and collected. The most consequential are that the confidence model was originally fit on the same controls used to evaluate it, and that direct reference lookups cannot serve as accuracy tests.
+  Yes, both distributed and collected, and the collected section now opens by naming them as the bounds within which the results hold rather than presenting them as apology. The most consequential are that the confidence model was originally fit on the same controls used to evaluate it, and that direct reference lookups cannot serve as accuracy tests. Nothing was removed in the reframing: the same facts read the other way round are the rigor the competitive argument rests on.
 
 - Are accuracy, confidence, identification, and annotation used precisely?
 

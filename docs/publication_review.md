@@ -211,14 +211,13 @@ rather than a product.
 
 These need a human and are not closable by review or by the gates.
 
-- **The guidance worksheets are one pass behind.** `docs/writing_guidance_public_brief.md`
+- **Keep the guidance worksheets in step with the documents.** `docs/writing_guidance_public_brief.md`
   and `docs/writing_guidance_manuscript.md` answer the writing guidance for both surfaces,
-  and their review answers still describe the documents as they stood before review 6.
-  They were deliberately not edited in that pass, because a separate open change rewrites
-  the same passages into the guidance template's own structure and editing both at once
-  would have produced a conflict for no benefit. Refresh them once that change has landed:
-  the answers that go stale are the ones about existing approaches, technical
-  differentiation, and the rigor and audience reviews.
+  so a content pass over either document leaves them stale until they are refreshed. They
+  fell one pass behind after review 6 and were brought back into step once the change that
+  restructured them had landed. The answers most likely to go stale next are the ones about
+  existing approaches, technical differentiation, and the rigor and audience reviews, since
+  those quote the documents most closely.
 
 - **Release placeholders.** The white paper carries seven `[REQUIRED: ...]` placeholders
   and the manuscript eight, covering contact details, commercial availability,
