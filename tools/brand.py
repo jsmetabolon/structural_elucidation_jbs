@@ -91,6 +91,20 @@ FONT_STACK = "Montserrat, Avenir Next, Segoe UI, Arial, sans-serif"
 _FONTCONFIG_DIR: Path | None = None
 
 
+def on_fill(fill: str) -> str:
+    """The text colour that stays legible on `fill`.
+
+    Most of the palette is mid-toned. Insightful Orange and Method Grey in
+    particular are light enough that white type on them all but disappears,
+    while Dark Mode Blue needs white, so a label inside a bar cannot pick one
+    colour and hold it across figures.
+    """
+
+    red, green, blue = (int(fill.lstrip("#")[index : index + 2], 16) / 255 for index in (0, 2, 4))
+    luminance = 0.2126 * red + 0.7152 * green + 0.0722 * blue
+    return WHITE if luminance < 0.45 else INK
+
+
 def _fontconfig_document(font_dir: Path, cache_dir: Path) -> str:
     return (
         '<?xml version="1.0"?>\n'

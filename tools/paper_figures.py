@@ -4,6 +4,10 @@
 Pure standard library: no matplotlib dependency.  Every accuracy panel includes
 the evaluation cohort, denominator, and Wilson 95% confidence interval.
 
+Colour, type, and chart furniture come from ``tools/brand.py`` rather than being
+chosen per figure, so the manuscript and the public brief cannot be restyled
+independently of each other.
+
 Usage:
     python3 tools/paper_figures.py \
         --structure docs/paper/data/structure/audit_structure_summary.json \
@@ -18,14 +22,33 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sys
 from pathlib import Path
 from typing import Any
 
-INK = "#1f2933"
-MUTED = "#52606d"
-GRID = "#d9e2ec"
-WHITE = "#ffffff"
-COLORS = ("#2563a6", "#2f855a", "#b45309", "#805ad5", "#b83280", "#64748b")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from tools.brand import (  # noqa: E402
+    AXIS_LABEL,
+    AXIS_LABEL_SIZE,
+    BAR_PRIMARY,
+    BAR_SECONDARY,
+    DATA_LABEL,
+    DATA_LABEL_SIZE,
+    ERROR_BAR,
+    FONT_STACK,
+    FRAME,
+    GRID,
+    HAIRLINE,
+    INK,
+    METHOD_GREY,
+    MUTED,
+    SERIES,
+    WHITE,
+    on_fill,
+)
 
 
 def esc(value: Any) -> str:
@@ -37,16 +60,78 @@ def text(
     y: float,
     value: Any,
     *,
-    size: int = 11,
+    size: float = 11,
     anchor: str = "middle",
     bold: bool = False,
     color: str = INK,
 ) -> str:
     weight = " font-weight='bold'" if bold else ""
     return (
-        f"<text x='{x:.1f}' y='{y:.1f}' font-size='{size}' text-anchor='{anchor}' "
+        f"<text x='{x:.1f}' y='{y:.1f}' font-size='{size:g}' text-anchor='{anchor}' "
         f"fill='{color}'{weight}>{esc(value)}</text>"
     )
+
+
+def canvas(width: int, height: int) -> list[str]:
+    """Open a framed white canvas set in the brand typeface."""
+
+    return [
+        f"<svg xmlns='http://www.w3.org/2000/svg' width='{width}' height='{height}' "
+        f"viewBox='0 0 {width} {height}' font-family='{FONT_STACK}'>",
+        f"<rect width='{width}' height='{height}' fill='{WHITE}'/>",
+        f"<rect x='0.5' y='0.5' width='{width - 1}' height='{height - 1}' fill='none' "
+        f"stroke='{FRAME}' stroke-width='{HAIRLINE}'/>",
+    ]
+
+
+def axis_text(
+    x: float,
+    y: float,
+    value: Any,
+    *,
+    anchor: str = "middle",
+    size: float = AXIS_LABEL_SIZE,
+) -> str:
+    """An axis label the way the workbook sets one: small, bold, and in caps.
+
+    The size is adjustable because the brief draws on a narrower canvas that is
+    printed to the same width, so holding the pixel size fixed across both
+    documents would not hold the printed size fixed. The treatment is what
+    carries across; the measurement follows the canvas.
+    """
+
+    return text(x, y, str(value).upper(), size=size, anchor=anchor, bold=True, color=AXIS_LABEL)
+
+
+def value_text(
+    x: float,
+    y: float,
+    value: Any,
+    *,
+    anchor: str = "middle",
+    color: str = DATA_LABEL,
+    size: float = DATA_LABEL_SIZE,
+) -> str:
+    """A data label: same size as the axis labels but regular, so the number reads first."""
+
+    return text(x, y, value, size=size, anchor=anchor, color=color)
+
+
+def rule(x1: float, y1: float, x2: float, y2: float, *, color: str = GRID, width: float = HAIRLINE) -> str:
+    return (
+        f"<line x1='{x1:.1f}' y1='{y1:.1f}' x2='{x2:.1f}' y2='{y2:.1f}' "
+        f"stroke='{color}' stroke-width='{width:g}'/>"
+    )
+
+
+def error_bar(x: float, low_y: float, high_y: float, *, color: str = ERROR_BAR, cap: float = 5.0) -> list[str]:
+    """A capped interval whisker, drawn in grey so it never competes with the bar."""
+
+    return [
+        rule(x, high_y, x, low_y, color=color),
+        rule(x - cap, high_y, x + cap, high_y, color=color),
+        rule(x - cap, low_y, x + cap, low_y, color=color),
+    ]
 
 
 def split_label(label: str, width: int = 15) -> list[str]:
@@ -78,17 +163,16 @@ def bar_chart(
     plot_w, plot_h = width - left - right, height - top - bottom
     group_w = plot_w / len(categories)
     bar_w = min(52.0, group_w * 0.72 / max(1, len(series)))
-    svg = [
-        f"<svg xmlns='http://www.w3.org/2000/svg' width='{width}' height='{height}' "
-        f"viewBox='0 0 {width} {height}' font-family='Arial, Helvetica, sans-serif'>",
-        f"<rect width='{width}' height='{height}' fill='white'/>",
+    svg = canvas(width, height)
+    svg += [
         text(left, 30, title, size=18, anchor="start", bold=True),
-        text(left, 52, subtitle, size=11, anchor="start"),
+        text(left, 52, subtitle, size=11, anchor="start", color=MUTED),
     ]
     for tick in range(0, 101, 20):
         y = top + plot_h - (tick / ymax) * plot_h
-        svg.append(f"<line x1='{left}' y1='{y:.1f}' x2='{left + plot_w}' y2='{y:.1f}' stroke='{GRID}'/>")
-        svg.append(text(left - 10, y + 4, tick, anchor="end"))
+        svg.append(rule(left, y, left + plot_w, y))
+        svg.append(axis_text(left - 10, y + 4, tick, anchor="end"))
+    svg.append(rule(left, top, left, top + plot_h))
     svg.append(
         f"<text x='20' y='{top + plot_h / 2:.1f}' font-size='12' fill='{MUTED}' "
         f"text-anchor='middle' transform='rotate(-90 20 {top + plot_h / 2:.1f})'>{esc(ylabel)}</text>"
@@ -103,7 +187,7 @@ def bar_chart(
             y = top + plot_h - value / ymax * plot_h
             svg.append(
                 f"<rect x='{x:.1f}' y='{y:.1f}' width='{bar_w - 3:.1f}' "
-                f"height='{value / ymax * plot_h:.1f}' fill='{item['color']}' rx='2'/>"
+                f"height='{value / ymax * plot_h:.1f}' fill='{item['color']}'/>"
             )
             center_x = x + (bar_w - 3) / 2
             label_top = y
@@ -111,31 +195,27 @@ def bar_chart(
             if ci[0] is not None:
                 low_y = top + plot_h - float(ci[0]) * 100.0 / ymax * plot_h
                 high_y = top + plot_h - float(ci[1]) * 100.0 / ymax * plot_h
-                mid_x = center_x
-                svg += [
-                    f"<line x1='{mid_x:.1f}' y1='{high_y:.1f}' x2='{mid_x:.1f}' "
-                    f"y2='{low_y:.1f}' stroke='{INK}' stroke-width='1.2'/>",
-                    f"<line x1='{mid_x - 5:.1f}' y1='{high_y:.1f}' x2='{mid_x + 5:.1f}' "
-                    f"y2='{high_y:.1f}' stroke='{INK}'/>",
-                    f"<line x1='{mid_x - 5:.1f}' y1='{low_y:.1f}' x2='{mid_x + 5:.1f}' "
-                    f"y2='{low_y:.1f}' stroke='{INK}'/>",
-                ]
+                svg += error_bar(center_x, low_y, high_y)
                 label_top = min(y, high_y)
-            svg.append(text(center_x, label_top - 8, f"{value:.1f}", size=10, bold=True))
+            svg.append(value_text(center_x, label_top - 8, f"{value:.1f}"))
             if metric.get("n") is not None:
                 bar_px = top + plot_h - y
                 if bar_px >= 26:
-                    svg.append(text(center_x, y + 16, f"n={metric['n']}", size=9, color=WHITE))
+                    # Sat at the foot of the bar rather than under its top edge,
+                    # which is where the confidence whisker crosses it.
+                    svg.append(
+                        value_text(center_x, top + plot_h - 9, f"n={metric['n']}", color=on_fill(item["color"]))
+                    )
                 else:
-                    svg.append(text(center_x, top + plot_h - 5, f"n={metric['n']}", size=9, color=MUTED))
+                    svg.append(value_text(center_x, top + plot_h - 5, f"n={metric['n']}", color=AXIS_LABEL))
         label_y = top + plot_h + 20
         for line_index, line in enumerate(split_label(category)):
-            svg.append(text(center, label_y + 14 * line_index, line, size=10))
+            svg.append(axis_text(center, label_y + 13 * line_index, line))
     legend_x = left + plot_w - 180 * len(series)
     for index, item in enumerate(series):
         x = legend_x + 180 * index
         svg.append(f"<rect x='{x:.1f}' y='65' width='12' height='12' fill='{item['color']}'/>")
-        svg.append(text(x + 18, 75, item["name"], size=10, anchor="start"))
+        svg.append(text(x + 18, 75, item["name"], size=10, anchor="start", color=MUTED))
     svg.append("</svg>")
     path.write_text("\n".join(svg) + "\n")
 
@@ -145,10 +225,8 @@ def reliability_chart(path: Path, full: dict[str, Any], ablated: dict[str, Any])
     left, top, size = 85, 75, 400
     bin_sizes = [int(row["n"]) for row in full["reliability_bins"]] or [0]
     min_bin, max_bin = min(bin_sizes), max(bin_sizes)
-    svg = [
-        f"<svg xmlns='http://www.w3.org/2000/svg' width='{width}' height='{height}' "
-        f"viewBox='0 0 {width} {height}' font-family='Arial, Helvetica, sans-serif'>",
-        f"<rect width='{width}' height='{height}' fill='white'/>",
+    svg = canvas(width, height)
+    svg += [
         text(left, 28, "Leave-one-out identification-confidence reliability", size=18, anchor="start", bold=True),
         text(
             left,
@@ -157,6 +235,7 @@ def reliability_chart(path: Path, full: dict[str, Any], ablated: dict[str, Any])
             f"; {min_bin}\u2013{max_bin} controls per bin",
             size=11,
             anchor="start",
+            color=MUTED,
         ),
     ]
     for tick in range(0, 6):
@@ -164,17 +243,17 @@ def reliability_chart(path: Path, full: dict[str, Any], ablated: dict[str, Any])
         x = left + value * size
         y = top + size - value * size
         svg += [
-            f"<line x1='{x:.1f}' y1='{top}' x2='{x:.1f}' y2='{top + size}' stroke='{GRID}'/>",
-            f"<line x1='{left}' y1='{y:.1f}' x2='{left + size}' y2='{y:.1f}' stroke='{GRID}'/>",
-            text(x, top + size + 20, f"{value:.1f}", size=10),
-            text(left - 12, y + 4, f"{value:.1f}", size=10, anchor="end"),
+            rule(x, top, x, top + size),
+            rule(left, y, left + size, y),
+            axis_text(x, top + size + 20, f"{value:.1f}"),
+            axis_text(left - 12, y + 4, f"{value:.1f}", anchor="end"),
         ]
     svg.append(
         f"<line x1='{left}' y1='{top + size}' x2='{left + size}' y2='{top}' "
-        f"stroke='{MUTED}' stroke-dasharray='5 5'/>"
+        f"stroke='{METHOD_GREY}' stroke-dasharray='5 5'/>"
     )
     for series_index, (name, result, color) in enumerate(
-        (("Full model", full, COLORS[0]), ("Without pathway axis", ablated, COLORS[1]))
+        (("Full model", full, SERIES[0]), ("Without pathway axis", ablated, SERIES[1]))
     ):
         points = []
         for row in result["reliability_bins"]:
@@ -186,14 +265,14 @@ def reliability_chart(path: Path, full: dict[str, Any], ablated: dict[str, Any])
             svg += [
                 f"<line x1='{x:.1f}' y1='{high_y:.1f}' x2='{x:.1f}' y2='{low_y:.1f}' "
                 f"stroke='{color}' stroke-width='1.5'/>",
-                f"<circle cx='{x:.1f}' cy='{y:.1f}' r='5' fill='{color}'/>",
+                f"<circle cx='{x:.1f}' cy='{y:.1f}' r='3.5' fill='{color}'/>",
             ]
         if len(points) > 1:
             coords = " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
             svg.append(f"<polyline points='{coords}' fill='none' stroke='{color}' stroke-width='2'/>")
         legend_y = 105 + series_index * 24
-        svg.append(f"<circle cx='525' cy='{legend_y}' r='5' fill='{color}'/>")
-        svg.append(text(538, legend_y + 4, name, size=10, anchor="start"))
+        svg.append(f"<circle cx='525' cy='{legend_y}' r='3.5' fill='{color}'/>")
+        svg.append(text(538, legend_y + 4, name, size=10, anchor="start", color=MUTED))
     svg += [
         text(left + size / 2, top + size + 48, "Mean predicted probability", size=12),
         (
@@ -215,9 +294,9 @@ def selective_prediction_chart(path: Path, selective: dict[str, Any]) -> None:
     width, height = 760, 600
     left, top, plot_w, plot_h = 85, 100, 620, 380
     series = (
-        ("Pathway super-pathway (by similarity)", selective["pathway_super"], COLORS[0]),
-        ("Pathway subpathway (by similarity)", selective["pathway_sub"], COLORS[1]),
-        ("Structure rank 1 (by confidence)", selective["structure_rank1"], COLORS[2]),
+        ("Pathway super-pathway (by similarity)", selective["pathway_super"], SERIES[0]),
+        ("Pathway subpathway (by similarity)", selective["pathway_sub"], SERIES[1]),
+        ("Structure rank 1 (by confidence)", selective["structure_rank1"], SERIES[2]),
     )
     grid = [float(value) for value in selective["coverage_grid"]]
     span = max(grid) - min(grid) or 1.0
@@ -228,10 +307,8 @@ def selective_prediction_chart(path: Path, selective: dict[str, Any]) -> None:
     def y_of(fraction: float) -> float:
         return top + plot_h - fraction * plot_h
 
-    svg = [
-        f"<svg xmlns='http://www.w3.org/2000/svg' width='{width}' height='{height}' "
-        f"viewBox='0 0 {width} {height}' font-family='Arial, Helvetica, sans-serif'>",
-        f"<rect width='{width}' height='{height}' fill='white'/>",
+    svg = canvas(width, height)
+    svg += [
         text(left, 30, "Accuracy against the fraction of calls retained", size=18, anchor="start", bold=True),
         text(
             left,
@@ -239,6 +316,7 @@ def selective_prediction_chart(path: Path, selective: dict[str, Any]) -> None:
             "Each cohort sorted most to least confident and scored over cumulative prefixes.",
             size=11,
             anchor="start",
+            color=MUTED,
         ),
         text(
             left,
@@ -246,17 +324,19 @@ def selective_prediction_chart(path: Path, selective: dict[str, Any]) -> None:
             "A falling curve means confidence ranks usefully; a flat curve means it does not.",
             size=11,
             anchor="start",
+            color=MUTED,
         ),
     ]
     for tick in range(0, 101, 20):
         y = y_of(tick / 100)
         svg += [
-            f"<line x1='{left}' y1='{y:.1f}' x2='{left + plot_w}' y2='{y:.1f}' stroke='{GRID}'/>",
-            text(left - 12, y + 4, tick, size=10, anchor="end"),
+            rule(left, y, left + plot_w, y),
+            axis_text(left - 12, y + 4, tick, anchor="end"),
         ]
+    svg.append(rule(left, top, left, top + plot_h))
     for coverage in grid:
         x = x_of(coverage)
-        svg.append(text(x, top + plot_h + 22, f"{coverage:.0%}", size=10))
+        svg.append(axis_text(x, top + plot_h + 22, f"{coverage:.0%}"))
     for index, (name, block, color) in enumerate(series):
         points = []
         for row in block["points"]:
@@ -268,7 +348,7 @@ def selective_prediction_chart(path: Path, selective: dict[str, Any]) -> None:
             svg += [
                 f"<line x1='{x:.1f}' y1='{y_of(float(row['ci95'][1])):.1f}' x2='{x:.1f}' "
                 f"y2='{y_of(float(row['ci95'][0])):.1f}' stroke='{color}' stroke-width='1.4'/>",
-                f"<circle cx='{x:.1f}' cy='{y:.1f}' r='4.5' fill='{color}'/>",
+                f"<circle cx='{x:.1f}' cy='{y:.1f}' r='3.5' fill='{color}'/>",
             ]
         if len(points) > 1:
             coords = " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
@@ -284,10 +364,11 @@ def selective_prediction_chart(path: Path, selective: dict[str, Any]) -> None:
                 "from the most confident fifth to the whole cohort",
                 size=11,
                 anchor="start",
+                color=MUTED,
             ),
         ]
     svg += [
-        text(left + plot_w / 2, top + plot_h + 40, "Fraction of the cohort retained", size=12),
+        text(left + plot_w / 2, top + plot_h + 40, "Fraction of the cohort retained", size=12, color=MUTED),
         (
             f"<text x='24' y='{top + plot_h / 2:.1f}' font-size='12' fill='{MUTED}' "
             f"text-anchor='middle' transform='rotate(-90 24 {top + plot_h / 2:.1f})'>"
@@ -300,10 +381,8 @@ def selective_prediction_chart(path: Path, selective: dict[str, Any]) -> None:
 
 def distribution_chart(path: Path, presentation: dict[str, Any]) -> None:
     width, height = 960, 500
-    svg = [
-        f"<svg xmlns='http://www.w3.org/2000/svg' width='{width}' height='{height}' "
-        f"viewBox='0 0 {width} {height}' font-family='Arial, Helvetica, sans-serif'>",
-        f"<rect width='{width}' height='{height}' fill='white'/>",
+    svg = canvas(width, height)
+    svg += [
         text(40, 30, "Identification outputs across all 3,897 reports", size=18, anchor="start", bold=True),
         text(
             40,
@@ -311,6 +390,7 @@ def distribution_chart(path: Path, presentation: dict[str, Any]) -> None:
             "Square-root count scale preserves small categories; labels show count and percentage.",
             size=11,
             anchor="start",
+            color=MUTED,
         ),
     ]
     panels = [
@@ -341,11 +421,11 @@ def distribution_chart(path: Path, presentation: dict[str, Any]) -> None:
             y = y0 + panel_h - bar_h
             svg.append(
                 f"<rect x='{x:.1f}' y='{y:.1f}' width='{slot - 25:.1f}' height='{bar_h:.1f}' "
-                f"fill='{COLORS[index % len(COLORS)]}' rx='2'/>"
+                f"fill='{SERIES[index % len(SERIES)]}'/>"
             )
-            svg.append(text(x + (slot - 25) / 2, y - 7, f"{count} ({100 * count / total:.1f}%)", size=9, bold=True))
-            svg.append(text(x + (slot - 25) / 2, y0 + panel_h + 18, label, size=10))
-        svg.append(f"<line x1='{x0}' y1='{y0 + panel_h}' x2='{x0 + panel_w}' y2='{y0 + panel_h}' stroke='{INK}'/>")
+            svg.append(value_text(x + (slot - 25) / 2, y - 7, f"{count} ({100 * count / total:.1f}%)"))
+            svg.append(axis_text(x + (slot - 25) / 2, y0 + panel_h + 18, label))
+        svg.append(rule(x0, y0 + panel_h, x0 + panel_w, y0 + panel_h))
     svg.append("</svg>")
     path.write_text("\n".join(svg) + "\n")
 
@@ -369,7 +449,7 @@ def mass_mismatch_chart(path: Path, claims: dict[str, dict[str, Any]]) -> None:
             "This is a projection, not proven accuracy."
         ),
         categories=categories,
-        series=[{"name": "Reports", "color": COLORS[2], "metrics": metrics}],
+        series=[{"name": "Reports", "color": BAR_PRIMARY, "metrics": metrics}],
         ymax=100,
         ylabel="Relative count (% of maximum)",
     )
@@ -409,7 +489,7 @@ def main() -> None:
         title="Structural recovery on truth-verified controls",
         subtitle="Correct = truth Tanimoto >= 0.70; Wilson 95% confidence intervals.",
         categories=["Rank 1", "Top 3", "Top 10", "Exact-source rank 1", "Predicted-source rank 1"],
-        series=[{"name": "Structural recovery", "color": COLORS[0], "metrics": structure_metrics}],
+        series=[{"name": "Structural recovery", "color": BAR_PRIMARY, "metrics": structure_metrics}],
     )
     reliability_chart(
         args.out_dir / "fig3_confidence_reliability.svg",
@@ -446,8 +526,8 @@ def main() -> None:
         ),
         categories=pathway_categories,
         series=[
-            {"name": "Super-pathway", "color": COLORS[0], "metrics": pathway_super},
-            {"name": "Subpathway", "color": COLORS[1], "metrics": pathway_sub},
+            {"name": "Super-pathway", "color": BAR_PRIMARY, "metrics": pathway_super},
+            {"name": "Subpathway", "color": BAR_SECONDARY, "metrics": pathway_sub},
         ],
     )
     distribution_chart(args.out_dir / "fig4_identification_distributions.svg", presentation)
@@ -460,8 +540,8 @@ def main() -> None:
         subtitle="known_X cohort; Wilson 95% confidence intervals.",
         categories=tier_order,
         series=[
-            {"name": "Super-pathway", "color": COLORS[0], "metrics": [tiers[key]["super"] for key in tier_order]},
-            {"name": "Subpathway", "color": COLORS[1], "metrics": [tiers[key]["sub"] for key in tier_order]},
+            {"name": "Super-pathway", "color": BAR_PRIMARY, "metrics": [tiers[key]["super"] for key in tier_order]},
+            {"name": "Subpathway", "color": BAR_SECONDARY, "metrics": [tiers[key]["sub"] for key in tier_order]},
         ],
     )
     loo_bins = loo["super_accuracy_by_similarity_bin"]
@@ -471,7 +551,7 @@ def main() -> None:
         title="Neighbor-vote leave-one-out accuracy by similarity",
         subtitle="Intrinsic mechanism validation; does not include production priors/overrides.",
         categories=bin_order,
-        series=[{"name": "Super-pathway", "color": COLORS[0], "metrics": [loo_bins[key] for key in bin_order]}],
+        series=[{"name": "Super-pathway", "color": BAR_PRIMARY, "metrics": [loo_bins[key] for key in bin_order]}],
     )
     statuses = known["by_assignment_status"]
     status_order = [key for key in ("strong_similarity_vote", "weak_similarity_backfill") if key in statuses]
@@ -481,8 +561,12 @@ def main() -> None:
         subtitle="known_X cohort; Wilson 95% confidence intervals.",
         categories=["Strong similarity vote", "Weak-similarity backfill"][: len(status_order)],
         series=[
-            {"name": "Super-pathway", "color": COLORS[0], "metrics": [statuses[key]["super"] for key in status_order]},
-            {"name": "Subpathway", "color": COLORS[1], "metrics": [statuses[key]["sub"] for key in status_order]},
+            {
+                "name": "Super-pathway",
+                "color": BAR_PRIMARY,
+                "metrics": [statuses[key]["super"] for key in status_order],
+            },
+            {"name": "Subpathway", "color": BAR_SECONDARY, "metrics": [statuses[key]["sub"] for key in status_order]},
         ],
     )
     mass_mismatch_chart(args.out_dir / "figS4_mass_mismatch.svg", claims)

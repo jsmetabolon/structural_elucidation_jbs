@@ -33,14 +33,30 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from tools.paper_figures import COLORS, GRID, INK, MUTED, WHITE, text  # noqa: E402
+from tools.brand import (  # noqa: E402
+    BAR_PRIMARY,
+    GRID,
+    INK,
+    METHOD_GREY,
+    MINT_GREEN,
+    MUTED,
+    on_fill,
+)
+from tools.paper_figures import axis_text, canvas, error_bar, rule, text, value_text  # noqa: E402
 
 # Levels that present a specific structure to the customer, versus those that withhold one.
 STRUCTURE_SHOWN_LEVELS = ("1", "2", "3")
 STRUCTURE_WITHHELD_LEVELS = ("4", "5")
 
-PRIMARY = COLORS[0]
-POSITIVE = COLORS[1]
+PRIMARY = BAR_PRIMARY
+POSITIVE = MINT_GREEN
+WITHHELD = METHOD_GREY
+
+# The brief's canvases are narrower than the manuscript's but print to the same
+# width, so its labels are set larger in pixels to land at a comparable size on
+# the page. The workbook's treatment of them — bold, caps, grey — is unchanged.
+AXIS_SIZE = 11
+LABEL_SIZE = 12
 
 
 def recovery_chart(path: Path, structure: dict[str, Any]) -> None:
@@ -59,10 +75,8 @@ def recovery_chart(path: Path, structure: dict[str, Any]) -> None:
     slot = plot_w / len(bars)
     bar_w = 92.0
 
-    svg = [
-        f"<svg xmlns='http://www.w3.org/2000/svg' width='{width}' height='{height}' "
-        f"viewBox='0 0 {width} {height}' font-family='Arial, Helvetica, sans-serif'>",
-        f"<rect width='{width}' height='{height}' fill='white'/>",
+    svg = canvas(width, height)
+    svg += [
         text(left - 22, 32, "How often the correct structure is found", size=17, anchor="start", bold=True),
         text(
             left - 22,
@@ -76,8 +90,9 @@ def recovery_chart(path: Path, structure: dict[str, Any]) -> None:
 
     for tick in range(0, 101, 25):
         y = top + plot_h - tick / 100.0 * plot_h
-        svg.append(f"<line x1='{left}' y1='{y:.1f}' x2='{left + plot_w}' y2='{y:.1f}' stroke='{GRID}'/>")
-        svg.append(text(left - 10, y + 5, f"{tick}%", size=11, anchor="end", color=MUTED))
+        svg.append(rule(left, y, left + plot_w, y))
+        svg.append(axis_text(left - 10, y + 5, f"{tick}%", anchor="end", size=AXIS_SIZE))
+    svg.append(rule(left, top, left, top + plot_h))
 
     for position, (label, metric) in enumerate(bars):
         value = float(metric["accuracy"]) * 100.0
@@ -85,21 +100,16 @@ def recovery_chart(path: Path, structure: dict[str, Any]) -> None:
         y = top + plot_h - value / 100.0 * plot_h
         svg.append(
             f"<rect x='{centre - bar_w / 2:.1f}' y='{y:.1f}' width='{bar_w:.1f}' "
-            f"height='{plot_h - (y - top):.1f}' fill='{PRIMARY}' rx='3'/>"
+            f"height='{plot_h - (y - top):.1f}' fill='{PRIMARY}'/>"
         )
 
         low, high = metric["ci95"]
         low_y = top + plot_h - float(low) * 100.0 / 100.0 * plot_h
         high_y = top + plot_h - float(high) * 100.0 / 100.0 * plot_h
-        svg += [
-            f"<line x1='{centre:.1f}' y1='{high_y:.1f}' x2='{centre:.1f}' y2='{low_y:.1f}' "
-            f"stroke='{INK}' stroke-width='1.4'/>",
-            f"<line x1='{centre - 7:.1f}' y1='{high_y:.1f}' x2='{centre + 7:.1f}' y2='{high_y:.1f}' stroke='{INK}'/>",
-            f"<line x1='{centre - 7:.1f}' y1='{low_y:.1f}' x2='{centre + 7:.1f}' y2='{low_y:.1f}' stroke='{INK}'/>",
-        ]
-        svg.append(text(centre, high_y - 10, f"{value:.1f}%", size=17, bold=True))
-        svg.append(text(centre, y + 24, f"{metric['correct']} of {metric['n']}", size=12, color=WHITE))
-        svg.append(text(centre, top + plot_h + 24, label, size=13, bold=True))
+        svg += error_bar(centre, low_y, high_y, cap=7.0)
+        svg.append(text(centre, high_y - 10, f"{value:.1f}%", size=17, bold=True, color=INK))
+        svg.append(value_text(centre, y + 24, f"{metric['correct']} of {metric['n']}", color=on_fill(PRIMARY), size=11))
+        svg.append(axis_text(centre, top + plot_h + 24, label, size=LABEL_SIZE))
 
     svg.append(
         text(
@@ -128,10 +138,8 @@ def coverage_chart(path: Path, presentation: dict[str, Any]) -> None:
     bar_w, bar_h = width - 2 * left, 78
     shown_w = bar_w * shown / total
 
-    svg = [
-        f"<svg xmlns='http://www.w3.org/2000/svg' width='{width}' height='{height}' "
-        f"viewBox='0 0 {width} {height}' font-family='Arial, Helvetica, sans-serif'>",
-        f"<rect width='{width}' height='{height}' fill='white'/>",
+    svg = canvas(width, height)
+    svg += [
         text(left, 34, "Every feature is reported", size=17, anchor="start", bold=True),
         text(
             left,
@@ -144,17 +152,20 @@ def coverage_chart(path: Path, presentation: dict[str, Any]) -> None:
         text(left, 84, "Of those reports:", size=12, anchor="start", color=MUTED),
     ]
 
+    # Mint green reads as the affirmative segment and grey as the withheld one,
+    # which is the distinction the figure exists to make. Both take dark text:
+    # the brand's mid tones are too light to carry white type.
     segments = (
         (left, shown_w, POSITIVE, "Structure proposed", shown),
-        (left + shown_w, bar_w - shown_w, MUTED, "Structure withheld", withheld),
+        (left + shown_w, bar_w - shown_w, WITHHELD, "Structure withheld", withheld),
     )
     for x, segment_w, color, label, count in segments:
         share = count / total * 100.0
         centre = x + segment_w / 2
         svg.append(f"<rect x='{x:.1f}' y='{top}' width='{segment_w:.1f}' height='{bar_h}' fill='{color}'/>")
-        svg.append(text(centre, top + 36, f"{share:.1f}%", size=24, bold=True, color=WHITE))
-        svg.append(text(centre, top + 60, f"{count:,} features", size=12, color=WHITE))
-        svg.append(text(centre, top + bar_h + 24, label, size=13, bold=True))
+        svg.append(text(centre, top + 36, f"{share:.1f}%", size=24, bold=True, color=on_fill(color)))
+        svg.append(value_text(centre, top + 60, f"{count:,} features", color=on_fill(color), size=11))
+        svg.append(axis_text(centre, top + bar_h + 24, label, size=LABEL_SIZE))
 
     svg.append(f"<rect x='{left}' y='{top}' width='{bar_w}' height='{bar_h}' fill='none' stroke='{GRID}'/>")
     svg.append(
