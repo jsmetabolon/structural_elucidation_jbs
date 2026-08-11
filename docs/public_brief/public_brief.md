@@ -10,27 +10,29 @@
 
 Untargeted metabolomics detects far more molecules than any laboratory can name. The unnamed remainder is not noise: it is reproducible, quantifiable, and often the part of the data most closely tied to the biology under study. But because those features arrive with no structure and no statement of confidence, most analyses set them aside, and the biology they carry is set aside with them.
 
-Metabolon's structural elucidation capability closes that gap. It turns unnamed features into documented structure hypotheses, each carrying an explicit, graded statement of how much evidence stands behind it. Applied to a delivered set of 3,897 unnamed features, it produced a complete evidence report for every feature, proposed a specific structure for 2,726 of them, and deliberately withheld a structure for the remaining 1,171 where the evidence did not justify one.
+Metabolon's structural elucidation capability closes that gap. Compounds confirmable against an authentic standard are still reported that way, because that remains the strongest answer; this begins where that stops. It turns unnamed features into documented structure hypotheses, each carrying an explicit, graded statement of how much evidence stands behind it. Applied to a delivered set of 3,897 unnamed features, it produced a complete evidence report for every feature, proposed a specific structure for 2,726 of them, and deliberately withheld a structure for the remaining 1,171 where the evidence did not justify one.
 
-Three consequences follow for a research team. Nothing is silently dropped from the deliverable, so the unnamed fraction stays inside the biological interpretation. What the workflow declines to claim is as informative as what it proposes, which is what makes the results that are shown worth acting on. And because every feature is graded against the same criteria, results stay comparable across a study, so decisions about where to spend confirmation effort rest on a consistent basis.
+Three consequences follow for a research team. Nothing is silently dropped from the deliverable, so the unnamed fraction stays inside the biological interpretation and can extend a biochemical signature into areas the reference catalogue does not yet cover. What the workflow declines to claim is as informative as what it proposes, which is what makes the results that are shown worth acting on. And because every feature is graded against the same criteria, results stay comparable across studies as well as within one, so confirmation effort can be aimed at the molecules most likely to repay it.
 
 ## The unnamed fraction of an untargeted dataset
 
 A typical untargeted run yields thousands of reproducible signals. Only a fraction correspond to compounds that have been matched to an authentic chemical standard. The rest are reported as unnamed features: real, measurable, and anonymous.
 
-Setting them aside is expensive in two directions. Biologically, the discarded features frequently include the compounds that differentiate the study groups, so the finding that would have mattered most can be the one never examined. Operationally, the conventional route to naming one of them, in which a chemist interprets the spectra by hand and then buys or synthesizes a candidate to confirm it, is slow enough that it can only ever reach a handful of features per study. The cost is not only the features that go unnamed. It is that the choice of which few to pursue gets made without any consistent basis for comparison.
+Setting them aside is expensive in two directions. Biologically, the discarded features frequently include the compounds that differentiate the study groups, so the finding that would have mattered most can be the one never examined. Operationally, naming one by hand and then buying or synthesizing a candidate to confirm it is slow enough to reach a handful of features per study. The deeper cost is that the choice of which few to pursue is made without any consistent basis for comparison.
 
 The alternative is not to guess. It is to produce a defensible hypothesis for every feature and to say plainly how strong each one is, so that a scientist can decide which are worth the cost of confirmation.
 
 ## What the established routes cover, and what they leave
 
-Two routes put a name to a signal today. Both work, and what each one covers is what defines the gap between them.
+Three routes put a name to a signal today. Two of them work and are bounded by what they cover. The third trades rigor for volume, and it is the one worth understanding before reading any list of metabolite names.
 
-The first is matching an observed spectrum against a reference library. It is fast, well understood, and the most precise answer available short of a standard, which is why it produces the named part of every untargeted deliverable and why it is the first step here too. What bounds it is the size of the catalogue rather than the quality of the match: a molecule that has not been catalogued is outside the space such a search covers, and novel, study-specific chemistry is exactly the chemistry that tends to sit outside it.
+The first is matching an observed spectrum against a reference library. It is fast, well understood, and the most precise answer available short of a standard, which is why it produces the named part of every untargeted deliverable and why it is the first step here too. What bounds it is the size of the catalogue rather than the quality of the match: an uncatalogued molecule is outside the space such a search covers, and novel, study-specific chemistry tends to sit outside it.
 
 The second is expert manual interpretation, followed by acquisition of a candidate compound and confirmation against it. This remains the most authoritative answer available and the proper standard for a settled identity. It is also the scarcest resource in the workflow, which is why it reaches a few features rather than thousands.
 
-What neither route supplies on its own is the thing a study needs in order to triage: a consistent, comparable statement of how much evidence supports each candidate identity. The metabolomics community communicates that through identification levels, which describe the kind of evidence behind a call, from an exact mass alone up to a structure confirmed against an authentic standard. Applying that vocabulary to every unnamed feature in a study, rather than to the few a chemist has time to examine, is the requirement this capability was built to meet.
+The third is to match every detected signal against a broad database and report whatever comes back. It produces an impressive number, and that is the problem. A list of several thousand metabolite names is not several thousand findings when the same molecule is counted more than once, when different ionized and isotopic forms of one compound each return as their own entry, and when a weak match is printed in the same typeface as a strong one. Nothing in the list says which is which, so the work of deciding what to trust passes to the reader, who has less to go on than the workflow did. Volume of that kind is not coverage.
+
+What none of the three supplies on its own is the thing a study needs in order to triage: a consistent, comparable statement of how much evidence supports each candidate identity. The metabolomics community communicates that through identification levels, which describe the kind of evidence behind a call, from an exact mass alone up to a structure confirmed against an authentic standard. Applying that vocabulary to every unnamed feature in a study, rather than to the few a chemist has time to examine, is the requirement this capability was built to meet.
 
 ## What the capability does
 
@@ -47,7 +49,9 @@ The capability runs in four conceptual stages.
 3. **Weigh.** Candidates are ordered by how well several independent lines of evidence agree with one another rather than by any single measure, so a candidate that looks convincing on one axis alone does not reach the top of the list unchallenged.
 4. **Report.** Each result is graded, given biochemical pathway context, and rendered as a standalone report. Where the supporting evidence falls short, the structure is withheld and the report says so.
 
-The value is concentrated in the third and fourth stages. Proposing plausible molecules is comparatively easy. Deciding which proposals have earned the right to be shown to a customer is the hard part, and it is where the capability is deliberately conservative.
+The value is concentrated in the last two stages. Proposing plausible molecules is comparatively easy; deciding which proposals have earned the right to be shown is the hard part, and it is where the capability is deliberately conservative.
+
+**How the count is kept honest.** The controls that stop a list inflating sit inside those stages rather than being applied at the end. What enters is a reproducible feature with its fragmentation evidence combined across the scans it appeared in, not a raw signal. Candidates are scored against the mass of the uncharged molecule implied by how it ionized, so different ionized forms of one compound are not read as different compounds, and isotope agreement is among the evidence weighed. A feature seen by more than one chromatographic method is counted once. A top candidate whose mass does not fit is demoted rather than shown, which happened for 598 features. And where the evidence does not support a structure, none is offered: 1,171 of 3,897 features arrive with no structure at all. That last number is the clearest evidence of the approach, because it is coverage we could have claimed and did not.
 
 **Table 1. What each part of the workflow means for a research team.**
 
@@ -69,17 +73,13 @@ Every feature is placed in a biochemical pathway and subpathway, including the f
 
 *Figure 2. Biochemical context reaches a feature either by lookup against a catalogued compound or by inference from chemically similar ones. The two are not equally strong, which is why every report says which of them produced the call.*
 
-**When the proposed structure is already catalogued.** The classification established for that compound is carried across unchanged, which is what happened for 1,459 of the delivered features. It is a lookup rather than a prediction, so it is exactly as dependable as the reference catalogue and no more.
+**When the proposed structure is already catalogued**, the classification established for that compound is carried across unchanged. It is a lookup rather than a prediction, so it is exactly as dependable as the reference catalogue and no more. **When the structure is new to the catalogue**, the classification comes from the consensus of the catalogued compounds most chemically similar to it, because molecules that are chemically alike usually take part in similar biochemistry.
 
-**When the structure is new to the catalogue.** The classification is taken from the consensus of the catalogued compounds most chemically similar to the proposal, weighted toward the closest matches, because molecules that are chemically alike usually take part in similar biochemistry. That is also why the broad class is firmer than the fine one: fine distinctions turn on exactly the small differences that similarity smooths over. Each assignment carries its own confidence grade, describing the biochemistry rather than the structure, and the report keeps the two apart.
-
-**How well the inferred path holds up.** Hide a reference metabolite's own labels and ask the capability to recover them: across 5,095 reference metabolites it returns the correct broad class 86.7% of the time and the finer subpathway 71.1%. Scored a harder way, against a separate internal label source, agreement is 52.2% and 18.8% across 644 controls. Those two figures are not comparable to each other. The second is scored against a different biochemical vocabulary, one that agrees with the first only 62.5% and 34.8% of the time on identical structures, where any method is right by definition. Read against that ceiling rather than against a perfect score, the broad class holds up about as well under the harder measurement as the easier one, while the finer subpathway genuinely weakens, though far less than the raw figures suggest.
-
-**What that means for using it.** The broad class is usually right and worth acting on. The finer subpathway is a lead rather than a determination, worth checking against your own conventions, since part of any disagreement is vocabulary rather than chemistry. A looked-up assignment is firmer than an inferred one, and each report tells you which you are looking at.
+That second path was tested by hiding a reference metabolite's own labels and asking the capability to recover them, across several thousand metabolites. The broad class comes back right most of the time; the finer subpathway is less reliable, because fine distinctions turn on exactly the small differences that chemical similarity smooths over. So the broad class is worth acting on, the subpathway is a lead worth checking against your own conventions, a looked-up assignment is firmer than an inferred one, and every report tells you which of the two you are reading.
 
 ## Evidence that it works
 
-**What was done.** The capability was evaluated against a set of internal controls whose true structures are known independently, so that each proposal could be scored against a known answer rather than against another prediction. A proposal counts as correct when it matches that answer within a fixed structural-similarity threshold.
+**What was done.** The capability was scored against internal controls whose true structures are known independently, so each proposal was judged against a known answer rather than against another prediction. A proposal counts as correct when it matches that answer within a fixed structural-similarity threshold.
 
 **What was observed.** On those controls, the correct structure was the single top-ranked proposal 47.8% of the time, appeared within the top three proposals 64.1% of the time, and appeared within the top ten 73.9% of the time.
 
@@ -87,27 +87,27 @@ Every feature is placed in a biochemical pathway and subpathway, including the f
 
 *Figure 3. The correct structure is usually near the top of a short ranked list, across 92 controls with independently known structures. That is what converts an unbounded chemical space into a shortlist a chemist can work through.*
 
-**What it means.** Two points of context matter when reading those percentages. The control set is modest at 92 compounds and was assembled from the material available rather than sampled at random, so the percentages describe performance on that set rather than a rate that can be assumed for new data. And the results are ranked lists: a top-ten result is genuinely useful because it reduces a boundless chemical space to a short list, but it is not the same as a single settled answer.
+**What it means.** Two caveats travel with those percentages. The control set is modest at 92 compounds and was assembled from the material available rather than sampled at random, so it describes performance on that set rather than a rate to assume for new data. And these are ranked lists: a top-ten result reduces a boundless chemical space to a short one, which is useful but is not a settled answer.
 
-**Why it matters to you.** A shortlist that usually contains the right molecule changes the arithmetic of following a feature up. Rather than committing chemistry time to a feature chosen on intuition, a team can work through a small ranked set whose hit rate has been measured.
+**Why it matters to you.** A shortlist that usually contains the right molecule changes the arithmetic of following a feature up: instead of committing chemistry time on intuition, a team works through a small ranked set whose hit rate has been measured.
 
 ## What you receive
 
 Each feature is delivered as a self-contained report, with a searchable index across the full set, so the deliverable can be browsed by a biologist and audited by a chemist.
 
 - **The proposed structure and a short list of alternatives**, so that a reviewer sees the runners-up rather than only the winner.
-- **The supporting evidence**, including how well the candidate accounts for the observed mass and fragmentation behaviour, so a call can be checked, not taken on trust.
-- **Biochemical pathway and subpathway context**, including for features where no structure is shown.
-- **An identification level** together with a plain-language statement of what that level does and does not assert.
+- **The supporting evidence**, including how well the candidate accounts for the observed mass and fragmentation, so a call can be checked rather than taken on trust.
+- **Biochemical pathway and subpathway context**, including where no structure is shown.
+- **An identification level** with a plain-language statement of what it does and does not assert.
 - **Cross-references** to the independently assigned Metabolon Level, so the new output can be read alongside existing deliverables.
 
 ![Figure 4. A delivered report.](figures/fig_report_public.png)
 
-*Figure 4. Every feature arrives as a page like this one, which states the proposed structure and the grade limiting it together, so what a result claims is visible rather than buried in a score. The panel is the top of one report; the evidence listed above continues below it. The example is a demonstration compound.*
+*Figure 4. Every feature arrives as a page like this one, stating the proposed structure and the grade limiting it together, so what a result claims is visible rather than buried in a score. The panel is the top of one report, and the example is a demonstration compound.*
 
 ![Figure 5. Reporting coverage across the delivered set.](figures/fig_coverage_public.svg)
 
-*Figure 5. Across 3,897 delivered features, every one receives a report and pathway context while a specific structure appears only where the evidence supports it. Completeness and restraint arrive together rather than being traded against each other.*
+*Figure 5. Across 3,897 delivered features, every one receives a report and pathway context while a specific structure appears only where the evidence supports it, so completeness and restraint arrive together.*
 
 ## How to read a result
 
@@ -123,18 +123,20 @@ Results are graded on the confidence-level framework the metabolomics community 
 | Formula-level only | Composition supported; no structure claimed | Treat as an unnamed but characterized feature |
 | Mass-level only | The feature is real and quantifiable | Track across studies |
 
-The most important lines in that table are the last two. When the capability cannot support a structure, it does not offer one. Withholding is a designed behaviour rather than a gap in coverage, and it is the reason a structure that is shown carries weight.
+The most important lines are the last two. When the capability cannot support a structure it does not offer one, and that withholding is designed behaviour rather than a gap in coverage. It is the reason a structure that is shown carries weight.
 
-For the same reason, the confidence output limits what each report claims rather than stating the probability that a structure is correct. It is worth being precise about the ordering it supports. Within a feature the candidate list is genuinely ordered, which is why working down a short list pays. Between features, the structural grade does not reliably indicate which will turn out to be right, so it should not be the sole basis for choosing what to chase. Biochemical confidence, described earlier, behaves differently and does separate the stronger assignments from the weaker ones. Reporting a hypothesis as a hypothesis is a more useful and more honest product than reporting it as a number that implies more certainty than the underlying evidence can support.
+The confidence output works the same way: it limits what a report claims rather than giving the probability that a structure is correct, and we say which of those it is. Within a feature the candidate list is genuinely ordered, so working down a short list pays. Between features, use the biochemical confidence described earlier, which does separate stronger assignments from weaker ones, rather than the structural grade. We tested both and report what each supports.
 
 ## Where this fits
 
-This capability complements library matching and authentic-standard confirmation rather than replacing either. Matching against the reference library stays the first step and the most direct answer wherever a feature corresponds to a catalogued compound; what this adds is a graded result for the features that fall outside that coverage. It is designed for two situations in particular.
+This capability complements library matching and authentic-standard confirmation rather than replacing either. Matching against the reference library stays the first step and the most direct answer wherever a feature corresponds to a catalogued compound; what this adds is a graded result for the features that fall outside that coverage. The relationship runs both ways, which is the part most easily missed: every proposal is weighed against catalogued chemistry and placed in biochemistry by the catalogued compounds it most resembles, so a larger confirmed library does not only name more compounds outright, it makes the predictions about everything else better. The capability is designed for two situations in particular.
 
 - **Prioritizing discovery.** When a study points to unnamed features, the capability turns each of them into a short, chemically specific candidate list, so the work goes into a handful of named possibilities rather than starting from nothing.
 - **Extending reference coverage.** Well-supported hypotheses give a defensible starting point for adding compounds to a reference library, and every addition raises the share of future studies that can be named outright, so the two routes reinforce each other rather than compete.
 
 Used alongside a reference-library search, the capability contributes additional evidence and reduces dependence on a single evidence source. Used alongside manual interpretation, it enables consistent application at scale. It has not been benchmarked head to head against other computational approaches, and no such comparison is claimed here.
+
+[REQUIRED: add matrix-specific impact and a coverage-improvement table. Both need source-study matrix metadata and a per-study baseline for the named fraction, neither retained in the reporting bundle.]
 
 ## Conclusion
 
