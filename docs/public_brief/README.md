@@ -108,18 +108,18 @@ as a platform enhancement, but no platform positioning is documented in this
 repository, and whether existing deliverables may be named externally is a
 marketing decision rather than a technical one.
 
-Watch the budgets while filling these in. The word count is roughly 2,470 of
-2,600, which leaves about a hundred words, and that is the looser of the two
-constraints.
+Pages are the budget that matters. The document renders to ten pages of ten, and
+what remains is roughly half of the last page, which is the room the availability
+and legal text has to fit into. Two things have each cost a whole page before, so
+re-run the gate with `--check-pages` after every edit, without exception: a
+caption gaining a single line, and the report capture being printed tall enough
+that Word stops letting it share a page.
 
-Pages are the one to watch. The document renders to ten pages of ten, and the
-key-terms table is what takes it there: it needs a page and no amount of
-shrinking the report capture buys that page back, which was measured rather
-than assumed. What remains is roughly half of the last page, which is the room
-the availability and legal text has to fit into. Two things have each cost a
-whole page before, so re-run the gate with `--check-pages` after every edit,
-without exception: a caption gaining a single line, and the report capture
-being printed tall enough that Word stops letting it share a page.
+The word cap is a backstop rather than a target. It sits at 3,200, above what ten
+pages can hold, precisely so that pages bind first. It previously sat at 2,600 and
+bound before pages did, which meant sentences were being cut to satisfy a proxy
+while the page count still had room; if you find yourself trimming prose, check
+`--check-pages` before assuming you have to.
 
 If the placeholder text will not fit, shorten the key-terms definitions before
 touching prose. Table rows cost no words at all, since the word counter skips

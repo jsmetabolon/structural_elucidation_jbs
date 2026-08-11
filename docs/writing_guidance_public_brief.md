@@ -315,11 +315,11 @@ This figure demonstrates that ______, which matters because ______.
 
 - Are claims supported?
 
-  Yes. Every statistic in the brief must resolve to a row in the audited claim ledger at `docs/paper/supplement/claim_evidence.csv`, and the release gate fails the build on any number that does not. That check is what keeps marketing copy from drifting away from what was measured.
+  Yes. Every statistic in the brief must resolve to a row in the audited claim ledger at `docs/paper/supplement/claim_evidence.csv`, and the release gate fails the build on any number that does not. That check is what keeps marketing copy from drifting away from what was measured. The brief now applies the same test outward: where a list of matches carries a confidence number, it asks what that number was tested against, and notes that a score with no stated test cannot be acted on differently from one never tested. It says explicitly that the standard applies to our output too, which is what keeps the point from being a cheap shot.
 
 - Are limitations stated?
 
-  Yes, and next to the claims they qualify rather than collected where they can be skipped. The cohort caveat sits in the evidence section and the ranked-list caveat beside the recovery figures. They also do double duty: the same restraint that limits what the brief claims is what distinguishes it from an unqualified list, so the withheld count is presented as evidence rather than as apology.
+  Yes, and next to the claims they qualify rather than collected where they can be skipped. The cohort caveat sits in the evidence section and the ranked-list caveat beside the recovery figures. They also do double duty: the same restraint that limits what the brief claims is what distinguishes it from an unqualified list, so the withheld count is presented as evidence rather than as apology. The sharpest instance is in the false-positive passage, which states that none of the controls makes the workflow incapable of being wrong, and that containing the consequences of an error is a different thing from never making one. Conceding that is what earns the rest of the paragraph.
 
 - Are accuracy, confidence, identification, and annotation used precisely?
 
