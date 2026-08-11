@@ -38,8 +38,10 @@ from tools.build_manuscript_docx import (  # noqa: E402
     split_table_row,
 )
 
-# Budgets sized so the rendered brief stays well under the ten-page requirement.
-MAX_WORDS = 2600
+# Budgets sized around the ten-page requirement, which is the real constraint. The
+# word cap is a backstop set above what ten pages hold, so the page check binds
+# first; see the note in tools/verify_public_brief.py.
+MAX_WORDS = 3200
 MAX_FIGURES = 5
 MAX_TABLES = 3
 

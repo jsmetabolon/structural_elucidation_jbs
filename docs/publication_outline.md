@@ -257,12 +257,13 @@ than a style guide. Three constraints change how sentences get written:
   be stated, and for pathway assignment it is, because a customer cannot judge a pathway
   call without knowing whether the label was looked up or inferred. Nothing that would
   let a reader reproduce the workflow appears.
-- **Overclaim language is blocked**, and budgets cap the document at 2,600 words, five
-  figures, three tables, and ten pages. Pages bind well before words do, and the
-  document now sits at ten of ten with roughly half of the last page free, so check
-  `--check-pages` after every edit rather than only near a figure. A table is the
-  cheap way to add content, since the word counter skips lines beginning with a pipe,
-  but rows still cost lines and lines are what is scarce.
+- **Overclaim language is blocked**, and budgets cap the document at five figures,
+  three tables, and ten pages. Pages are the real constraint. The word cap sits at
+  3,200, deliberately above what ten pages hold, so `--check-pages` is what binds; it
+  used to sit at 2,600 and bind first, which meant edits were being trimmed to satisfy
+  a proxy while pages still had room. Check pages after every edit rather than only
+  near a figure. A table is the cheap way to add content, since the word counter skips
+  lines beginning with a pipe, but rows still cost lines and lines are what is scarce.
 
 The manuscript is gated by `tools/verify_paper_package.py` and `tests/test_manuscript_docx.py`:
 a 200-word abstract limit, a 75-character title, exactly six figures and one table,

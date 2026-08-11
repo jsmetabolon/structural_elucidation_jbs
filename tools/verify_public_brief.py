@@ -39,7 +39,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from tools.figure_formats import figure_error  # noqa: E402
 
 MAX_PAGES = 10
-MAX_WORDS = 2600
+# Pages are the real deliverable constraint; the word count is a backstop against
+# runaway growth and is deliberately set above what ten pages can hold, so that
+# --check-pages is what binds. It used to bind first at 2,600, which meant edits
+# were being trimmed to satisfy a proxy while pages still had room.
+MAX_WORDS = 3200
 MAX_FIGURES = 5
 MAX_TABLES = 3
 

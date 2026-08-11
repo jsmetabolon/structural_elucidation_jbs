@@ -32,6 +32,8 @@ The second is expert manual interpretation, followed by acquisition of a candida
 
 The third is to match every detected signal against a broad database and report whatever comes back. It produces an impressive number, and that is the problem. A list of several thousand metabolite names is not several thousand findings when the same molecule is counted more than once, when different ionized and isotopic forms of one compound each return as their own entry, and when a weak match is printed in the same typeface as a strong one. Nothing in the list says which is which, so the work of deciding what to trust passes to the reader, who has less to go on than the workflow did. Volume of that kind is not coverage.
 
+Where such a list does carry a confidence number, the question to ask is what the number was tested against, and the answer is usually not given. A score with no stated test, and no statement of which comparisons it does and does not support, cannot be acted on any differently from a score that was never tested at all. That is the standard we hold ourselves to below, and it is a fair one to apply to anybody's output, including ours.
+
 What none of the three supplies on its own is the thing a study needs in order to triage: a consistent, comparable statement of how much evidence supports each candidate identity. The metabolomics community communicates that through identification levels, which describe the kind of evidence behind a call, from an exact mass alone up to a structure confirmed against an authentic standard. Applying that vocabulary to every unnamed feature in a study, rather than to the few a chemist has time to examine, is the requirement this capability was built to meet.
 
 ## What the capability does
@@ -51,7 +53,13 @@ The capability runs in four conceptual stages.
 
 The value is concentrated in the last two stages. Proposing plausible molecules is comparatively easy; deciding which proposals have earned the right to be shown is the hard part, and it is where the capability is deliberately conservative.
 
-**How the count is kept honest.** The controls that stop a list inflating sit inside those stages rather than being applied at the end. What enters is a reproducible feature with its fragmentation evidence combined across the scans it appeared in, not a raw signal. Candidates are scored against the mass of the uncharged molecule implied by how it ionized, so different ionized forms of one compound are not read as different compounds, and isotope agreement is among the evidence weighed. A feature seen by more than one chromatographic method is counted once. A top candidate whose mass does not fit is demoted rather than shown, which happened for 598 features. And where the evidence does not support a structure, none is offered: 1,171 of 3,897 features arrive with no structure at all. That last number is the clearest evidence of the approach, because it is coverage we could have claimed and did not.
+**How a wrong or repeated call is kept out.** Two things have to be prevented: the same molecule being counted several times, and a structure that the evidence does not support being shown at all. The controls for both sit inside the stages above rather than being applied at the end.
+
+Against repetition: what enters is a reproducible feature with its fragmentation evidence combined across the scans it appeared in, not a raw signal; candidates are scored against the mass of the uncharged molecule implied by how it ionized, so different ionized forms of one compound are not read as different compounds; isotope agreement is among the evidence weighed; and a feature seen by more than one chromatographic method is counted once.
+
+Against unsupported structures: a top candidate whose mass does not fit is demoted rather than shown, which happened for 598 features, and where the evidence does not support a structure, none is offered — 1,171 of 3,897 features arrive with no structure at all. That last number is the clearest evidence of the approach, because it is coverage we could have claimed and did not.
+
+None of this makes the workflow incapable of being wrong, and it is worth saying so plainly. What it does is make a wrong call visible as a weak one: an unsupported proposal is either withheld or arrives carrying a grade that tells you not to build on it yet. Containing the consequences of an error is a different thing from never making one, and only the first is claimed here.
 
 **Table 1. What each part of the workflow means for a research team.**
 
