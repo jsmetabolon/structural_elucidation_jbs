@@ -32,6 +32,7 @@ structural_elucidation_jbs/
 │   ├── decoder_weights/      # .pt decoder weights (fetched)
 │   └── embedding_banks/      # retrieval latents (fetched)
 ├── data/                     # ions, known_X, base pools, feature rows, SMILES subset
+├── assets/fonts/montserrat/  # brand typeface, vendored (SIL OFL 1.1)
 ├── fetch_assets.sh
 ├── run_inference.sh
 ├── pyproject.toml
