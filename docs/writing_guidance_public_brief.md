@@ -43,10 +43,10 @@ Explain the problem with current approaches to metabolite ID and LC-MS feature u
 
   **What the established routes cover, and what they leave**
 
-  - *Understand:* library matching and expert interpretation both work, and each covers a different part of the problem.
-  - *Believe:* the gap between them is coverage and throughput, not quality.
-  - *Evidence:* a molecule that has not been catalogued is outside the space a catalogue search covers; expert confirmation is the scarcest resource in the workflow.
-  - *Why it matters:* what neither supplies on its own is a comparable statement of evidence for every feature, which is what triage requires.
+  - *Understand:* three routes exist; two work and are bounded by what they cover, and the third trades rigor for volume.
+  - *Believe:* the first two are limited by coverage and throughput rather than quality, and the third produces a number that is not a measure of coverage at all.
+  - *Evidence:* an uncatalogued molecule is outside the space a catalogue search covers; expert confirmation is the scarcest resource in the workflow; and a list built by reporting whatever a broad database returns counts one compound repeatedly and prints weak matches like strong ones.
+  - *Why it matters:* none of the three supplies a comparable statement of evidence for every feature, which is what triage requires, and the third actively transfers that work to the reader.
 
   **What the capability does**
 
@@ -59,7 +59,7 @@ Explain the problem with current approaches to metabolite ID and LC-MS feature u
 
   - *Understand:* pathway context reaches a feature by one of two paths, a lookup against a catalogued compound or an inference from chemically similar ones.
   - *Believe:* the two do not carry equal weight, and every report says which produced the call.
-  - *Evidence:* 1,459 of the delivered features were looked up; the inferred path recovers the correct broad class 86.7% of the time when a reference metabolite's own labels are hidden, and agrees with a separate internal label source 52.2% of the time, against a ceiling of 62.5% on identical structures.
+  - *Evidence:* hiding a reference metabolite's own labels and asking the capability to recover them shows the broad class coming back right most of the time and the subpathway less reliably. The agreement rates and the annotation ceiling that bounds them are reported in the manuscript rather than here, which is the level distinction the review asked for.
   - *Why it matters:* the broad class is worth acting on, the finer subpathway is a lead, and a reader cannot judge either without knowing which path produced it.
 
   **Evidence that it works**
@@ -112,7 +112,7 @@ Explain the problem with current approaches to metabolite ID and LC-MS feature u
 
 - Why existing approaches are insufficient
 
-  Matching against a spectral library is the most precise route short of an authentic standard and produces the named part of every deliverable, but its reach is set by the size of the catalogue, so genuinely novel and study-specific molecules sit outside it. Expert manual interpretation followed by purchase or synthesis is authoritative but scales to a handful of features per study. What neither supplies on its own is a comparable, explicit statement of how much evidence stands behind each call, for every feature.
+  Three routes exist and they fail differently. Matching against a spectral library is the most precise route short of an authentic standard and produces the named part of every deliverable, but its reach is set by the size of the catalogue, so genuinely novel and study-specific molecules sit outside it. Expert manual interpretation followed by purchase or synthesis is authoritative but scales to a handful of features per study. The third fails in the opposite direction: matching every detected signal against a broad database and reporting whatever returns inflates a list without adding identifications, because one compound is counted repeatedly across its ionized and isotopic forms and across chromatographic methods, and weak matches are presented like strong ones. What none of them supplies on its own is a comparable, explicit statement of how much evidence stands behind each call, for every feature.
 
 - What the tool / GDP enhancement does
 
@@ -120,7 +120,7 @@ Explain the problem with current approaches to metabolite ID and LC-MS feature u
 
 - What is technically differentiated
 
-  Three things, in the order they matter: candidate generation is not bounded by catalogue membership; ranking draws on several independent evidence axes rather than a single similarity measure; and the reporting layer is an explicit claim-control mechanism that withholds a structure when corroboration is insufficient. The grade is therefore produced by the process rather than asserted after it.
+  Four things, in the order they matter: candidate generation is not bounded by catalogue membership; ranking draws on several independent evidence axes rather than a single similarity measure; the reporting layer is an explicit claim-control mechanism that withholds a structure when corroboration is insufficient; and the count is kept honest before any of that, by scoring against the neutral mass so ionized forms are not read as separate compounds, weighing isotope agreement, and counting a feature once across chromatographic methods. The grade is therefore produced by the process rather than asserted after it, and the deliverable reports compounds rather than returns.
 
 - What evidence supports the claims
 
@@ -287,7 +287,7 @@ This figure demonstrates that ______, which matters because ______.
 
 - Is the solution differentiated?
 
-  Yes, on three specific axes rather than on a general claim of being better: candidate generation is not bounded by catalogue membership, ranking uses several independent evidence axes, and the reporting layer withholds a structure when corroboration is insufficient. The third is the one competitors are least likely to have, and it is given the most space.
+  Yes, on specific axes rather than on a general claim of being better: candidate generation is not bounded by catalogue membership, ranking uses several independent evidence axes, the reporting layer withholds a structure when corroboration is insufficient, and redundancy is removed before anything is counted. The withholding is the one competitors are least likely to have and it gets the most space, because restraint is the whole argument against a long unqualified list.
 
 - Is the evidence sufficient?
 
@@ -309,7 +309,7 @@ This figure demonstrates that ______, which matters because ______.
 
 - Is unnecessary detail removed?
 
-  Yes, and symmetrically. Model families, descriptors, scoring parameters, thresholds, internal library numbers, pipeline versions, and infrastructure names are all absent, and their absence is enforced by a scanner rather than by reviewer attention. Detail is dropped in both directions rather than keeping the flattering half.
+  Yes, and symmetrically. Model families, descriptors, scoring parameters, thresholds, internal library numbers, pipeline versions, and infrastructure names are all absent, and their absence is enforced by a scanner rather than by reviewer attention. Detail is dropped in both directions rather than keeping the flattering half. A later pass raised the level again: the pathway agreement rates and the annotation ceiling went back to the manuscript, leaving the brief to say what a reader should do with a broad class and a subpathway. Statistics now appear only where they carry the argument, which is recovery, coverage, and the counts behind the restraint claim.
 
 ## Review 3: Scientific rigor
 
@@ -319,7 +319,7 @@ This figure demonstrates that ______, which matters because ______.
 
 - Are limitations stated?
 
-  Yes, and next to the claims they qualify rather than collected where they can be skipped. The cohort caveat sits in the evidence section, the ranked-list caveat beside the recovery figures, the annotation-vocabulary caveat beside the pathway agreement figures.
+  Yes, and next to the claims they qualify rather than collected where they can be skipped. The cohort caveat sits in the evidence section and the ranked-list caveat beside the recovery figures. They also do double duty: the same restraint that limits what the brief claims is what distinguishes it from an unqualified list, so the withheld count is presented as evidence rather than as apology.
 
 - Are accuracy, confidence, identification, and annotation used precisely?
 
