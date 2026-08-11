@@ -22,7 +22,7 @@ from pathlib import Path
 from docx import Document
 from docx.document import Document as DocumentType
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Pt, RGBColor
+from docx.shared import Inches, Pt, RGBColor
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -35,6 +35,7 @@ from tools.build_manuscript_docx import (  # noqa: E402
 
 BRAND = RGBColor(0x1F, 0x4E, 0x79)
 INK = RGBColor(0x1F, 0x29, 0x33)
+ANSWER_INDENT = Inches(0.3)
 
 DEFAULT_SOURCES = (
     Path("docs/writing_guidance_public_brief.md"),
@@ -75,7 +76,7 @@ def configure(document: DocumentType) -> None:
     heading2.paragraph_format.space_after = Pt(4)
     heading2.paragraph_format.keep_with_next = True
 
-    for style_name in ("List Bullet", "List Number"):
+    for style_name in ("List Bullet", "List Bullet 2", "List Number"):
         style = document.styles[style_name]
         style.font.name = "Calibri"
         style.font.size = Pt(10.5)
@@ -92,7 +93,13 @@ def render(source: Path, output: Path) -> dict[str, int]:
     index = 0
     with tempfile.TemporaryDirectory(prefix="guidance_docx_"):
         while index < len(lines):
-            line = lines[index].strip()
+            raw = lines[index]
+            line = raw.strip()
+            # Indentation is the whole convention here: the prompts come from the
+            # guidance template and sit flush left, and everything written in
+            # answer to one is indented under it, so the two stay tellable apart
+            # in a document that alternates between them the whole way down.
+            indented = len(raw) - len(raw.lstrip()) >= 2
             if not line or line == "---":
                 index += 1
                 continue
@@ -120,17 +127,21 @@ def render(source: Path, output: Path) -> dict[str, int]:
                 tables += 1
                 continue
             if line.startswith("- "):
-                paragraph = document.add_paragraph(style="List Bullet")
+                paragraph = document.add_paragraph(style="List Bullet 2" if indented else "List Bullet")
                 add_markup(paragraph, line[2:])
                 index += 1
                 continue
             numbered = re.match(r"^(\d+)\.\s+(.*)", line)
             if numbered:
                 paragraph = document.add_paragraph(style="List Number")
+                if indented:
+                    paragraph.paragraph_format.left_indent = ANSWER_INDENT
                 add_markup(paragraph, numbered.group(2))
                 index += 1
                 continue
             paragraph = document.add_paragraph()
+            if indented:
+                paragraph.paragraph_format.left_indent = ANSWER_INDENT
             add_markup(paragraph, line)
             index += 1
 
