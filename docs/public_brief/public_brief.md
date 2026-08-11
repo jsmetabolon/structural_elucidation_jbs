@@ -125,7 +125,7 @@ Results are graded on the confidence-level framework the metabolomics community 
 
 The most important lines are the last two. When the capability cannot support a structure it does not offer one, and that withholding is designed behaviour rather than a gap in coverage. It is the reason a structure that is shown carries weight.
 
-The confidence output works the same way: it limits what a report claims rather than giving the probability that a structure is correct, and we say which of those it is. Within a feature the candidate list is genuinely ordered, so working down a short list pays. Between features, use the biochemical confidence described earlier, which does separate stronger assignments from weaker ones, rather than the structural grade. We tested both and report what each supports.
+The confidence output works the same way: it limits what a report claims rather than giving the probability that a structure is correct, and we say which of those it is. Within a feature the candidate list is genuinely ordered, so working down a short list pays. Between features, use the biochemical confidence described earlier, which does separate stronger assignments from weaker ones, rather than the structural grade. We tested both, and publishing what each supports is what makes a grade usable rather than decorative.
 
 ## Where this fits
 
