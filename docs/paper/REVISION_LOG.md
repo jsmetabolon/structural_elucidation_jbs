@@ -101,6 +101,51 @@ clause per term to a definition.
   makes the placement a decision. In the Word build it therefore follows the
   declarations, which is worth the corresponding author confirming.
 
+## Review pass on inflated annotation counts and rigor
+
+A comment pass on both surfaces asked for the competitive argument to address a
+practice rather than a product: matching every mass-spec signal against a broad
+reference database and reporting many thousands of metabolites, including weak
+matches and including duplicates, adducts and isotopologues of one compound. No
+company is named in either document, and comparison to other workflows is kept
+to the manuscript.
+
+- **The Introduction gained the opposite failure mode.** It described only the
+  coverage boundary of library matching. It now also names the three mechanisms
+  that inflate an annotation list without adding identifications: adducts and
+  isotopologues annotated separately, one compound counted again per
+  chromatographic method, and matches admitted with no similarity floor. The
+  consequence stated is that annotation totals are not comparable between
+  workflows unless the redundancy and admission criteria behind them are given.
+- **The Discussion gained a false-positive control paragraph.** Every mechanism
+  in it was already in the paper, spread across the mass-mismatch section, the
+  level rubric and the coverage result, where they could not be seen as a
+  system. Nothing new is claimed: it closes on the same limit as before, that a
+  mass-consistent alternative sits lower in 523 of 598 demoted lists, so claim
+  limitation is containment rather than repair.
+- **Confidence wording.** The comment asked us to state that we provide a
+  validated score. That would be false, given the leave-one-out Brier of 0.255
+  already reported here. The manuscript instead states that both signals were
+  tested, publishes what each supports and what it does not, and notes that a
+  confidence value published without that statement cannot be acted on
+  differently from one that was never tested. The brief carries the same point
+  in plainer words and does not use "validated" anywhere.
+- **Limitations reframed, not softened.** Every entry is unchanged. The section
+  now opens by naming them as the bounds within which the results hold, because
+  the same facts read the other way round are the rigor the competitive argument
+  rests on.
+- **Blocked on missing inputs.** Two comments asked for matrix-specific content
+  and one for a table of improved percentage coverage. Specimen-level matrix and
+  species metadata were never retained in the reporting bundle, and no audited
+  baseline exists for the named fraction of a study, so there is nothing to
+  improve on. Both documents carry `[REQUIRED: ...]` placeholders rather than
+  estimates.
+- **The brief moved up a level.** The pathway section lost four bolded
+  sub-paragraphs and six percentages, and the confidence-ordering paragraph lost
+  half its length, in both cases keeping the caveat and dropping the arithmetic.
+  That freed a page, which is what paid for the new competitive material; the
+  brief is back to nine pages of ten.
+
 ## Material claim changes
 
 - **Subpathway annotation ceiling reported.** The manuscript gave the super-pathway

@@ -96,7 +96,7 @@ plainly*.
 |---|---|
 | Executive summary | Deliver the whole problem-solution-evidence-impact arc in miniature and close on the three takeaways, so a reader who stops here still leaves with the argument. |
 | Introduction | Establish the unnamed-feature problem and price it in both directions: biologically, discarded features often carry the differentiating signal; operationally, the conventional route to naming one is too slow to apply at scale. |
-| Background | Explain how identification confidence is communicated in the field today, and what the two existing routes — library matching and manual expert interpretation — each cover, so the gap is located in catalogue coverage and expert throughput rather than in the quality of either method. Library matching produces the named fraction of every deliverable and is the first step of this workflow, so it is described as the route being extended rather than one being displaced. Ends by naming the requirement the rest of the paper answers. |
+| Background | Explain how identification confidence is communicated in the field today, and what each of the three existing routes covers. Library matching and manual expert interpretation both work and are bounded by catalogue coverage and expert throughput rather than by quality, so library matching is described as the route being extended rather than one being displaced. The third route, matching every signal against a broad database and reporting whatever returns, is described as a practice and never attributed to a named company: the objection is that a long list is not a set of findings when one compound is counted repeatedly and weak matches are printed like strong ones. Ends by naming the requirement the rest of the paper answers. |
 | What the capability does | Describe the four stages so a non-specialist can follow the logic, with each paragraph ending on the consequence for the reader rather than on the mechanism. Carries the capability-to-value table. |
 | How biochemical context is assigned | Explain the two paths by which a feature gets its pathway and subpathway, at a level a non-specialist can follow, and attach to each path the evidence that actually bounds it. A reader cannot judge a pathway call without knowing whether it was looked up or inferred. |
 | Validation and evidence | Keep what was done, what was observed, what it means, and why it matters as four distinct moves, and state the limits of the evidence in the same breath as the result. |
@@ -106,12 +106,23 @@ plainly*.
 | Conclusion | Restate the three takeaways as impact, define where the capability fits against authentic-standard confirmation, and avoid any comparative claim the evidence cannot carry. |
 | Availability | Carry the required commercial, legal, and contact placeholders through to marketing and legal review. |
 
-Two things run through every section rather than living in one of them. **User value**
+Three things run through every section rather than living in one of them. **User value**
 is the closing note of each substantive paragraph. **Limitations** are placed next to
 the claims they qualify — the control set is modest and was assembled from available
 material rather than sampled at random; a ranked list is not a confirmed answer; the
 confidence output ranks and limits claims rather than stating a probability of
 correctness; and pathway context orients rather than settles a classification.
+**Restraint** is the third, and it is the one the competitive argument rests on: the
+same limitations, read the other way round, are what distinguishes this from a long
+unqualified list, so they are written as evidence of rigor rather than as apology. The
+withheld count is the clearest instance, being coverage that could have been claimed
+and was not.
+
+The white paper stays at a higher level than the manuscript throughout. Statistics
+appear where they carry the argument — recovery, coverage, and the counts behind the
+restraint claim — and are cut everywhere else. The pathway section in particular states
+what a reader should do with a broad class and a subpathway rather than reproducing the
+agreement figures and the annotation ceiling, which belong to the manuscript.
 
 ## 4. Technical capability, and why it matters to the reader
 
@@ -221,6 +232,14 @@ within it. The specific edits:
   since that is where the distinction between them starts to matter.
 - **Coverage counts** — reconcile the pathway assignment counts in Results with
   `docs/paper/data/pathway/audit_pathway_summary.json`, which they had drifted from.
+- **Competitive framing** — the manuscript is where comparison to other workflows
+  belongs, and where the named published tools stay. Those are cited academic software,
+  not companies, and no company is named in either document. The inflated-annotation
+  practice is described in the Introduction as a class of practice with its three
+  mechanisms named, so the claim is about method rather than about anyone's product.
+- **False-positive control** — stated once in the Discussion as a system rather than
+  left implicit across the mass-mismatch section, the level rubric and the coverage
+  result, and closing on the limit that it contains error rather than correcting it.
 
 ## 7. Constraints that shape the drafting
 
