@@ -154,7 +154,12 @@ def mass_rows() -> list[dict[str, Any]]:
         f"1.00 at or below {MASS_SCORE_PLATEAU_DA:g} Da of error and 0.00 at or above "
         f"{MASS_SCORE_TOLERANCE_DA:g} Da, falling linearly between. Because the windows are "
         f"absolute Da, the ppm equivalents below hold at {PPM_REFERENCE_MASS_DA:.0f} Da and "
-        "tighten as the compound gets heavier."
+        "tighten as the compound gets heavier. "
+        "NOT the rule the delivered reports were scored under: measured against the bundle, "
+        "22,204 of 31,645 candidate scores follow 1 - error_da and only 56 follow the windows "
+        "described here, so the bands in this row describe the implemented function rather than "
+        "the delivered numbers. See tools/audit_mass_policy.py and "
+        "docs/paper/data/thresholds/audit_mass_policy.json."
     )
     weight = WEIGHTS[key]
     return [

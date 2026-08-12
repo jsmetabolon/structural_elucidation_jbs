@@ -73,6 +73,16 @@ def parameter_section(parameters: dict[str, Any]) -> list[str]:
         f"{parameters['ppm_reference_mass_da']:.0f} Da and tighten as the compound gets heavier. "
         "And the count of similar library standards is context on the report card rather than an "
         "axis: no count acts as a cutoff, and changing it moves no score.",
+        "",
+        "**The mass row describes the implemented function, not the delivered numbers.** Measured "
+        "against the delivered bundle, 22,204 of 31,645 candidate scores follow `1 - error_da` and "
+        "only 56 follow the windows quoted above. Under the rule the reports were actually scored "
+        "with, the strong-mass cutoff admits an error near 0.1 Da, which is hundreds of parts per "
+        "million rather than the few implied here. Which rule is authoritative is unresolved: "
+        "either the scorer in the inference package is not what produced the delivered set, or the "
+        "delivered set predates it. Until that is settled the mass bands above should be read as a "
+        "description of the code, and `docs/paper/data/thresholds/audit_mass_policy.json` as a "
+        "description of what shipped.",
     ]
     return lines
 
