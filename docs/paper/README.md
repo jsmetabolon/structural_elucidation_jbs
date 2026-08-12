@@ -72,9 +72,18 @@ substituted for those cohorts.
 ## Build the Nature Word manuscript
 
 The Word generator enforces the Nature-oriented title/summary/display-item limits,
-uses 12-point Times New Roman with double spacing, adds page and continuous line
+uses 12-point Montserrat with double spacing, adds page and continuous line
 numbers, converts SVGs to high-resolution embedded PNGs, and preserves Word-native
 tables and references.
+
+The typeface is the brand's rather than a journal serif. Everything a Nature
+initial submission actually asks for — the 12-point body, the double spacing, the
+line numbering — is unchanged, and a journal that wants its own template will
+re-set the manuscript anyway. Montserrat is vendored at
+`assets/fonts/montserrat/` and registered by `tools/brand.py`, because the
+figures are rasterised through cairosvg at build time and an unresolved family
+would put them into a fallback face without failing anything. Both release gates
+check that it resolves.
 
 ```bash
 python3 tools/build_manuscript_docx.py \

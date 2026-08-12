@@ -5,8 +5,9 @@ A customer-facing, high-level companion to the scientific manuscript in
 and how it works only at the level of concept, never of parameters.
 
 - `public_brief.md` — editable source.
-- `public_brief.docx` — the distributable Word file (currently ten pages,
-  against a ten-page budget).
+- `public_brief.docx` — the distributable Word file, against a ten-page budget.
+  Measure it rather than trusting a number written down here; see the note on
+  pages below.
 - `figures/` — four SVGs (two hand-authored diagrams plus two charts regenerated
   from the same audited JSON the manuscript uses) and one PNG screen capture of
   a rendered report.
@@ -108,18 +109,26 @@ as a platform enhancement, but no platform positioning is documented in this
 repository, and whether existing deliverables may be named externally is a
 marketing decision rather than a technical one.
 
-Watch the budgets while filling these in. The word count is roughly 2,470 of
-2,600, which leaves about a hundred words, and that is the looser of the two
-constraints.
+Watch the budgets while filling these in. The word count is close to its 2,600
+ceiling, leaving room for tens of words rather than hundreds, and that is the
+looser of the two constraints.
 
-Pages are the one to watch. The document renders to ten pages of ten, and the
-key-terms table is what takes it there: it needs a page and no amount of
-shrinking the report capture buys that page back, which was measured rather
-than assumed. What remains is roughly half of the last page, which is the room
-the availability and legal text has to fit into. Two things have each cost a
-whole page before, so re-run the gate with `--check-pages` after every edit,
-without exception: a caption gaining a single line, and the report capture
-being printed tall enough that Word stops letting it share a page.
+Pages are the one to watch, and the count is not portable. Different LibreOffice
+versions and different sets of installed fonts disagree by about a page on the
+same file, so re-run the gate with `--check-pages` in your own environment after
+every edit, without exception, and treat any figure quoted here as a rough guide
+rather than a fact about the document.
+
+The key-terms table is what pushes the length: it needs a page, and no amount of
+shrinking the report capture buys that page back, which was measured rather than
+assumed. Roughly half of the last page is the room the availability and legal
+text has to fit into. Two things have each cost a whole page before: a caption
+gaining a single line, and the report capture being printed tall enough that
+Word stops letting it share a page.
+
+The body size in `tools/build_public_brief_docx.py` is the knob to reach for
+first if the count goes over. It is set a full point below where this document
+turns a page, which is deliberate headroom, not slack to be spent.
 
 If the placeholder text will not fit, shorten the key-terms definitions before
 touching prose. Table rows cost no words at all, since the word counter skips

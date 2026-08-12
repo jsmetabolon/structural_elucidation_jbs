@@ -4,8 +4,8 @@
 The guidance arrived as a Word template with prompts to fill in, so the answers
 go back in the same form. Markdown parsing is shared with the Nature manuscript
 builder; only the typography differs. These are internal working documents, so
-they use the readable Calibri setting of the other internal Word outputs rather
-than the double-spaced submission format.
+they use the readable single-spaced setting of the other internal Word outputs
+rather than the double-spaced submission format.
 
 Usage:
     python3 tools/build_guidance_answers_docx.py
@@ -26,15 +26,18 @@ from docx.shared import Inches, Pt, RGBColor
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from tools.brand import DARK_MODE_BLUE, MOLECULAR_BLUE  # noqa: E402
 from tools.build_manuscript_docx import (  # noqa: E402
     TABLE_SEPARATOR,
     add_markup,
     add_table,
+    set_font,
+    set_theme_fonts,
     split_table_row,
 )
 
-BRAND = RGBColor(0x1F, 0x4E, 0x79)
-INK = RGBColor(0x1F, 0x29, 0x33)
+BRAND = RGBColor.from_string(MOLECULAR_BLUE.lstrip("#"))
+INK = RGBColor.from_string(DARK_MODE_BLUE.lstrip("#"))
 ANSWER_INDENT = Inches(0.3)
 
 DEFAULT_SOURCES = (
@@ -44,22 +47,24 @@ DEFAULT_SOURCES = (
 
 
 def configure(document: DocumentType) -> None:
+    set_theme_fonts(document)
+
     normal = document.styles["Normal"]
-    normal.font.name = "Calibri"
+    set_font(normal)
     normal.font.size = Pt(10.5)
     normal.font.color.rgb = INK
     normal.paragraph_format.space_after = Pt(6)
     normal.paragraph_format.line_spacing = 1.15
 
     title = document.styles["Title"]
-    title.font.name = "Calibri"
+    set_font(title)
     title.font.size = Pt(22)
     title.font.bold = True
     title.font.color.rgb = BRAND
     title.paragraph_format.space_after = Pt(10)
 
     heading1 = document.styles["Heading 1"]
-    heading1.font.name = "Calibri"
+    set_font(heading1)
     heading1.font.size = Pt(15)
     heading1.font.bold = True
     heading1.font.color.rgb = BRAND
@@ -68,7 +73,7 @@ def configure(document: DocumentType) -> None:
     heading1.paragraph_format.keep_with_next = True
 
     heading2 = document.styles["Heading 2"]
-    heading2.font.name = "Calibri"
+    set_font(heading2)
     heading2.font.size = Pt(12)
     heading2.font.bold = True
     heading2.font.color.rgb = INK
@@ -78,7 +83,7 @@ def configure(document: DocumentType) -> None:
 
     for style_name in ("List Bullet", "List Bullet 2", "List Number"):
         style = document.styles[style_name]
-        style.font.name = "Calibri"
+        set_font(style)
         style.font.size = Pt(10.5)
         style.paragraph_format.space_after = Pt(4)
         style.paragraph_format.line_spacing = 1.15

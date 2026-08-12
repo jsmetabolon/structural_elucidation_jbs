@@ -2,7 +2,7 @@
 """Build the X-compound prediction overview Word document from Markdown.
 
 The output mirrors the uploaded untargeted-pipeline overview: Letter paper,
-Calibri body text, 24-point bold title, blue 16-point Heading 1 sections,
+brand-face body text, 24-point bold title, blue 16-point Heading 1 sections,
 compact bullets/numbering, and shaded Consolas command blocks.
 
 Usage:
@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
 from pathlib import Path
 
 from docx import Document
@@ -27,6 +28,11 @@ from docx.enum.text import WD_LINE_SPACING
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from tools.brand import MOLECULAR_BLUE  # noqa: E402
+from tools.build_manuscript_docx import set_font, set_theme_fonts  # noqa: E402
 
 INLINE = re.compile(r"(\*\*.+?\*\*|`.+?`)")
 
@@ -43,6 +49,8 @@ def clear_body(document: DocumentType) -> None:
 def configure_document(document: DocumentType) -> None:
     """Apply the reference overview's page and typography settings."""
 
+    set_theme_fonts(document)
+
     section = document.sections[0]
     section.page_width = Inches(8.5)
     section.page_height = Inches(11)
@@ -52,23 +60,23 @@ def configure_document(document: DocumentType) -> None:
     section.left_margin = Inches(1)
 
     normal = document.styles["Normal"]
-    normal.font.name = "Calibri"
+    set_font(normal)
     normal.font.size = Pt(10.5)
     normal.paragraph_format.space_after = Pt(6)
     normal.paragraph_format.line_spacing = 1.1
 
     heading = document.styles["Heading 1"]
-    heading.font.name = "Calibri"
+    set_font(heading)
     heading.font.size = Pt(16)
     heading.font.bold = True
-    heading.font.color.rgb = RGBColor(0x2E, 0x74, 0xB5)
+    heading.font.color.rgb = RGBColor.from_string(MOLECULAR_BLUE.lstrip("#"))
     heading.paragraph_format.space_before = Pt(16)
     heading.paragraph_format.space_after = Pt(8)
     heading.paragraph_format.keep_with_next = True
 
     for style_name in ("List Bullet", "List Number"):
         style = document.styles[style_name]
-        style.font.name = "Calibri"
+        set_font(style)
         style.font.size = Pt(10.5)
         style.paragraph_format.space_after = Pt(5)
         style.paragraph_format.line_spacing = 1.15
@@ -171,7 +179,7 @@ def parse_markdown(document: DocumentType, source: str) -> None:
             paragraph.paragraph_format.line_spacing = 1.0
             run = paragraph.add_run(line[2:].strip())
             run.bold = True
-            run.font.name = "Calibri"
+            set_font(run)
             run.font.size = Pt(24)
             run.font.color.rgb = RGBColor(0, 0, 0)
             document.add_paragraph()

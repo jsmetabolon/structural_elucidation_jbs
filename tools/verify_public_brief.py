@@ -36,6 +36,7 @@ from docx import Document
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from tools.brand import FAMILY, font_is_resolvable  # noqa: E402
 from tools.figure_formats import figure_error  # noqa: E402
 
 MAX_PAGES = 10
@@ -307,10 +308,16 @@ def main() -> None:
         if problem:
             errors.append(f"{link}: {problem}")
 
+    # Naming the brand face in an SVG is not the same as having it. The Word file
+    # embeds rasterised figures, so where the family is missing the brief goes out
+    # in a fallback face with every other check still green.
+    if not font_is_resolvable():
+        errors.append(f"{FAMILY} is unavailable to the renderer; figures would rasterise in a fallback face")
+
     if docx_path.exists():
         word = Document(docx_path)
-        if word.styles["Normal"].font.name != "Calibri":
-            errors.append("brief DOCX body is not Calibri")
+        if word.styles["Normal"].font.name != FAMILY:
+            errors.append(f"brief DOCX body is not {FAMILY}")
         if len(word.inline_shapes) != len(figures):
             errors.append(f"DOCX embeds {len(word.inline_shapes)} figures; source references {len(figures)}")
         if word.core_properties.category != "Public":

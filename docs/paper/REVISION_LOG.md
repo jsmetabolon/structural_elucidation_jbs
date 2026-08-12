@@ -197,8 +197,9 @@ to the manuscript.
 - Added Supplementary Information with cohort glossary and extended tables.
 - Added a one-command regeneration/verification entry point.
 - Added a Nature initial-submission DOCX: 67-character title, 136-word summary,
-  12-point Times New Roman, double spacing, line/page numbering, five embedded
+  12-point body, double spacing, line/page numbering, five embedded
   figures plus one main table, and Nature-ordered References/Methods/declarations.
+  The body was Times New Roman until the brand pass recorded below.
 - Added explicit required human inputs for authorship, funding, disclosures,
   ethics, run-environment provenance, and data-access details.
 - Extended the package verifier to assert the Results pathway coverage counts and
@@ -320,4 +321,31 @@ What changed, and what it will move:
   set, because the report sidecar never carried the field the audit reads. They
   will populate on the next regeneration, so that block of
   `audit_pathway_summary.json` becomes reportable for the first time.
+
+## Presentational revision (brand palette and typeface)
+
+Both surfaces were restyled to the Metabolon brand. No number, claim, cohort,
+caption message, or section order changed; this pass is presentational in full.
+
+- **Colour and chart furniture now come from `tools/brand.py`.** The palette, the
+  categorical series order, and the axis, gridline, label and whisker treatment
+  were read off the brand guide and the chart formatting in
+  `figure_examples.xlsx` rather than chosen. Both documents' figures read from
+  that one module, so neither can be restyled without the other following.
+- **Both documents are set in Montserrat**, including this manuscript, which was
+  12-point Times New Roman. The double spacing, 12-point body and line numbering
+  a Nature initial submission asks for are unchanged. A journal that requires a
+  serif will re-set the manuscript in its own template regardless.
+- **Montserrat is vendored at `assets/fonts/montserrat/`** under the SIL OFL, and
+  `tools/brand.py` registers it with fontconfig before cairosvg loads. This is
+  not convenience packaging: figures are rasterised at build time, so a checkout
+  without the family produces documents whose figures are set in a fallback with
+  every other check still passing. Both release gates now fail on that condition.
+- **Two workflow diagrams were re-laid out, not just recoloured.** Montserrat is
+  wider than the Helvetica they were drawn against and the labels overflowed
+  their boxes. The new box widths and line breaks were measured against the real
+  font.
+- **The public brief's body dropped from 10.5 to 10 point** to pay for the wider
+  face inside an unchanged ten-page budget. Its headings and captions were
+  measured at their original sizes and kept them.
 
