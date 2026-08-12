@@ -19,6 +19,74 @@ def claim_map(path: Path) -> dict[str, dict[str, Any]]:
     return {row["claim_id"]: row for row in json.loads(path.read_text())["claims"]}
 
 
+def parameter_section(parameters: dict[str, Any]) -> list[str]:
+    """Render the evidence-score parameter table from its exported JSON.
+
+    Read rather than recomputed, so the section and the machine-readable export
+    cannot disagree: both come from ``tools/build_parameter_table.py``.
+    """
+
+    rows = parameters["parameters"]
+    weights = parameters["weights"]
+    total = parameters["weight_total"]
+    lines = [
+        "",
+        "## S10. Evidence-score parameters and their bands",
+        "",
+        "What each parameter measures, what it is worth, and where the boundaries fall that "
+        "separate a strong value from one the report treats as a caution. Exported from the "
+        "constants the scoring code applies, so this table cannot describe a model other than "
+        "the one that ran.",
+        "",
+        "The bands say how a measurement is read, not how often that reading is right. The "
+        "aggregate score is Platt-scaled in-sample and is not externally calibrated, so no band "
+        "below should be read as a probability of correctness.",
+        "",
+        "The last column is the sentence a report carries for a value in that band. A name in "
+        "braces is filled in per feature with the measured value.",
+        "",
+        f"**Table S10. Evidence-score parameters, weights, and value bands.** Weights total "
+        f"{total:.2f} across the {len(weights)} scored axes; a parameter marked unscored "
+        "contributes nothing to the score and is shown for context.",
+        "",
+        "| Parameter | Weight | Strength | Low end | High end | Units | What the report says |",
+        "|---|---:|---|---:|---:|---|---|",
+    ]
+    for row in rows:
+        weight = f"{row['weight']:.2f}" if row["scored"] else "—"
+        lines.append(
+            f"| {row['parameter']} | {weight} | {row['value_strength']} | "
+            f"{row['low_end']} | {row['high_end']} | {row['units']} | {row['report_language']} |"
+        )
+    lines += ["", "Where a band changes what the report may claim:", ""]
+    for row in rows:
+        if row["consequence"]:
+            lines.append(
+                f"- **{row['parameter']}, {row['value_strength'].lower()}.** {row['consequence']}"
+            )
+    lines += [
+        "",
+        "Two mismatches between this table and earlier drafts of it are worth stating plainly, "
+        "because both were written down before the code was checked. Mass agreement is scored on "
+        "an absolute mass error, not on a fixed parts-per-million window, so a single ppm figure "
+        f"holds only at one mass; the equivalents above are quoted at "
+        f"{parameters['ppm_reference_mass_da']:.0f} Da and tighten as the compound gets heavier. "
+        "And the count of similar library standards is context on the report card rather than an "
+        "axis: no count acts as a cutoff, and changing it moves no score.",
+        "",
+        "**The mass row describes the implemented function, not the delivered numbers.** Measured "
+        "against the delivered bundle, 22,204 of 31,645 candidate scores follow `1 - error_da` and "
+        "only 56 follow the windows quoted above. Under the rule the reports were actually scored "
+        "with, the strong-mass cutoff admits an error near 0.1 Da, which is hundreds of parts per "
+        "million rather than the few implied here. Which rule is authoritative is unresolved: "
+        "either the scorer in the inference package is not what produced the delivered set, or the "
+        "delivered set predates it. Until that is settled the mass bands above should be read as a "
+        "description of the code, and `docs/paper/data/thresholds/audit_mass_policy.json` as a "
+        "description of what shipped.",
+    ]
+    return lines
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--structure", type=Path, required=True)
@@ -29,6 +97,11 @@ def main() -> None:
     parser.add_argument("--harmonization", type=Path, default=Path("docs/paper/data/taxonomy_harmonization.json"))
     parser.add_argument("--selective", type=Path, default=Path("docs/paper/data/selective_prediction.json"))
     parser.add_argument("--library", type=Path, default=Path("docs/paper/data/library_stratification.json"))
+    parser.add_argument(
+        "--parameters",
+        type=Path,
+        default=Path("docs/paper/data/parameters/evidence_parameters.json"),
+    )
     parser.add_argument("--out", type=Path, default=Path("docs/paper/supplement/supplementary_information.md"))
     args = parser.parse_args()
     args.out.parent.mkdir(parents=True, exist_ok=True)
@@ -41,6 +114,7 @@ def main() -> None:
     harmonization = json.loads(args.harmonization.read_text()) if args.harmonization.exists() else None
     selective = json.loads(args.selective.read_text()) if args.selective.exists() else None
     library = json.loads(args.library.read_text()) if args.library.exists() else None
+    parameters = json.loads(args.parameters.read_text()) if args.parameters.exists() else None
     known = pathway["accuracy"]
     reference_cohort = known["by_reference_membership"]["reference_structure"]
     n_reports = int(presentation["n_reports"])
@@ -361,6 +435,8 @@ def main() -> None:
             + ", so a per-library recovery rate would be noise. That imbalance is the "
             "evidence for the cohort-selection caveat in Limitations.",
         ]
+    if parameters is not None:
+        lines += parameter_section(parameters)
     args.out.write_text("\n".join(lines) + "\n")
     print(f"[paper-supplement] wrote {args.out}")
 

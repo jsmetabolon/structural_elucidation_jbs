@@ -87,6 +87,12 @@ STRUCT_STRONG = 0.85
 STRUCT_MODERATE = 0.70
 STRUCT_WEAK = 0.45
 MS2_PRESENT = 0.30
+# Similarity a library standard must reach to be counted a neighbor of the
+# target. This one is a display count rather than an evidence axis: it appears on
+# the report card and in the parameter table, and it carries no weight in
+# ``WEIGHTS``. Named so the exported table can cite the floor the counter
+# actually applies instead of restating a literal that could drift away from it.
+NEIGHBOR_SIMILARITY_FLOOR = 0.50
 # Bar an exact catalog hit must clear to claim a probable structure (MSI L2).
 # A catalog hit pins both the structure axis and the pathway axis to 1.0, so half
 # the evidence weight rests on one observation - and that observation is correct
@@ -1802,7 +1808,7 @@ def read_fields_from_sidecars(data_dir: Path, slug: str) -> dict | None:
     neigh = 0
     for row in _read_csv_rows(data_dir / "similarity_neighbors.csv"):
         s = _num(row.get("similarity_to_target"))
-        if s is not None and s >= 0.50:
+        if s is not None and s >= NEIGHBOR_SIMILARITY_FLOOR:
             neigh += 1
 
     correlations_real = True

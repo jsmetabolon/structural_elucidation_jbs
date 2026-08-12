@@ -178,3 +178,50 @@ Inferred assignments only, since direct lookups copy a reference label rather th
 Every interval overlaps at both levels, so agreement does not vary detectably by library and the pooled figures are not an average over dissimilar populations. Excluded as underpowered: 305 (n=13), unlabelled (n=3).
 
 Structural recovery cannot be stratified the same way. The truth-verified cohort splits across libraries as 209 n=52, 305 n=6, 400 n=26, 402 n=2, unlabelled n=6, so a per-library recovery rate would be noise. That imbalance is the evidence for the cohort-selection caveat in Limitations.
+
+## S10. Evidence-score parameters and their bands
+
+What each parameter measures, what it is worth, and where the boundaries fall that separate a strong value from one the report treats as a caution. Exported from the constants the scoring code applies, so this table cannot describe a model other than the one that ran.
+
+The bands say how a measurement is read, not how often that reading is right. The aggregate score is Platt-scaled in-sample and is not externally calibrated, so no band below should be read as a probability of correctness.
+
+The last column is the sentence a report carries for a value in that band. A name in braces is filled in per feature with the measured value.
+
+**Table S10. Evidence-score parameters, weights, and value bands.** Weights total 1.05 across the 5 scored axes; a parameter marked unscored contributes nothing to the score and is shown for context.
+
+| Parameter | Weight | Strength | Low end | High end | Units | What the report says |
+|---|---:|---|---:|---:|---|---|
+| Structure similarity | 0.40 | Strong | 0.85 | 1.00 | Tanimoto similarity | Top structure is very close to a cataloged metabolite |
+| Structure similarity | 0.40 | Acceptable | 0.45 | 0.85 | Tanimoto similarity | Top structure is moderately similar to the nearest cataloged metabolite |
+| Structure similarity | 0.40 | Borderline | 0.00 | 0.45 | Tanimoto similarity | Top structure is distant from any cataloged metabolite (de novo) |
+| Mass / formula match | 0.30 | Strong | 0.000 Da (0.0 ppm) | 0.001 Da (3.3 ppm) | absolute neutral-mass error | The mass of the proposed structure matches the observed mass, which is a strong match for this parameter |
+| Mass / formula match | 0.30 | Acceptable | 0.001 Da (3.3 ppm) | 0.0025 Da (8.3 ppm) | absolute neutral-mass error | Partial mass agreement |
+| Mass / formula match | 0.30 | Borderline | 0.0025 Da (8.3 ppm) | no limit | absolute neutral-mass error | Candidate mass does NOT match the target neutral mass |
+| MS2 fragment fit | 0.20 | Strong | 0.50 | 1.00 | spectral fit | Observed MS2 spectrum explained by candidate (fit {fit}) |
+| MS2 fragment fit | 0.20 | Acceptable | 0.30 | 0.50 | spectral fit | Observed MS2 spectrum explained by candidate (fit {fit}) |
+| MS2 fragment fit | 0.20 | Borderline | 0.00 | 0.30 | spectral fit | Observed MS2 spectrum poorly explained by candidate (fit {fit}) |
+| Pathway consensus | 0.10 | Strong | 0.90 | 1.00 | neighbor vote share | Neighbor pathway consensus {share} |
+| Pathway consensus | 0.10 | Acceptable | 0.60 | 0.90 | neighbor vote share | Neighbor pathway consensus {share} |
+| Pathway consensus | 0.10 | Borderline | 0.00 | 0.60 | neighbor vote share | Neighbor pathway consensus {share} |
+| Retention-index fit | 0.05 | Strong | 0.0 sigma | 1.0 sigma | residual sigma | Retention is consistent with the candidate ({sigma} sigma) |
+| Retention-index fit | 0.05 | Acceptable | 1.0 sigma | 3.0 sigma | residual sigma | Retention is a loose fit ({sigma} sigma from the predicted index) |
+| Retention-index fit | 0.05 | Borderline | 3.0 sigma | no limit | residual sigma | Candidate could not have eluted here ({sigma} sigma from its predicted index) |
+| Library neighbors | — | Not scored | 0 | no limit | count of library standards at Tanimoto >= 0.50 | This metabolite is similar to {count} Metabolon library standards, enabling a higher confidence structural candidate |
+
+Where a band changes what the report may claim:
+
+- **Structure similarity, acceptable.** At or above 0.70 the candidate can reach MSI Level 2 given MS2 and mass support; at or above 0.45 it can reach Level 3.
+- **Structure similarity, borderline.** Below this the structure cannot support MSI Level 3, so the report withholds a structure and gives formula or mass only.
+- **Mass / formula match, strong.** Sub-score 1.00. The plateau makes this the only way to clear the 0.90 strong-mass bar: leaving it drops the score straight to 0.80, so nothing scores between 0.80 and 1.00.
+- **Mass / formula match, acceptable.** Sub-score 0.50 to 0.80. Too low for the strong-mass bar, so it cannot reach MSI Level 2.
+- **Mass / formula match, borderline.** Sub-score below 0.50, which demotes the report to Tentative whatever the other axes say, and caps it at MSI Level 4 or below.
+- **MS2 fragment fit, strong.** Meets the higher bar an exact catalog hit must clear for MSI Level 2, which exists because a catalog match supplies no spectral evidence of its own.
+- **MS2 fragment fit, acceptable.** Enough for MSI Level 2 for a de novo candidate, not for one taken from the catalog.
+- **MS2 fragment fit, borderline.** A spectrum exists and the candidate does not account for it, which is evidence against the candidate rather than missing evidence.
+- **Pathway consensus, borderline.** The pathway is still reported, with the split vote behind it shown, because every feature receives pathway context whether or not a structure is shown.
+- **Retention-index fit, borderline.** Demotes the report to Tentative on its own and blocks MSI Levels 2 and 3, on the reasoning that a correct structure does not elute this far from its predicted index.
+- **Library neighbors, not scored.** Informational. The similarity of the single nearest standard is what the structure axis scores; the count is not scored anywhere.
+
+Two mismatches between this table and earlier drafts of it are worth stating plainly, because both were written down before the code was checked. Mass agreement is scored on an absolute mass error, not on a fixed parts-per-million window, so a single ppm figure holds only at one mass; the equivalents above are quoted at 300 Da and tighten as the compound gets heavier. And the count of similar library standards is context on the report card rather than an axis: no count acts as a cutoff, and changing it moves no score.
+
+**The mass row describes the implemented function, not the delivered numbers.** Measured against the delivered bundle, 22,204 of 31,645 candidate scores follow `1 - error_da` and only 56 follow the windows quoted above. Under the rule the reports were actually scored with, the strong-mass cutoff admits an error near 0.1 Da, which is hundreds of parts per million rather than the few implied here. Which rule is authoritative is unresolved: either the scorer in the inference package is not what produced the delivered set, or the delivered set predates it. Until that is settled the mass bands above should be read as a description of the code, and `docs/paper/data/thresholds/audit_mass_policy.json` as a description of what shipped.

@@ -120,6 +120,7 @@ def main() -> None:
     selective = data / "selective_prediction.json"
     harmonization = data / "taxonomy_harmonization.json"
     library = data / "library_stratification.json"
+    parameters = data / "parameters/evidence_parameters.json"
 
     run(
         [
@@ -234,6 +235,16 @@ def main() -> None:
         ],
         dry_run=args.dry_run,
     )
+    # Ahead of the supplement, which reads the exported JSON to render Table S10.
+    run(
+        [
+            python,
+            "tools/build_parameter_table.py",
+            "--out-dir",
+            str(parameters.parent),
+        ],
+        dry_run=args.dry_run,
+    )
     run(
         [
             python,
@@ -254,6 +265,8 @@ def main() -> None:
             str(selective),
             "--library",
             str(library),
+            "--parameters",
+            str(parameters),
             "--out",
             str(supplement / "supplementary_information.md"),
         ],
