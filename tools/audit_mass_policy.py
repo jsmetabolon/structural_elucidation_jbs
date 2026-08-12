@@ -455,6 +455,49 @@ def paired_recovery(reports: list[Report], policy: MassPolicy) -> dict[str, Any]
     return result
 
 
+def truth_coverage(reports: list[Report], policy: MassPolicy) -> dict[str, Any]:
+    """How much of the cohort the gate targets is actually checkable against truth.
+
+    The number that decides how far the paired result generalises. A gate aimed at
+    the mass-mismatch cohort can only be validated on the part of that cohort whose
+    correct answer is known, and if the overlap is small then a clean result on the
+    controls says little about the rest.
+    """
+
+    controls = [report for report in reports if report.is_truth_control]
+    mismatched = [
+        report
+        for report in reports
+        if report.candidates[0].stored_score is not None
+        and report.candidates[0].stored_score < MASS_WEAK
+    ]
+    fired = gained = lost = unchanged = 0
+    for report in controls:
+        reordered = gated_order(report, policy)
+        if reordered[0] is report.candidates[0]:
+            continue
+        fired += 1
+        before = (report.candidates[0].truth_tanimoto or 0.0) >= TRUTH_THRESHOLD
+        after = (reordered[0].truth_tanimoto or 0.0) >= TRUTH_THRESHOLD
+        if after and not before:
+            gained += 1
+        elif before and not after:
+            lost += 1
+        else:
+            unchanged += 1
+    return {
+        "n_truth_controls": len(controls),
+        "n_rank1_mass_mismatch": len(mismatched),
+        "n_rank1_mass_mismatch_that_are_truth_controls": sum(
+            1 for report in mismatched if report.is_truth_control
+        ),
+        "gate_reordered_rank1_on_controls": fired,
+        "of_those_gained": gained,
+        "of_those_lost": lost,
+        "of_those_unchanged": unchanged,
+    }
+
+
 def distributions(reports: list[Report], policy: MassPolicy) -> dict[str, Any]:
     """How the mass band splits the delivered set under a policy.
 
@@ -556,6 +599,10 @@ def main() -> None:
             CURRENT.name: paired_recovery(reports, CURRENT),
             DRAFTED.name: paired_recovery(reports, DRAFTED),
         }
+        summary["truth_coverage"] = {
+            CURRENT.name: truth_coverage(reports, CURRENT),
+            DRAFTED.name: truth_coverage(reports, DRAFTED),
+        }
 
     prov = summary["provenance"]
     print(f"[mass-policy] reports: {len(reports)}")
@@ -586,10 +633,16 @@ def main() -> None:
     if args.rerank:
         for name, block in summary["paired_reorder"].items():
             rank1 = block["rank1"]
+            cover = summary["truth_coverage"][name]
             print(
                 f"[mass-policy] {name}: {block['n_controls']} truth controls;"
                 f" rank-1 {rank1['correct_before']} -> {rank1['correct_after']}"
                 f" (+{rank1['gained']} / -{rank1['lost']}, exact p={rank1['mcnemar_exact_p']})"
+            )
+            print(
+                f"[mass-policy]   gate reordered rank 1 on {cover['gate_reordered_rank1_on_controls']}"
+                f" controls; only {cover['n_rank1_mass_mismatch_that_are_truth_controls']} of the"
+                f" {cover['n_rank1_mass_mismatch']} mass-mismatch reports are checkable against truth"
             )
 
     if args.out_dir:

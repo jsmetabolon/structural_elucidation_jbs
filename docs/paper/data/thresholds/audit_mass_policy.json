@@ -1,0 +1,146 @@
+{
+  "method": "Read-only comparison of the mass-match window against a proposed one, over a delivered report bundle. Measures reordering only: the pool filter drops candidates before they reach a report, so a tighter tolerance's effect on what was available cannot be seen from here.",
+  "policies": {
+    "current": {
+      "name": "current-absolute-da",
+      "plateau": 0.001,
+      "tolerance": 0.005,
+      "unit": "da"
+    },
+    "proposed": {
+      "name": "drafted-ppm",
+      "plateau": 1.0,
+      "tolerance": 5.0,
+      "unit": "ppm"
+    }
+  },
+  "provenance": {
+    "n_scored_candidates": 31645,
+    "matches_by_rule": {
+      "predict.py (plateau 0.001 Da, tolerance 0.005 Da)": 56,
+      "1 - err_da": 22204,
+      "1 - err_da / 5": 715,
+      "5 / (5 + err_da)": 1987,
+      "1 / (1 + err_da)": 167
+    },
+    "attribution": "each candidate counted once, against the first rule it matches",
+    "matched_more_than_one_rule": 14280,
+    "stored_score_exactly_zero": 5631,
+    "unexplained": 885
+  },
+  "known_figure_check": {
+    "n_reports": 3897,
+    "rank1_mass_mismatch": 598,
+    "rank1_mass_mismatch_rate": 0.1535,
+    "recoverable_by_in_list_alternative": 523,
+    "expected": {
+      "n_reports": 3897,
+      "rank1_mass_mismatch": 598,
+      "rank1_mass_mismatch_rate": 0.1535,
+      "recoverable_by_in_list_alternative": 523
+    }
+  },
+  "screen": {
+    "n_candidates_with_error": 31645,
+    "n_without_mass_reference": 0,
+    "ppm_histogram": {
+      "<=1": 8797,
+      "<=2": 5393,
+      "<=3": 1510,
+      "<=5": 1418,
+      "<=10": 1103,
+      "<=20": 1012,
+      "<=50": 1782,
+      "<=100": 1850,
+      "<=1000": 2693,
+      ">1000": 6087
+    },
+    "in_reband_zone": 1532,
+    "rank1_in_reband_zone": 95,
+    "band_changes": {
+      "partial->fail": 1591,
+      "strong->fail": 525,
+      "strong->partial": 5860
+    },
+    "rank1_band_changes": {
+      "partial->fail": 170,
+      "strong->fail": 87,
+      "strong->partial": 925
+    }
+  },
+  "band_distribution": {
+    "current-absolute-da": {
+      "strong": 2436,
+      "partial": 230,
+      "fail": 787,
+      "unknown": 444
+    },
+    "drafted-ppm": {
+      "strong": 1424,
+      "partial": 985,
+      "fail": 1044,
+      "unknown": 444
+    }
+  },
+  "scope_note": "Reordering a fixed list of ten cannot change top-10 recovery, so top-10 is not reported. Bands describe how a measurement is read, not how often that reading is right.",
+  "paired_reorder": {
+    "current-absolute-da": {
+      "n_controls": 92,
+      "rank1": {
+        "correct_before": 44,
+        "correct_after": 41,
+        "gained": 0,
+        "lost": 3,
+        "net": -3,
+        "mcnemar_exact_p": 0.25
+      },
+      "rank3": {
+        "correct_before": 59,
+        "correct_after": 58,
+        "gained": 3,
+        "lost": 4,
+        "net": -1,
+        "mcnemar_exact_p": 1.0
+      }
+    },
+    "drafted-ppm": {
+      "n_controls": 92,
+      "rank1": {
+        "correct_before": 44,
+        "correct_after": 39,
+        "gained": 0,
+        "lost": 5,
+        "net": -5,
+        "mcnemar_exact_p": 0.0625
+      },
+      "rank3": {
+        "correct_before": 59,
+        "correct_after": 55,
+        "gained": 3,
+        "lost": 7,
+        "net": -4,
+        "mcnemar_exact_p": 0.34375
+      }
+    }
+  },
+  "truth_coverage": {
+    "current-absolute-da": {
+      "n_truth_controls": 92,
+      "n_rank1_mass_mismatch": 598,
+      "n_rank1_mass_mismatch_that_are_truth_controls": 9,
+      "gate_reordered_rank1_on_controls": 9,
+      "of_those_gained": 0,
+      "of_those_lost": 3,
+      "of_those_unchanged": 6
+    },
+    "drafted-ppm": {
+      "n_truth_controls": 92,
+      "n_rank1_mass_mismatch": 598,
+      "n_rank1_mass_mismatch_that_are_truth_controls": 9,
+      "gate_reordered_rank1_on_controls": 12,
+      "of_those_gained": 0,
+      "of_those_lost": 5,
+      "of_those_unchanged": 7
+    }
+  }
+}
