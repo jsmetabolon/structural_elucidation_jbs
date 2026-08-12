@@ -82,7 +82,7 @@
       "unknown": 444
     }
   },
-  "scope_note": "Reordering a fixed list of ten cannot change top-10 recovery, so top-10 is not reported. Bands describe how a measurement is read, not how often that reading is right.",
+  "scope_note": "Bands describe how a measurement is read, not how often that reading is right.",
   "paired_reorder": {
     "current-absolute-da": {
       "n_controls": 92,

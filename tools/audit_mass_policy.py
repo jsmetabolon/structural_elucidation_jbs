@@ -552,7 +552,63 @@ def render_markdown(summary: dict[str, Any]) -> str:
     ]
     for bucket, count in summary["screen"]["ppm_histogram"].items():
         lines.append(f"| {bucket} ppm | {count} |")
-    lines += ["", "## Scope", "", summary["scope_note"], ""]
+    lines += [
+        "",
+        "Bands are how the confidence model reads a mass error. Rank-1 candidates by band:",
+        "",
+        "| Policy | strong | partial | fail | no mass |",
+        "|---|---:|---:|---:|---:|",
+    ]
+    for name, counts in summary["band_distribution"].items():
+        lines.append(
+            f"| `{name}` | {counts['strong']} | {counts['partial']} | {counts['fail']} | "
+            f"{counts['unknown']} |"
+        )
+
+    if "paired_reorder" in summary:
+        lines += [
+            "",
+            "## Does the mass gate improve recovery",
+            "",
+            "The gate from handoff item 2, applied to the whole candidate list under each "
+            "policy, scored against the truth controls. Paired, because the same controls are "
+            "scored twice and two independent intervals could not resolve a handful of flips.",
+            "",
+            "| Policy | Depth | Correct before | Correct after | Gained | Lost | Exact p |",
+            "|---|---|---:|---:|---:|---:|---:|",
+        ]
+        for name, block in summary["paired_reorder"].items():
+            for depth in ("rank1", "rank3"):
+                row = block[depth]
+                lines.append(
+                    f"| `{name}` | {depth} | {row['correct_before']} | {row['correct_after']} | "
+                    f"{row['gained']} | {row['lost']} | {row['mcnemar_exact_p']} |"
+                )
+        cover = next(iter(summary["truth_coverage"].values()))
+        lines += [
+            "",
+            "### How far that generalises",
+            "",
+            f"Only **{cover['n_rank1_mass_mismatch_that_are_truth_controls']} of the "
+            f"{cover['n_rank1_mass_mismatch']}** rank-1 mass-mismatch reports have a known correct "
+            "answer, so that handful carries the entire evidence base for any projection about the "
+            "rest. The gate is aimed at a cohort the truth set barely covers, which bounds what "
+            "these counts can settle either way.",
+        ]
+
+    lines += [
+        "",
+        "## Scope",
+        "",
+        summary["scope_note"],
+        "",
+        "Two limits are structural rather than incidental. Reordering a fixed list of ten cannot "
+        "change top-10 recovery, so no top-10 figure appears above. And the pool filter in "
+        "`structural_elucidation/utils/merge.py` drops candidates before they reach a report, so "
+        "delivered data cannot show what a tighter tolerance would have discarded; answering that "
+        "needs a pipeline re-run, not this bundle.",
+        "",
+    ]
     return "\n".join(lines)
 
 
@@ -589,9 +645,7 @@ def main() -> None:
             DRAFTED.name: distributions(reports, DRAFTED),
         },
         "scope_note": (
-            "Reordering a fixed list of ten cannot change top-10 recovery, so top-10 is not "
-            "reported. Bands describe how a measurement is read, not how often that reading "
-            "is right."
+            "Bands describe how a measurement is read, not how often that reading is right."
         ),
     }
     if args.rerank:
