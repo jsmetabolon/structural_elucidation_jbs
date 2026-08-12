@@ -49,6 +49,7 @@ jobs:
           python3 tools/analyze_library_stratification.py
           python3 tools/audit_thresholds.py
           python3 tools/audit_rt_feasibility.py
+          python3 tools/build_parameter_table.py
           python3 tools/paper_figures.py \
             --structure docs/paper/data/structure/audit_structure_summary.json \
             --pathway docs/paper/data/pathway/audit_pathway_summary.json \
