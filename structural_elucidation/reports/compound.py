@@ -3703,7 +3703,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         ms2_spectrum_present=_ms2_score is not None and _ms2_score > 0,
         ms2_score=_ms2_score,
         library_neighbors_ge_050=sum(
-            1 for nb in neighbors if float(nb.get("similarity_to_target", 0.0) or 0.0) >= 0.50
+            1
+            for nb in neighbors
+            if float(nb.get("similarity_to_target", 0.0) or 0.0) >= confmod.NEIGHBOR_SIMILARITY_FLOOR
         ),
         correlations_real=not correlation_blocker,
         # Retention. The observed index rides along in the feature key; the

@@ -33,6 +33,10 @@ Primary artifacts (under ``--output_dir``):
 
 from __future__ import annotations
 
+from structural_elucidation.inference.mass_windows import (
+    MASS_SCORE_PLATEAU_DA,
+    MASS_SCORE_TOLERANCE_DA,
+)
 from structural_elucidation.paths import REPO_ROOT
 
 import argparse
@@ -270,19 +274,16 @@ def passes_strict_mass_filter(predicted_mass: float, parent_mz: float, ion_mode:
     return err <= shared_strict_tolerance_da(parent_mz, ion_mode=ion_mode)
 
 
-_MASS_SCORE_PLATEAU_DA: float = 0.001  # full mass score below this Da error
-
-
 def mass_match_score(
     predicted_mass: float | None,
     parent_mz: float,
-    tolerance_da: float = 0.005,
+    tolerance_da: float = MASS_SCORE_TOLERANCE_DA,
     ion_mode: str = "negative",
 ) -> float:
     """Score [0, 1] from mass error vs adduct-corrected neutral mass.
 
     Uses ppm relative to the reference neutral mass with the same Da windows as
-    before: full score below ``_MASS_SCORE_PLATEAU_DA``, zero at or above
+    before: full score below ``MASS_SCORE_PLATEAU_DA``, zero at or above
     ``tolerance_da``, and ``1 - err_ppm / tol_ppm`` in between (equivalent to
     ``1 - err_da / tolerance_da`` since ``err_ppm / tol_ppm == err_da / tolerance_da``).
     """
@@ -294,7 +295,7 @@ def mass_match_score(
         1e-12,
     )
     err_ppm = err_da / ref * 1e6
-    plateau_ppm = _MASS_SCORE_PLATEAU_DA / ref * 1e6
+    plateau_ppm = MASS_SCORE_PLATEAU_DA / ref * 1e6
     tol_ppm = float(tolerance_da) / ref * 1e6
     if err_ppm <= plateau_ppm:
         return 1.0
