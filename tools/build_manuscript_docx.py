@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Build a Nature initial-submission Word manuscript from ``docs/paper/manuscript.md``.
+"""Build the internal Word manuscript from ``docs/paper/manuscript.md``.
 
 Main SVG figures are rasterized at 2x resolution and embedded; Markdown tables,
 headings, lists, captions, emphasis, inline code, superscripts, page numbers, and
 line numbering are preserved in Word-native form.
 
-Body text is set in the brand face rather than a journal's serif default. The
-double spacing, 12-point body, and line numbering a Nature initial submission
-asks for are all still here; only the typeface differs, and a journal that
-objects will re-set the manuscript in its own template anyway.
+The document is branded: brand face, brand-coloured headings, brand table fills.
+It retains the 12-point double-spaced body, the line numbering and the
+display-item cap of a Nature initial submission, because those are structural
+requirements rather than styling, and dropping them would make a later submission
+expensive. Set ``BRANDED = False`` to produce that submission instead; it is one
+flag and the gates follow it.
 
 Usage:
     python3 tools/build_manuscript_docx.py \
@@ -25,7 +27,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from tools.brand import DARK_MODE_BLUE, FAMILY, METABOLITE_WHITE, install_fonts  # noqa: E402
+from tools.brand import DARK_MODE_BLUE, FAMILY, METABOLITE_WHITE, MUTED, install_fonts  # noqa: E402
 
 # Before cairosvg, and the order is load-bearing. Fontconfig resolves once, when
 # it first initialises, and cairo initialises it on the first piece of text it
@@ -44,9 +46,29 @@ from docx.shared import Inches, Pt, RGBColor  # noqa: E402
 
 from tools.figure_formats import png_dimensions  # noqa: E402
 
-BODY_FONT = FAMILY
+# The one switch. True builds the internal document this repository ships: brand
+# face, brand-coloured headings. False builds a journal-plain submission: serif
+# body, black headings, everything else identical. Both keep the 12-point double-
+# spaced body, the line numbering and the display-item cap a Nature initial
+# submission asks for, because those are requirements rather than styling.
+#
+# It is a single flag on purpose. The typeface question stayed open for a while
+# and was awkward to reverse when the answer was spread across four style blocks
+# and two gates; the gates now read BODY_FONT from here rather than naming a face.
+BRANDED = True
+
+BODY_FONT = FAMILY if BRANDED else "Times New Roman"
 CODE_FONT = "Consolas"
 THEME_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.theme+xml"
+
+
+def _rgb(value: str) -> RGBColor:
+    return RGBColor.from_string(value.lstrip("#").upper())
+
+
+BLACK = RGBColor(0, 0, 0)
+HEADING_COLOR = _rgb(DARK_MODE_BLUE) if BRANDED else BLACK
+CAPTION_COLOR = _rgb(MUTED) if BRANDED else RGBColor(0x33, 0x33, 0x33)
 
 # Word takes bare hex without the leading hash.
 TABLE_HEADER_FILL = DARK_MODE_BLUE.lstrip("#")
@@ -146,14 +168,14 @@ def configure(document: DocumentType) -> None:
     set_font(title)
     title.font.size = Pt(16)
     title.font.bold = True
-    title.font.color.rgb = RGBColor(0, 0, 0)
+    title.font.color.rgb = HEADING_COLOR
     title.paragraph_format.space_after = Pt(12)
 
     heading1 = document.styles["Heading 1"]
     set_font(heading1)
     heading1.font.size = Pt(12)
     heading1.font.bold = True
-    heading1.font.color.rgb = RGBColor(0, 0, 0)
+    heading1.font.color.rgb = HEADING_COLOR
     heading1.paragraph_format.space_before = Pt(12)
     heading1.paragraph_format.space_after = Pt(6)
     heading1.paragraph_format.keep_with_next = True
@@ -163,7 +185,7 @@ def configure(document: DocumentType) -> None:
     heading2.font.size = Pt(12)
     heading2.font.bold = True
     heading2.font.italic = True
-    heading2.font.color.rgb = RGBColor(0, 0, 0)
+    heading2.font.color.rgb = HEADING_COLOR
     heading2.paragraph_format.space_before = Pt(10)
     heading2.paragraph_format.space_after = Pt(4)
     heading2.paragraph_format.keep_with_next = True
@@ -172,7 +194,7 @@ def configure(document: DocumentType) -> None:
     set_font(caption)
     caption.font.size = Pt(9)
     caption.font.italic = True
-    caption.font.color.rgb = RGBColor(0x33, 0x33, 0x33)
+    caption.font.color.rgb = CAPTION_COLOR
     caption.paragraph_format.space_after = Pt(8)
     caption.paragraph_format.keep_with_next = False
 

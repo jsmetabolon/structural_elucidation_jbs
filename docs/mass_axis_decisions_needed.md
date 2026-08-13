@@ -90,11 +90,12 @@ Expanding truth coverage of the mass-mismatch cohort specifically would be worth
 more than expanding the truth set uniformly, since that cohort is where the
 proposed changes act.
 
-## Also outstanding, unrelated to the above
+## Settled since this was written
 
-The manuscript body is currently set in Montserrat. It was Times New Roman until
-the brand pass, and `docs/paper/README.md` still describes the file as a Nature
-initial submission. If it is going to a journal, the body should revert while the
-figures stay branded: about five lines in
-[tools/build_manuscript_docx.py](../tools/build_manuscript_docx.py) plus two
-assertions. Flagged at the time and never decided.
+**The manuscript typeface.** It was open here as a decision needing a person, and
+it has been taken: the manuscript is an internal document and is branded, body
+face and heading colour together. Reversing it is no longer the five-line job
+described here. `BRANDED` in
+[tools/build_manuscript_docx.py](../tools/build_manuscript_docx.py) governs face
+and colour together, and the release gate and the test read `BODY_FONT` from the
+builder rather than naming a face, so a journal-plain submission is one flag.

@@ -384,6 +384,41 @@ than quietly resolved, because the draft has circulated.
   which is a real axis at weight 0.05 and the only one that can demote a report
   to Tentative and block MSI Levels 2 and 3 by itself; S10 includes it.
 
+## Presentational revision (the manuscript joins the brand)
+
+The manuscript was branded in part during the earlier palette pass and finished
+here. No claim, number, cohort or section changed.
+
+- **The headings and captions were still black.** The face, the figures and the
+  table fills had already moved; the title, both heading levels and the captions
+  had not. They are now Dark Mode Blue and brand muted, matching the brief.
+- **The typeface question is closed.** It had been open since the palette pass and
+  was listed as needing a person. The decision is that this is the internal
+  document and it is branded. `BRANDED` in `tools/build_manuscript_docx.py` now
+  governs the body face and the heading colour together, and both the release gate
+  and `tests/test_manuscript_docx.py` read `BODY_FONT` from the builder rather than
+  naming a face, so producing a journal-plain submission is one flag rather than
+  four style blocks and two assertions. Part of why the question stayed open was
+  that reversing it looked expensive; it no longer is.
+- **The Nature mechanics are kept deliberately.** Twelve-point double-spaced body,
+  line numbering, seven display items. Those are structural requirements rather
+  than styling, and keeping them is what makes the flag cheap.
+- **IMRaD was retained.** The writing guidance describes a white-paper arc, and
+  this document is Abstract, Introduction, Methods, Results, Discussion,
+  Limitations, Conclusion. Those are different documents rather than one document
+  formatted two ways, and the guidance's "separate explanation from proof" rule is
+  already satisfied by the section structure, with Results paragraphs leading on
+  their claim rather than their evidence.
+- **One review comment was closed.** The direction to highlight that other
+  approaches' confidence scores are of unclear meaning and untested accuracy had
+  been answered only for this workflow's own score. The related-work section now
+  separates score interpretability from accuracy, frames it as a reporting gap
+  rather than a defect, and points at Section 3.3, which reports that the score
+  here orders candidates within a feature and does not separate features. No
+  accuracy comparison was added and no tool is criticised.
+- **Both guidance worksheets were refreshed** to carry review 6, which they had
+  missed, and the review log's note that they were stale is retired.
+
 ## Decision record: the mass axis
 
 Measuring the drafted ppm bands turned up something larger than the question
