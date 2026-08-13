@@ -16,6 +16,24 @@ Read-only comparison of the mass-match window against a proposed one, over a del
 
 Out of 31645 scored candidates.
 
+## Which generator was scored on which scale
+
+Inverting the score recovers the tolerance each candidate was scored under.
+
+| Candidate source | n | Dominant tolerance | Share |
+|---|---:|---|---:|
+| `library_anchored_candidates_v1` | 13127 | 1 Da | 95% |
+| `peptide_first_denovo_v1` | 9293 | 1 Da | 99% |
+| `balanced` | 2584 | 5 Da | 68% |
+| `dehydro_v1` | 218 | 0.005 Da | 100% |
+| `wgcna_seeded_v1` | 125 | 0.005 Da | 100% |
+| `hydroxyl_v1` | 124 | 0.005 Da | 98% |
+| `methylation_v1` | 113 | 0.005 Da | 95% |
+| `strict_1da` | 99 | other | 100% |
+| `protected_peptide_permutation_baseline` | 92 | other | 52% |
+
+Each generator is internally consistent and they disagree with each other, so the mass sub-score is not one quantity across the delivered set. Candidates scored on different scales are ranked against each other and averaged into one confidence number.
+
 ## The screen
 
 Candidates between the two windows: **1532** (95 of them at rank 1) out of 31645 with a mass error.

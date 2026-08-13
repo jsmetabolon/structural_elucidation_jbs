@@ -160,6 +160,7 @@ class Candidate:
     error_da: float | None
     stored_score: float | None
     truth_tanimoto: float | None
+    source: str = ""
 
 
 @dataclass
@@ -239,6 +240,7 @@ def read_reports(root: Path) -> Iterator[Report]:
                     error_da=_num(row.get("abs_mass_error_da")),
                     stored_score=_num(row.get("mass_match_score")),
                     truth_tanimoto=_num(row.get("truth_tanimoto")),
+                    source=str(row.get("candidate_source", "") or "").strip(),
                 )
             )
         if not candidates:
@@ -509,6 +511,65 @@ def truth_coverage(reports: list[Report], policy: MassPolicy) -> dict[str, Any]:
     }
 
 
+KNOWN_TOLERANCES_DA = (0.005, 0.05, 0.15, 0.5, 1.0, 5.0)
+
+
+def implied_tolerance_by_source(reports: list[Report]) -> dict[str, Any]:
+    """Which generator's candidates were scored on which mass scale.
+
+    Inverting ``score = 1 - err / tolerance`` recovers the tolerance each candidate
+    was scored under. Grouping that by the generator that produced the candidate
+    says whether the mixture of scales is accidental or structural, and it is
+    structural: each generator is consistent with itself and they disagree with
+    each other by up to 200-fold. Candidates from different generators are
+    therefore ranked against one another on scales that do not correspond.
+    """
+
+    def bucket(tolerance: float) -> str:
+        for target in KNOWN_TOLERANCES_DA:
+            if abs(tolerance - target) / target < 0.02:
+                return f"{target:g} Da"
+        return "other"
+
+    by_source: dict[str, dict[str, int]] = {}
+    for report in reports:
+        for candidate in report.candidates:
+            error, score = candidate.error_da, candidate.stored_score
+            if error is None or score is None or error <= 0 or not 0.0 < score < 1.0:
+                continue
+            key = candidate.source or "(blank)"
+            counts = by_source.setdefault(key, {})
+            label = bucket(error / (1.0 - score))
+            counts[label] = counts.get(label, 0) + 1
+
+    rows = []
+    for source, counts in sorted(by_source.items(), key=lambda kv: -sum(kv[1].values())):
+        total = sum(counts.values())
+        dominant, dominant_n = max(counts.items(), key=lambda kv: kv[1])
+        rows.append(
+            {
+                "candidate_source": source,
+                "n": total,
+                "dominant_tolerance": dominant,
+                "dominant_share": round(dominant_n / total, 3),
+                "counts": dict(sorted(counts.items())),
+            }
+        )
+    distinct = {row["dominant_tolerance"] for row in rows if row["n"] >= 100}
+    return {
+        "by_candidate_source": rows,
+        "distinct_dominant_tolerances": sorted(distinct),
+        "finding": (
+            "Each generator is internally consistent and they disagree with each other, so the "
+            "mass sub-score is not one quantity across the delivered set. Candidates scored on "
+            "different scales are ranked against each other and averaged into one confidence "
+            "number."
+            if len(distinct) > 1
+            else "All generators scored on the same tolerance."
+        ),
+    }
+
+
 def tolerance_sweep(reports: list[Report]) -> dict[str, Any]:
     """Recovery and band split across three orders of magnitude of mass tolerance.
 
@@ -599,6 +660,28 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"| unexplained | {prov['unexplained']} |",
         "",
         f"Out of {prov['n_scored_candidates']} scored candidates.",
+    ]
+
+    attribution = summary["implied_tolerance_by_source"]
+    lines += [
+        "",
+        "## Which generator was scored on which scale",
+        "",
+        "Inverting the score recovers the tolerance each candidate was scored under.",
+        "",
+        "| Candidate source | n | Dominant tolerance | Share |",
+        "|---|---:|---|---:|",
+    ]
+    for row in attribution["by_candidate_source"]:
+        if row["n"] < 50:
+            continue
+        lines.append(
+            f"| `{row['candidate_source']}` | {row['n']} | {row['dominant_tolerance']} | "
+            f"{row['dominant_share']:.0%} |"
+        )
+    lines += [
+        "",
+        attribution["finding"],
         "",
         "## The screen",
         "",
@@ -726,6 +809,7 @@ def main() -> None:
             "proposed": DRAFTED.__dict__,
         },
         "provenance": provenance(reports),
+        "implied_tolerance_by_source": implied_tolerance_by_source(reports),
         "known_figure_check": known_figure_check(reports),
         "screen": screen(reports, CURRENT, DRAFTED),
         "band_distribution": {

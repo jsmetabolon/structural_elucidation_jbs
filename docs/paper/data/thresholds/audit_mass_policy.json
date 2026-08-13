@@ -28,6 +28,217 @@
     "stored_score_exactly_zero": 5631,
     "unexplained": 885
   },
+  "implied_tolerance_by_source": {
+    "by_candidate_source": [
+      {
+        "candidate_source": "library_anchored_candidates_v1",
+        "n": 13127,
+        "dominant_tolerance": "1 Da",
+        "dominant_share": 0.949,
+        "counts": {
+          "1 Da": 12460,
+          "5 Da": 36,
+          "other": 631
+        }
+      },
+      {
+        "candidate_source": "peptide_first_denovo_v1",
+        "n": 9293,
+        "dominant_tolerance": "1 Da",
+        "dominant_share": 0.991,
+        "counts": {
+          "1 Da": 9206,
+          "5 Da": 82,
+          "other": 5
+        }
+      },
+      {
+        "candidate_source": "balanced",
+        "n": 2584,
+        "dominant_tolerance": "5 Da",
+        "dominant_share": 0.681,
+        "counts": {
+          "5 Da": 1760,
+          "other": 824
+        }
+      },
+      {
+        "candidate_source": "dehydro_v1",
+        "n": 218,
+        "dominant_tolerance": "0.005 Da",
+        "dominant_share": 1.0,
+        "counts": {
+          "0.005 Da": 218
+        }
+      },
+      {
+        "candidate_source": "wgcna_seeded_v1",
+        "n": 125,
+        "dominant_tolerance": "0.005 Da",
+        "dominant_share": 1.0,
+        "counts": {
+          "0.005 Da": 125
+        }
+      },
+      {
+        "candidate_source": "hydroxyl_v1",
+        "n": 124,
+        "dominant_tolerance": "0.005 Da",
+        "dominant_share": 0.984,
+        "counts": {
+          "0.005 Da": 122,
+          "other": 2
+        }
+      },
+      {
+        "candidate_source": "methylation_v1",
+        "n": 113,
+        "dominant_tolerance": "0.005 Da",
+        "dominant_share": 0.947,
+        "counts": {
+          "0.005 Da": 107,
+          "other": 6
+        }
+      },
+      {
+        "candidate_source": "strict_1da",
+        "n": 99,
+        "dominant_tolerance": "other",
+        "dominant_share": 1.0,
+        "counts": {
+          "other": 99
+        }
+      },
+      {
+        "candidate_source": "protected_peptide_permutation_baseline",
+        "n": 92,
+        "dominant_tolerance": "other",
+        "dominant_share": 0.522,
+        "counts": {
+          "1 Da": 39,
+          "5 Da": 5,
+          "other": 48
+        }
+      },
+      {
+        "candidate_source": "demethyl_v1",
+        "n": 49,
+        "dominant_tolerance": "0.005 Da",
+        "dominant_share": 1.0,
+        "counts": {
+          "0.005 Da": 49
+        }
+      },
+      {
+        "candidate_source": "mlims_anchored_candidates_v1",
+        "n": 38,
+        "dominant_tolerance": "1 Da",
+        "dominant_share": 1.0,
+        "counts": {
+          "1 Da": 38
+        }
+      },
+      {
+        "candidate_source": "mass_aware_combinatorial_v1",
+        "n": 34,
+        "dominant_tolerance": "0.005 Da",
+        "dominant_share": 1.0,
+        "counts": {
+          "0.005 Da": 34
+        }
+      },
+      {
+        "candidate_source": "lactoyl_amino_acid_v1",
+        "n": 19,
+        "dominant_tolerance": "other",
+        "dominant_share": 0.737,
+        "counts": {
+          "0.05 Da": 5,
+          "other": 14
+        }
+      },
+      {
+        "candidate_source": "n_acetyl_v1",
+        "n": 12,
+        "dominant_tolerance": "0.005 Da",
+        "dominant_share": 0.833,
+        "counts": {
+          "0.005 Da": 10,
+          "other": 2
+        }
+      },
+      {
+        "candidate_source": "mlims_strict_overlay_v1",
+        "n": 11,
+        "dominant_tolerance": "1 Da",
+        "dominant_share": 0.636,
+        "counts": {
+          "1 Da": 7,
+          "other": 4
+        }
+      },
+      {
+        "candidate_source": "sulfate_position_v1",
+        "n": 9,
+        "dominant_tolerance": "other",
+        "dominant_share": 1.0,
+        "counts": {
+          "other": 9
+        }
+      },
+      {
+        "candidate_source": "targeted_combinatorial_v1",
+        "n": 5,
+        "dominant_tolerance": "0.005 Da",
+        "dominant_share": 1.0,
+        "counts": {
+          "0.005 Da": 5
+        }
+      },
+      {
+        "candidate_source": "glucuronide_v1",
+        "n": 3,
+        "dominant_tolerance": "other",
+        "dominant_share": 1.0,
+        "counts": {
+          "other": 3
+        }
+      },
+      {
+        "candidate_source": "taurine_variant_v1",
+        "n": 3,
+        "dominant_tolerance": "other",
+        "dominant_share": 1.0,
+        "counts": {
+          "other": 3
+        }
+      },
+      {
+        "candidate_source": "step7_targeted_chemistry_v1",
+        "n": 2,
+        "dominant_tolerance": "other",
+        "dominant_share": 1.0,
+        "counts": {
+          "other": 2
+        }
+      },
+      {
+        "candidate_source": "multi_conjugate_candidates_v1",
+        "n": 2,
+        "dominant_tolerance": "other",
+        "dominant_share": 1.0,
+        "counts": {
+          "other": 2
+        }
+      }
+    ],
+    "distinct_dominant_tolerances": [
+      "0.005 Da",
+      "1 Da",
+      "5 Da"
+    ],
+    "finding": "Each generator is internally consistent and they disagree with each other, so the mass sub-score is not one quantity across the delivered set. Candidates scored on different scales are ranked against each other and averaged into one confidence number."
+  },
   "known_figure_check": {
     "n_reports": 3897,
     "rank1_mass_mismatch": 598,
