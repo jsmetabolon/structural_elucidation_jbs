@@ -180,6 +180,11 @@ sample. Thousands of them would resolve shifts that 92 controls cannot see at al
 and the same harness would then measure handoff item 2 before it ships rather
 than after.
 
+Costed in [docs/library_holdout_validation_scope.md](library_holdout_validation_scope.md).
+Read the first section before funding anything: the whole proposition rests on how
+many library standards carry a usable acquired spectrum, and that number is not
+answerable from this repository.
+
 ## Settled since this was written
 
 **The manuscript typeface.** It was open here as a decision needing a person, and

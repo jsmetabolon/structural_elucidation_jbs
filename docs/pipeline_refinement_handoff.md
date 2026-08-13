@@ -148,6 +148,10 @@ Context you need:
   - Sequencing: worth doing before, not after, the authentic-standard expansion.
     It is cheaper, it arrives sooner, and it tells you whether a proposed rerank
     change is worth the standards budget in the first place.
+  - Costed in `docs/library_holdout_validation_scope.md`, including the three
+    places a held-out compound could leak into its own answer and the one number
+    that has to be established before any of it is worth scoping further: how many
+    library standards have a usable acquired MS2 spectrum.
 
 ## 5. Evidence-aware headline candidate score (fold evidence_confidence into rerank)
 - Goal: make the number the reranker emits as the candidate's headline score reflect
