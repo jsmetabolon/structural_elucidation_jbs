@@ -144,6 +144,42 @@ Expanding truth coverage of the mass-mismatch cohort specifically would be worth
 more than expanding the truth set uniformly, since that cohort is where the
 proposed changes act.
 
+### A second option, which handoff item 4 does not consider
+
+Item 4 proposes one route: acquire more authentic standards. That is a chemistry
+budget and a long lead time. There is a second route that costs compute instead,
+and the reason it is available is the thing the writing guidance already says
+about the library — a large Level-1 library empowers prediction. It is also the
+validation set.
+
+**Metabolon already holds thousands of compounds with both a known structure and
+an acquired spectrum: the reference library itself.** Running those spectra
+through the pipeline with each compound suppressed from retrieval turns every one
+of them into a held-out control. No new chemistry, no new acquisition.
+
+There is precedent in this repository for exactly that reasoning. The pathway
+audit runs leave-one-out over **5,095 reference metabolites**, hiding each
+metabolite's own labels and asking the mechanism to recover them, and reports the
+result as mechanism validation rather than as accuracy.
+
+**Two honest limits, and neither is fatal.**
+
+- **Catalogued compounds are not unknowns**, and this work already measures the
+  gap: exact-source rank-1 recovery is 38.1% against 56.0% for predicted-source.
+  So this cannot replace truth on real unknowns, and any absolute rate from it
+  must be labelled as measured on catalogued chemistry.
+- **It is not as cheap as the pathway version.** That one replays offline from the
+  reference database because a neighbour vote over fingerprints can be recomputed
+  from the database alone. Structural candidate generation cannot: it needs the
+  spectra, the models and the inference stack. This is an EC2 run, not a laptop
+  script.
+
+**What it is good for is the question that blocks everything else.** Deciding
+whether a reranking change helps needs paired comparisons, not a representative
+sample. Thousands of them would resolve shifts that 92 controls cannot see at all,
+and the same harness would then measure handoff item 2 before it ships rather
+than after.
+
 ## Settled since this was written
 
 **The manuscript typeface.** It was open here as a decision needing a person, and

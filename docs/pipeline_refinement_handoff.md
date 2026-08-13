@@ -125,6 +125,29 @@ Context you need:
   calibration decile-bin monotonicity + per-tier observed correctness improve.
 - Open question: whether to also fit per-library or per-pathway calibration once
   the labeled set is large enough.
+- **Second route, no new chemistry: hold out the library against itself.** The
+  steps above buy truth with acquisition lead time. The reference library is
+  already thousands of compounds with both a known structure and an acquired
+  spectrum, so running those spectra through the pipeline with each compound
+  suppressed from retrieval makes every one of them a held-out control. Precedent
+  is item-adjacent and already in the repo: `tools/audit_pathway_predictions.py
+  --loo` does this for pathway labels over 5,095 reference metabolites and reports
+  it as mechanism validation rather than accuracy.
+  - What it needs: the library standard spectra and structures (both exist), a way
+    to suppress one compound from retrieval and library matching for its own
+    query without disturbing the rest, and an inference run. Unlike the pathway
+    version it cannot be replayed offline from the database, because candidate
+    generation needs the models and the spectra.
+  - What it gives: thousands of paired comparisons instead of 92, which is what
+    any question of the form "does this reranking change help" actually requires.
+    It is the missing prerequisite for validating item 2 before shipping it.
+  - What it does not give: a rate transferable to real unknowns. Catalogued
+    compounds are a different population, and this work already measures the gap
+    at 38.1% exact-source rank-1 recovery against 56.0% predicted-source. Report
+    it as measured on catalogued chemistry, the way the pathway LOO is reported.
+  - Sequencing: worth doing before, not after, the authentic-standard expansion.
+    It is cheaper, it arrives sooner, and it tells you whether a proposed rerank
+    change is worth the standards budget in the first place.
 
 ## 5. Evidence-aware headline candidate score (fold evidence_confidence into rerank)
 - Goal: make the number the reranker emits as the candidate's headline score reflect
