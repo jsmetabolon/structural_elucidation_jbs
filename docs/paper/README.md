@@ -3,7 +3,10 @@
 This folder holds the manuscript, committed aggregate audit artifacts, vector
 figures, and Supplementary Information.
 
-- `manuscript.docx` — primary Nature initial-submission manuscript (figures embedded).
+- `manuscript.docx` — the internal manuscript, branded, with figures embedded. It
+  keeps Nature initial-submission mechanics (12-point double-spaced body, line
+  numbering, seven display items) so a submission stays cheap to produce; set
+  `BRANDED = False` in `tools/build_manuscript_docx.py` to build that version.
 - `manuscript.md` — editable source.
 - `supplement/supplementary_information.md` — cohort glossary, extended tables,
   calibration, pathway, and mass-mismatch details.
@@ -69,21 +72,27 @@ Authoritative P0/P1 results are intentionally absent until
 `models/p1_reference_v1/` are supplied; the 92-control calibration set is not
 substituted for those cohorts.
 
-## Build the Nature Word manuscript
+## Build the Word manuscript
 
 The Word generator enforces the Nature-oriented title/summary/display-item limits,
-uses 12-point Montserrat with double spacing, adds page and continuous line
-numbers, converts SVGs to high-resolution embedded PNGs, and preserves Word-native
-tables and references.
+uses a 12-point double-spaced body, adds page and continuous line numbers,
+converts SVGs to high-resolution embedded PNGs, and preserves Word-native tables
+and references.
 
-The typeface is the brand's rather than a journal serif. Everything a Nature
-initial submission actually asks for — the 12-point body, the double spacing, the
-line numbering — is unchanged, and a journal that wants its own template will
-re-set the manuscript anyway. Montserrat is vendored at
-`assets/fonts/montserrat/` and registered by `tools/brand.py`, because the
-figures are rasterised through cairosvg at build time and an unresolved family
-would put them into a fallback face without failing anything. Both release gates
-check that it resolves.
+**Branded or journal-plain, on one flag.** `BRANDED` in
+`tools/build_manuscript_docx.py` governs the body face and the heading colour
+together: true gives the internal document this repository ships, Montserrat with
+Dark Mode Blue headings; false gives a journal submission, Times New Roman with
+black headings. Nothing else differs, because the mechanics a submission actually
+requires are kept under both settings. The release gate and
+`tests/test_manuscript_docx.py` read `BODY_FONT` from the builder rather than
+naming a face, so flipping the flag does not mean editing assertions too.
+
+Montserrat is vendored at `assets/fonts/montserrat/` and registered by
+`tools/brand.py` regardless of the flag, because the figures are branded either
+way and are rasterised through cairosvg at build time; an unresolved family would
+put them into a fallback face without failing anything. Both release gates check
+that it resolves.
 
 ```bash
 python3 tools/build_manuscript_docx.py \
