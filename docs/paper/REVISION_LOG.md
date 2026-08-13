@@ -384,3 +384,62 @@ than quietly resolved, because the draft has circulated.
   which is a real axis at weight 0.05 and the only one that can demote a report
   to Tentative and block MSI Levels 2 and 3 by itself; S10 includes it.
 
+## Decision record: the mass axis
+
+Measuring the drafted ppm bands turned up something larger than the question
+that prompted it. The audit is `tools/audit_mass_policy.py`, run over the 3,897
+delivered reports; its output is `docs/paper/data/thresholds/audit_mass_policy.json`.
+The reader was validated by reproducing the committed 598 rank-1 mass
+mismatches, the 15.35% rate, and the 523 with an in-list alternative exactly.
+
+No scoring behaviour changed in this pass. What changed is what is written down.
+
+### Settled
+
+- **The delivered reports were not scored by the function the documentation
+  described.** Two functions were named `mass_match_score`, with different
+  signatures and tolerances 200-fold apart. `pipeline/candidates.py` imported the
+  one in `chemistry/conjugates.py`, which runs at a 1.0 Da default; the
+  documentation described the one in `inference/predict.py`, which has a 0.001 Da
+  plateau and a 0.005 Da tolerance. Nothing failed, because the names matched and
+  the signatures were never checked against each other. The conjugates function
+  is now `linear_mass_match_score` and each definition points at the other.
+- **The scale varies by generator, and systematically.** Inverting the score
+  recovers the tolerance each candidate was scored under: library-anchored and
+  peptide de novo candidates at 1.0 Da, the balanced assembly path at 5.0 Da, and
+  the biotransformation families at 0.005 Da. Each generator is consistent with
+  itself. So the mass sub-score is not one quantity: candidates on scales that
+  differ by up to 200-fold are ranked against each other, averaged with the other
+  axes, and the Platt coefficients were fitted on the mixture. This is the most
+  consequential finding here and it was not previously recorded anywhere.
+- **The drafted 0-1 / 1-3 / 3-5 ppm bands are rejected.** They shrink rank-1
+  strong-mass calls from 2,436 to 1,424 and made recovery worse on every
+  comparison. The question is closed.
+- **The mass tolerance is not a useful dial.** Swept from 0.005 Da to 5.0 Da, a
+  thousand-fold range, rank-1 recovery moves by two controls out of 92 and no
+  setting gains a single one. Losses fall as the tolerance loosens, so the gate
+  does least harm where it fires least. Meanwhile rank-1 strong-mass claims range
+  from 2,057 to 3,105 across the same sweep: the axis relabels reports without
+  discriminating between them.
+- **Handoff item 2 should not ship as specified.** Its projection of roughly 523
+  recoverable reports counts cases where a mass-consistent alternative exists,
+  which is a claim about mass consistency rather than about correctness. Applied
+  to the truth controls the gate gained nothing at rank 1 and lost three to five.
+
+### Open, and why they cannot be closed here
+
+- **Whether a 1.0 Da tolerance was intended.** At 300 Da that is roughly 3,300
+  ppm, which admits essentially every candidate the generator proposes. The
+  profile carrying it is named `strict_1da`, which suggests deliberate, but one
+  Dalton is not strict for high-resolution data. Someone with the pipeline's
+  history should say which.
+- **Whether to unify the scorers, rescore and recalibrate.** The technical work
+  is clear and the cost is not: a pipeline re-run, a Platt refit, and re-auditing
+  every number in both documents. It should be decided together with the question
+  above rather than slipped in as cleanup.
+- **Whether the truth set can support any of this.** Only 9 of the 598
+  mass-mismatch reports have a known correct answer. That single number is why
+  the two decisions above rest on judgement rather than measurement, and it
+  gates any future rerank change as well. Expanding it is handoff item 4, and it
+  now looks like a prerequisite rather than a parallel improvement.
+
