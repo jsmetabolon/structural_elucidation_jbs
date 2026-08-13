@@ -16,6 +16,7 @@ from docx.oxml.ns import qn
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from tools.brand import FAMILY, font_is_resolvable  # noqa: E402
+from tools.build_manuscript_docx import BODY_FONT  # noqa: E402
 from tools.figure_formats import figure_error  # noqa: E402
 
 # Documents whose job is to record what was withdrawn, and which therefore have to
@@ -177,8 +178,12 @@ def main() -> None:
         word = Document(docx_path)
         if len(word.core_properties.title) > 75:
             errors.append(f"Nature title exceeds 75 characters: {word.core_properties.title}")
-        if word.styles["Normal"].font.name != FAMILY:
-            errors.append(f"Nature DOCX body is not {FAMILY}")
+        # Read the face the builder is configured for rather than naming one, so
+        # flipping between the branded document and a journal-plain submission
+        # does not require editing the gate as well. What this catches is a
+        # committed DOCX that no longer matches the builder.
+        if word.styles["Normal"].font.name != BODY_FONT:
+            errors.append(f"manuscript DOCX body is not {BODY_FONT}")
         if word.styles["Normal"].font.size.pt != 12:
             errors.append("Nature DOCX body is not 12 point")
         if word.styles["Normal"].paragraph_format.line_spacing_rule != WD_LINE_SPACING.DOUBLE:
