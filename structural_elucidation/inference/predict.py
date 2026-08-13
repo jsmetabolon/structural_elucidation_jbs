@@ -286,6 +286,14 @@ def mass_match_score(
     before: full score below ``MASS_SCORE_PLATEAU_DA``, zero at or above
     ``tolerance_da``, and ``1 - err_ppm / tol_ppm`` in between (equivalent to
     ``1 - err_da / tolerance_da`` since ``err_ppm / tol_ppm == err_da / tolerance_da``).
+
+    This is **not** the scorer behind most of the ``mass_match_score`` column in the
+    delivered candidate tables. That is
+    ``chemistry.conjugates.linear_mass_match_score``, which takes an error rather
+    than two masses, has no plateau, and runs at a 1.0 Da default. Measured over the
+    delivered set, roughly 80% of scores came from that function and 2.6% from this
+    one; see ``docs/paper/data/thresholds/audit_mass_policy.json``. Check which
+    scorer a number came from before comparing it against these windows.
     """
     if predicted_mass is None:
         return 0.0

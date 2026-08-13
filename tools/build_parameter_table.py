@@ -155,10 +155,11 @@ def mass_rows() -> list[dict[str, Any]]:
         f"{MASS_SCORE_TOLERANCE_DA:g} Da, falling linearly between. Because the windows are "
         f"absolute Da, the ppm equivalents below hold at {PPM_REFERENCE_MASS_DA:.0f} Da and "
         "tighten as the compound gets heavier. "
-        "NOT the rule the delivered reports were scored under: measured against the bundle, "
-        "22,204 of 31,645 candidate scores follow 1 - error_da and only 56 follow the windows "
-        "described here, so the bands in this row describe the implemented function rather than "
-        "the delivered numbers. See tools/audit_mass_policy.py and "
+        "These windows are NOT what scored the delivered reports. That column is filled by "
+        "chemistry.conjugates.linear_mass_match_score, a different function running at a 1.0 Da "
+        "default, and roughly 80% of delivered scores came from it against 2.6% from the windows "
+        "described here. Under a 1.0 Da tolerance the strong-mass cutoff admits an error near "
+        "0.1 Da, some hundreds of ppm rather than the few implied above. See "
         "docs/paper/data/thresholds/audit_mass_policy.json."
     )
     weight = WEIGHTS[key]

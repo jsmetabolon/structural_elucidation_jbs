@@ -27,7 +27,11 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from structural_elucidation.chemistry.conjugates import CONJUGATE_REACTIONS, apply_reaction, mass_match_score
+from structural_elucidation.chemistry.conjugates import (
+    CONJUGATE_REACTIONS,
+    apply_reaction,
+    linear_mass_match_score,
+)
 from structural_elucidation.utils.denovo import canonicalize_smiles, exact_mass_from_smiles, formula_from_smiles
 from structural_elucidation.evaluation.failure_modes import load_x_controls
 from structural_elucidation.chemistry.formula import formula_prior_score
@@ -352,7 +356,7 @@ def append_candidate(
     )
     formula = formula_from_smiles(canonical) or str(hit.get("library_formula", ""))
     formula_prior = formula_prior_score(formula, target_mass, tolerance_da=float(args.formula_tolerance_da))
-    mass_score = mass_match_score(abs_error, float(args.mass_score_tolerance_da))
+    mass_score = linear_mass_match_score(abs_error, float(args.mass_score_tolerance_da))
     nce_forward = safe_float(hit.get("forward_spectrum_score"), 0.0)
     nce_ms2 = safe_float(hit.get("ms2_match_score"), 0.0)
     nce_pipeline = safe_float(hit.get("nce_pipeline_score"), 0.0)

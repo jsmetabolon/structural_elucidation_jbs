@@ -97,10 +97,21 @@ class MassPolicy:
         return max(0.0, 1.0 - error_da / tolerance)
 
 
-# What the code implements today.
+# What inference/predict.py implements.
 CURRENT = MassPolicy("current-absolute-da", MASS_SCORE_PLATEAU_DA, MASS_SCORE_TOLERANCE_DA, "da")
 # What the drafted parameter sheet asks for: Strong to 1 ppm, nothing past 5 ppm.
 DRAFTED = MassPolicy("drafted-ppm", 1.0, 5.0, "ppm")
+
+# The shape the delivered column actually has: linear from zero, no plateau, which
+# is chemistry.conjugates.linear_mass_match_score. Swept across three orders of
+# magnitude because the shipped default of 1.0 Da is thousands of ppm, loose enough
+# that the axis may not be separating candidates at all. A flat curve here says the
+# tolerance is not a dial worth turning; a peak says which way to turn it.
+SWEEP_TOLERANCES_DA = (0.005, 0.05, 0.5, 1.0, 5.0)
+
+
+def delivered_policy(tolerance_da: float) -> MassPolicy:
+    return MassPolicy(f"linear-{tolerance_da:g}da", 0.0, tolerance_da, "da")
 
 
 def band_of(score: float | None) -> str | None:
@@ -149,6 +160,7 @@ class Candidate:
     error_da: float | None
     stored_score: float | None
     truth_tanimoto: float | None
+    source: str = ""
 
 
 @dataclass
@@ -228,6 +240,7 @@ def read_reports(root: Path) -> Iterator[Report]:
                     error_da=_num(row.get("abs_mass_error_da")),
                     stored_score=_num(row.get("mass_match_score")),
                     truth_tanimoto=_num(row.get("truth_tanimoto")),
+                    source=str(row.get("candidate_source", "") or "").strip(),
                 )
             )
         if not candidates:
@@ -498,6 +511,113 @@ def truth_coverage(reports: list[Report], policy: MassPolicy) -> dict[str, Any]:
     }
 
 
+KNOWN_TOLERANCES_DA = (0.005, 0.05, 0.15, 0.5, 1.0, 5.0)
+
+
+def implied_tolerance_by_source(reports: list[Report]) -> dict[str, Any]:
+    """Which generator's candidates were scored on which mass scale.
+
+    Inverting ``score = 1 - err / tolerance`` recovers the tolerance each candidate
+    was scored under. Grouping that by the generator that produced the candidate
+    says whether the mixture of scales is accidental or structural, and it is
+    structural: each generator is consistent with itself and they disagree with
+    each other by up to 200-fold. Candidates from different generators are
+    therefore ranked against one another on scales that do not correspond.
+    """
+
+    def bucket(tolerance: float) -> str:
+        for target in KNOWN_TOLERANCES_DA:
+            if abs(tolerance - target) / target < 0.02:
+                return f"{target:g} Da"
+        return "other"
+
+    by_source: dict[str, dict[str, int]] = {}
+    for report in reports:
+        for candidate in report.candidates:
+            error, score = candidate.error_da, candidate.stored_score
+            if error is None or score is None or error <= 0 or not 0.0 < score < 1.0:
+                continue
+            key = candidate.source or "(blank)"
+            counts = by_source.setdefault(key, {})
+            label = bucket(error / (1.0 - score))
+            counts[label] = counts.get(label, 0) + 1
+
+    rows = []
+    for source, counts in sorted(by_source.items(), key=lambda kv: -sum(kv[1].values())):
+        total = sum(counts.values())
+        dominant, dominant_n = max(counts.items(), key=lambda kv: kv[1])
+        rows.append(
+            {
+                "candidate_source": source,
+                "n": total,
+                "dominant_tolerance": dominant,
+                "dominant_share": round(dominant_n / total, 3),
+                "counts": dict(sorted(counts.items())),
+            }
+        )
+    distinct = {row["dominant_tolerance"] for row in rows if row["n"] >= 100}
+    return {
+        "by_candidate_source": rows,
+        "distinct_dominant_tolerances": sorted(distinct),
+        "finding": (
+            "Each generator is internally consistent and they disagree with each other, so the "
+            "mass sub-score is not one quantity across the delivered set. Candidates scored on "
+            "different scales are ranked against each other and averaged into one confidence "
+            "number."
+            if len(distinct) > 1
+            else "All generators scored on the same tolerance."
+        ),
+    }
+
+
+def tolerance_sweep(reports: list[Report]) -> dict[str, Any]:
+    """Recovery and band split across three orders of magnitude of mass tolerance.
+
+    Answers whether the mass axis is carrying information. The shipped default of
+    1.0 Da is thousands of ppm, which is loose enough that nearly every candidate
+    scores near the top and the axis stops separating anything. If rank-1 recovery
+    is unmoved from 0.005 Da to 5.0 Da then the tolerance is not the problem and
+    tightening it is not the fix.
+    """
+
+    rows = []
+    for tolerance in SWEEP_TOLERANCES_DA:
+        policy = delivered_policy(tolerance)
+        paired = paired_recovery(reports, policy)
+        rows.append(
+            {
+                "tolerance_da": tolerance,
+                "rank1_correct": paired["rank1"]["correct_after"],
+                "rank1_gained": paired["rank1"]["gained"],
+                "rank1_lost": paired["rank1"]["lost"],
+                "rank1_mcnemar_exact_p": paired["rank1"]["mcnemar_exact_p"],
+                "rank3_correct": paired["rank3"]["correct_after"],
+                "rank1_band": distributions(reports, policy),
+            }
+        )
+    baseline = rows[0]["rank1_correct"] if rows else None
+    spread = max(row["rank1_correct"] for row in rows) - min(row["rank1_correct"] for row in rows)
+    return {
+        "baseline_rank1_correct_before_any_gate": paired_recovery(reports, CURRENT)["rank1"][
+            "correct_before"
+        ],
+        "points": rows,
+        "rank1_spread_across_the_sweep": spread,
+        "reading": (
+            f"A spread of {spread} across a "
+            f"{SWEEP_TOLERANCES_DA[-1] / SWEEP_TOLERANCES_DA[0]:.0f}-fold change in tolerance "
+            "means the mass axis is not separating correct candidates from incorrect ones at any "
+            "setting, so no choice of window is defensible on this cohort. Note also that losses "
+            "fall as the tolerance loosens: the gate does least harm where it fires least, which "
+            "is what an intervention carrying no signal looks like."
+            if spread <= 3
+            else "Recovery varies with the tolerance, so the window is a real choice and the "
+            "best-performing setting is worth examining against a larger truth set."
+        ),
+        "_baseline_at_tightest": baseline,
+    }
+
+
 def distributions(reports: list[Report], policy: MassPolicy) -> dict[str, Any]:
     """How the mass band splits the delivered set under a policy.
 
@@ -540,6 +660,28 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"| unexplained | {prov['unexplained']} |",
         "",
         f"Out of {prov['n_scored_candidates']} scored candidates.",
+    ]
+
+    attribution = summary["implied_tolerance_by_source"]
+    lines += [
+        "",
+        "## Which generator was scored on which scale",
+        "",
+        "Inverting the score recovers the tolerance each candidate was scored under.",
+        "",
+        "| Candidate source | n | Dominant tolerance | Share |",
+        "|---|---:|---|---:|",
+    ]
+    for row in attribution["by_candidate_source"]:
+        if row["n"] < 50:
+            continue
+        lines.append(
+            f"| `{row['candidate_source']}` | {row['n']} | {row['dominant_tolerance']} | "
+            f"{row['dominant_share']:.0%} |"
+        )
+    lines += [
+        "",
+        attribution["finding"],
         "",
         "## The screen",
         "",
@@ -584,6 +726,35 @@ def render_markdown(summary: dict[str, Any]) -> str:
                     f"| `{name}` | {depth} | {row['correct_before']} | {row['correct_after']} | "
                     f"{row['gained']} | {row['lost']} | {row['mcnemar_exact_p']} |"
                 )
+        sweep = summary["tolerance_sweep"]
+        lines += [
+            "",
+            "### Does the tolerance matter at all",
+            "",
+            "The delivered scorer is linear from zero with no plateau. Sweeping its tolerance "
+            "across three orders of magnitude, against "
+            f"{sweep['baseline_rank1_correct_before_any_gate']} controls correct at rank 1 before "
+            "any gate:",
+            "",
+            "| Tolerance | Rank-1 correct | Gained | Lost | Exact p | Rank-1 strong | partial | fail |",
+            "|---:|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+        for row in sweep["points"]:
+            band = row["rank1_band"]
+            lines.append(
+                f"| {row['tolerance_da']:g} Da | {row['rank1_correct']} | {row['rank1_gained']} | "
+                f"{row['rank1_lost']} | {row['rank1_mcnemar_exact_p']} | {band['strong']} | "
+                f"{band['partial']} | {band['fail']} |"
+            )
+        lines += [
+            "",
+            f"Recovery moves by {sweep['rank1_spread_across_the_sweep']} controls across the whole "
+            "sweep, and no setting gains a single one. What does move is what the reports say: "
+            "rank-1 strong-mass claims range from "
+            f"{sweep['points'][0]['rank1_band']['strong']} to "
+            f"{sweep['points'][-1]['rank1_band']['strong']} across the same range. "
+            + sweep["reading"],
+        ]
         cover = next(iter(summary["truth_coverage"].values()))
         lines += [
             "",
@@ -638,6 +809,7 @@ def main() -> None:
             "proposed": DRAFTED.__dict__,
         },
         "provenance": provenance(reports),
+        "implied_tolerance_by_source": implied_tolerance_by_source(reports),
         "known_figure_check": known_figure_check(reports),
         "screen": screen(reports, CURRENT, DRAFTED),
         "band_distribution": {
@@ -657,6 +829,7 @@ def main() -> None:
             CURRENT.name: truth_coverage(reports, CURRENT),
             DRAFTED.name: truth_coverage(reports, DRAFTED),
         }
+        summary["tolerance_sweep"] = tolerance_sweep(reports)
 
     prov = summary["provenance"]
     print(f"[mass-policy] reports: {len(reports)}")
@@ -698,6 +871,19 @@ def main() -> None:
                 f" controls; only {cover['n_rank1_mass_mismatch_that_are_truth_controls']} of the"
                 f" {cover['n_rank1_mass_mismatch']} mass-mismatch reports are checkable against truth"
             )
+        sweep = summary["tolerance_sweep"]
+        print(
+            f"[mass-policy] tolerance sweep (rank-1 correct of"
+            f" {sweep['baseline_rank1_correct_before_any_gate']} before any gate):"
+        )
+        for row in sweep["points"]:
+            band = row["rank1_band"]
+            print(
+                f"[mass-policy]   {row['tolerance_da']:>6g} Da -> {row['rank1_correct']:2d} correct"
+                f" (+{row['rank1_gained']} / -{row['rank1_lost']}, p={row['rank1_mcnemar_exact_p']});"
+                f" rank-1 strong {band['strong']}, partial {band['partial']}, fail {band['fail']}"
+            )
+        print(f"[mass-policy]   spread across the sweep: {sweep['rank1_spread_across_the_sweep']} controls")
 
     if args.out_dir:
         args.out_dir.mkdir(parents=True, exist_ok=True)

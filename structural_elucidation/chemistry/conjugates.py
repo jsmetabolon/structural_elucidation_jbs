@@ -149,8 +149,20 @@ def apply_reaction(base_smiles: str, reaction_name: str, max_products: int) -> l
     return products
 
 
-def mass_match_score(abs_error: float, tolerance_da: float) -> float:
-    """Linear mass-match score in [0, 1] with zero at or beyond ``tolerance_da``."""
+def linear_mass_match_score(abs_error: float, tolerance_da: float) -> float:
+    """Linear mass-match score in [0, 1] with zero at or beyond ``tolerance_da``.
+
+    This is the scorer that fills the ``mass_match_score`` column of the delivered
+    candidate tables, via ``pipeline/candidates.py`` at its 1.0 Da default.
+
+    Not to be confused with ``inference.predict.mass_match_score``, which is a
+    different function that takes ``(predicted_mass, parent_mz)`` rather than an
+    error, applies a plateau, and defaults to a tolerance 200 times tighter. The
+    two shared a name until an audit of the delivered set found the documentation
+    describing one while the pipeline ran the other; see
+    ``docs/paper/data/thresholds/audit_mass_policy.json``.
+    """
+
     if not np.isfinite(abs_error):
         return 0.0
     return float(np.clip(1.0 - abs(float(abs_error)) / max(float(tolerance_da), 1e-9), 0.0, 1.0))
@@ -208,7 +220,7 @@ def build_rows(seed_queue: pd.DataFrame, args: argparse.Namespace) -> tuple[pd.D
                     if not np.isfinite(exact_mass):
                         continue
                     abs_error = abs(float(exact_mass) - float(target_neutral_mass))
-                    score = mass_match_score(abs_error, float(args.mass_score_tolerance_da))
+                    score = linear_mass_match_score(abs_error, float(args.mass_score_tolerance_da))
                     formula_prior = safe_float(seed.get("formula_prior_score"), 0.0)
                     ms1_supported = str(seed.get("ms1_buddy_supported", False)).lower() in {"true", "1", "yes", "y"}
                     evidence = float(np.clip(0.35 + 0.35 * formula_prior + (0.15 if ms1_supported else 0.0), 0.0, 1.0))

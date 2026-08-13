@@ -16,6 +16,24 @@ Read-only comparison of the mass-match window against a proposed one, over a del
 
 Out of 31645 scored candidates.
 
+## Which generator was scored on which scale
+
+Inverting the score recovers the tolerance each candidate was scored under.
+
+| Candidate source | n | Dominant tolerance | Share |
+|---|---:|---|---:|
+| `library_anchored_candidates_v1` | 13127 | 1 Da | 95% |
+| `peptide_first_denovo_v1` | 9293 | 1 Da | 99% |
+| `balanced` | 2584 | 5 Da | 68% |
+| `dehydro_v1` | 218 | 0.005 Da | 100% |
+| `wgcna_seeded_v1` | 125 | 0.005 Da | 100% |
+| `hydroxyl_v1` | 124 | 0.005 Da | 98% |
+| `methylation_v1` | 113 | 0.005 Da | 95% |
+| `strict_1da` | 99 | other | 100% |
+| `protected_peptide_permutation_baseline` | 92 | other | 52% |
+
+Each generator is internally consistent and they disagree with each other, so the mass sub-score is not one quantity across the delivered set. Candidates scored on different scales are ranked against each other and averaged into one confidence number.
+
 ## The screen
 
 Candidates between the two windows: **1532** (95 of them at rank 1) out of 31645 with a mass error.
@@ -50,6 +68,20 @@ The gate from handoff item 2, applied to the whole candidate list under each pol
 | `current-absolute-da` | rank3 | 59 | 58 | 3 | 4 | 1.0 |
 | `drafted-ppm` | rank1 | 44 | 39 | 0 | 5 | 0.0625 |
 | `drafted-ppm` | rank3 | 59 | 55 | 3 | 7 | 0.34375 |
+
+### Does the tolerance matter at all
+
+The delivered scorer is linear from zero with no plateau. Sweeping its tolerance across three orders of magnitude, against 44 controls correct at rank 1 before any gate:
+
+| Tolerance | Rank-1 correct | Gained | Lost | Exact p | Rank-1 strong | partial | fail |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0.005 Da | 41 | 0 | 3 | 0.25 | 2057 | 609 | 787 |
+| 0.05 Da | 42 | 0 | 2 | 0.5 | 2756 | 196 | 501 |
+| 0.5 Da | 42 | 0 | 2 | 0.5 | 3068 | 30 | 355 |
+| 1 Da | 42 | 0 | 2 | 0.5 | 3085 | 20 | 348 |
+| 5 Da | 43 | 0 | 1 | 1.0 | 3105 | 18 | 330 |
+
+Recovery moves by 2 controls across the whole sweep, and no setting gains a single one. What does move is what the reports say: rank-1 strong-mass claims range from 2057 to 3105 across the same range. A spread of 2 across a 1000-fold change in tolerance means the mass axis is not separating correct candidates from incorrect ones at any setting, so no choice of window is defensible on this cohort. Note also that losses fall as the tolerance loosens: the gate does least harm where it fires least, which is what an intervention carrying no signal looks like.
 
 ### How far that generalises
 
