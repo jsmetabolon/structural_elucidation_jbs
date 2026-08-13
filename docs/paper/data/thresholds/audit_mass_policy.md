@@ -51,6 +51,20 @@ The gate from handoff item 2, applied to the whole candidate list under each pol
 | `drafted-ppm` | rank1 | 44 | 39 | 0 | 5 | 0.0625 |
 | `drafted-ppm` | rank3 | 59 | 55 | 3 | 7 | 0.34375 |
 
+### Does the tolerance matter at all
+
+The delivered scorer is linear from zero with no plateau. Sweeping its tolerance across three orders of magnitude, against 44 controls correct at rank 1 before any gate:
+
+| Tolerance | Rank-1 correct | Gained | Lost | Exact p | Rank-1 strong | partial | fail |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0.005 Da | 41 | 0 | 3 | 0.25 | 2057 | 609 | 787 |
+| 0.05 Da | 42 | 0 | 2 | 0.5 | 2756 | 196 | 501 |
+| 0.5 Da | 42 | 0 | 2 | 0.5 | 3068 | 30 | 355 |
+| 1 Da | 42 | 0 | 2 | 0.5 | 3085 | 20 | 348 |
+| 5 Da | 43 | 0 | 1 | 1.0 | 3105 | 18 | 330 |
+
+Recovery moves by 2 controls across the whole sweep, and no setting gains a single one. What does move is what the reports say: rank-1 strong-mass claims range from 2057 to 3105 across the same range. A spread of 2 across a 1000-fold change in tolerance means the mass axis is not separating correct candidates from incorrect ones at any setting, so no choice of window is defensible on this cohort. Note also that losses fall as the tolerance loosens: the gate does least harm where it fires least, which is what an intervention carrying no signal looks like.
+
 ### How far that generalises
 
 Only **9 of the 598** rank-1 mass-mismatch reports have a known correct answer, so that handful carries the entire evidence base for any projection about the rest. The gate is aimed at a cohort the truth set barely covers, which bounds what these counts can settle either way.

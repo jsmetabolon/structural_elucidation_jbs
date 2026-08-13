@@ -142,5 +142,83 @@
       "of_those_lost": 5,
       "of_those_unchanged": 7
     }
+  },
+  "tolerance_sweep": {
+    "baseline_rank1_correct_before_any_gate": 44,
+    "points": [
+      {
+        "tolerance_da": 0.005,
+        "rank1_correct": 41,
+        "rank1_gained": 0,
+        "rank1_lost": 3,
+        "rank1_mcnemar_exact_p": 0.25,
+        "rank3_correct": 58,
+        "rank1_band": {
+          "strong": 2057,
+          "partial": 609,
+          "fail": 787,
+          "unknown": 444
+        }
+      },
+      {
+        "tolerance_da": 0.05,
+        "rank1_correct": 42,
+        "rank1_gained": 0,
+        "rank1_lost": 2,
+        "rank1_mcnemar_exact_p": 0.5,
+        "rank3_correct": 58,
+        "rank1_band": {
+          "strong": 2756,
+          "partial": 196,
+          "fail": 501,
+          "unknown": 444
+        }
+      },
+      {
+        "tolerance_da": 0.5,
+        "rank1_correct": 42,
+        "rank1_gained": 0,
+        "rank1_lost": 2,
+        "rank1_mcnemar_exact_p": 0.5,
+        "rank3_correct": 57,
+        "rank1_band": {
+          "strong": 3068,
+          "partial": 30,
+          "fail": 355,
+          "unknown": 444
+        }
+      },
+      {
+        "tolerance_da": 1.0,
+        "rank1_correct": 42,
+        "rank1_gained": 0,
+        "rank1_lost": 2,
+        "rank1_mcnemar_exact_p": 0.5,
+        "rank3_correct": 57,
+        "rank1_band": {
+          "strong": 3085,
+          "partial": 20,
+          "fail": 348,
+          "unknown": 444
+        }
+      },
+      {
+        "tolerance_da": 5.0,
+        "rank1_correct": 43,
+        "rank1_gained": 0,
+        "rank1_lost": 1,
+        "rank1_mcnemar_exact_p": 1.0,
+        "rank3_correct": 58,
+        "rank1_band": {
+          "strong": 3105,
+          "partial": 18,
+          "fail": 330,
+          "unknown": 444
+        }
+      }
+    ],
+    "rank1_spread_across_the_sweep": 2,
+    "reading": "A spread of 2 across a 1000-fold change in tolerance means the mass axis is not separating correct candidates from incorrect ones at any setting, so no choice of window is defensible on this cohort. Note also that losses fall as the tolerance loosens: the gate does least harm where it fires least, which is what an intervention carrying no signal looks like.",
+    "_baseline_at_tightest": 41
   }
 }

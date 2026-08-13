@@ -97,10 +97,21 @@ class MassPolicy:
         return max(0.0, 1.0 - error_da / tolerance)
 
 
-# What the code implements today.
+# What inference/predict.py implements.
 CURRENT = MassPolicy("current-absolute-da", MASS_SCORE_PLATEAU_DA, MASS_SCORE_TOLERANCE_DA, "da")
 # What the drafted parameter sheet asks for: Strong to 1 ppm, nothing past 5 ppm.
 DRAFTED = MassPolicy("drafted-ppm", 1.0, 5.0, "ppm")
+
+# The shape the delivered column actually has: linear from zero, no plateau, which
+# is chemistry.conjugates.linear_mass_match_score. Swept across three orders of
+# magnitude because the shipped default of 1.0 Da is thousands of ppm, loose enough
+# that the axis may not be separating candidates at all. A flat curve here says the
+# tolerance is not a dial worth turning; a peak says which way to turn it.
+SWEEP_TOLERANCES_DA = (0.005, 0.05, 0.5, 1.0, 5.0)
+
+
+def delivered_policy(tolerance_da: float) -> MassPolicy:
+    return MassPolicy(f"linear-{tolerance_da:g}da", 0.0, tolerance_da, "da")
 
 
 def band_of(score: float | None) -> str | None:
@@ -498,6 +509,54 @@ def truth_coverage(reports: list[Report], policy: MassPolicy) -> dict[str, Any]:
     }
 
 
+def tolerance_sweep(reports: list[Report]) -> dict[str, Any]:
+    """Recovery and band split across three orders of magnitude of mass tolerance.
+
+    Answers whether the mass axis is carrying information. The shipped default of
+    1.0 Da is thousands of ppm, which is loose enough that nearly every candidate
+    scores near the top and the axis stops separating anything. If rank-1 recovery
+    is unmoved from 0.005 Da to 5.0 Da then the tolerance is not the problem and
+    tightening it is not the fix.
+    """
+
+    rows = []
+    for tolerance in SWEEP_TOLERANCES_DA:
+        policy = delivered_policy(tolerance)
+        paired = paired_recovery(reports, policy)
+        rows.append(
+            {
+                "tolerance_da": tolerance,
+                "rank1_correct": paired["rank1"]["correct_after"],
+                "rank1_gained": paired["rank1"]["gained"],
+                "rank1_lost": paired["rank1"]["lost"],
+                "rank1_mcnemar_exact_p": paired["rank1"]["mcnemar_exact_p"],
+                "rank3_correct": paired["rank3"]["correct_after"],
+                "rank1_band": distributions(reports, policy),
+            }
+        )
+    baseline = rows[0]["rank1_correct"] if rows else None
+    spread = max(row["rank1_correct"] for row in rows) - min(row["rank1_correct"] for row in rows)
+    return {
+        "baseline_rank1_correct_before_any_gate": paired_recovery(reports, CURRENT)["rank1"][
+            "correct_before"
+        ],
+        "points": rows,
+        "rank1_spread_across_the_sweep": spread,
+        "reading": (
+            f"A spread of {spread} across a "
+            f"{SWEEP_TOLERANCES_DA[-1] / SWEEP_TOLERANCES_DA[0]:.0f}-fold change in tolerance "
+            "means the mass axis is not separating correct candidates from incorrect ones at any "
+            "setting, so no choice of window is defensible on this cohort. Note also that losses "
+            "fall as the tolerance loosens: the gate does least harm where it fires least, which "
+            "is what an intervention carrying no signal looks like."
+            if spread <= 3
+            else "Recovery varies with the tolerance, so the window is a real choice and the "
+            "best-performing setting is worth examining against a larger truth set."
+        ),
+        "_baseline_at_tightest": baseline,
+    }
+
+
 def distributions(reports: list[Report], policy: MassPolicy) -> dict[str, Any]:
     """How the mass band splits the delivered set under a policy.
 
@@ -584,6 +643,35 @@ def render_markdown(summary: dict[str, Any]) -> str:
                     f"| `{name}` | {depth} | {row['correct_before']} | {row['correct_after']} | "
                     f"{row['gained']} | {row['lost']} | {row['mcnemar_exact_p']} |"
                 )
+        sweep = summary["tolerance_sweep"]
+        lines += [
+            "",
+            "### Does the tolerance matter at all",
+            "",
+            "The delivered scorer is linear from zero with no plateau. Sweeping its tolerance "
+            "across three orders of magnitude, against "
+            f"{sweep['baseline_rank1_correct_before_any_gate']} controls correct at rank 1 before "
+            "any gate:",
+            "",
+            "| Tolerance | Rank-1 correct | Gained | Lost | Exact p | Rank-1 strong | partial | fail |",
+            "|---:|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+        for row in sweep["points"]:
+            band = row["rank1_band"]
+            lines.append(
+                f"| {row['tolerance_da']:g} Da | {row['rank1_correct']} | {row['rank1_gained']} | "
+                f"{row['rank1_lost']} | {row['rank1_mcnemar_exact_p']} | {band['strong']} | "
+                f"{band['partial']} | {band['fail']} |"
+            )
+        lines += [
+            "",
+            f"Recovery moves by {sweep['rank1_spread_across_the_sweep']} controls across the whole "
+            "sweep, and no setting gains a single one. What does move is what the reports say: "
+            "rank-1 strong-mass claims range from "
+            f"{sweep['points'][0]['rank1_band']['strong']} to "
+            f"{sweep['points'][-1]['rank1_band']['strong']} across the same range. "
+            + sweep["reading"],
+        ]
         cover = next(iter(summary["truth_coverage"].values()))
         lines += [
             "",
@@ -657,6 +745,7 @@ def main() -> None:
             CURRENT.name: truth_coverage(reports, CURRENT),
             DRAFTED.name: truth_coverage(reports, DRAFTED),
         }
+        summary["tolerance_sweep"] = tolerance_sweep(reports)
 
     prov = summary["provenance"]
     print(f"[mass-policy] reports: {len(reports)}")
@@ -698,6 +787,19 @@ def main() -> None:
                 f" controls; only {cover['n_rank1_mass_mismatch_that_are_truth_controls']} of the"
                 f" {cover['n_rank1_mass_mismatch']} mass-mismatch reports are checkable against truth"
             )
+        sweep = summary["tolerance_sweep"]
+        print(
+            f"[mass-policy] tolerance sweep (rank-1 correct of"
+            f" {sweep['baseline_rank1_correct_before_any_gate']} before any gate):"
+        )
+        for row in sweep["points"]:
+            band = row["rank1_band"]
+            print(
+                f"[mass-policy]   {row['tolerance_da']:>6g} Da -> {row['rank1_correct']:2d} correct"
+                f" (+{row['rank1_gained']} / -{row['rank1_lost']}, p={row['rank1_mcnemar_exact_p']});"
+                f" rank-1 strong {band['strong']}, partial {band['partial']}, fail {band['fail']}"
+            )
+        print(f"[mass-policy]   spread across the sweep: {sweep['rank1_spread_across_the_sweep']} controls")
 
     if args.out_dir:
         args.out_dir.mkdir(parents=True, exist_ok=True)
