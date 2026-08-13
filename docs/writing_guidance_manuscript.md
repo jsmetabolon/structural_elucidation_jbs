@@ -102,7 +102,9 @@ Explain the problem with current approaches to metabolite ID and LC-MS feature u
 
 - Why existing approaches are insufficient
 
-  Matching an observed spectrum against a reference library is the established route and the most precise one short of an authentic standard, but what bounds it is coverage: a structure absent from the library is outside the space the search returns, so extending the named fraction has meant manual chemistry at a throughput that limits both library expansion and the discovery of dataset-specific metabolites. Published computational approaches span retrieval to de novo generation, but none has been benchmarked head to head against this workflow, so no accuracy comparison is made.
+  Two failure modes, running in opposite directions. Matching an observed spectrum against a reference library is the established route and the most precise one short of an authentic standard, but what bounds it is coverage: a structure absent from the library is outside the space the search returns, so extending the named fraction has meant manual chemistry at a throughput that limits both library expansion and the discovery of dataset-specific metabolites. The second is the more consequential for how results are read: matching every signal against a broad database inflates an annotation list without adding identifications, through redundant adducts and isotopologues, recounting across chromatographic methods, and admission with no similarity floor. The resulting total is not a measure of coverage, and annotation counts are not comparable between workflows unless the redundancy and admission criteria behind them are stated.
+
+  A third gap sits alongside accuracy rather than inside it. Each route attaches a number to a candidate, and what that number is on the scale of, and what it was validated against, is reported unevenly. A score can rank well and calibrate badly, and those are not interchangeable for a reader deciding where to spend confirmation effort. Published computational approaches span retrieval to de novo generation, but none has been benchmarked head to head against this workflow, so no accuracy comparison is made.
 
 - What the tool / GDP enhancement does
 
@@ -110,7 +112,9 @@ Explain the problem with current approaches to metabolite ID and LC-MS feature u
 
 - What is technically differentiated
 
-  Three contributions, and none of them is accuracy: rank-aware structural validation with uncertainty and source-stratified recovery; provenance-aware taxonomy evaluation that separates direct database lookup from neighbour consensus and from agreement with an independent label source; and evidence-limited reporting for every feature, with a rubric that presents a structure hypothesis only when minimum corroboration criteria are met.
+  Four contributions, and none of them is accuracy: rank-aware structural validation with uncertainty and source-stratified recovery; provenance-aware taxonomy evaluation that separates direct database lookup from neighbour consensus and from agreement with an independent label source; evidence-limited reporting for every feature, with a rubric that presents a structure hypothesis only when minimum corroboration criteria are met; and a count that is defensible by construction rather than by assertion, through deduplication, adduct-aware mass gating against the neutral mass, one count per feature across chromatographic methods, and demotion of a top candidate whose mass does not fit.
+
+  A fifth is about the reporting rather than the method: the score's validation is published together with the score, including where it fails. Section 3.3 reports that it orders candidates within a feature and does not separate one feature from another. Stating that is what makes the number usable, and it is the property the landscape reports least consistently.
 
 - What evidence supports the claims
 
@@ -351,6 +355,26 @@ Added after a reader observed that the manuscript was dismissive of library matc
 - What was deliberately not softened
 
   Exact-source rank-1 recovery of 38.1% (16/42) and predicted-source 56.0% (28/50) both stand, with their overlapping intervals, and so does the conclusion that catalog provenance is not confirmation. Two sentences were rescoped rather than removed: Results no longer asserts that provenance confers no recovery advantage, which claims more than 42 controls can support, and now says the cohort does not resolve a difference in either direction. That is a narrower claim, not a friendlier one.
+
+## Review 6: Rigor against inflated annotation counts
+
+A commented pass directing the competitive argument at a practice rather than a product. Not part of the guidance as issued. Recorded in full in `docs/publication_review.md`.
+
+- The finding
+
+  A reader comparing deliverables sees two annotation totals and nothing telling them that one counts compounds and the other counts database returns. The manuscript described the coverage bound of library matching but not the opposite failure, so it answered only half of why the established routes fall short.
+
+- The correction
+
+  The Introduction now carries the second failure mode and names the three mechanisms that drive it, and Methods describes the deduplication, adduct-aware mass gating and claim-control rules that keep this workflow's own count honest. Section 3.1 reports what those rules cost in presented coverage. No company is named; the argument is aimed at a practice, and the named entries in the toolkit landscape are cited academic software.
+
+- Where the review was not followed
+
+  The direction asked for the score to be called validated. It is not, and saying so would contradict the Brier score this manuscript reports. The text instead states what the score was tested against and what the test showed, which is a stronger claim than the literal instruction and is the one the evidence supports.
+
+- Added since
+
+  The related-work section now also separates score interpretability from accuracy, because a number attached to a candidate is only usable if its scale and its validation are stated. That completes the review comment about other approaches' confidence scores, which the earlier pass had answered only for this workflow's own.
 
 ---
 

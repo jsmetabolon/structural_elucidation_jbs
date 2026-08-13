@@ -363,6 +363,26 @@ Added after a reader observed that the brief was dismissive of library matching.
 
   Defining reference library, library match, catalogued compound, and authentic standard neutrally in Key terms is what keeps the rest of the document from implying a verdict on a route it relies on.
 
+## Review 6: Rigor against inflated annotation counts
+
+A commented pass directing the competitive argument at a practice rather than a product. Not part of the guidance as issued. Recorded in full in `docs/publication_review.md`.
+
+- The finding
+
+  A customer comparing two deliverables sees two numbers of named metabolites and nothing telling them that one counts compounds and the other counts database returns. The brief described what library matching and expert interpretation each cover, and said nothing about the third route, which is the one that produces the impressive number.
+
+- The correction
+
+  "What the established routes cover, and what they leave" now describes three routes rather than two, and says plainly why a list of several thousand names is not several thousand findings: the same compound counted more than once, ionized and isotopic forms each returning separately, and a weak match printed like a strong one. "How the count is kept honest" answers it with the audited record, and closes on the withheld count, because coverage that could have been claimed and was not is the strongest evidence there is.
+
+- Where the review was not followed
+
+  The direction asked the brief to call its score validated. It does not, because leave-one-out calibration does not support that reading. It says instead that both confidence signals were tested, what each supports, and what neither supports.
+
+- Still open
+
+  Matrix-specific impact and a coverage-improvement table were both requested and are both blocked: they need source-study metadata and a baseline named fraction, neither of which exists in the reporting bundle. Carried as a `[REQUIRED: ...]` placeholder rather than guessed at.
+
 ---
 
 ## Carried, for a human
