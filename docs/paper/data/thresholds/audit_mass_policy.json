@@ -239,6 +239,106 @@
     ],
     "finding": "Each generator is internally consistent and they disagree with each other, so the mass sub-score is not one quantity across the delivered set. Candidates scored on different scales are ranked against each other and averaged into one confidence number."
   },
+  "mass_accuracy_by_correctness": {
+    "correct": {
+      "n": 97,
+      "median_ppm": 1.066,
+      "p90_ppm": 577413.4,
+      "p95_ppm": 939177.2
+    },
+    "incorrect": {
+      "n": 676,
+      "median_ppm": 1.705,
+      "p90_ppm": 591.5,
+      "p95_ppm": 126219.8
+    },
+    "windows": [
+      {
+        "window_ppm": 1.0,
+        "share_of_correct_within": 0.485,
+        "share_of_incorrect_within": 0.373
+      },
+      {
+        "window_ppm": 2.0,
+        "share_of_correct_within": 0.753,
+        "share_of_incorrect_within": 0.534
+      },
+      {
+        "window_ppm": 5.0,
+        "share_of_correct_within": 0.814,
+        "share_of_incorrect_within": 0.595
+      },
+      {
+        "window_ppm": 10.0,
+        "share_of_correct_within": 0.814,
+        "share_of_incorrect_within": 0.612
+      },
+      {
+        "window_ppm": 20.0,
+        "share_of_correct_within": 0.825,
+        "share_of_incorrect_within": 0.629
+      },
+      {
+        "window_ppm": 50.0,
+        "share_of_correct_within": 0.825,
+        "share_of_incorrect_within": 0.691
+      },
+      {
+        "window_ppm": 1000.0,
+        "share_of_correct_within": 0.825,
+        "share_of_incorrect_within": 0.901
+      },
+      {
+        "window_ppm": 3333.0,
+        "share_of_correct_within": 0.825,
+        "share_of_incorrect_within": 0.901
+      }
+    ],
+    "best_separating_window_ppm": 2.0,
+    "finding": "Correct candidates are measurably more accurate than incorrect ones, so the measurement carries signal. Whether a gate built on it helps is a separate question, answered separately, and the answer there was no."
+  },
+  "conjugate_tail": {
+    "n_correct_candidates": 97,
+    "n_with_implausible_mass": 17,
+    "share_of_correct": 0.175,
+    "n_distinct_controls": 7,
+    "controls": [
+      "X-12811",
+      "X-21470",
+      "X-21788",
+      "X-24137",
+      "X-25551",
+      "X-26094",
+      "X-26103"
+    ],
+    "by_conjugate": {
+      "unmatched": 12,
+      "glucuronide": 5
+    },
+    "modal_error_masses_da": {
+      "278.0907": 6,
+      "176.0329": 5,
+      "233.0664": 1,
+      "104.5358": 1,
+      "0.9839": 1,
+      "28.0315": 1,
+      "154.1722": 1,
+      "182.2035": 1
+    },
+    "identical_structure_but_mass_mismatched": [
+      "X-21470"
+    ],
+    "conjugate_masses_da": {
+      "water": 18.011,
+      "ammonia": 17.027,
+      "methylene": 14.016,
+      "acetyl": 42.011,
+      "sulfate": 79.957,
+      "hexose": 162.053,
+      "glucuronide": 176.032
+    },
+    "finding": "The Tanimoto truth threshold admits structures with the wrong molecular formula. Any mass window tight enough to be useful discards them, which is why tightening reads as harmful against this definition of correct. The tail concentrates in a handful of controls rather than being spread thinly, and where a candidate is structurally identical to the truth and still hundreds of Daltons out, the control's own annotation is the thing in question."
+  },
   "known_figure_check": {
     "n_reports": 3897,
     "rank1_mass_mismatch": 598,

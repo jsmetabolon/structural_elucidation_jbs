@@ -511,7 +511,185 @@ def truth_coverage(reports: list[Report], policy: MassPolicy) -> dict[str, Any]:
     }
 
 
+# Windows the accuracy split is reported at, spanning instrument accuracy through
+# the shipped default. 3333 ppm is 1.0 Da at 300 Da, included so the shipped
+# setting appears on the same axis as the alternatives rather than off the end.
+ACCURACY_WINDOWS_PPM = (1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 1000.0, 3333.0)
+
+# A candidate can clear the Tanimoto truth threshold while carrying a mass error
+# far too large for its formula to match: the same structure plus or minus a
+# conjugate. These are the common ones, and finding the tail clustered on them is
+# what distinguishes a conjugate relationship from a scoring error.
+CONJUGATE_MASSES_DA = {
+    "water": 18.011,
+    "ammonia": 17.027,
+    "methylene": 14.016,
+    "acetyl": 42.011,
+    "sulfate": 79.957,
+    "hexose": 162.053,
+    "glucuronide": 176.032,
+}
+# Wide enough to catch a conjugate at any of these masses, tight enough that a
+# random error does not land on one by accident.
+CONJUGATE_TOLERANCE_DA = 0.05
+
 KNOWN_TOLERANCES_DA = (0.005, 0.05, 0.15, 0.5, 1.0, 5.0)
+
+
+def _quantile(sorted_values: list[float], fraction: float) -> float:
+    index = min(int(fraction * len(sorted_values)), len(sorted_values) - 1)
+    return sorted_values[index]
+
+
+def mass_accuracy_by_correctness(reports: list[Report]) -> dict[str, Any]:
+    """Mass error split by whether the candidate is actually the right structure.
+
+    This is what says whether the mass axis carries information, as distinct from
+    whether a gate built on it helps. The two came apart: correct candidates are
+    measurably more accurate than incorrect ones, while promoting a mass-consistent
+    alternative to rank 1 gained nothing. A window that admits nearly everything
+    spends that signal.
+
+    Scored only over the truth controls, since it needs a known answer per
+    candidate.
+    """
+
+    correct: list[float] = []
+    incorrect: list[float] = []
+    for report in reports:
+        if not report.is_truth_control or not report.neutral_mass:
+            continue
+        for candidate in report.candidates:
+            if candidate.error_da is None or candidate.truth_tanimoto is None:
+                continue
+            ppm = ppm_of(candidate.error_da, report.neutral_mass)
+            if ppm is None:
+                continue
+            bucket = correct if candidate.truth_tanimoto >= TRUTH_THRESHOLD else incorrect
+            bucket.append(ppm)
+
+    def summarise(values: list[float]) -> dict[str, Any]:
+        if not values:
+            return {"n": 0}
+        ordered = sorted(values)
+        return {
+            "n": len(ordered),
+            "median_ppm": round(_quantile(ordered, 0.5), 3),
+            "p90_ppm": round(_quantile(ordered, 0.9), 1),
+            "p95_ppm": round(_quantile(ordered, 0.95), 1),
+        }
+
+    windows = []
+    for window in ACCURACY_WINDOWS_PPM:
+        share = lambda values: (  # noqa: E731
+            round(sum(1 for v in values if v <= window) / len(values), 3) if values else None
+        )
+        windows.append(
+            {
+                "window_ppm": window,
+                "share_of_correct_within": share(correct),
+                "share_of_incorrect_within": share(incorrect),
+            }
+        )
+
+    best = max(
+        (w for w in windows if w["share_of_correct_within"] is not None),
+        key=lambda w: w["share_of_correct_within"] - w["share_of_incorrect_within"],
+        default=None,
+    )
+    return {
+        "correct": summarise(correct),
+        "incorrect": summarise(incorrect),
+        "windows": windows,
+        "best_separating_window_ppm": best["window_ppm"] if best else None,
+        "finding": (
+            "Correct candidates are measurably more accurate than incorrect ones, so the "
+            "measurement carries signal. Whether a gate built on it helps is a separate "
+            "question, answered separately, and the answer there was no."
+        ),
+    }
+
+
+def conjugate_tail(reports: list[Report]) -> dict[str, Any]:
+    """Candidates counted correct whose mass error is conjugate-scale.
+
+    A Tanimoto of 0.70 to the truth structure does not require the same molecular
+    formula. A candidate missing a glucuronide is similar enough to pass and wrong
+    by 176 Da, so it is scored correct and would be discarded by any mass window
+    tight enough to be worth having. That is a property of the truth definition
+    rather than of the tolerance, and it is why tightening the window looks harmful.
+    """
+
+    offenders = []
+    total_correct = 0
+    for report in reports:
+        if not report.is_truth_control or not report.neutral_mass:
+            continue
+        for candidate in report.candidates:
+            if candidate.error_da is None or candidate.truth_tanimoto is None:
+                continue
+            if candidate.truth_tanimoto < TRUTH_THRESHOLD:
+                continue
+            total_correct += 1
+            ppm = ppm_of(candidate.error_da, report.neutral_mass)
+            if ppm is None or ppm <= max(ACCURACY_WINDOWS_PPM[:-1]):
+                continue
+            named = next(
+                (
+                    name
+                    for name, mass in CONJUGATE_MASSES_DA.items()
+                    if abs(candidate.error_da - mass) <= CONJUGATE_TOLERANCE_DA
+                ),
+                None,
+            )
+            offenders.append(
+                {
+                    "control_id": report.control_id,
+                    "error_da": round(candidate.error_da, 4),
+                    "truth_tanimoto": round(candidate.truth_tanimoto, 3),
+                    "matches": named,
+                }
+            )
+
+    by_conjugate: dict[str, int] = {}
+    by_mass: dict[str, int] = {}
+    for row in offenders:
+        key = row["matches"] or "unmatched"
+        by_conjugate[key] = by_conjugate.get(key, 0) + 1
+        mass_key = f"{row['error_da']:.4f}"
+        by_mass[mass_key] = by_mass.get(mass_key, 0) + 1
+
+    # A candidate identical to the truth structure cannot legitimately be off by
+    # hundreds of Daltons. Where that happens the truth annotation and the observed
+    # feature disagree, which is a question about the control rather than about the
+    # scorer, and it is worth naming rather than folding into a conjugate count.
+    identical_but_mismatched = sorted(
+        {row["control_id"] for row in offenders if row["truth_tanimoto"] >= 0.999}
+    )
+    controls = sorted({row["control_id"] for row in offenders})
+    return {
+        "n_correct_candidates": total_correct,
+        "n_with_implausible_mass": len(offenders),
+        "share_of_correct": (
+            round(len(offenders) / total_correct, 3) if total_correct else None
+        ),
+        "n_distinct_controls": len(controls),
+        "controls": controls,
+        "by_conjugate": dict(sorted(by_conjugate.items(), key=lambda kv: -kv[1])),
+        "modal_error_masses_da": dict(
+            sorted(by_mass.items(), key=lambda kv: -kv[1])[:8]
+        ),
+        "identical_structure_but_mass_mismatched": identical_but_mismatched,
+        "conjugate_masses_da": CONJUGATE_MASSES_DA,
+        "finding": (
+            "The Tanimoto truth threshold admits structures with the wrong molecular "
+            "formula. Any mass window tight enough to be useful discards them, which is "
+            "why tightening reads as harmful against this definition of correct. The tail "
+            "concentrates in a handful of controls rather than being spread thinly, and "
+            "where a candidate is structurally identical to the truth and still hundreds "
+            "of Daltons out, the control's own annotation is the thing in question."
+        ),
+    }
 
 
 def implied_tolerance_by_source(reports: list[Report]) -> dict[str, Any]:
@@ -679,9 +857,63 @@ def render_markdown(summary: dict[str, Any]) -> str:
             f"| `{row['candidate_source']}` | {row['n']} | {row['dominant_tolerance']} | "
             f"{row['dominant_share']:.0%} |"
         )
+    lines += ["", attribution["finding"]]
+
+    accuracy = summary["mass_accuracy_by_correctness"]
+    tail = summary["conjugate_tail"]
     lines += [
         "",
-        attribution["finding"],
+        "## Does the mass measurement carry signal",
+        "",
+        "Whether the axis separates correct candidates from incorrect ones is a different "
+        "question from whether a gate built on it helps, and the two answers differ.",
+        "",
+        f"Correct candidates have a median error of {accuracy['correct'].get('median_ppm')} ppm "
+        f"against {accuracy['incorrect'].get('median_ppm')} ppm for incorrect ones "
+        f"({accuracy['correct'].get('n')} and {accuracy['incorrect'].get('n')} candidates over the "
+        "truth controls).",
+        "",
+        "| Window | Correct within | Incorrect within | Separation |",
+        "|---:|---:|---:|---:|",
+    ]
+    for row in accuracy["windows"]:
+        correct_share, incorrect_share = row["share_of_correct_within"], row["share_of_incorrect_within"]
+        if correct_share is None or incorrect_share is None:
+            continue
+        lines.append(
+            f"| {row['window_ppm']:g} ppm | {correct_share:.1%} | {incorrect_share:.1%} | "
+            f"{correct_share - incorrect_share:+.1%} |"
+        )
+    lines += [
+        "",
+        f"Separation is widest at {accuracy['best_separating_window_ppm']:g} ppm. At the shipped "
+        "1.0 Da, which is roughly 3,300 ppm at these masses, it inverts: a window that loose "
+        "admits a higher share of incorrect candidates than correct ones, because the correct "
+        "ones include a tail that is genuinely far out. So the axis is not merely uninformative "
+        "at the shipped setting, it is very slightly worse than that.",
+        "",
+        "### The tail, and what it says about the truth definition",
+        "",
+        f"{tail['n_with_implausible_mass']} of {tail['n_correct_candidates']} candidates scored "
+        f"correct carry a mass error too large for their formula to match, concentrated in "
+        f"{tail['n_distinct_controls']} controls rather than spread thinly. A Tanimoto of "
+        f"{TRUTH_THRESHOLD:.2f} to the truth structure does not require the same molecular "
+        "formula, so a candidate missing a conjugate passes as correct while being wrong by the "
+        "conjugate's mass.",
+        "",
+        f"Grouped by conjugate: {tail['by_conjugate']}.",
+    ]
+    if tail["identical_structure_but_mass_mismatched"]:
+        lines += [
+            "",
+            "Worth separating from the rest: "
+            + ", ".join(f"`{c}`" for c in tail["identical_structure_but_mass_mismatched"])
+            + " carries a candidate structurally identical to its truth annotation and still "
+            "hundreds of Daltons out. That is a question about the control's annotation rather "
+            "than about the scorer, and it should not be counted as a conjugate relationship.",
+        ]
+
+    lines += [
         "",
         "## The screen",
         "",
@@ -810,6 +1042,8 @@ def main() -> None:
         },
         "provenance": provenance(reports),
         "implied_tolerance_by_source": implied_tolerance_by_source(reports),
+        "mass_accuracy_by_correctness": mass_accuracy_by_correctness(reports),
+        "conjugate_tail": conjugate_tail(reports),
         "known_figure_check": known_figure_check(reports),
         "screen": screen(reports, CURRENT, DRAFTED),
         "band_distribution": {
@@ -852,6 +1086,23 @@ def main() -> None:
         f" ({check['rank1_mass_mismatch_rate']}), recoverable {check['recoverable_by_in_list_alternative']}"
         f"  [expected on the full set: 598 (0.1535), 523]"
     )
+    accuracy = summary["mass_accuracy_by_correctness"]
+    print(
+        f"[mass-policy] median error: correct {accuracy['correct'].get('median_ppm')} ppm,"
+        f" incorrect {accuracy['incorrect'].get('median_ppm')} ppm;"
+        f" widest separation at {accuracy['best_separating_window_ppm']:g} ppm"
+    )
+    tail = summary["conjugate_tail"]
+    print(
+        f"[mass-policy]   {tail['n_with_implausible_mass']} of {tail['n_correct_candidates']}"
+        f" correct candidates carry a conjugate-scale error, across"
+        f" {tail['n_distinct_controls']} controls: {tail['by_conjugate']}"
+    )
+    if tail["identical_structure_but_mass_mismatched"]:
+        print(
+            "[mass-policy]   identical structure but mismatched mass (check the annotation):"
+            f" {', '.join(tail['identical_structure_but_mass_mismatched'])}"
+        )
     scr = summary["screen"]
     print(
         f"[mass-policy] between the windows: {scr['in_reband_zone']} candidates,"

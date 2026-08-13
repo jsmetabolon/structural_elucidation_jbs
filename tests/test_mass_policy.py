@@ -185,3 +185,80 @@ def test_recovery_is_scored_at_the_truth_threshold():
     report = report_of(candidate(1, 0.0001, truth=0.69), candidate(2, 0.0001, truth=0.71))
     assert report.correct_at(1) is False
     assert report.correct_at(3) is True
+
+
+# --- mass accuracy split -----------------------------------------------------
+
+
+def test_accuracy_split_separates_correct_from_incorrect():
+    """A tight window should pass the accurate candidate and not the wild one."""
+
+    report = report_of(
+        candidate(1, 0.0003, truth=0.95),   # 1 ppm at 300 Da, correct
+        candidate(2, 0.0300, truth=0.10),   # 100 ppm, incorrect
+    )
+    result = M.mass_accuracy_by_correctness([report])
+    assert result["correct"]["n"] == 1
+    assert result["incorrect"]["n"] == 1
+    within_2 = next(w for w in result["windows"] if w["window_ppm"] == 2.0)
+    assert within_2["share_of_correct_within"] == 1.0
+    assert within_2["share_of_incorrect_within"] == 0.0
+
+
+def test_accuracy_split_ignores_reports_without_truth():
+    """Without a known answer there is nothing to split on."""
+
+    report = report_of(candidate(1, 0.0003, truth=0.0))
+    assert M.mass_accuracy_by_correctness([report])["correct"]["n"] == 0
+
+
+def test_a_window_wide_enough_stops_separating():
+    report = report_of(
+        candidate(1, 0.0003, truth=0.95),
+        candidate(2, 0.0300, truth=0.10),
+    )
+    widest = M.mass_accuracy_by_correctness([report])["windows"][-1]
+    assert widest["share_of_correct_within"] == widest["share_of_incorrect_within"] == 1.0
+
+
+# --- the conjugate tail ------------------------------------------------------
+
+
+def test_conjugate_tail_names_a_glucuronide_shifted_candidate():
+    """Correct by Tanimoto, wrong by exactly one glucuronide."""
+
+    report = report_of(candidate(1, 176.032, truth=0.80))
+    tail = M.conjugate_tail([report])
+    assert tail["n_with_implausible_mass"] == 1
+    assert tail["by_conjugate"] == {"glucuronide": 1}
+    assert tail["n_distinct_controls"] == 1
+
+
+def test_conjugate_tail_leaves_an_accurate_correct_candidate_alone():
+    report = report_of(candidate(1, 0.0003, truth=0.80))
+    tail = M.conjugate_tail([report])
+    assert tail["n_correct_candidates"] == 1
+    assert tail["n_with_implausible_mass"] == 0
+
+
+def test_conjugate_tail_flags_an_identical_structure_that_cannot_be_a_conjugate():
+    """A perfect structural match hundreds of Daltons out is an annotation problem.
+
+    It cannot be a conjugate relationship, because the fingerprints are identical,
+    so folding it into the conjugate count would explain away the wrong thing.
+    """
+
+    report = report_of(candidate(1, 233.066, truth=1.0))
+    tail = M.conjugate_tail([report])
+    assert tail["identical_structure_but_mass_mismatched"] == ["X-1"]
+    assert tail["by_conjugate"] == {"unmatched": 1}
+
+
+def test_conjugate_tail_reports_modal_masses():
+    report = report_of(
+        candidate(1, 176.032, truth=0.80),
+        candidate(2, 176.032, truth=0.75),
+        candidate(3, 162.053, truth=0.72),
+    )
+    modal = M.conjugate_tail([report])["modal_error_masses_da"]
+    assert list(modal.items())[0] == ("176.0320", 2)
