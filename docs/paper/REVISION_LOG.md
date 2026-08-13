@@ -450,12 +450,21 @@ No scoring behaviour changed in this pass. What changed is what is written down.
 - **The drafted 0-1 / 1-3 / 3-5 ppm bands are rejected.** They shrink rank-1
   strong-mass calls from 2,436 to 1,424 and made recovery worse on every
   comparison. The question is closed.
-- **The mass tolerance is not a useful dial.** Swept from 0.005 Da to 5.0 Da, a
-  thousand-fold range, rank-1 recovery moves by two controls out of 92 and no
-  setting gains a single one. Losses fall as the tolerance loosens, so the gate
-  does least harm where it fires least. Meanwhile rank-1 strong-mass claims range
-  from 2,057 to 3,105 across the same sweep: the axis relabels reports without
-  discriminating between them.
+- **Tuning the tolerance under the current gate is not a useful dial.** Swept from
+  0.005 Da to 5.0 Da, a thousand-fold range, rank-1 recovery moves by two controls
+  out of 92 and no setting gains a single one. Losses fall as the tolerance
+  loosens, so the gate does least harm where it fires least. Meanwhile rank-1
+  strong-mass claims range from 2,057 to 3,105 across the same sweep.
+
+  **Corrected.** An earlier version of this entry read that the axis "relabels
+  reports without discriminating between them", which conflated the measurement
+  with the intervention built on it. A later pass measured them apart. Correct
+  candidates have a median mass error of 1.07 ppm against 1.71 for incorrect ones,
+  and the widest separation, about 22 points, sits at 2 ppm. The measurement does
+  discriminate. What does not work is the gate. At the shipped 1.0 Da the
+  separation inverts, because 17 of 97 candidates scored correct carry a
+  conjugate-scale error, so a window that loose admits proportionally more
+  incorrect candidates than correct ones.
 - **Handoff item 2 should not ship as specified.** Its projection of roughly 523
   recoverable reports counts cases where a mass-consistent alternative exists,
   which is a claim about mass consistency rather than about correctness. Applied

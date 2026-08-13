@@ -1,9 +1,14 @@
-# Three decisions needed on the mass axis
+# Decisions on the mass axis
 
 For whoever owns the inference pipeline, the manuscript, and the validation
 budget. Each item states what is needed, the evidence, what happens if it is
-deferred, and a recommendation. None of the three can be settled by more
-analysis of the current data; that is why they are here rather than in a ticket.
+deferred, and a recommendation.
+
+**Status.** This began as three decisions that analysis could not settle. Decision
+1 turned out to be answerable from the delivered data and is now closed apart from
+a sanity check. Decision 2 keeps its shape but its recommendation changed once the
+measurement was separated from the intervention. Decision 3 is still a real budget
+decision, but it now has a cheaper option that did not exist when this was written.
 
 Background and the full measurement are in the decision record at the end of
 [docs/paper/REVISION_LOG.md](paper/REVISION_LOG.md) and in
@@ -30,17 +35,45 @@ candidates are ranked against one another on scales that do not correspond, and
 the confidence model averages the result with the other axes as though it were a
 single quantity. `PLATT_A` and `PLATT_B` were fitted on that mixture.
 
-## Decision 1: is a 1.0 Da tolerance intended?
+## Decision 1: is a 1.0 Da tolerance intended? — answered
 
-**Owner: whoever knows the pipeline's history.** This one is cheap and blocks the
-other two.
+**This no longer needs the pipeline's history.** It was posed as a question for
+whoever knew why the value was chosen. The history does not contain the answer and
+the data does not need it.
 
-At 300 Da, 1.0 Da is roughly 3,300 ppm. It admits essentially every candidate the
-generator proposes, which is why rank-1 strong-mass claims sit at 3,085 of 3,897
-under it. The profile carrying the value is named `strict_1da`, which reads as
-deliberate, but one Dalton is not strict for high-resolution data.
+The history is a dead end. Both `--mass-score-tolerance-da default=1.0` and the
+conjugates default of 0.15 arrive in a single bulk refactor commit, so their origin
+predates this repository.
 
-The answer decides whether the sweep below is a diagnosis or a post-mortem.
+The data settles the substance regardless of intent. Across the truth controls,
+candidates that are correct have a **median mass error of 1.07 ppm**, and 81.4% of
+them fall within 5 ppm. The measurement is accurate to roughly 1 to 2 ppm, so a
+1.0 Da window — about 3,300 ppm at these masses — is some three thousand times
+looser than the instrument warrants. **It is indefensible as a mass-accuracy
+window whatever was intended**, and the evidence under decision 2 shows it is
+actively counterproductive at that setting rather than merely permissive.
+
+Two things follow that a tighter window alone does not fix.
+
+- **17 of 97 candidates scored correct carry a conjugate-scale mass error**,
+  concentrated in seven controls, five of them exactly one glucuronide (176.032 Da)
+  out. A Tanimoto of 0.70 to the truth structure does not require the same
+  molecular formula, so a candidate missing a conjugate passes as correct while
+  being wrong by the conjugate's mass. Any window tight enough to be useful
+  discards them.
+- **One of those is not a conjugate relationship at all.** `X-21470` carries a
+  candidate structurally *identical* to its truth annotation and still 233 Da out.
+  Identical fingerprints cannot differ by a conjugate, so either that control's
+  annotation or its observed mass is wrong. That is a truth-set integrity item,
+  not a scoring one.
+
+So a single linear tolerance is the wrong instrument for two jobs. Mass accuracy
+wants a ppm-scale window; conjugate relationships want the conjugate-aware
+generation already proposed as fix 3 of handoff item 2.
+
+**What remains for a person:** confirming that 1.0 Da was not a deliberate
+scientific choice that this analysis has misread. That is a sanity check rather
+than a blocker, and decisions 2 and 3 no longer wait on it.
 
 ## Decision 2: unify the scorers, rescore, and recalibrate?
 
@@ -59,17 +92,38 @@ Evidence that it may not be worth it. Sweeping the tolerance from 0.005 Da to
 
 Recovery moves by two controls across the entire range and no setting gains one.
 What does move is what the reports claim: a thousand-report swing in strong-mass
-calls. The axis relabels without discriminating.
+calls.
+
+**Correction to an earlier reading.** This section previously concluded that the
+axis "relabels without discriminating". That took a result about the *gate* and
+stated it about the *measurement*, and they turn out to differ. Splitting mass
+error by known correctness across the truth controls:
+
+| Window | Correct within | Incorrect within | Separation |
+|---:|---:|---:|---:|
+| 1 ppm | 48.5% | 37.3% | +11.2% |
+| 2 ppm | 75.3% | 53.4% | +21.9% |
+| 5 ppm | 81.4% | 59.5% | +21.9% |
+| 20 ppm | 82.5% | 62.9% | +19.6% |
+| ~3,300 ppm (the shipped 1.0 Da) | 82.5% | 90.1% | **−7.6%** |
+
+The measurement discriminates, most sharply at 2 to 5 ppm. The intervention built
+on it does not. And at the shipped tolerance the separation inverts: a window that
+loose admits proportionally more incorrect candidates than correct ones, because
+17 of 97 candidates scored correct carry a conjugate-scale error and sit outside
+any window. So the axis at 1.0 Da is not neutral, it is very slightly worse than
+neutral.
 
 The cost of acting is a pipeline re-run, a Platt refit, and re-auditing every
 number in both documents.
 
-**Recommendation: fix the incomparability, do not chase the tolerance.** Putting
-all generators on one scale is defensible on its own terms, because ranking
-candidates scored on different scales is wrong regardless of what the truth set
-can detect. Tuning the tolerance is not, because the evidence says no value of it
-changes correctness. If the re-run happens, do it to make the axis coherent, not
-to make it tighter.
+**Recommendation: unify the scorers onto one instrument-scale window.** Two
+reasons, and the second is new. Ranking candidates scored on scales that differ
+200-fold is wrong on its own terms, whatever the truth set can detect. And the
+measurement does carry signal that the shipped tolerance spends: separation is
+about 22 points at 2 to 5 ppm and negative at 1.0 Da. What is *not* supported is
+keeping the current gate and tuning its threshold, which is what the sweep tested
+and what it ruled out.
 
 ## Decision 3: fund truth-set expansion?
 
@@ -89,6 +143,47 @@ improvement.** Every other item in the refinement handoff is gated behind it.
 Expanding truth coverage of the mass-mismatch cohort specifically would be worth
 more than expanding the truth set uniformly, since that cohort is where the
 proposed changes act.
+
+### A second option, which handoff item 4 does not consider
+
+Item 4 proposes one route: acquire more authentic standards. That is a chemistry
+budget and a long lead time. There is a second route that costs compute instead,
+and the reason it is available is the thing the writing guidance already says
+about the library — a large Level-1 library empowers prediction. It is also the
+validation set.
+
+**Metabolon already holds thousands of compounds with both a known structure and
+an acquired spectrum: the reference library itself.** Running those spectra
+through the pipeline with each compound suppressed from retrieval turns every one
+of them into a held-out control. No new chemistry, no new acquisition.
+
+There is precedent in this repository for exactly that reasoning. The pathway
+audit runs leave-one-out over **5,095 reference metabolites**, hiding each
+metabolite's own labels and asking the mechanism to recover them, and reports the
+result as mechanism validation rather than as accuracy.
+
+**Two honest limits, and neither is fatal.**
+
+- **Catalogued compounds are not unknowns**, and this work already measures the
+  gap: exact-source rank-1 recovery is 38.1% against 56.0% for predicted-source.
+  So this cannot replace truth on real unknowns, and any absolute rate from it
+  must be labelled as measured on catalogued chemistry.
+- **It is not as cheap as the pathway version.** That one replays offline from the
+  reference database because a neighbour vote over fingerprints can be recomputed
+  from the database alone. Structural candidate generation cannot: it needs the
+  spectra, the models and the inference stack. This is an EC2 run, not a laptop
+  script.
+
+**What it is good for is the question that blocks everything else.** Deciding
+whether a reranking change helps needs paired comparisons, not a representative
+sample. Thousands of them would resolve shifts that 92 controls cannot see at all,
+and the same harness would then measure handoff item 2 before it ships rather
+than after.
+
+Costed in [docs/library_holdout_validation_scope.md](library_holdout_validation_scope.md).
+Read the first section before funding anything: the whole proposition rests on how
+many library standards carry a usable acquired spectrum, and that number is not
+answerable from this repository.
 
 ## Settled since this was written
 

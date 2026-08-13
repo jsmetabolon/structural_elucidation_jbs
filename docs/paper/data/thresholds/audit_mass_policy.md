@@ -34,6 +34,33 @@ Inverting the score recovers the tolerance each candidate was scored under.
 
 Each generator is internally consistent and they disagree with each other, so the mass sub-score is not one quantity across the delivered set. Candidates scored on different scales are ranked against each other and averaged into one confidence number.
 
+## Does the mass measurement carry signal
+
+Whether the axis separates correct candidates from incorrect ones is a different question from whether a gate built on it helps, and the two answers differ.
+
+Correct candidates have a median error of 1.066 ppm against 1.705 ppm for incorrect ones (97 and 676 candidates over the truth controls).
+
+| Window | Correct within | Incorrect within | Separation |
+|---:|---:|---:|---:|
+| 1 ppm | 48.5% | 37.3% | +11.2% |
+| 2 ppm | 75.3% | 53.4% | +21.9% |
+| 5 ppm | 81.4% | 59.5% | +21.9% |
+| 10 ppm | 81.4% | 61.2% | +20.2% |
+| 20 ppm | 82.5% | 62.9% | +19.6% |
+| 50 ppm | 82.5% | 69.1% | +13.4% |
+| 1000 ppm | 82.5% | 90.1% | -7.6% |
+| 3333 ppm | 82.5% | 90.1% | -7.6% |
+
+Separation is widest at 2 ppm. At the shipped 1.0 Da, which is roughly 3,300 ppm at these masses, it inverts: a window that loose admits a higher share of incorrect candidates than correct ones, because the correct ones include a tail that is genuinely far out. So the axis is not merely uninformative at the shipped setting, it is very slightly worse than that.
+
+### The tail, and what it says about the truth definition
+
+17 of 97 candidates scored correct carry a mass error too large for their formula to match, concentrated in 7 controls rather than spread thinly. A Tanimoto of 0.70 to the truth structure does not require the same molecular formula, so a candidate missing a conjugate passes as correct while being wrong by the conjugate's mass.
+
+Grouped by conjugate: {'unmatched': 12, 'glucuronide': 5}.
+
+Worth separating from the rest: `X-21470` carries a candidate structurally identical to its truth annotation and still hundreds of Daltons out. That is a question about the control's annotation rather than about the scorer, and it should not be counted as a conjugate relationship.
+
 ## The screen
 
 Candidates between the two windows: **1532** (95 of them at rank 1) out of 31645 with a mass error.
