@@ -184,6 +184,38 @@ Context you need:
   on the delivered data (median raw `candidate_report_score` 0.035 ->
   `evidence_confidence` 0.997).
 
+## 6. Multiply charged precursors are converted as though singly charged
+- Goal: stop assigning a neutral mass that is out by a clean integer factor, and
+  stop such a feature reaching the Confirmed tier.
+- Evidence: `X-21470` has `observed_neutral_mass` 233.0668 and a rank-1
+  `candidate_exact_mass` of 466.1331, a ratio of exactly 2.0000. The compound is
+  5-androstenetriol 3,17-disulfate (`C19H30O9S2`), a disulfate, which readily
+  forms `[M-2H]2-` in negative mode. The structure, its Tanimoto of 1.0 and the
+  annotation are all correct; the m/z-to-neutral-mass conversion assumed one
+  charge. Across the 2,471 delivered reports carrying both masses, five show an
+  exact integer ratio: `X-21470`, `X-24546`, `X-24637`, `X-25814` at 2x and
+  `X-25107` at 0.5x.
+- Why it is worth fixing at 0.2%: **`X-21470` is MSI Level 1, the Confirmed
+  tier.** A feature whose neutral mass is wrong by a factor of two carries the
+  pipeline's highest-confidence label, and nothing flagged it. The same report
+  also states a `mass_match_score` of 0.95 against a recorded error of 233 Da, so
+  two of its own fields disagree and the one a reader sees is the reassuring one.
+  The exposure class -- disulfates, diphosphates, dicarboxylates -- is common
+  enough that the rate may be higher in other matrices than in this cohort.
+- Cheap detector, already running: `charge_state_suspects` in
+  `tools/audit_mass_policy.py` tests whether a candidate's mass is a near-exact
+  integer multiple or reciprocal of the observed neutral mass (relative tolerance
+  1e-4). No mass window catches these, because a factor of two is orders of
+  magnitude too large to read as a tolerance problem and far too exact to be
+  noise. Fixing item 2's mass gate will not address this.
+- Plug-in: infer charge at feature extraction from isotope-envelope spacing
+  (`1/z` Da between peaks) rather than assuming `z=1`, and carry `z` through to
+  the neutral-mass conversion. Failing that, when a candidate matches at an exact
+  integer multiple, re-evaluate under that charge assumption instead of scoring
+  it as a huge mass error.
+- Verify: `charge_state_suspects` reports zero, and no report reaches MSI Level 1
+  while carrying an unexplained integer mass ratio.
+
 ## Cross-cutting: from-source regeneration + render_html parity task
 Once items 1-4 land upstream, prefer regenerating reports from source
 (`python -m structural_elucidation.reports.batch` with `--observed-lookup-dir`,

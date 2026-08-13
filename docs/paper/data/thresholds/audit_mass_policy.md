@@ -83,6 +83,18 @@ Separately, 117 reports state a strong mass match that no catalogued scoring rul
 |---|---:|---:|---:|
 | `X-21470` | 0.95 | 233.0664 Da | 1 |
 
+## How much the headline depends on the truth definition
+
+Recovery over 92 truth controls under the published definition (Tanimoto >= 0.7) and under one that also requires the correct hit to fit the observed mass within 20 ppm.
+
+| Depth | Published | Also mass-plausible | Controls lost |
+|---|---:|---:|---|
+| top 1 | 47.8% (44/92) | 45.7% (42/92) | `X-21470`, `X-24137` |
+| top 3 | 64.1% (59/92) | 59.8% (55/92) | `X-12811`, `X-21470`, `X-23080`, `X-24137` |
+| top 10 | 73.9% (68/92) | 68.5% (63/92) | `X-12811`, `X-21470`, `X-23080`, `X-24137`, `X-26094` |
+
+Requiring a correct hit to also fit the observed mass costs a little at rank 1 and more with depth, which is what you would expect if the extra hits admitted deeper in the list are structurally similar molecules of the wrong formula. Reported as sensitivity, not as a proposed replacement: the published definition is Tanimoto, and changing it is an editorial decision.
+
 ## The screen
 
 Candidates between the two windows: **1532** (95 of them at rank 1) out of 31645 with a mass error.

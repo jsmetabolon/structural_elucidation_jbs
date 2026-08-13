@@ -154,9 +154,13 @@ def candidate(rank: int, error_da: float | None, truth: float = 0.0) -> "M.Candi
                        truth_tanimoto=truth)
 
 
-def report_of(*candidates, neutral_mass: float = 300.0) -> "M.Report":
-    return M.Report(control_id="X-1", neutral_mass=neutral_mass, msi_level=None,
-                    source="predicted", candidates=list(candidates))
+def report_of(*candidates, neutral_mass: float = 300.0, control_id: str = "X-1",
+              msi_level: int | None = None, candidate_exact_mass: float | None = None,
+              observed_neutral_mass: float | None = None) -> "M.Report":
+    return M.Report(control_id=control_id, neutral_mass=neutral_mass, msi_level=msi_level,
+                    source="predicted", candidates=list(candidates),
+                    candidate_exact_mass=candidate_exact_mass,
+                    observed_neutral_mass=observed_neutral_mass)
 
 
 def test_the_gate_demotes_a_mass_failing_candidate_below_a_passing_one():
@@ -242,10 +246,11 @@ def test_conjugate_tail_leaves_an_accurate_correct_candidate_alone():
 
 
 def test_conjugate_tail_flags_an_identical_structure_that_cannot_be_a_conjugate():
-    """A perfect structural match hundreds of Daltons out is an annotation problem.
+    """A perfect structural match hundreds of Daltons out is not a conjugate.
 
-    It cannot be a conjugate relationship, because the fingerprints are identical,
-    so folding it into the conjugate count would explain away the wrong thing.
+    Identical fingerprints cannot differ by a conjugate, so folding it into the
+    conjugate count would explain away the wrong thing. In the delivered data the
+    real cause was charge state, which the next section tests for.
     """
 
     report = report_of(candidate(1, 233.066, truth=1.0))
@@ -262,3 +267,171 @@ def test_conjugate_tail_reports_modal_masses():
     )
     modal = M.conjugate_tail([report])["modal_error_masses_da"]
     assert list(modal.items())[0] == ("176.0320", 2)
+
+
+# --- charge state ------------------------------------------------------------
+
+
+def test_a_doubly_charged_precursor_read_as_singly_charged_is_flagged():
+    """The X-21470 case: a disulfate whose candidate mass is exactly twice observed."""
+
+    report = report_of(candidate(1, 233.066, truth=1.0), control_id="X-21470", msi_level=1,
+                       observed_neutral_mass=233.0668, candidate_exact_mass=466.1331)
+    found = M.charge_state_suspects([report])
+    assert found["n_suspects"] == 1
+    assert found["suspects"][0]["ratio"] == "2x"
+    assert found["suspects"][0]["control_id"] == "X-21470"
+
+
+def test_a_singly_charged_feature_is_not_flagged():
+    """The guard that keeps this from being noise: an ordinary report must pass."""
+
+    report = report_of(candidate(1, 0.0003, truth=0.9),
+                       observed_neutral_mass=300.0000, candidate_exact_mass=300.0003)
+    assert M.charge_state_suspects([report])["n_suspects"] == 0
+
+
+def test_a_merely_heavy_candidate_is_not_flagged():
+    """Being far off is not the signal. Being off by a clean integer factor is.
+
+    A candidate at 2.05x is further from the observed mass than one at exactly 2x,
+    and is the ordinary bad match the mass window already handles.
+    """
+
+    report = report_of(candidate(1, 315.0, truth=0.0),
+                       observed_neutral_mass=300.0, candidate_exact_mass=615.0)
+    assert M.charge_state_suspects([report])["n_suspects"] == 0
+
+
+def test_the_reciprocal_direction_is_flagged_too():
+    report = report_of(candidate(1, 306.0, truth=0.0), control_id="X-25107", msi_level=4,
+                       observed_neutral_mass=612.0505, candidate_exact_mass=306.0253)
+    found = M.charge_state_suspects([report])
+    assert found["suspects"][0]["ratio"] == "1/2x"
+
+
+def test_a_triply_charged_precursor_is_flagged():
+    report = report_of(candidate(1, 600.0, truth=0.0),
+                       observed_neutral_mass=300.0, candidate_exact_mass=900.0)
+    found = M.charge_state_suspects([report])
+    assert found["suspects"][0]["ratio"] == "3x"
+
+
+def test_the_msi_level_of_a_suspect_is_reported():
+    """A clean factor of two in the Confirmed tier is the finding, so it must surface."""
+
+    reports = [
+        report_of(candidate(1, 233.0, truth=1.0), control_id="X-21470", msi_level=1,
+                  observed_neutral_mass=233.0668, candidate_exact_mass=466.1331),
+        report_of(candidate(1, 232.0, truth=0.0), control_id="X-24546", msi_level=3,
+                  observed_neutral_mass=232.0581, candidate_exact_mass=464.1175),
+    ]
+    found = M.charge_state_suspects(reports)
+    assert found["by_msi_level"] == {"1": 1, "3": 1}
+    assert found["reaches_msi_level_1"] is True
+
+
+def test_a_report_without_both_masses_is_not_considered():
+    """The comparison needs an observed mass that is not the candidate's own."""
+
+    report = report_of(candidate(1, 0.0003, truth=0.9), candidate_exact_mass=466.1331)
+    found = M.charge_state_suspects([report])
+    assert found["n_reports_with_both_masses"] == 0
+    assert found["n_suspects"] == 0
+
+
+# --- a strong claim the evidence does not support ----------------------------
+
+
+def test_a_strong_score_against_a_huge_error_is_contradictory():
+    report = report_of(
+        M.Candidate(rank=1, smiles="C", error_da=233.0664, stored_score=0.95, truth_tanimoto=1.0),
+        control_id="X-21470", msi_level=1,
+    )
+    found = M.strong_score_without_support([report])
+    assert found["n_contradictory"] == 1
+    assert found["contradictory"][0]["control_id"] == "X-21470"
+
+
+def test_a_strong_score_against_a_tiny_error_is_not_contradictory():
+    """Unreproducible is not the same as indefensible.
+
+    A sub-milli-Dalton error with a high score is a fair reading of the evidence
+    by some rule this audit has not catalogued, and lumping it in with a 233 Da
+    contradiction would bury the one case that matters.
+    """
+
+    report = report_of(
+        M.Candidate(rank=1, smiles="C", error_da=0.0012, stored_score=0.999, truth_tanimoto=0.9),
+    )
+    found = M.strong_score_without_support([report])
+    assert found["n_contradictory"] == 0
+
+
+def test_a_reproducible_score_is_not_flagged_at_all():
+    """A score a known rule explains is not a disagreement, however it was made."""
+
+    error = 0.002
+    report = report_of(
+        M.Candidate(rank=1, smiles="C", error_da=error, stored_score=1.0 - error / 1.0,
+                    truth_tanimoto=0.9),
+    )
+    assert M.strong_score_without_support([report])["n"] == 0
+
+
+# --- truth-definition sensitivity --------------------------------------------
+
+
+def test_a_correct_hit_that_misses_the_mass_is_lost_under_the_strict_definition():
+    """Tanimoto can clear the bar while the molecular formula is wrong.
+
+    A candidate missing a glucuronide is structurally very similar to the truth
+    and is 176 Da away from being the compound.
+    """
+
+    report = report_of(candidate(1, 176.032, truth=0.80))
+    result = M.mass_plausible_recovery([report])
+    top1 = result["depths"]["top_1"]
+    assert top1["published_n"] == 1
+    assert top1["mass_plausible_n"] == 0
+    assert top1["controls_lost"] == ["X-1"]
+
+
+def test_a_correct_hit_that_fits_the_mass_survives():
+    report = report_of(candidate(1, 0.0003, truth=0.80))
+    result = M.mass_plausible_recovery([report])
+    assert result["depths"]["top_1"]["mass_plausible_n"] == 1
+    assert result["depths"]["top_1"]["controls_lost"] == []
+
+
+def test_a_candidate_with_no_recorded_error_cannot_be_shown_to_fit():
+    """The strict variant is a bound, so absent evidence counts against it.
+
+    This is deliberately the opposite of how the gate treats a missing error,
+    where missing evidence is not failing evidence. Here the question is what
+    recovery would be if a fit were required, and an unmeasurable candidate
+    cannot demonstrate one.
+    """
+
+    report = report_of(candidate(1, None, truth=0.80))
+    result = M.mass_plausible_recovery([report])
+    assert result["depths"]["top_1"]["published_n"] == 1
+    assert result["depths"]["top_1"]["mass_plausible_n"] == 0
+
+
+def test_the_strict_definition_can_promote_a_deeper_candidate():
+    """Depth still counts: if rank 1 fails the mass, a correct rank-2 can carry top-3."""
+
+    report = report_of(candidate(1, 176.032, truth=0.80), candidate(2, 0.0003, truth=0.85))
+    result = M.mass_plausible_recovery([report])
+    assert result["depths"]["top_1"]["mass_plausible_n"] == 0
+    assert result["depths"]["top_3"]["mass_plausible_n"] == 1
+
+
+def test_reports_without_truth_are_not_counted_as_controls():
+    reports = [
+        report_of(candidate(1, 0.0003, truth=0.80)),
+        report_of(candidate(1, 0.0003, truth=0.0), control_id="X-2"),
+    ]
+    assert M.mass_plausible_recovery(reports)["n_controls"] == 1
+

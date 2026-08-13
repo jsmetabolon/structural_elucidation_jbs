@@ -463,6 +463,52 @@
     ],
     "finding": "A score no catalogued rule reproduces is untidy but usually harmless: most of these pair a sub-milli-Dalton error with a high score, which is a fair reading of the evidence by some rule not listed here. The ones worth acting on are those whose error exceeds 0.01 Da, where no strong claim is defensible whatever produced the number, and where the field a reader sees is the reassuring one."
   },
+  "mass_plausible_recovery": {
+    "n_controls": 92,
+    "truth_threshold": 0.7,
+    "mass_plausible_ppm": 20.0,
+    "depths": {
+      "top_1": {
+        "published_n": 44,
+        "published_rate": 0.4783,
+        "mass_plausible_n": 42,
+        "mass_plausible_rate": 0.4565,
+        "n_lost": 2,
+        "controls_lost": [
+          "X-21470",
+          "X-24137"
+        ]
+      },
+      "top_3": {
+        "published_n": 59,
+        "published_rate": 0.6413,
+        "mass_plausible_n": 55,
+        "mass_plausible_rate": 0.5978,
+        "n_lost": 4,
+        "controls_lost": [
+          "X-12811",
+          "X-21470",
+          "X-23080",
+          "X-24137"
+        ]
+      },
+      "top_10": {
+        "published_n": 68,
+        "published_rate": 0.7391,
+        "mass_plausible_n": 63,
+        "mass_plausible_rate": 0.6848,
+        "n_lost": 5,
+        "controls_lost": [
+          "X-12811",
+          "X-21470",
+          "X-23080",
+          "X-24137",
+          "X-26094"
+        ]
+      }
+    },
+    "finding": "Requiring a correct hit to also fit the observed mass costs a little at rank 1 and more with depth, which is what you would expect if the extra hits admitted deeper in the list are structurally similar molecules of the wrong formula. Reported as sensitivity, not as a proposed replacement: the published definition is Tanimoto, and changing it is an editorial decision."
+  },
   "known_figure_check": {
     "n_reports": 3897,
     "rank1_mass_mismatch": 598,

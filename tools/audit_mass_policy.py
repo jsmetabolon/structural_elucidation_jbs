@@ -189,6 +189,24 @@ class Report:
             for candidate in self.candidates[:depth]
         )
 
+    def correct_and_mass_plausible_at(self, depth: int, ppm_limit: float) -> bool:
+        """As ``correct_at``, but the candidate must also fit the observed mass.
+
+        A candidate with no recorded error cannot be shown to fit, so it fails.
+        That is the conservative reading, and the point of this variant is to be
+        the strict bound against which the published definition is compared.
+        """
+
+        for candidate in self.candidates[:depth]:
+            if (candidate.truth_tanimoto or 0.0) < TRUTH_THRESHOLD:
+                continue
+            if candidate.error_da is None:
+                continue
+            error_ppm = ppm_of(abs(candidate.error_da), self.neutral_mass)
+            if error_ppm is not None and error_ppm <= ppm_limit:
+                return True
+        return False
+
 
 def _num(value: Any) -> float | None:
     try:
@@ -880,6 +898,60 @@ def strong_score_without_support(reports: list[Report]) -> dict[str, Any]:
     }
 
 
+# Depths the manuscript reports recovery at.
+RECOVERY_DEPTHS = (1, 3, 10)
+# The window a correct hit must also fit under the strict variant. Wide enough
+# that instrument accuracy is not the thing being tested.
+MASS_PLAUSIBLE_PPM = 20.0
+
+
+def mass_plausible_recovery(reports: list[Report]) -> dict[str, Any]:
+    """Recovery under the published truth definition and under a stricter one.
+
+    The published definition is a Tanimoto threshold, which two molecules can
+    clear while having different molecular formulae: a candidate missing a
+    glucuronide is structurally very similar to the truth and is not the compound.
+    This reports what the headline figures would be if a correct hit also had to
+    fit the observed mass.
+
+    Reported as sensitivity. The audit already publishes recovery at four Tanimoto
+    thresholds, and which definition the manuscript adopts is an editorial call
+    with a claim-ledger consequence, not a side effect of measuring it.
+    """
+
+    controls = [report for report in reports if report.is_truth_control]
+    depths: dict[str, Any] = {}
+    for depth in RECOVERY_DEPTHS:
+        published = [report for report in controls if report.correct_at(depth)]
+        strict = [
+            report
+            for report in controls
+            if report.correct_and_mass_plausible_at(depth, MASS_PLAUSIBLE_PPM)
+        ]
+        lost = sorted({r.control_id for r in published} - {r.control_id for r in strict})
+        depths[f"top_{depth}"] = {
+            "published_n": len(published),
+            "published_rate": round(len(published) / len(controls), 4) if controls else None,
+            "mass_plausible_n": len(strict),
+            "mass_plausible_rate": round(len(strict) / len(controls), 4) if controls else None,
+            "n_lost": len(lost),
+            "controls_lost": lost,
+        }
+    return {
+        "n_controls": len(controls),
+        "truth_threshold": TRUTH_THRESHOLD,
+        "mass_plausible_ppm": MASS_PLAUSIBLE_PPM,
+        "depths": depths,
+        "finding": (
+            "Requiring a correct hit to also fit the observed mass costs a little at rank 1 "
+            "and more with depth, which is what you would expect if the extra hits admitted "
+            "deeper in the list are structurally similar molecules of the wrong formula. "
+            "Reported as sensitivity, not as a proposed replacement: the published definition "
+            "is Tanimoto, and changing it is an editorial decision."
+        ),
+    }
+
+
 def tolerance_sweep(reports: list[Report]) -> dict[str, Any]:
     """Recovery and band split across three orders of magnitude of mass tolerance.
 
@@ -1095,6 +1167,30 @@ def render_markdown(summary: dict[str, Any]) -> str:
                     f"{row['msi_level']} |"
                 )
 
+    sens = summary["mass_plausible_recovery"]
+    lines += [
+        "",
+        "## How much the headline depends on the truth definition",
+        "",
+        f"Recovery over {sens['n_controls']} truth controls under the published definition "
+        f"(Tanimoto >= {sens['truth_threshold']}) and under one that also requires the correct "
+        f"hit to fit the observed mass within {sens['mass_plausible_ppm']:g} ppm.",
+        "",
+        "| Depth | Published | Also mass-plausible | Controls lost |",
+        "|---|---:|---:|---|",
+    ]
+    total = sens["n_controls"]
+    for depth in RECOVERY_DEPTHS:
+        row = sens["depths"][f"top_{depth}"]
+        lost = ", ".join(f"`{c}`" for c in row["controls_lost"]) or "—"
+        # Formatted from the counts rather than the rounded rate, so the printed
+        # percentage does not drift from the fraction beside it.
+        lines.append(
+            f"| top {depth} | {row['published_n'] / total:.1%} ({row['published_n']}/{total}) | "
+            f"{row['mass_plausible_n'] / total:.1%} ({row['mass_plausible_n']}/{total}) | {lost} |"
+        )
+    lines += ["", sens["finding"]]
+
     lines += [
         "",
         "## The screen",
@@ -1228,6 +1324,7 @@ def main() -> None:
         "conjugate_tail": conjugate_tail(reports),
         "charge_state_suspects": charge_state_suspects(reports),
         "strong_score_without_support": strong_score_without_support(reports),
+        "mass_plausible_recovery": mass_plausible_recovery(reports),
         "known_figure_check": known_figure_check(reports),
         "screen": screen(reports, CURRENT, DRAFTED),
         "band_distribution": {
@@ -1300,6 +1397,15 @@ def main() -> None:
             f" rule reproduces; {unsupported['n_contradictory']} of them above"
             f" {unsupported['contradictory_limit_da']} Da, where the claim is indefensible"
         )
+    sens = summary["mass_plausible_recovery"]
+    parts = []
+    total = sens["n_controls"] or 1
+    for depth in RECOVERY_DEPTHS:
+        row = sens["depths"][f"top_{depth}"]
+        parts.append(
+            f"top{depth} {row['published_n'] / total:.1%}->{row['mass_plausible_n'] / total:.1%}"
+        )
+    print(f"[mass-policy] if correct also had to fit the mass: {', '.join(parts)}")
     scr = summary["screen"]
     print(
         f"[mass-policy] between the windows: {scr['in_reband_zone']} candidates,"
