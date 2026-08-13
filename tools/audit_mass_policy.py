@@ -170,6 +170,13 @@ class Report:
     msi_level: int | None
     source: str
     candidates: list[Candidate]
+    # The rank-1 candidate's own neutral mass, kept alongside the observed one so
+    # the two can be compared for a charge-state mismatch.
+    candidate_exact_mass: float | None = None
+    # The observed neutral mass with no fallback. ``neutral_mass`` above will fall
+    # back to the candidate's own mass when the observed one is missing, which is
+    # fine for a ppm denominator and circular for a charge-state comparison.
+    observed_neutral_mass: float | None = None
 
     @property
     def is_truth_control(self) -> bool:
@@ -222,12 +229,13 @@ def read_reports(root: Path) -> Iterator[Report]:
         # The observed m/z is a property of the feature, so one value serves every
         # candidate. The per-candidate `parent_mz` column is unreliable: in the
         # bundles seen so far it is blank on most rows.
-        neutral_mass = _num(fields.get("observed_neutral_mass"))
+        observed_neutral = _num(fields.get("observed_neutral_mass"))
+        observed_mz = _num(fields.get("observed_mz"))
+        candidate_mass = _num(fields.get("candidate_exact_mass"))
+        # Either is within a milli-Dalton of the other, and a ppm denominator does
+        # not care which; take whichever is present.
+        neutral_mass = observed_neutral
         if neutral_mass is None:
-            observed_mz = _num(fields.get("observed_mz"))
-            candidate_mass = _num(fields.get("candidate_exact_mass"))
-            # Either is within a milli-Dalton of the other, and a ppm denominator
-            # does not care which; take whichever is present.
             neutral_mass = observed_mz if observed_mz is not None else candidate_mass
 
         candidates = []
@@ -253,6 +261,8 @@ def read_reports(root: Path) -> Iterator[Report]:
             msi_level=int(msi) if msi is not None else None,
             source=str(fields.get("source", "") or "").strip(),
             candidates=candidates,
+            candidate_exact_mass=candidate_mass,
+            observed_neutral_mass=observed_neutral,
         )
 
 
@@ -659,10 +669,10 @@ def conjugate_tail(reports: list[Report]) -> dict[str, Any]:
         mass_key = f"{row['error_da']:.4f}"
         by_mass[mass_key] = by_mass.get(mass_key, 0) + 1
 
-    # A candidate identical to the truth structure cannot legitimately be off by
-    # hundreds of Daltons. Where that happens the truth annotation and the observed
-    # feature disagree, which is a question about the control rather than about the
-    # scorer, and it is worth naming rather than folding into a conjugate count.
+    # A candidate identical to the truth structure cannot differ from it by a
+    # conjugate, so a large error here is something else and folding it into the
+    # conjugate count would explain away the wrong thing. In the delivered set the
+    # something else was charge state: see ``charge_state_suspects``.
     identical_but_mismatched = sorted(
         {row["control_id"] for row in offenders if row["truth_tanimoto"] >= 0.999}
     )
@@ -685,9 +695,10 @@ def conjugate_tail(reports: list[Report]) -> dict[str, Any]:
             "The Tanimoto truth threshold admits structures with the wrong molecular "
             "formula. Any mass window tight enough to be useful discards them, which is "
             "why tightening reads as harmful against this definition of correct. The tail "
-            "concentrates in a handful of controls rather than being spread thinly, and "
-            "where a candidate is structurally identical to the truth and still hundreds "
-            "of Daltons out, the control's own annotation is the thing in question."
+            "concentrates in a handful of controls rather than being spread thinly. Where "
+            "a candidate is structurally identical to the truth and still hundreds of "
+            "Daltons out it cannot be a conjugate at all; check charge_state_suspects, "
+            "which is what that turned out to be."
         ),
     }
 
@@ -744,6 +755,127 @@ def implied_tolerance_by_source(reports: list[Report]) -> dict[str, Any]:
             "number."
             if len(distinct) > 1
             else "All generators scored on the same tolerance."
+        ),
+    }
+
+
+# Charge states worth testing for. A doubly charged precursor read as singly
+# charged puts the neutral mass out by a clean factor of two, and the reciprocal
+# case covers the opposite mistake.
+CHARGE_RATIOS = (2, 3)
+# The observed cases are exact to well within this. Loose enough to survive
+# rounding in the stored masses, tight enough that a merely heavy candidate cannot
+# land on an integer ratio by chance.
+CHARGE_RATIO_TOLERANCE = 1e-4
+
+# Above this error no strong mass claim is defensible whatever rule produced the
+# score. At 300 Da it is roughly 33 ppm, an order of magnitude past the accuracy
+# the instrument actually delivers.
+STRONG_CLAIM_LIMIT_DA = 0.01
+
+
+def charge_state_suspects(reports: list[Report]) -> dict[str, Any]:
+    """Features whose candidate mass is a clean integer multiple of the observed one.
+
+    A disulfate or diphosphate readily forms a doubly charged anion. Convert its
+    m/z to a neutral mass assuming one charge and the result is out by exactly a
+    factor of two, which no chemistry explains and no mass window catches: the
+    error is far too large to look like a tolerance problem and far too exact to
+    look like noise.
+
+    Reported with the MSI level each lands in, because a clean factor of two in the
+    Confirmed tier is a different problem from the same error at Level 4.
+    """
+
+    suspects = []
+    considered = 0
+    for report in reports:
+        observed = report.observed_neutral_mass
+        candidate_mass = report.candidate_exact_mass
+        if not observed or not candidate_mass or observed <= 0:
+            continue
+        considered += 1
+        ratio = candidate_mass / observed
+        for factor in CHARGE_RATIOS:
+            for value, label in ((float(factor), f"{factor}x"), (1.0 / factor, f"1/{factor}x")):
+                if abs(ratio - value) / value < CHARGE_RATIO_TOLERANCE:
+                    suspects.append(
+                        {
+                            "control_id": report.control_id,
+                            "observed_neutral_mass": round(observed, 4),
+                            "candidate_exact_mass": round(candidate_mass, 4),
+                            "ratio": label,
+                            "msi_level": report.msi_level,
+                        }
+                    )
+    by_msi: dict[str, int] = {}
+    for row in suspects:
+        key = str(row["msi_level"]) if row["msi_level"] is not None else "unknown"
+        by_msi[key] = by_msi.get(key, 0) + 1
+    return {
+        "n_reports_with_both_masses": considered,
+        "n_suspects": len(suspects),
+        "suspects": sorted(suspects, key=lambda row: row["control_id"]),
+        "by_msi_level": dict(sorted(by_msi.items())),
+        "reaches_msi_level_1": any(row["msi_level"] == 1 for row in suspects),
+        "finding": (
+            "A candidate mass that is an exact integer multiple of the observed neutral "
+            "mass is a charge-state misassignment rather than a mass error: the precursor "
+            "was multiply charged and was converted as though it were singly charged. No "
+            "mass tolerance catches this, because the discrepancy is orders of magnitude "
+            "too large to read as a tolerance problem."
+        ),
+    }
+
+
+def strong_score_without_support(reports: list[Report]) -> dict[str, Any]:
+    """Reports claiming a strong mass match that their own error does not support.
+
+    Narrower than the unexplained bucket in ``provenance``, and worse: a score no
+    rule reproduces is untidy, but a score no rule reproduces that also reads as
+    strong is a claim the report cannot back from its own recorded evidence.
+    """
+
+    offenders = []
+    for report in reports:
+        top = report.candidates[0] if report.candidates else None
+        if top is None or top.error_da is None or top.stored_score is None:
+            continue
+        if top.stored_score < MASS_STRONG:
+            continue
+        explained = any(
+            (predicted := rule(top.error_da, report.neutral_mass)) is not None
+            and abs(top.stored_score - predicted) < 1e-6
+            for rule in PROVENANCE_RULES.values()
+        )
+        if explained:
+            continue
+        offenders.append(
+            {
+                "control_id": report.control_id,
+                "stored_score": round(top.stored_score, 4),
+                "error_da": round(top.error_da, 4),
+                "msi_level": report.msi_level,
+            }
+        )
+    # Most of these are a small error with a high score, which is a reasonable
+    # reading of the evidence produced by some rule not catalogued here. The ones
+    # that matter carry an error no strong claim survives, whatever rule produced
+    # the number.
+    contradictory = [row for row in offenders if row["error_da"] > STRONG_CLAIM_LIMIT_DA]
+    return {
+        "n": len(offenders),
+        "n_contradictory": len(contradictory),
+        "contradictory_limit_da": STRONG_CLAIM_LIMIT_DA,
+        "contradictory": sorted(contradictory, key=lambda row: -row["error_da"]),
+        "examples": sorted(offenders, key=lambda row: -row["error_da"])[:10],
+        "finding": (
+            "A score no catalogued rule reproduces is untidy but usually harmless: most of "
+            "these pair a sub-milli-Dalton error with a high score, which is a fair reading "
+            "of the evidence by some rule not listed here. The ones worth acting on are "
+            f"those whose error exceeds {STRONG_CLAIM_LIMIT_DA} Da, where no strong claim is "
+            "defensible whatever produced the number, and where the field a reader sees is "
+            "the reassuring one."
         ),
     }
 
@@ -909,9 +1041,59 @@ def render_markdown(summary: dict[str, Any]) -> str:
             "Worth separating from the rest: "
             + ", ".join(f"`{c}`" for c in tail["identical_structure_but_mass_mismatched"])
             + " carries a candidate structurally identical to its truth annotation and still "
-            "hundreds of Daltons out. That is a question about the control's annotation rather "
-            "than about the scorer, and it should not be counted as a conjugate relationship.",
+            "hundreds of Daltons out. Identical fingerprints cannot differ by a conjugate, so "
+            "this is not a conjugate relationship and should not be counted as one. See the "
+            "charge-state section below, which is what it turned out to be.",
         ]
+
+    charge = summary["charge_state_suspects"]
+    unsupported = summary["strong_score_without_support"]
+    lines += [
+        "",
+        "## Charge-state misassignment",
+        "",
+        charge["finding"],
+        "",
+        f"{charge['n_suspects']} of {charge['n_reports_with_both_masses']} reports carrying both "
+        "masses show a clean integer ratio.",
+    ]
+    if charge["suspects"]:
+        lines += [
+            "",
+            "| Control | Observed neutral mass | Candidate mass | Ratio | MSI |",
+            "|---|---:|---:|---|---:|",
+        ]
+        for row in charge["suspects"]:
+            lines.append(
+                f"| `{row['control_id']}` | {row['observed_neutral_mass']} | "
+                f"{row['candidate_exact_mass']} | {row['ratio']} | {row['msi_level']} |"
+            )
+    if charge["reaches_msi_level_1"]:
+        lines += [
+            "",
+            "**One of these is MSI Level 1.** A feature whose neutral mass is out by a clean "
+            "factor of two is sitting in the Confirmed tier, and nothing in the pipeline "
+            "flagged it. That is what makes this worth fixing at so small a count.",
+        ]
+    if unsupported["n"]:
+        lines += [
+            "",
+            f"Separately, {unsupported['n']} reports state a strong mass match that no catalogued "
+            f"scoring rule reproduces from their own recorded error, and **{unsupported['n_contradictory']} "
+            f"of those carry an error above {unsupported['contradictory_limit_da']} Da**, where no "
+            "strong claim is defensible whatever produced the number. " + unsupported["finding"],
+        ]
+        if unsupported["contradictory"]:
+            lines += [
+                "",
+                "| Control | Stored score | Recorded error | MSI |",
+                "|---|---:|---:|---:|",
+            ]
+            for row in unsupported["contradictory"][:10]:
+                lines.append(
+                    f"| `{row['control_id']}` | {row['stored_score']} | {row['error_da']} Da | "
+                    f"{row['msi_level']} |"
+                )
 
     lines += [
         "",
@@ -1044,6 +1226,8 @@ def main() -> None:
         "implied_tolerance_by_source": implied_tolerance_by_source(reports),
         "mass_accuracy_by_correctness": mass_accuracy_by_correctness(reports),
         "conjugate_tail": conjugate_tail(reports),
+        "charge_state_suspects": charge_state_suspects(reports),
+        "strong_score_without_support": strong_score_without_support(reports),
         "known_figure_check": known_figure_check(reports),
         "screen": screen(reports, CURRENT, DRAFTED),
         "band_distribution": {
@@ -1100,8 +1284,21 @@ def main() -> None:
     )
     if tail["identical_structure_but_mass_mismatched"]:
         print(
-            "[mass-policy]   identical structure but mismatched mass (check the annotation):"
+            "[mass-policy]   identical structure but mismatched mass (not a conjugate):"
             f" {', '.join(tail['identical_structure_but_mass_mismatched'])}"
+        )
+    charge = summary["charge_state_suspects"]
+    print(
+        f"[mass-policy] charge-state suspects: {charge['n_suspects']} of"
+        f" {charge['n_reports_with_both_masses']} reports, by MSI level {charge['by_msi_level']}"
+        + ("  <-- one is Level 1" if charge["reaches_msi_level_1"] else "")
+    )
+    unsupported = summary["strong_score_without_support"]
+    if unsupported["n"]:
+        print(
+            f"[mass-policy]   {unsupported['n']} reports claim a strong mass match no catalogued"
+            f" rule reproduces; {unsupported['n_contradictory']} of them above"
+            f" {unsupported['contradictory_limit_da']} Da, where the claim is indefensible"
         )
     scr = summary["screen"]
     print(
