@@ -1,0 +1,48 @@
+{
+  "n_compounds": 3897,
+  "truth_control": {
+    "n": 92,
+    "basis": "structure_tanimoto",
+    "truth_threshold": 0.7,
+    "rank_1": {
+      "n_assessable": 92,
+      "n_matched": 44,
+      "rate": 0.4783
+    },
+    "top_3": {
+      "n_assessable": 92,
+      "n_matched": 59,
+      "rate": 0.6413
+    },
+    "top_10": {
+      "n_assessable": 92,
+      "n_matched": 68,
+      "rate": 0.7391
+    }
+  },
+  "level_2c": {
+    "n": 163,
+    "basis": "formula_only",
+    "n_with_a_reference_formula": 26,
+    "rank_1": {
+      "n_assessable": 26,
+      "n_matched": 23,
+      "rate": 0.8846
+    },
+    "top_3": {
+      "n_assessable": 26,
+      "n_matched": 23,
+      "rate": 0.8846
+    },
+    "top_10": {
+      "n_assessable": 26,
+      "n_matched": 23,
+      "rate": 0.8846
+    },
+    "caveat": "Formula agreement against a tentative annotation, not a structural match. No Level 2C compound has a reference structure or a named candidate, and only a minority record a formula at all; the rest are not assessable."
+  },
+  "other": {
+    "n": 3642,
+    "basis": "none"
+  }
+}
