@@ -1,0 +1,2782 @@
+{
+  "method": "Chemical-pathway composition of human feces, recomputed with X-compound pathway predictions added to the named metabolites the Global Discovery Panel detects. Detection is GDP, not MFP. Predicted pathways carry 52.2% measured super-pathway agreement against independent labels, so this shows direction and rough size rather than a measurement.",
+  "detection_basis": {
+    "identified": "GDP Bucket - hFecal != 'Never' in 'GLOBAL 20260129'",
+    "x_compounds": "present in the human-feces detection history",
+    "counting": "one compound, one count"
+  },
+  "coverage": {
+    "global_panel_rows": 5189,
+    "identified_detected_in_feces": 2265,
+    "x_compounds_in_detection_history": 705,
+    "x_compounds_with_an_assignment": 704,
+    "x_compounds_added": 704,
+    "x_compounds_without_a_report": [
+      "X-25434"
+    ]
+  },
+  "super_pathway": [
+    {
+      "chemical_pathway": "Lipid",
+      "identified_detected": 786,
+      "baseline_pct": 34.7,
+      "x_compounds_added": 182,
+      "updated_total": 968,
+      "updated_pct": 32.6,
+      "delta_pct_points": -2.1,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Xenobiotics",
+      "identified_detected": 594,
+      "baseline_pct": 26.23,
+      "x_compounds_added": 191,
+      "updated_total": 785,
+      "updated_pct": 26.44,
+      "delta_pct_points": 0.21,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Amino Acid",
+      "identified_detected": 357,
+      "baseline_pct": 15.76,
+      "x_compounds_added": 142,
+      "updated_total": 499,
+      "updated_pct": 16.81,
+      "delta_pct_points": 1.05,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Peptide",
+      "identified_detected": 78,
+      "baseline_pct": 3.44,
+      "x_compounds_added": 134,
+      "updated_total": 212,
+      "updated_pct": 7.14,
+      "delta_pct_points": 3.7,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Secondary metabolism",
+      "identified_detected": 118,
+      "baseline_pct": 5.21,
+      "x_compounds_added": 0,
+      "updated_total": 118,
+      "updated_pct": 3.97,
+      "delta_pct_points": -1.24,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Nucleotide",
+      "identified_detected": 98,
+      "baseline_pct": 4.33,
+      "x_compounds_added": 17,
+      "updated_total": 115,
+      "updated_pct": 3.87,
+      "delta_pct_points": -0.45,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Carbohydrate",
+      "identified_detected": 94,
+      "baseline_pct": 4.15,
+      "x_compounds_added": 20,
+      "updated_total": 114,
+      "updated_pct": 3.84,
+      "delta_pct_points": -0.31,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Cofactors and Vitamins",
+      "identified_detected": 64,
+      "baseline_pct": 2.83,
+      "x_compounds_added": 11,
+      "updated_total": 75,
+      "updated_pct": 2.53,
+      "delta_pct_points": -0.3,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Partially Characterized Molecules",
+      "identified_detected": 37,
+      "baseline_pct": 1.63,
+      "x_compounds_added": 2,
+      "updated_total": 39,
+      "updated_pct": 1.31,
+      "delta_pct_points": -0.32,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Energy",
+      "identified_detected": 18,
+      "baseline_pct": 0.79,
+      "x_compounds_added": 5,
+      "updated_total": 23,
+      "updated_pct": 0.77,
+      "delta_pct_points": -0.02,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Cofactors, Prosthetic Groups, Electron Carriers",
+      "identified_detected": 17,
+      "baseline_pct": 0.75,
+      "x_compounds_added": 0,
+      "updated_total": 17,
+      "updated_pct": 0.57,
+      "delta_pct_points": -0.18,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Hormone metabolism",
+      "identified_detected": 4,
+      "baseline_pct": 0.18,
+      "x_compounds_added": 0,
+      "updated_total": 4,
+      "updated_pct": 0.13,
+      "delta_pct_points": -0.04,
+      "outside_predicted_vocabulary": "TRUE"
+    }
+  ],
+  "sub_pathway": [
+    {
+      "chemical_pathway": "Food Component/Plant",
+      "identified_detected": 209,
+      "baseline_pct": 9.23,
+      "x_compounds_added": 89,
+      "updated_total": 298,
+      "updated_pct": 10.04,
+      "delta_pct_points": 0.81,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Dipeptide",
+      "identified_detected": 39,
+      "baseline_pct": 1.72,
+      "x_compounds_added": 116,
+      "updated_total": 155,
+      "updated_pct": 5.22,
+      "delta_pct_points": 3.5,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Chemical",
+      "identified_detected": 38,
+      "baseline_pct": 1.68,
+      "x_compounds_added": 39,
+      "updated_total": 77,
+      "updated_pct": 2.59,
+      "delta_pct_points": 0.92,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Benzoate Metabolism",
+      "identified_detected": 20,
+      "baseline_pct": 0.88,
+      "x_compounds_added": 39,
+      "updated_total": 59,
+      "updated_pct": 1.99,
+      "delta_pct_points": 1.1,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Drug - Antibiotic",
+      "identified_detected": 45,
+      "baseline_pct": 1.99,
+      "x_compounds_added": 2,
+      "updated_total": 47,
+      "updated_pct": 1.58,
+      "delta_pct_points": -0.4,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Lysophospholipid",
+      "identified_detected": 47,
+      "baseline_pct": 2.08,
+      "x_compounds_added": 0,
+      "updated_total": 47,
+      "updated_pct": 1.58,
+      "delta_pct_points": -0.49,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Drug - Analgesics, Anesthetics",
+      "identified_detected": 41,
+      "baseline_pct": 1.81,
+      "x_compounds_added": 5,
+      "updated_total": 46,
+      "updated_pct": 1.55,
+      "delta_pct_points": -0.26,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Diacylglycerol",
+      "identified_detected": 40,
+      "baseline_pct": 1.77,
+      "x_compounds_added": 4,
+      "updated_total": 44,
+      "updated_pct": 1.48,
+      "delta_pct_points": -0.28,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Drug - Cardiovascular",
+      "identified_detected": 40,
+      "baseline_pct": 1.77,
+      "x_compounds_added": 1,
+      "updated_total": 41,
+      "updated_pct": 1.38,
+      "delta_pct_points": -0.39,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Drug - Metabolic",
+      "identified_detected": 36,
+      "baseline_pct": 1.59,
+      "x_compounds_added": 5,
+      "updated_total": 41,
+      "updated_pct": 1.38,
+      "delta_pct_points": -0.21,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Steroid",
+      "identified_detected": 41,
+      "baseline_pct": 1.81,
+      "x_compounds_added": 0,
+      "updated_total": 41,
+      "updated_pct": 1.38,
+      "delta_pct_points": -0.43,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Drug - Psychoactive",
+      "identified_detected": 40,
+      "baseline_pct": 1.77,
+      "x_compounds_added": 0,
+      "updated_total": 40,
+      "updated_pct": 1.35,
+      "delta_pct_points": -0.42,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Partially Characterized Molecules",
+      "identified_detected": 37,
+      "baseline_pct": 1.63,
+      "x_compounds_added": 2,
+      "updated_total": 39,
+      "updated_pct": 1.31,
+      "delta_pct_points": -0.32,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Secondary Bile Acid Metabolism",
+      "identified_detected": 28,
+      "baseline_pct": 1.24,
+      "x_compounds_added": 9,
+      "updated_total": 37,
+      "updated_pct": 1.25,
+      "delta_pct_points": 0.01,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid, Monohydroxy",
+      "identified_detected": 15,
+      "baseline_pct": 0.66,
+      "x_compounds_added": 21,
+      "updated_total": 36,
+      "updated_pct": 1.21,
+      "delta_pct_points": 0.55,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid, Dicarboxylate",
+      "identified_detected": 19,
+      "baseline_pct": 0.84,
+      "x_compounds_added": 15,
+      "updated_total": 34,
+      "updated_pct": 1.15,
+      "delta_pct_points": 0.31,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Leucine, Isoleucine and Valine Metabolism",
+      "identified_detected": 10,
+      "baseline_pct": 0.44,
+      "x_compounds_added": 24,
+      "updated_total": 34,
+      "updated_pct": 1.15,
+      "delta_pct_points": 0.7,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Tryptophan Metabolism",
+      "identified_detected": 22,
+      "baseline_pct": 0.97,
+      "x_compounds_added": 12,
+      "updated_total": 34,
+      "updated_pct": 1.15,
+      "delta_pct_points": 0.17,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Methionine, Cysteine, SAM and Taurine Metabolism",
+      "identified_detected": 6,
+      "baseline_pct": 0.26,
+      "x_compounds_added": 26,
+      "updated_total": 32,
+      "updated_pct": 1.08,
+      "delta_pct_points": 0.81,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",
+      "identified_detected": 8,
+      "baseline_pct": 0.35,
+      "x_compounds_added": 22,
+      "updated_total": 30,
+      "updated_pct": 1.01,
+      "delta_pct_points": 0.66,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Galactosyl Glycerolipids",
+      "identified_detected": 25,
+      "baseline_pct": 1.1,
+      "x_compounds_added": 4,
+      "updated_total": 29,
+      "updated_pct": 0.98,
+      "delta_pct_points": -0.13,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Phosphatidylcholine (PC)",
+      "identified_detected": 29,
+      "baseline_pct": 1.28,
+      "x_compounds_added": 0,
+      "updated_total": 29,
+      "updated_pct": 0.98,
+      "delta_pct_points": -0.3,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Endocannabinoid",
+      "identified_detected": 22,
+      "baseline_pct": 0.97,
+      "x_compounds_added": 6,
+      "updated_total": 28,
+      "updated_pct": 0.94,
+      "delta_pct_points": -0.03,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Bile acids",
+      "identified_detected": 27,
+      "baseline_pct": 1.19,
+      "x_compounds_added": 0,
+      "updated_total": 27,
+      "updated_pct": 0.91,
+      "delta_pct_points": -0.28,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Disaccharides and Oligosaccharides",
+      "identified_detected": 20,
+      "baseline_pct": 0.88,
+      "x_compounds_added": 7,
+      "updated_total": 27,
+      "updated_pct": 0.91,
+      "delta_pct_points": 0.03,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Fatty acid, hydroxy",
+      "identified_detected": 27,
+      "baseline_pct": 1.19,
+      "x_compounds_added": 0,
+      "updated_total": 27,
+      "updated_pct": 0.91,
+      "delta_pct_points": -0.28,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Drug - Neurological",
+      "identified_detected": 25,
+      "baseline_pct": 1.1,
+      "x_compounds_added": 1,
+      "updated_total": 26,
+      "updated_pct": 0.88,
+      "delta_pct_points": -0.23,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Lysine Metabolism",
+      "identified_detected": 20,
+      "baseline_pct": 0.88,
+      "x_compounds_added": 6,
+      "updated_total": 26,
+      "updated_pct": 0.88,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Glutamate, Arginine, and Proline Metabolism",
+      "identified_detected": 25,
+      "baseline_pct": 1.1,
+      "x_compounds_added": 0,
+      "updated_total": 25,
+      "updated_pct": 0.84,
+      "delta_pct_points": -0.26,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Tyrosine Metabolism",
+      "identified_detected": 9,
+      "baseline_pct": 0.4,
+      "x_compounds_added": 16,
+      "updated_total": 25,
+      "updated_pct": 0.84,
+      "delta_pct_points": 0.44,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Plasmalogen",
+      "identified_detected": 24,
+      "baseline_pct": 1.06,
+      "x_compounds_added": 0,
+      "updated_total": 24,
+      "updated_pct": 0.81,
+      "delta_pct_points": -0.25,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Fatty acid conjugate",
+      "identified_detected": 23,
+      "baseline_pct": 1.02,
+      "x_compounds_added": 0,
+      "updated_total": 23,
+      "updated_pct": 0.77,
+      "delta_pct_points": -0.24,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Glutamate Metabolism",
+      "identified_detected": 8,
+      "baseline_pct": 0.35,
+      "x_compounds_added": 15,
+      "updated_total": 23,
+      "updated_pct": 0.77,
+      "delta_pct_points": 0.42,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Glutamate family (alpha-ketoglutarate derived)",
+      "identified_detected": 23,
+      "baseline_pct": 1.02,
+      "x_compounds_added": 0,
+      "updated_total": 23,
+      "updated_pct": 0.77,
+      "delta_pct_points": -0.24,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Aspartate family (OAA derived)",
+      "identified_detected": 22,
+      "baseline_pct": 0.97,
+      "x_compounds_added": 0,
+      "updated_total": 22,
+      "updated_pct": 0.74,
+      "delta_pct_points": -0.23,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Phenylpropanoids",
+      "identified_detected": 22,
+      "baseline_pct": 0.97,
+      "x_compounds_added": 0,
+      "updated_total": 22,
+      "updated_pct": 0.74,
+      "delta_pct_points": -0.23,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Polypeptide",
+      "identified_detected": 7,
+      "baseline_pct": 0.31,
+      "x_compounds_added": 15,
+      "updated_total": 22,
+      "updated_pct": 0.74,
+      "delta_pct_points": 0.43,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Sphingomyelins",
+      "identified_detected": 21,
+      "baseline_pct": 0.93,
+      "x_compounds_added": 0,
+      "updated_total": 21,
+      "updated_pct": 0.71,
+      "delta_pct_points": -0.22,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Urea cycle; Arginine and Proline Metabolism",
+      "identified_detected": 8,
+      "baseline_pct": 0.35,
+      "x_compounds_added": 13,
+      "updated_total": 21,
+      "updated_pct": 0.71,
+      "delta_pct_points": 0.35,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Androgenic Steroids",
+      "identified_detected": 9,
+      "baseline_pct": 0.4,
+      "x_compounds_added": 11,
+      "updated_total": 20,
+      "updated_pct": 0.67,
+      "delta_pct_points": 0.28,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Phenylalanine Metabolism",
+      "identified_detected": 13,
+      "baseline_pct": 0.57,
+      "x_compounds_added": 7,
+      "updated_total": 20,
+      "updated_pct": 0.67,
+      "delta_pct_points": 0.1,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Tocopherol Metabolism",
+      "identified_detected": 18,
+      "baseline_pct": 0.79,
+      "x_compounds_added": 2,
+      "updated_total": 20,
+      "updated_pct": 0.67,
+      "delta_pct_points": -0.12,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Aminosugar Metabolism",
+      "identified_detected": 14,
+      "baseline_pct": 0.62,
+      "x_compounds_added": 5,
+      "updated_total": 19,
+      "updated_pct": 0.64,
+      "delta_pct_points": 0.02,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Aspartate, Threonine, Methionine Metabolism",
+      "identified_detected": 19,
+      "baseline_pct": 0.84,
+      "x_compounds_added": 0,
+      "updated_total": 19,
+      "updated_pct": 0.64,
+      "delta_pct_points": -0.2,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Branched Chain Amino Acid (Pyruvate derived) metabolism",
+      "identified_detected": 19,
+      "baseline_pct": 0.84,
+      "x_compounds_added": 0,
+      "updated_total": 19,
+      "updated_pct": 0.64,
+      "delta_pct_points": -0.2,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Histidine Metabolism",
+      "identified_detected": 17,
+      "baseline_pct": 0.75,
+      "x_compounds_added": 2,
+      "updated_total": 19,
+      "updated_pct": 0.64,
+      "delta_pct_points": -0.11,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Pyrimidine Metabolism, Uracil containing",
+      "identified_detected": 14,
+      "baseline_pct": 0.62,
+      "x_compounds_added": 5,
+      "updated_total": 19,
+      "updated_pct": 0.64,
+      "delta_pct_points": 0.02,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Nicotinate and Nicotinamide Metabolism",
+      "identified_detected": 14,
+      "baseline_pct": 0.62,
+      "x_compounds_added": 4,
+      "updated_total": 18,
+      "updated_pct": 0.61,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Chemicals",
+      "identified_detected": 17,
+      "baseline_pct": 0.75,
+      "x_compounds_added": 0,
+      "updated_total": 17,
+      "updated_pct": 0.57,
+      "delta_pct_points": -0.18,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Polyamine Metabolism",
+      "identified_detected": 14,
+      "baseline_pct": 0.62,
+      "x_compounds_added": 3,
+      "updated_total": 17,
+      "updated_pct": 0.57,
+      "delta_pct_points": -0.05,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Purine Metabolism, (Hypo)Xanthine/Inosine containing",
+      "identified_detected": 13,
+      "baseline_pct": 0.57,
+      "x_compounds_added": 4,
+      "updated_total": 17,
+      "updated_pct": 0.57,
+      "delta_pct_points": -0.0,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Purine Metabolism, Adenine containing",
+      "identified_detected": 14,
+      "baseline_pct": 0.62,
+      "x_compounds_added": 3,
+      "updated_total": 17,
+      "updated_pct": 0.57,
+      "delta_pct_points": -0.05,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Purine Metabolism, Guanine containing",
+      "identified_detected": 15,
+      "baseline_pct": 0.66,
+      "x_compounds_added": 2,
+      "updated_total": 17,
+      "updated_pct": 0.57,
+      "delta_pct_points": -0.09,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Aromatic amino acid metabolism (PEP derived)",
+      "identified_detected": 16,
+      "baseline_pct": 0.71,
+      "x_compounds_added": 0,
+      "updated_total": 16,
+      "updated_pct": 0.54,
+      "delta_pct_points": -0.17,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Ceramides",
+      "identified_detected": 16,
+      "baseline_pct": 0.71,
+      "x_compounds_added": 0,
+      "updated_total": 16,
+      "updated_pct": 0.54,
+      "delta_pct_points": -0.17,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Corticosteroids",
+      "identified_detected": 9,
+      "baseline_pct": 0.4,
+      "x_compounds_added": 7,
+      "updated_total": 16,
+      "updated_pct": 0.54,
+      "delta_pct_points": 0.14,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Fatty acid, Dicarboxylate",
+      "identified_detected": 16,
+      "baseline_pct": 0.71,
+      "x_compounds_added": 0,
+      "updated_total": 16,
+      "updated_pct": 0.54,
+      "delta_pct_points": -0.17,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Pentose Metabolism",
+      "identified_detected": 11,
+      "baseline_pct": 0.49,
+      "x_compounds_added": 5,
+      "updated_total": 16,
+      "updated_pct": 0.54,
+      "delta_pct_points": 0.05,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Alkaloids",
+      "identified_detected": 15,
+      "baseline_pct": 0.66,
+      "x_compounds_added": 0,
+      "updated_total": 15,
+      "updated_pct": 0.51,
+      "delta_pct_points": -0.16,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Benzenoids",
+      "identified_detected": 15,
+      "baseline_pct": 0.66,
+      "x_compounds_added": 0,
+      "updated_total": 15,
+      "updated_pct": 0.51,
+      "delta_pct_points": -0.16,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Dipeptide Derivative",
+      "identified_detected": 15,
+      "baseline_pct": 0.66,
+      "x_compounds_added": 0,
+      "updated_total": 15,
+      "updated_pct": 0.51,
+      "delta_pct_points": -0.16,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Drug - Antiviral",
+      "identified_detected": 15,
+      "baseline_pct": 0.66,
+      "x_compounds_added": 0,
+      "updated_total": 15,
+      "updated_pct": 0.51,
+      "delta_pct_points": -0.16,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)",
+      "identified_detected": 3,
+      "baseline_pct": 0.13,
+      "x_compounds_added": 12,
+      "updated_total": 15,
+      "updated_pct": 0.51,
+      "delta_pct_points": 0.37,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Glutathione metabolism",
+      "identified_detected": 15,
+      "baseline_pct": 0.66,
+      "x_compounds_added": 0,
+      "updated_total": 15,
+      "updated_pct": 0.51,
+      "delta_pct_points": -0.16,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Glycerolipids - Monoacyl",
+      "identified_detected": 15,
+      "baseline_pct": 0.66,
+      "x_compounds_added": 0,
+      "updated_total": 15,
+      "updated_pct": 0.51,
+      "delta_pct_points": -0.16,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Sterol",
+      "identified_detected": 12,
+      "baseline_pct": 0.53,
+      "x_compounds_added": 3,
+      "updated_total": 15,
+      "updated_pct": 0.51,
+      "delta_pct_points": -0.02,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Aromatic Compound Degradation",
+      "identified_detected": 14,
+      "baseline_pct": 0.62,
+      "x_compounds_added": 0,
+      "updated_total": 14,
+      "updated_pct": 0.47,
+      "delta_pct_points": -0.15,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Drug - Gastrointestinal",
+      "identified_detected": 14,
+      "baseline_pct": 0.62,
+      "x_compounds_added": 0,
+      "updated_total": 14,
+      "updated_pct": 0.47,
+      "delta_pct_points": -0.15,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Long Chain Polyunsaturated Fatty Acid (n3 and n6)",
+      "identified_detected": 4,
+      "baseline_pct": 0.18,
+      "x_compounds_added": 10,
+      "updated_total": 14,
+      "updated_pct": 0.47,
+      "delta_pct_points": 0.29,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Orphan secondary metabolites",
+      "identified_detected": 14,
+      "baseline_pct": 0.62,
+      "x_compounds_added": 0,
+      "updated_total": 14,
+      "updated_pct": 0.47,
+      "delta_pct_points": -0.15,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Phosphatidylethanolamine (PE)",
+      "identified_detected": 14,
+      "baseline_pct": 0.62,
+      "x_compounds_added": 0,
+      "updated_total": 14,
+      "updated_pct": 0.47,
+      "delta_pct_points": -0.15,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Phospholipids",
+      "identified_detected": 14,
+      "baseline_pct": 0.62,
+      "x_compounds_added": 0,
+      "updated_total": 14,
+      "updated_pct": 0.47,
+      "delta_pct_points": -0.15,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Polyunsaturated Fatty Acid (n3 and n6)",
+      "identified_detected": 14,
+      "baseline_pct": 0.62,
+      "x_compounds_added": 0,
+      "updated_total": 14,
+      "updated_pct": 0.47,
+      "delta_pct_points": -0.15,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Primary Bile Acid Metabolism",
+      "identified_detected": 14,
+      "baseline_pct": 0.62,
+      "x_compounds_added": 0,
+      "updated_total": 14,
+      "updated_pct": 0.47,
+      "delta_pct_points": -0.15,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Terpenoids",
+      "identified_detected": 14,
+      "baseline_pct": 0.62,
+      "x_compounds_added": 0,
+      "updated_total": 14,
+      "updated_pct": 0.47,
+      "delta_pct_points": -0.15,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Xanthine Metabolism",
+      "identified_detected": 10,
+      "baseline_pct": 0.44,
+      "x_compounds_added": 4,
+      "updated_total": 14,
+      "updated_pct": 0.47,
+      "delta_pct_points": 0.03,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Flavonoids",
+      "identified_detected": 13,
+      "baseline_pct": 0.57,
+      "x_compounds_added": 0,
+      "updated_total": 13,
+      "updated_pct": 0.44,
+      "delta_pct_points": -0.14,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Monoacylglycerol",
+      "identified_detected": 11,
+      "baseline_pct": 0.49,
+      "x_compounds_added": 2,
+      "updated_total": 13,
+      "updated_pct": 0.44,
+      "delta_pct_points": -0.05,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Pyrimidine Metabolism, Cytidine containing",
+      "identified_detected": 10,
+      "baseline_pct": 0.44,
+      "x_compounds_added": 3,
+      "updated_total": 13,
+      "updated_pct": 0.44,
+      "delta_pct_points": -0.0,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Acetylated Peptides",
+      "identified_detected": 10,
+      "baseline_pct": 0.44,
+      "x_compounds_added": 2,
+      "updated_total": 12,
+      "updated_pct": 0.4,
+      "delta_pct_points": -0.04,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Drug - Respiratory",
+      "identified_detected": 12,
+      "baseline_pct": 0.53,
+      "x_compounds_added": 0,
+      "updated_total": 12,
+      "updated_pct": 0.4,
+      "delta_pct_points": -0.13,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid, Dihydroxy",
+      "identified_detected": 7,
+      "baseline_pct": 0.31,
+      "x_compounds_added": 5,
+      "updated_total": 12,
+      "updated_pct": 0.4,
+      "delta_pct_points": 0.1,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Fructose, Mannose and Galactose Metabolism",
+      "identified_detected": 10,
+      "baseline_pct": 0.44,
+      "x_compounds_added": 2,
+      "updated_total": 12,
+      "updated_pct": 0.4,
+      "delta_pct_points": -0.04,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Medium Chain Fatty Acid",
+      "identified_detected": 10,
+      "baseline_pct": 0.44,
+      "x_compounds_added": 2,
+      "updated_total": 12,
+      "updated_pct": 0.4,
+      "delta_pct_points": -0.04,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Serine, Glycine and Cysteine  Metabolism",
+      "identified_detected": 12,
+      "baseline_pct": 0.53,
+      "x_compounds_added": 0,
+      "updated_total": 12,
+      "updated_pct": 0.4,
+      "delta_pct_points": -0.13,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "TCA /Glyoxylate/ Methyl Citrate  Cycle",
+      "identified_detected": 12,
+      "baseline_pct": 0.53,
+      "x_compounds_added": 0,
+      "updated_total": 12,
+      "updated_pct": 0.4,
+      "delta_pct_points": -0.13,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Bacterial/Fungal",
+      "identified_detected": 9,
+      "baseline_pct": 0.4,
+      "x_compounds_added": 2,
+      "updated_total": 11,
+      "updated_pct": 0.37,
+      "delta_pct_points": -0.03,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid Metabolism (Acyl Glycine)",
+      "identified_detected": 5,
+      "baseline_pct": 0.22,
+      "x_compounds_added": 6,
+      "updated_total": 11,
+      "updated_pct": 0.37,
+      "delta_pct_points": 0.15,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Lyso-phospholipids",
+      "identified_detected": 11,
+      "baseline_pct": 0.49,
+      "x_compounds_added": 0,
+      "updated_total": 11,
+      "updated_pct": 0.37,
+      "delta_pct_points": -0.12,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Lysolipid",
+      "identified_detected": 11,
+      "baseline_pct": 0.49,
+      "x_compounds_added": 0,
+      "updated_total": 11,
+      "updated_pct": 0.37,
+      "delta_pct_points": -0.12,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Lysoplasmalogen",
+      "identified_detected": 11,
+      "baseline_pct": 0.49,
+      "x_compounds_added": 0,
+      "updated_total": 11,
+      "updated_pct": 0.37,
+      "delta_pct_points": -0.12,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Serine family (phosphoglycerate derived)",
+      "identified_detected": 11,
+      "baseline_pct": 0.49,
+      "x_compounds_added": 0,
+      "updated_total": 11,
+      "updated_pct": 0.37,
+      "delta_pct_points": -0.12,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid, Branched",
+      "identified_detected": 6,
+      "baseline_pct": 0.26,
+      "x_compounds_added": 4,
+      "updated_total": 10,
+      "updated_pct": 0.34,
+      "delta_pct_points": 0.07,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Inositol Metabolism",
+      "identified_detected": 8,
+      "baseline_pct": 0.35,
+      "x_compounds_added": 2,
+      "updated_total": 10,
+      "updated_pct": 0.34,
+      "delta_pct_points": -0.02,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Phenylalanine and Tyrosine Metabolism",
+      "identified_detected": 10,
+      "baseline_pct": 0.44,
+      "x_compounds_added": 0,
+      "updated_total": 10,
+      "updated_pct": 0.34,
+      "delta_pct_points": -0.1,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Pregnenolone Steroids",
+      "identified_detected": 6,
+      "baseline_pct": 0.26,
+      "x_compounds_added": 4,
+      "updated_total": 10,
+      "updated_pct": 0.34,
+      "delta_pct_points": 0.07,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Amines and polyamines",
+      "identified_detected": 9,
+      "baseline_pct": 0.4,
+      "x_compounds_added": 0,
+      "updated_total": 9,
+      "updated_pct": 0.3,
+      "delta_pct_points": -0.09,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Dinucleotide",
+      "identified_detected": 9,
+      "baseline_pct": 0.4,
+      "x_compounds_added": 0,
+      "updated_total": 9,
+      "updated_pct": 0.3,
+      "delta_pct_points": -0.09,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid Metabolism (Acyl Carnitine, Long Chain Saturated)",
+      "identified_detected": 9,
+      "baseline_pct": 0.4,
+      "x_compounds_added": 0,
+      "updated_total": 9,
+      "updated_pct": 0.3,
+      "delta_pct_points": -0.09,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid Metabolism (Acyl Carnitine, Monounsaturated)",
+      "identified_detected": 9,
+      "baseline_pct": 0.4,
+      "x_compounds_added": 0,
+      "updated_total": 9,
+      "updated_pct": 0.3,
+      "delta_pct_points": -0.09,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Glycolysis and ED Pathway",
+      "identified_detected": 9,
+      "baseline_pct": 0.4,
+      "x_compounds_added": 0,
+      "updated_total": 9,
+      "updated_pct": 0.3,
+      "delta_pct_points": -0.09,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Long Chain Fatty Acid",
+      "identified_detected": 9,
+      "baseline_pct": 0.4,
+      "x_compounds_added": 0,
+      "updated_total": 9,
+      "updated_pct": 0.3,
+      "delta_pct_points": -0.09,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Long Chain Monounsaturated Fatty Acid",
+      "identified_detected": 8,
+      "baseline_pct": 0.35,
+      "x_compounds_added": 1,
+      "updated_total": 9,
+      "updated_pct": 0.3,
+      "delta_pct_points": -0.05,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Branched Chain Amino Acid (Aspartate derived) metabolism",
+      "identified_detected": 8,
+      "baseline_pct": 0.35,
+      "x_compounds_added": 0,
+      "updated_total": 8,
+      "updated_pct": 0.27,
+      "delta_pct_points": -0.08,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid Metabolism (Acyl Carnitine, Dicarboxylate)",
+      "identified_detected": 6,
+      "baseline_pct": 0.26,
+      "x_compounds_added": 2,
+      "updated_total": 8,
+      "updated_pct": 0.27,
+      "delta_pct_points": 0.0,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Glycine, Serine and Threonine Metabolism",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 7,
+      "updated_total": 8,
+      "updated_pct": 0.27,
+      "delta_pct_points": 0.23,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Hexosylceramides (HCER)",
+      "identified_detected": 7,
+      "baseline_pct": 0.31,
+      "x_compounds_added": 1,
+      "updated_total": 8,
+      "updated_pct": 0.27,
+      "delta_pct_points": -0.04,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Sucrose, glucose,fructose metabolism",
+      "identified_detected": 8,
+      "baseline_pct": 0.35,
+      "x_compounds_added": 0,
+      "updated_total": 8,
+      "updated_pct": 0.27,
+      "delta_pct_points": -0.08,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "TCA Cycle",
+      "identified_detected": 3,
+      "baseline_pct": 0.13,
+      "x_compounds_added": 5,
+      "updated_total": 8,
+      "updated_pct": 0.27,
+      "delta_pct_points": 0.14,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Alanine and Aspartate Metabolism",
+      "identified_detected": 2,
+      "baseline_pct": 0.09,
+      "x_compounds_added": 5,
+      "updated_total": 7,
+      "updated_pct": 0.24,
+      "delta_pct_points": 0.15,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Choline metabolism",
+      "identified_detected": 7,
+      "baseline_pct": 0.31,
+      "x_compounds_added": 0,
+      "updated_total": 7,
+      "updated_pct": 0.24,
+      "delta_pct_points": -0.07,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Dihydroceramides",
+      "identified_detected": 4,
+      "baseline_pct": 0.18,
+      "x_compounds_added": 3,
+      "updated_total": 7,
+      "updated_pct": 0.24,
+      "delta_pct_points": 0.06,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Drug - Antineoplastic",
+      "identified_detected": 6,
+      "baseline_pct": 0.26,
+      "x_compounds_added": 1,
+      "updated_total": 7,
+      "updated_pct": 0.24,
+      "delta_pct_points": -0.03,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Drug - Other",
+      "identified_detected": 6,
+      "baseline_pct": 0.26,
+      "x_compounds_added": 1,
+      "updated_total": 7,
+      "updated_pct": 0.24,
+      "delta_pct_points": -0.03,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid Metabolism (Acyl Carnitine, Polyunsaturated)",
+      "identified_detected": 7,
+      "baseline_pct": 0.31,
+      "x_compounds_added": 0,
+      "updated_total": 7,
+      "updated_pct": 0.24,
+      "delta_pct_points": -0.07,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Glutathione Metabolism",
+      "identified_detected": 5,
+      "baseline_pct": 0.22,
+      "x_compounds_added": 2,
+      "updated_total": 7,
+      "updated_pct": 0.24,
+      "delta_pct_points": 0.02,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Glycogen Metabolism",
+      "identified_detected": 6,
+      "baseline_pct": 0.26,
+      "x_compounds_added": 1,
+      "updated_total": 7,
+      "updated_pct": 0.24,
+      "delta_pct_points": -0.03,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Phospholipid Metabolism",
+      "identified_detected": 7,
+      "baseline_pct": 0.31,
+      "x_compounds_added": 0,
+      "updated_total": 7,
+      "updated_pct": 0.24,
+      "delta_pct_points": -0.07,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Sterols",
+      "identified_detected": 7,
+      "baseline_pct": 0.31,
+      "x_compounds_added": 0,
+      "updated_total": 7,
+      "updated_pct": 0.24,
+      "delta_pct_points": -0.07,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Ascorbate and Aldarate Metabolism",
+      "identified_detected": 6,
+      "baseline_pct": 0.26,
+      "x_compounds_added": 0,
+      "updated_total": 6,
+      "updated_pct": 0.2,
+      "delta_pct_points": -0.06,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Branched Chain Amino Acids (pyruvate derived)",
+      "identified_detected": 6,
+      "baseline_pct": 0.26,
+      "x_compounds_added": 0,
+      "updated_total": 6,
+      "updated_pct": 0.2,
+      "delta_pct_points": -0.06,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Dinucleotides",
+      "identified_detected": 6,
+      "baseline_pct": 0.26,
+      "x_compounds_added": 0,
+      "updated_total": 6,
+      "updated_pct": 0.2,
+      "delta_pct_points": -0.06,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Estrogenic Steroids",
+      "identified_detected": 5,
+      "baseline_pct": 0.22,
+      "x_compounds_added": 1,
+      "updated_total": 6,
+      "updated_pct": 0.2,
+      "delta_pct_points": -0.02,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid Metabolism (Acyl Choline)",
+      "identified_detected": 6,
+      "baseline_pct": 0.26,
+      "x_compounds_added": 0,
+      "updated_total": 6,
+      "updated_pct": 0.2,
+      "delta_pct_points": -0.06,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid, Amide",
+      "identified_detected": 6,
+      "baseline_pct": 0.26,
+      "x_compounds_added": 0,
+      "updated_total": 6,
+      "updated_pct": 0.2,
+      "delta_pct_points": -0.06,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid, Trihydroxy",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 5,
+      "updated_total": 6,
+      "updated_pct": 0.2,
+      "delta_pct_points": 0.16,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Gamma-glutamyl Amino Acid",
+      "identified_detected": 5,
+      "baseline_pct": 0.22,
+      "x_compounds_added": 1,
+      "updated_total": 6,
+      "updated_pct": 0.2,
+      "delta_pct_points": -0.02,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Lactoyl Amino Acid",
+      "identified_detected": 5,
+      "baseline_pct": 0.22,
+      "x_compounds_added": 1,
+      "updated_total": 6,
+      "updated_pct": 0.2,
+      "delta_pct_points": -0.02,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Pyrimidine metabolism",
+      "identified_detected": 6,
+      "baseline_pct": 0.26,
+      "x_compounds_added": 0,
+      "updated_total": 6,
+      "updated_pct": 0.2,
+      "delta_pct_points": -0.06,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Sphingolipid Synthesis",
+      "identified_detected": 6,
+      "baseline_pct": 0.26,
+      "x_compounds_added": 0,
+      "updated_total": 6,
+      "updated_pct": 0.2,
+      "delta_pct_points": -0.06,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Sphingosines",
+      "identified_detected": 6,
+      "baseline_pct": 0.26,
+      "x_compounds_added": 0,
+      "updated_total": 6,
+      "updated_pct": 0.2,
+      "delta_pct_points": -0.06,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Amino sugar and nucleotide sugar",
+      "identified_detected": 5,
+      "baseline_pct": 0.22,
+      "x_compounds_added": 0,
+      "updated_total": 5,
+      "updated_pct": 0.17,
+      "delta_pct_points": -0.05,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Catecholamine Metabolism",
+      "identified_detected": 5,
+      "baseline_pct": 0.22,
+      "x_compounds_added": 0,
+      "updated_total": 5,
+      "updated_pct": 0.17,
+      "delta_pct_points": -0.05,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Creatine Metabolism",
+      "identified_detected": 3,
+      "baseline_pct": 0.13,
+      "x_compounds_added": 2,
+      "updated_total": 5,
+      "updated_pct": 0.17,
+      "delta_pct_points": 0.04,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Dihydrosphingomyelins",
+      "identified_detected": 5,
+      "baseline_pct": 0.22,
+      "x_compounds_added": 0,
+      "updated_total": 5,
+      "updated_pct": 0.17,
+      "delta_pct_points": -0.05,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Drug - Topical Agents",
+      "identified_detected": 5,
+      "baseline_pct": 0.22,
+      "x_compounds_added": 0,
+      "updated_total": 5,
+      "updated_pct": 0.17,
+      "delta_pct_points": -0.05,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Lactosylceramides (LCER)",
+      "identified_detected": 5,
+      "baseline_pct": 0.22,
+      "x_compounds_added": 0,
+      "updated_total": 5,
+      "updated_pct": 0.17,
+      "delta_pct_points": -0.05,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Nicotinate and nicotinamide metabolism",
+      "identified_detected": 5,
+      "baseline_pct": 0.22,
+      "x_compounds_added": 0,
+      "updated_total": 5,
+      "updated_pct": 0.17,
+      "delta_pct_points": -0.05,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Pantothenate and CoA Metabolism",
+      "identified_detected": 4,
+      "baseline_pct": 0.18,
+      "x_compounds_added": 1,
+      "updated_total": 5,
+      "updated_pct": 0.17,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Pyrimidine Metabolism, Thymine containing",
+      "identified_detected": 5,
+      "baseline_pct": 0.22,
+      "x_compounds_added": 0,
+      "updated_total": 5,
+      "updated_pct": 0.17,
+      "delta_pct_points": -0.05,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Pyruvate Family derived",
+      "identified_detected": 5,
+      "baseline_pct": 0.22,
+      "x_compounds_added": 0,
+      "updated_total": 5,
+      "updated_pct": 0.17,
+      "delta_pct_points": -0.05,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Vitamin B6 Metabolism",
+      "identified_detected": 4,
+      "baseline_pct": 0.18,
+      "x_compounds_added": 1,
+      "updated_total": 5,
+      "updated_pct": 0.17,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Auxin metabolism",
+      "identified_detected": 4,
+      "baseline_pct": 0.18,
+      "x_compounds_added": 0,
+      "updated_total": 4,
+      "updated_pct": 0.13,
+      "delta_pct_points": -0.04,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Chlorophyll and heme metabolism",
+      "identified_detected": 4,
+      "baseline_pct": 0.18,
+      "x_compounds_added": 0,
+      "updated_total": 4,
+      "updated_pct": 0.13,
+      "delta_pct_points": -0.04,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Drug - Antiinflammatory, Immunosuppressant",
+      "identified_detected": 4,
+      "baseline_pct": 0.18,
+      "x_compounds_added": 0,
+      "updated_total": 4,
+      "updated_pct": 0.13,
+      "delta_pct_points": -0.04,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Eicosanoid",
+      "identified_detected": 0,
+      "baseline_pct": 0.0,
+      "x_compounds_added": 4,
+      "updated_total": 4,
+      "updated_pct": 0.13,
+      "delta_pct_points": 0.13,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid Metabolism (Acyl Glutamine)",
+      "identified_detected": 2,
+      "baseline_pct": 0.09,
+      "x_compounds_added": 2,
+      "updated_total": 4,
+      "updated_pct": 0.13,
+      "delta_pct_points": 0.05,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid, Methyl Ester",
+      "identified_detected": 0,
+      "baseline_pct": 0.0,
+      "x_compounds_added": 4,
+      "updated_total": 4,
+      "updated_pct": 0.13,
+      "delta_pct_points": 0.13,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Folate Metabolism",
+      "identified_detected": 4,
+      "baseline_pct": 0.18,
+      "x_compounds_added": 0,
+      "updated_total": 4,
+      "updated_pct": 0.13,
+      "delta_pct_points": -0.04,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Free fatty acid",
+      "identified_detected": 4,
+      "baseline_pct": 0.18,
+      "x_compounds_added": 0,
+      "updated_total": 4,
+      "updated_pct": 0.13,
+      "delta_pct_points": -0.04,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Heme and Porphyrin Metabolism",
+      "identified_detected": 4,
+      "baseline_pct": 0.18,
+      "x_compounds_added": 0,
+      "updated_total": 4,
+      "updated_pct": 0.13,
+      "delta_pct_points": -0.04,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Mevalonate Metabolism",
+      "identified_detected": 2,
+      "baseline_pct": 0.09,
+      "x_compounds_added": 2,
+      "updated_total": 4,
+      "updated_pct": 0.13,
+      "delta_pct_points": 0.05,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Pyrimidine Metabolism, Orotate containing",
+      "identified_detected": 4,
+      "baseline_pct": 0.18,
+      "x_compounds_added": 0,
+      "updated_total": 4,
+      "updated_pct": 0.13,
+      "delta_pct_points": -0.04,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Benzoxazinoids",
+      "identified_detected": 3,
+      "baseline_pct": 0.13,
+      "x_compounds_added": 0,
+      "updated_total": 3,
+      "updated_pct": 0.1,
+      "delta_pct_points": -0.03,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Branched Chain Amino Acids (OAA derived)",
+      "identified_detected": 3,
+      "baseline_pct": 0.13,
+      "x_compounds_added": 0,
+      "updated_total": 3,
+      "updated_pct": 0.1,
+      "delta_pct_points": -0.03,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Carnitine Metabolism",
+      "identified_detected": 2,
+      "baseline_pct": 0.09,
+      "x_compounds_added": 1,
+      "updated_total": 3,
+      "updated_pct": 0.1,
+      "delta_pct_points": 0.01,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid Hydroxyl Fatty Acid",
+      "identified_detected": 3,
+      "baseline_pct": 0.13,
+      "x_compounds_added": 0,
+      "updated_total": 3,
+      "updated_pct": 0.1,
+      "delta_pct_points": -0.03,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid Metabolism (also BCAA Metabolism)",
+      "identified_detected": 0,
+      "baseline_pct": 0.0,
+      "x_compounds_added": 3,
+      "updated_total": 3,
+      "updated_pct": 0.1,
+      "delta_pct_points": 0.1,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid Metabolism (also BCAA metabolism)",
+      "identified_detected": 3,
+      "baseline_pct": 0.13,
+      "x_compounds_added": 0,
+      "updated_total": 3,
+      "updated_pct": 0.1,
+      "delta_pct_points": -0.03,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Glycerolipids - Diacyl",
+      "identified_detected": 3,
+      "baseline_pct": 0.13,
+      "x_compounds_added": 0,
+      "updated_total": 3,
+      "updated_pct": 0.1,
+      "delta_pct_points": -0.03,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Hemoglobin and Porphyrin Metabolism",
+      "identified_detected": 3,
+      "baseline_pct": 0.13,
+      "x_compounds_added": 0,
+      "updated_total": 3,
+      "updated_pct": 0.1,
+      "delta_pct_points": -0.03,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Oxylipins",
+      "identified_detected": 3,
+      "baseline_pct": 0.13,
+      "x_compounds_added": 0,
+      "updated_total": 3,
+      "updated_pct": 0.1,
+      "delta_pct_points": -0.03,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Pentose Phosphate Pathway",
+      "identified_detected": 3,
+      "baseline_pct": 0.13,
+      "x_compounds_added": 0,
+      "updated_total": 3,
+      "updated_pct": 0.1,
+      "delta_pct_points": -0.03,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Phosphate",
+      "identified_detected": 3,
+      "baseline_pct": 0.13,
+      "x_compounds_added": 0,
+      "updated_total": 3,
+      "updated_pct": 0.1,
+      "delta_pct_points": -0.03,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Riboflavin Metabolism",
+      "identified_detected": 3,
+      "baseline_pct": 0.13,
+      "x_compounds_added": 0,
+      "updated_total": 3,
+      "updated_pct": 0.1,
+      "delta_pct_points": -0.03,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Serotonin Metabolism",
+      "identified_detected": 3,
+      "baseline_pct": 0.13,
+      "x_compounds_added": 0,
+      "updated_total": 3,
+      "updated_pct": 0.1,
+      "delta_pct_points": -0.03,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Sphingolipid",
+      "identified_detected": 3,
+      "baseline_pct": 0.13,
+      "x_compounds_added": 0,
+      "updated_total": 3,
+      "updated_pct": 0.1,
+      "delta_pct_points": -0.03,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Thiamine Metabolism",
+      "identified_detected": 2,
+      "baseline_pct": 0.09,
+      "x_compounds_added": 1,
+      "updated_total": 3,
+      "updated_pct": 0.1,
+      "delta_pct_points": 0.01,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Alkaloid derivative",
+      "identified_detected": 2,
+      "baseline_pct": 0.09,
+      "x_compounds_added": 0,
+      "updated_total": 2,
+      "updated_pct": 0.07,
+      "delta_pct_points": -0.02,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Aromatic Amino Acid Synthesis",
+      "identified_detected": 2,
+      "baseline_pct": 0.09,
+      "x_compounds_added": 0,
+      "updated_total": 2,
+      "updated_pct": 0.07,
+      "delta_pct_points": -0.02,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Biotin Metabolism",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 1,
+      "updated_total": 2,
+      "updated_pct": 0.07,
+      "delta_pct_points": 0.02,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "C5 branched dibasic acid metabolism",
+      "identified_detected": 2,
+      "baseline_pct": 0.09,
+      "x_compounds_added": 0,
+      "updated_total": 2,
+      "updated_pct": 0.07,
+      "delta_pct_points": -0.02,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Cyanogenic glucosides",
+      "identified_detected": 2,
+      "baseline_pct": 0.09,
+      "x_compounds_added": 0,
+      "updated_total": 2,
+      "updated_pct": 0.07,
+      "delta_pct_points": -0.02,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid Metabolism(Acyl Glycine)",
+      "identified_detected": 2,
+      "baseline_pct": 0.09,
+      "x_compounds_added": 0,
+      "updated_total": 2,
+      "updated_pct": 0.07,
+      "delta_pct_points": -0.02,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid, Amino",
+      "identified_detected": 2,
+      "baseline_pct": 0.09,
+      "x_compounds_added": 0,
+      "updated_total": 2,
+      "updated_pct": 0.07,
+      "delta_pct_points": -0.02,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid, Ester",
+      "identified_detected": 0,
+      "baseline_pct": 0.0,
+      "x_compounds_added": 2,
+      "updated_total": 2,
+      "updated_pct": 0.07,
+      "delta_pct_points": 0.07,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Fatty acid amide",
+      "identified_detected": 2,
+      "baseline_pct": 0.09,
+      "x_compounds_added": 0,
+      "updated_total": 2,
+      "updated_pct": 0.07,
+      "delta_pct_points": -0.02,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Furan metabolism",
+      "identified_detected": 2,
+      "baseline_pct": 0.09,
+      "x_compounds_added": 0,
+      "updated_total": 2,
+      "updated_pct": 0.07,
+      "delta_pct_points": -0.02,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Long Chain Saturated Fatty Acid",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 1,
+      "updated_total": 2,
+      "updated_pct": 0.07,
+      "delta_pct_points": 0.02,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Nucleotide Sugar",
+      "identified_detected": 2,
+      "baseline_pct": 0.09,
+      "x_compounds_added": 0,
+      "updated_total": 2,
+      "updated_pct": 0.07,
+      "delta_pct_points": -0.02,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Phosphatidylinositol (PI)",
+      "identified_detected": 2,
+      "baseline_pct": 0.09,
+      "x_compounds_added": 0,
+      "updated_total": 2,
+      "updated_pct": 0.07,
+      "delta_pct_points": -0.02,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Purine metabolism",
+      "identified_detected": 2,
+      "baseline_pct": 0.09,
+      "x_compounds_added": 0,
+      "updated_total": 2,
+      "updated_pct": 0.07,
+      "delta_pct_points": -0.02,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Short Chain Fatty Acid",
+      "identified_detected": 2,
+      "baseline_pct": 0.09,
+      "x_compounds_added": 0,
+      "updated_total": 2,
+      "updated_pct": 0.07,
+      "delta_pct_points": -0.02,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Tobacco Metabolite",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 1,
+      "updated_total": 2,
+      "updated_pct": 0.07,
+      "delta_pct_points": 0.02,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Ascorbate metabolism",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Biotin metabolism",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Calvin cycle and pentose phosphate",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "CoA metabolism",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Drug - Contraceptive",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Fatty Acid, Oxidized",
+      "identified_detected": 0,
+      "baseline_pct": 0.0,
+      "x_compounds_added": 1,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": 0.03,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Fatty acid and sugar derivatives",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Fatty acid, Amino",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Fatty acid, branched chain",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Fatty alcohol",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Galactolipids",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Glycerolipid Metabolism",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Glycolysis",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Guanidino and Acetamido Metabolism",
+      "identified_detected": 0,
+      "baseline_pct": 0.0,
+      "x_compounds_added": 1,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": 0.03,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Lipoate Metabolism",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Modified Peptides",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Neurotransmitter",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Photorespiration",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Phthalate",
+      "identified_detected": 0,
+      "baseline_pct": 0.0,
+      "x_compounds_added": 1,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": 0.03,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Progestin Steroids",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Pterin Metabolism",
+      "identified_detected": 0,
+      "baseline_pct": 0.0,
+      "x_compounds_added": 1,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": 0.03,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Sulfolipids",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "TCA cycle",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Tannins",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Tetrahydrobiopterin Metabolism",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Thiamine metabolism",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Thyroid Hormone Metabolism",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Tocopherol metabolism",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Tripeptide",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Vitamin A Metabolism",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Vitamin D Metabolism",
+      "identified_detected": 1,
+      "baseline_pct": 0.04,
+      "x_compounds_added": 0,
+      "updated_total": 1,
+      "updated_pct": 0.03,
+      "delta_pct_points": -0.01,
+      "outside_predicted_vocabulary": "TRUE"
+    }
+  ],
+  "by_confidence_tier": {
+    "high": [
+      {
+        "chemical_pathway": "Lipid",
+        "identified_detected": 786,
+        "baseline_pct": 34.7,
+        "x_compounds_added": 72,
+        "updated_total": 858,
+        "updated_pct": 33.9,
+        "delta_pct_points": -0.8,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Xenobiotics",
+        "identified_detected": 594,
+        "baseline_pct": 26.23,
+        "x_compounds_added": 70,
+        "updated_total": 664,
+        "updated_pct": 26.23,
+        "delta_pct_points": 0.01,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Amino Acid",
+        "identified_detected": 357,
+        "baseline_pct": 15.76,
+        "x_compounds_added": 47,
+        "updated_total": 404,
+        "updated_pct": 15.96,
+        "delta_pct_points": 0.2,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Peptide",
+        "identified_detected": 78,
+        "baseline_pct": 3.44,
+        "x_compounds_added": 52,
+        "updated_total": 130,
+        "updated_pct": 5.14,
+        "delta_pct_points": 1.69,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Secondary metabolism",
+        "identified_detected": 118,
+        "baseline_pct": 5.21,
+        "x_compounds_added": 0,
+        "updated_total": 118,
+        "updated_pct": 4.66,
+        "delta_pct_points": -0.55,
+        "outside_predicted_vocabulary": "TRUE"
+      },
+      {
+        "chemical_pathway": "Nucleotide",
+        "identified_detected": 98,
+        "baseline_pct": 4.33,
+        "x_compounds_added": 12,
+        "updated_total": 110,
+        "updated_pct": 4.35,
+        "delta_pct_points": 0.02,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Carbohydrate",
+        "identified_detected": 94,
+        "baseline_pct": 4.15,
+        "x_compounds_added": 4,
+        "updated_total": 98,
+        "updated_pct": 3.87,
+        "delta_pct_points": -0.28,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Cofactors and Vitamins",
+        "identified_detected": 64,
+        "baseline_pct": 2.83,
+        "x_compounds_added": 5,
+        "updated_total": 69,
+        "updated_pct": 2.73,
+        "delta_pct_points": -0.1,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Partially Characterized Molecules",
+        "identified_detected": 37,
+        "baseline_pct": 1.63,
+        "x_compounds_added": 1,
+        "updated_total": 38,
+        "updated_pct": 1.5,
+        "delta_pct_points": -0.13,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Energy",
+        "identified_detected": 18,
+        "baseline_pct": 0.79,
+        "x_compounds_added": 3,
+        "updated_total": 21,
+        "updated_pct": 0.83,
+        "delta_pct_points": 0.04,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Cofactors, Prosthetic Groups, Electron Carriers",
+        "identified_detected": 17,
+        "baseline_pct": 0.75,
+        "x_compounds_added": 0,
+        "updated_total": 17,
+        "updated_pct": 0.67,
+        "delta_pct_points": -0.08,
+        "outside_predicted_vocabulary": "TRUE"
+      },
+      {
+        "chemical_pathway": "Hormone metabolism",
+        "identified_detected": 4,
+        "baseline_pct": 0.18,
+        "x_compounds_added": 0,
+        "updated_total": 4,
+        "updated_pct": 0.16,
+        "delta_pct_points": -0.02,
+        "outside_predicted_vocabulary": "TRUE"
+      }
+    ],
+    "low": [
+      {
+        "chemical_pathway": "Lipid",
+        "identified_detected": 786,
+        "baseline_pct": 34.7,
+        "x_compounds_added": 76,
+        "updated_total": 862,
+        "updated_pct": 33.69,
+        "delta_pct_points": -1.02,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Xenobiotics",
+        "identified_detected": 594,
+        "baseline_pct": 26.23,
+        "x_compounds_added": 85,
+        "updated_total": 679,
+        "updated_pct": 26.53,
+        "delta_pct_points": 0.31,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Amino Acid",
+        "identified_detected": 357,
+        "baseline_pct": 15.76,
+        "x_compounds_added": 64,
+        "updated_total": 421,
+        "updated_pct": 16.45,
+        "delta_pct_points": 0.69,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Peptide",
+        "identified_detected": 78,
+        "baseline_pct": 3.44,
+        "x_compounds_added": 45,
+        "updated_total": 123,
+        "updated_pct": 4.81,
+        "delta_pct_points": 1.36,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Secondary metabolism",
+        "identified_detected": 118,
+        "baseline_pct": 5.21,
+        "x_compounds_added": 0,
+        "updated_total": 118,
+        "updated_pct": 4.61,
+        "delta_pct_points": -0.6,
+        "outside_predicted_vocabulary": "TRUE"
+      },
+      {
+        "chemical_pathway": "Carbohydrate",
+        "identified_detected": 94,
+        "baseline_pct": 4.15,
+        "x_compounds_added": 14,
+        "updated_total": 108,
+        "updated_pct": 4.22,
+        "delta_pct_points": 0.07,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Nucleotide",
+        "identified_detected": 98,
+        "baseline_pct": 4.33,
+        "x_compounds_added": 4,
+        "updated_total": 102,
+        "updated_pct": 3.99,
+        "delta_pct_points": -0.34,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Cofactors and Vitamins",
+        "identified_detected": 64,
+        "baseline_pct": 2.83,
+        "x_compounds_added": 3,
+        "updated_total": 67,
+        "updated_pct": 2.62,
+        "delta_pct_points": -0.21,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Partially Characterized Molecules",
+        "identified_detected": 37,
+        "baseline_pct": 1.63,
+        "x_compounds_added": 1,
+        "updated_total": 38,
+        "updated_pct": 1.48,
+        "delta_pct_points": -0.15,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Energy",
+        "identified_detected": 18,
+        "baseline_pct": 0.79,
+        "x_compounds_added": 2,
+        "updated_total": 20,
+        "updated_pct": 0.78,
+        "delta_pct_points": -0.01,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Cofactors, Prosthetic Groups, Electron Carriers",
+        "identified_detected": 17,
+        "baseline_pct": 0.75,
+        "x_compounds_added": 0,
+        "updated_total": 17,
+        "updated_pct": 0.66,
+        "delta_pct_points": -0.09,
+        "outside_predicted_vocabulary": "TRUE"
+      },
+      {
+        "chemical_pathway": "Hormone metabolism",
+        "identified_detected": 4,
+        "baseline_pct": 0.18,
+        "x_compounds_added": 0,
+        "updated_total": 4,
+        "updated_pct": 0.16,
+        "delta_pct_points": -0.02,
+        "outside_predicted_vocabulary": "TRUE"
+      }
+    ],
+    "medium": [
+      {
+        "chemical_pathway": "Lipid",
+        "identified_detected": 786,
+        "baseline_pct": 34.7,
+        "x_compounds_added": 34,
+        "updated_total": 820,
+        "updated_pct": 34.04,
+        "delta_pct_points": -0.66,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Xenobiotics",
+        "identified_detected": 594,
+        "baseline_pct": 26.23,
+        "x_compounds_added": 36,
+        "updated_total": 630,
+        "updated_pct": 26.15,
+        "delta_pct_points": -0.07,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Amino Acid",
+        "identified_detected": 357,
+        "baseline_pct": 15.76,
+        "x_compounds_added": 31,
+        "updated_total": 388,
+        "updated_pct": 16.11,
+        "delta_pct_points": 0.34,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Secondary metabolism",
+        "identified_detected": 118,
+        "baseline_pct": 5.21,
+        "x_compounds_added": 0,
+        "updated_total": 118,
+        "updated_pct": 4.9,
+        "delta_pct_points": -0.31,
+        "outside_predicted_vocabulary": "TRUE"
+      },
+      {
+        "chemical_pathway": "Peptide",
+        "identified_detected": 78,
+        "baseline_pct": 3.44,
+        "x_compounds_added": 37,
+        "updated_total": 115,
+        "updated_pct": 4.77,
+        "delta_pct_points": 1.33,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Nucleotide",
+        "identified_detected": 98,
+        "baseline_pct": 4.33,
+        "x_compounds_added": 1,
+        "updated_total": 99,
+        "updated_pct": 4.11,
+        "delta_pct_points": -0.22,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Carbohydrate",
+        "identified_detected": 94,
+        "baseline_pct": 4.15,
+        "x_compounds_added": 2,
+        "updated_total": 96,
+        "updated_pct": 3.99,
+        "delta_pct_points": -0.17,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Cofactors and Vitamins",
+        "identified_detected": 64,
+        "baseline_pct": 2.83,
+        "x_compounds_added": 3,
+        "updated_total": 67,
+        "updated_pct": 2.78,
+        "delta_pct_points": -0.04,
+        "outside_predicted_vocabulary": "FALSE"
+      },
+      {
+        "chemical_pathway": "Partially Characterized Molecules",
+        "identified_detected": 37,
+        "baseline_pct": 1.63,
+        "x_compounds_added": 0,
+        "updated_total": 37,
+        "updated_pct": 1.54,
+        "delta_pct_points": -0.1,
+        "outside_predicted_vocabulary": "TRUE"
+      },
+      {
+        "chemical_pathway": "Energy",
+        "identified_detected": 18,
+        "baseline_pct": 0.79,
+        "x_compounds_added": 0,
+        "updated_total": 18,
+        "updated_pct": 0.75,
+        "delta_pct_points": -0.05,
+        "outside_predicted_vocabulary": "TRUE"
+      },
+      {
+        "chemical_pathway": "Cofactors, Prosthetic Groups, Electron Carriers",
+        "identified_detected": 17,
+        "baseline_pct": 0.75,
+        "x_compounds_added": 0,
+        "updated_total": 17,
+        "updated_pct": 0.71,
+        "delta_pct_points": -0.04,
+        "outside_predicted_vocabulary": "TRUE"
+      },
+      {
+        "chemical_pathway": "Hormone metabolism",
+        "identified_detected": 4,
+        "baseline_pct": 0.18,
+        "x_compounds_added": 0,
+        "updated_total": 4,
+        "updated_pct": 0.17,
+        "delta_pct_points": -0.01,
+        "outside_predicted_vocabulary": "TRUE"
+      }
+    ]
+  },
+  "common_detection_only": [
+    {
+      "chemical_pathway": "Lipid",
+      "identified_detected": 382,
+      "baseline_pct": 36.31,
+      "x_compounds_added": 94,
+      "updated_total": 476,
+      "updated_pct": 33.43,
+      "delta_pct_points": -2.88,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Amino Acid",
+      "identified_detected": 244,
+      "baseline_pct": 23.19,
+      "x_compounds_added": 89,
+      "updated_total": 333,
+      "updated_pct": 23.38,
+      "delta_pct_points": 0.19,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Xenobiotics",
+      "identified_detected": 138,
+      "baseline_pct": 13.12,
+      "x_compounds_added": 76,
+      "updated_total": 214,
+      "updated_pct": 15.03,
+      "delta_pct_points": 1.91,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Peptide",
+      "identified_detected": 45,
+      "baseline_pct": 4.28,
+      "x_compounds_added": 82,
+      "updated_total": 127,
+      "updated_pct": 8.92,
+      "delta_pct_points": 4.64,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Nucleotide",
+      "identified_detected": 64,
+      "baseline_pct": 6.08,
+      "x_compounds_added": 9,
+      "updated_total": 73,
+      "updated_pct": 5.13,
+      "delta_pct_points": -0.96,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Secondary metabolism",
+      "identified_detected": 61,
+      "baseline_pct": 5.8,
+      "x_compounds_added": 0,
+      "updated_total": 61,
+      "updated_pct": 4.28,
+      "delta_pct_points": -1.51,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Carbohydrate",
+      "identified_detected": 43,
+      "baseline_pct": 4.09,
+      "x_compounds_added": 8,
+      "updated_total": 51,
+      "updated_pct": 3.58,
+      "delta_pct_points": -0.51,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Cofactors and Vitamins",
+      "identified_detected": 40,
+      "baseline_pct": 3.8,
+      "x_compounds_added": 9,
+      "updated_total": 49,
+      "updated_pct": 3.44,
+      "delta_pct_points": -0.36,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Energy",
+      "identified_detected": 12,
+      "baseline_pct": 1.14,
+      "x_compounds_added": 4,
+      "updated_total": 16,
+      "updated_pct": 1.12,
+      "delta_pct_points": -0.02,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Cofactors, Prosthetic Groups, Electron Carriers",
+      "identified_detected": 11,
+      "baseline_pct": 1.05,
+      "x_compounds_added": 0,
+      "updated_total": 11,
+      "updated_pct": 0.77,
+      "delta_pct_points": -0.27,
+      "outside_predicted_vocabulary": "TRUE"
+    },
+    {
+      "chemical_pathway": "Partially Characterized Molecules",
+      "identified_detected": 10,
+      "baseline_pct": 0.95,
+      "x_compounds_added": 1,
+      "updated_total": 11,
+      "updated_pct": 0.77,
+      "delta_pct_points": -0.18,
+      "outside_predicted_vocabulary": "FALSE"
+    },
+    {
+      "chemical_pathway": "Hormone metabolism",
+      "identified_detected": 2,
+      "baseline_pct": 0.19,
+      "x_compounds_added": 0,
+      "updated_total": 2,
+      "updated_pct": 0.14,
+      "delta_pct_points": -0.05,
+      "outside_predicted_vocabulary": "TRUE"
+    }
+  ]
+}
