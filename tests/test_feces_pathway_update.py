@@ -151,6 +151,79 @@ def test_an_x_compound_not_detected_in_feces_is_not_added():
     assert result["n_x_compounds_added"] == 1
 
 
+VOCABULARY = {"Lipid", "Peptide", "Amino Acid", "Xenobiotics"}
+
+
+def curated_csv(tmp_path, *rows):
+    path = tmp_path / "known_X.csv"
+    lines = ["Unknown,SuperPathway,Draft Subpathway"]
+    lines += [",".join(row) for row in rows]
+    path.write_text("\n".join(lines) + "\n")
+    return path
+
+
+def test_a_curated_pathway_is_read_where_one_exists(tmp_path):
+    path = curated_csv(tmp_path, ("X-1", "Peptide", "Dipeptide"))
+    curated = F.read_curated_pathways(path, VOCABULARY)
+    assert curated["X-1"]["super_pathway"] == "Peptide"
+
+
+def test_a_curator_note_is_not_treated_as_a_chemical_class(tmp_path):
+    """About a fifth of the column is review notes rather than taxonomy.
+
+    Taking them at face value invents pathways called 'Unknown', 'Ask DTS' and
+    'DO NOT INCLUDE', which then appear in the results table as if they were
+    chemistry.
+    """
+
+    path = curated_csv(
+        tmp_path,
+        ("X-1", "Unknown", ""),
+        ("X-2", "DO NOT INCLUDE", ""),
+        ("X-3", "Ask DTS", ""),
+        ("X-4", "Can add this", ""),
+        ("X-5", "Lipid", ""),
+    )
+    curated = F.read_curated_pathways(path, VOCABULARY)
+    assert set(curated) == {"X-5"}
+
+
+def test_the_first_recorded_value_wins_for_a_repeated_compound(tmp_path):
+    """A compound appears once per library, and the delivered set takes the first."""
+
+    path = curated_csv(tmp_path, ("X-1", "Lipid", ""), ("X-1", "Peptide", ""))
+    assert F.read_curated_pathways(path, VOCABULARY)["X-1"]["super_pathway"] == "Lipid"
+
+
+def test_restricting_to_an_inclusion_list_narrows_the_known_side():
+    panel = [
+        dict(metabolite("Lipid"), chemical_id="1"),
+        dict(metabolite("Peptide"), chemical_id="2"),
+    ]
+    everything = F.build(panel, {}, {})
+    narrowed = F.build(panel, {}, {}, restrict_to={"1"})
+    assert everything["n_identified_detected"] == 2
+    assert narrowed["n_identified_detected"] == 1
+
+
+def test_the_pathway_source_split_reports_the_disagreement():
+    assignments = {
+        "X-1": {"pathway_source": "curated", "super_pathway": "Peptide",
+                "predicted_super_pathway": "Lipid"},
+        "X-2": {"pathway_source": "curated", "super_pathway": "Lipid",
+                "predicted_super_pathway": "Lipid"},
+        "X-3": {"pathway_source": "predicted", "super_pathway": "Lipid",
+                "predicted_super_pathway": "Lipid"},
+    }
+    split = F.pathway_source_split(assignments)
+    assert split == {
+        "curated": 2,
+        "predicted": 1,
+        "curated_disagreeing_with_prediction": 1,
+        "curated_agreement_rate": 0.5,
+    }
+
+
 def test_weighting_moves_the_baseline_not_just_the_addition():
     """Which is why both counting modes are kept rather than one overwriting the other.
 
