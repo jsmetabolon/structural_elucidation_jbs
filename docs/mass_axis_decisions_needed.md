@@ -61,11 +61,19 @@ Two things follow that a tighter window alone does not fix.
   molecular formula, so a candidate missing a conjugate passes as correct while
   being wrong by the conjugate's mass. Any window tight enough to be useful
   discards them.
-- **One of those is not a conjugate relationship at all.** `X-21470` carries a
-  candidate structurally *identical* to its truth annotation and still 233 Da out.
-  Identical fingerprints cannot differ by a conjugate, so either that control's
-  annotation or its observed mass is wrong. That is a truth-set integrity item,
-  not a scoring one.
+- **One of those is not a conjugate relationship at all, and not what was first
+  reported.** `X-21470` carries a candidate structurally *identical* to its truth
+  annotation and still 233 Da out. An earlier version of this bullet concluded
+  that the control's annotation or its observed mass must be wrong, and called it
+  a truth-set integrity item. That was wrong, and it pointed at the wrong owner.
+
+  The candidate mass, 466.1331 Da, is **exactly twice** the observed neutral mass
+  of 233.0668. The compound is 5-androstenetriol 3,17-disulfate, `C19H30O9S2`: a
+  disulfate, which readily forms a doubly charged `[M-2H]2-` anion in negative
+  mode. The structure, the Tanimoto of 1.0 and the annotation are all correct.
+  What is wrong is the conversion from m/z to neutral mass, which assumed a single
+  charge. It is a **pipeline defect, not a curation task**, and it is now routed to
+  handoff item 6.
 
 So a single linear tolerance is the wrong instrument for two jobs. Mass accuracy
 wants a ppm-scale window; conjugate relationships want the conjugate-aware

@@ -337,7 +337,177 @@
       "hexose": 162.053,
       "glucuronide": 176.032
     },
-    "finding": "The Tanimoto truth threshold admits structures with the wrong molecular formula. Any mass window tight enough to be useful discards them, which is why tightening reads as harmful against this definition of correct. The tail concentrates in a handful of controls rather than being spread thinly, and where a candidate is structurally identical to the truth and still hundreds of Daltons out, the control's own annotation is the thing in question."
+    "finding": "The Tanimoto truth threshold admits structures with the wrong molecular formula. Any mass window tight enough to be useful discards them, which is why tightening reads as harmful against this definition of correct. The tail concentrates in a handful of controls rather than being spread thinly. Where a candidate is structurally identical to the truth and still hundreds of Daltons out it cannot be a conjugate at all; check charge_state_suspects, which is what that turned out to be."
+  },
+  "charge_state_suspects": {
+    "n_reports_with_both_masses": 2471,
+    "n_suspects": 5,
+    "suspects": [
+      {
+        "control_id": "X-21470",
+        "observed_neutral_mass": 233.0668,
+        "candidate_exact_mass": 466.1331,
+        "ratio": "2x",
+        "msi_level": 1
+      },
+      {
+        "control_id": "X-24546",
+        "observed_neutral_mass": 232.0581,
+        "candidate_exact_mass": 464.1175,
+        "ratio": "2x",
+        "msi_level": 3
+      },
+      {
+        "control_id": "X-24637",
+        "observed_neutral_mass": 263.0207,
+        "candidate_exact_mass": 526.0417,
+        "ratio": "2x",
+        "msi_level": 3
+      },
+      {
+        "control_id": "X-25107",
+        "observed_neutral_mass": 612.0505,
+        "candidate_exact_mass": 306.0253,
+        "ratio": "1/2x",
+        "msi_level": 4
+      },
+      {
+        "control_id": "X-25814",
+        "observed_neutral_mass": 227.1034,
+        "candidate_exact_mass": 454.2064,
+        "ratio": "2x",
+        "msi_level": 4
+      }
+    ],
+    "by_msi_level": {
+      "1": 1,
+      "3": 2,
+      "4": 2
+    },
+    "reaches_msi_level_1": true,
+    "finding": "A candidate mass that is an exact integer multiple of the observed neutral mass is a charge-state misassignment rather than a mass error: the precursor was multiply charged and was converted as though it were singly charged. No mass tolerance catches this, because the discrepancy is orders of magnitude too large to read as a tolerance problem."
+  },
+  "strong_score_without_support": {
+    "n": 117,
+    "n_contradictory": 1,
+    "contradictory_limit_da": 0.01,
+    "contradictory": [
+      {
+        "control_id": "X-21470",
+        "stored_score": 0.95,
+        "error_da": 233.0664,
+        "msi_level": 1
+      }
+    ],
+    "examples": [
+      {
+        "control_id": "X-21470",
+        "stored_score": 0.95,
+        "error_da": 233.0664,
+        "msi_level": 1
+      },
+      {
+        "control_id": "X-24852",
+        "stored_score": 0.9996,
+        "error_da": 0.0022,
+        "msi_level": 2
+      },
+      {
+        "control_id": "X-23347",
+        "stored_score": 0.9983,
+        "error_da": 0.0017,
+        "msi_level": 3
+      },
+      {
+        "control_id": "X-11440",
+        "stored_score": 0.9988,
+        "error_da": 0.0012,
+        "msi_level": 3
+      },
+      {
+        "control_id": "X-15168",
+        "stored_score": 0.999,
+        "error_da": 0.0012,
+        "msi_level": 3
+      },
+      {
+        "control_id": "X-24545",
+        "stored_score": 0.9998,
+        "error_da": 0.0009,
+        "msi_level": 3
+      },
+      {
+        "control_id": "X-21798",
+        "stored_score": 0.9998,
+        "error_da": 0.0008,
+        "msi_level": 3
+      },
+      {
+        "control_id": "X-25827",
+        "stored_score": 0.9995,
+        "error_da": 0.0007,
+        "msi_level": 3
+      },
+      {
+        "control_id": "X-14337",
+        "stored_score": 0.9999,
+        "error_da": 0.0006,
+        "msi_level": 3
+      },
+      {
+        "control_id": "X-21788",
+        "stored_score": 0.9402,
+        "error_da": 0.0006,
+        "msi_level": 1
+      }
+    ],
+    "finding": "A score no catalogued rule reproduces is untidy but usually harmless: most of these pair a sub-milli-Dalton error with a high score, which is a fair reading of the evidence by some rule not listed here. The ones worth acting on are those whose error exceeds 0.01 Da, where no strong claim is defensible whatever produced the number, and where the field a reader sees is the reassuring one."
+  },
+  "mass_plausible_recovery": {
+    "n_controls": 92,
+    "truth_threshold": 0.7,
+    "mass_plausible_ppm": 20.0,
+    "depths": {
+      "top_1": {
+        "published_n": 44,
+        "published_rate": 0.4783,
+        "mass_plausible_n": 42,
+        "mass_plausible_rate": 0.4565,
+        "n_lost": 2,
+        "controls_lost": [
+          "X-21470",
+          "X-24137"
+        ]
+      },
+      "top_3": {
+        "published_n": 59,
+        "published_rate": 0.6413,
+        "mass_plausible_n": 55,
+        "mass_plausible_rate": 0.5978,
+        "n_lost": 4,
+        "controls_lost": [
+          "X-12811",
+          "X-21470",
+          "X-23080",
+          "X-24137"
+        ]
+      },
+      "top_10": {
+        "published_n": 68,
+        "published_rate": 0.7391,
+        "mass_plausible_n": 63,
+        "mass_plausible_rate": 0.6848,
+        "n_lost": 5,
+        "controls_lost": [
+          "X-12811",
+          "X-21470",
+          "X-23080",
+          "X-24137",
+          "X-26094"
+        ]
+      }
+    },
+    "finding": "Requiring a correct hit to also fit the observed mass costs a little at rank 1 and more with depth, which is what you would expect if the extra hits admitted deeper in the list are structurally similar molecules of the wrong formula. Reported as sensitivity, not as a proposed replacement: the published definition is Tanimoto, and changing it is an editorial decision."
   },
   "known_figure_check": {
     "n_reports": 3897,

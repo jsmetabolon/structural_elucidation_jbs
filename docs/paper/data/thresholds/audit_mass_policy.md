@@ -59,7 +59,41 @@ Separation is widest at 2 ppm. At the shipped 1.0 Da, which is roughly 3,300 ppm
 
 Grouped by conjugate: {'unmatched': 12, 'glucuronide': 5}.
 
-Worth separating from the rest: `X-21470` carries a candidate structurally identical to its truth annotation and still hundreds of Daltons out. That is a question about the control's annotation rather than about the scorer, and it should not be counted as a conjugate relationship.
+Worth separating from the rest: `X-21470` carries a candidate structurally identical to its truth annotation and still hundreds of Daltons out. Identical fingerprints cannot differ by a conjugate, so this is not a conjugate relationship and should not be counted as one. See the charge-state section below, which is what it turned out to be.
+
+## Charge-state misassignment
+
+A candidate mass that is an exact integer multiple of the observed neutral mass is a charge-state misassignment rather than a mass error: the precursor was multiply charged and was converted as though it were singly charged. No mass tolerance catches this, because the discrepancy is orders of magnitude too large to read as a tolerance problem.
+
+5 of 2471 reports carrying both masses show a clean integer ratio.
+
+| Control | Observed neutral mass | Candidate mass | Ratio | MSI |
+|---|---:|---:|---|---:|
+| `X-21470` | 233.0668 | 466.1331 | 2x | 1 |
+| `X-24546` | 232.0581 | 464.1175 | 2x | 3 |
+| `X-24637` | 263.0207 | 526.0417 | 2x | 3 |
+| `X-25107` | 612.0505 | 306.0253 | 1/2x | 4 |
+| `X-25814` | 227.1034 | 454.2064 | 2x | 4 |
+
+**One of these is MSI Level 1.** A feature whose neutral mass is out by a clean factor of two is sitting in the Confirmed tier, and nothing in the pipeline flagged it. That is what makes this worth fixing at so small a count.
+
+Separately, 117 reports state a strong mass match that no catalogued scoring rule reproduces from their own recorded error, and **1 of those carry an error above 0.01 Da**, where no strong claim is defensible whatever produced the number. A score no catalogued rule reproduces is untidy but usually harmless: most of these pair a sub-milli-Dalton error with a high score, which is a fair reading of the evidence by some rule not listed here. The ones worth acting on are those whose error exceeds 0.01 Da, where no strong claim is defensible whatever produced the number, and where the field a reader sees is the reassuring one.
+
+| Control | Stored score | Recorded error | MSI |
+|---|---:|---:|---:|
+| `X-21470` | 0.95 | 233.0664 Da | 1 |
+
+## How much the headline depends on the truth definition
+
+Recovery over 92 truth controls under the published definition (Tanimoto >= 0.7) and under one that also requires the correct hit to fit the observed mass within 20 ppm.
+
+| Depth | Published | Also mass-plausible | Controls lost |
+|---|---:|---:|---|
+| top 1 | 47.8% (44/92) | 45.7% (42/92) | `X-21470`, `X-24137` |
+| top 3 | 64.1% (59/92) | 59.8% (55/92) | `X-12811`, `X-21470`, `X-23080`, `X-24137` |
+| top 10 | 73.9% (68/92) | 68.5% (63/92) | `X-12811`, `X-21470`, `X-23080`, `X-24137`, `X-26094` |
+
+Requiring a correct hit to also fit the observed mass costs a little at rank 1 and more with depth, which is what you would expect if the extra hits admitted deeper in the list are structurally similar molecules of the wrong formula. Reported as sensitivity, not as a proposed replacement: the published definition is Tanimoto, and changing it is an editorial decision.
 
 ## The screen
 

@@ -470,8 +470,59 @@ No scoring behaviour changed in this pass. What changed is what is written down.
   which is a claim about mass consistency rather than about correctness. Applied
   to the truth controls the gate gained nothing at rank 1 and lost three to five.
 
+### Corrected: X-21470 is a charge-state misassignment
+
+The audit's conjugate-tail analysis singled out `X-21470` as carrying a candidate
+structurally identical to its truth annotation while being 233 Da out, and
+concluded that "either that control's annotation or its observed mass is wrong",
+calling it a truth-set integrity item. That reading was wrong, and it sent a
+pipeline defect to the curation queue.
+
+The candidate's exact mass, 466.1331 Da, is exactly twice the observed neutral
+mass of 233.0668. The compound is 5-androstenetriol 3,17-disulfate
+(`C19H30O9S2`), a disulfate, which readily forms a doubly charged `[M-2H]2-`
+anion in negative mode. The structure is right, the Tanimoto of 1.0 is right and
+the annotation is right; the m/z-to-neutral-mass conversion assumed a single
+charge.
+
+Three consequences, none of which touch a published number:
+
+- It is systematic in kind. Five of the 2,471 reports carrying both masses show
+  an exact integer ratio, and **one of them is MSI Level 1**. A feature whose
+  neutral mass is out by a factor of two holds the Confirmed label. No mass
+  window would ever have caught it, so the audit now tests for it directly
+  (`charge_state_suspects`) rather than leaving it to be rediscovered.
+- The same report states a `mass_match_score` of 0.95 against its own recorded
+  error of 233 Da. Of the 117 reports whose strong scores no catalogued rule
+  reproduces, this is the only one whose error is large enough that no strong
+  claim is defensible at all; the rest pair a sub-milli-Dalton error with a high
+  score.
+- It is routed to the pipeline as handoff item 6, not to curation.
+
+### Sensitivity: what the truth definition is worth
+
+Recorded because the correction above raised the question, and answered rather
+than acted on. Requiring a correct hit to fit the observed mass within 20 ppm, in
+addition to clearing the Tanimoto threshold, moves rank-1 recovery from 47.8% to
+45.7%, top-3 from 64.1% to 59.8% and top-10 from 73.9% to 68.5%. The five
+controls involved are heterogeneous rather than one phenomenon: a glucuronide, an
+ethylene, the charge-state case, one candidate with no recorded mass error, and
+one roughly 1 Da discrepancy left unattributed.
+
+**No headline number changed.** The audit already publishes recovery at four
+Tanimoto thresholds, so the precedent is to show the sensitivity and let a reader
+weigh it. Adopting a stricter definition would rewrite both documents and the
+claim ledger, which is an editorial decision to be taken deliberately rather than
+as a side effect of an audit. It is listed as open below.
+
 ### Open, and why they cannot be closed here
 
+- **Whether the headline should require mass plausibility.** The argument for is
+  that a structure with the wrong molecular formula is not the compound. The
+  argument against is that Tanimoto is the stated definition, the sensitivity is
+  already published at four thresholds, and two points at rank 1 sits well inside
+  the 20-point confidence interval the cohort already carries. Flagged, not
+  proposed.
 - **Whether a 1.0 Da tolerance was intended.** At 300 Da that is roughly 3,300
   ppm, which admits essentially every candidate the generator proposes. The
   profile carrying it is named `strict_1da`, which suggests deliberate, but one
