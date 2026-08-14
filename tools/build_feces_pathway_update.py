@@ -59,6 +59,11 @@ if str(PROJECT_ROOT) not in sys.path:
 
 csv.field_size_limit(10**9)
 
+PROJECT_DATA = PROJECT_ROOT / "data"
+# Curated pathway labels for X-compounds live here, alongside their Metabolon
+# identification level.
+KNOWN_X_CSV = PROJECT_DATA / "known_X.csv"
+
 GLOBAL_SHEET = "GLOBAL 20260129"
 DETECTION_SHEET = "unk_feces_detection_rates"
 
@@ -139,6 +144,30 @@ def read_global_panel(path: Path) -> list[dict[str, Any]]:
     return records
 
 
+def read_inclusion_list(path: Path, sheet: str = "Fecal Inclusion List") -> set[str]:
+    """CHEMICAL_IDs on the curated fecal panel.
+
+    A narrower and more purposeful denominator than every metabolite the Global
+    panel has ever seen in feces: it is what the panel is actually meant to
+    carry.
+    """
+
+    import openpyxl
+
+    workbook = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    if sheet not in workbook.sheetnames:
+        raise SystemExit(f"{path.name} has no sheet {sheet!r}")
+    rows = workbook[sheet].iter_rows(values_only=True)
+    identifiers = set()
+    for row in rows:
+        identifier = _clean(row[0] if row else None)
+        # The sheet opens with a spacer row and a header row; both fail this.
+        if identifier and identifier.upper() != "CHEMICAL_ID":
+            identifiers.add(identifier)
+    workbook.close()
+    return identifiers
+
+
 def read_detection_history(path: Path) -> dict[str, float]:
     """X-compound to fecal detection rate, as a fraction."""
 
@@ -159,9 +188,49 @@ def read_detection_history(path: Path) -> dict[str, float]:
     return detected
 
 
-def read_pathway_assignments(root: Path, wanted: Iterable[str]) -> dict[str, dict[str, str]]:
-    """Each X-compound's rank-1 predicted pathway, tier and assignment status."""
+def read_curated_pathways(path: Path, vocabulary: set[str]) -> dict[str, dict[str, str]]:
+    """Curated pathway labels for X-compounds, where a curator has recorded one.
 
+    These are the *known* assignments. Where one exists there is no reason to use
+    a prediction instead, and good reason not to: the two agree less than half
+    the time, which is the predictor's measured accuracy rather than a surprise.
+
+    A fifth of the column is not taxonomy at all but review notes -- ``Unknown``,
+    ``DO NOT INCLUDE``, ``Ask DTS`` -- which is the same defect the manuscript
+    already records for the subpathway labels. Anything outside the reference
+    vocabulary is rejected here and the compound falls back to its prediction,
+    so a curator's open question cannot become a chemical class.
+    """
+
+    if not path.exists():
+        return {}
+    curated: dict[str, dict[str, str]] = {}
+    with path.open(newline="", encoding="utf-8-sig") as handle:
+        for row in csv.DictReader(handle):
+            compound = _clean(row.get("Unknown"))
+            super_pathway = _clean(row.get("SuperPathway"))
+            if not compound or not super_pathway:
+                continue
+            if canonical_pathway(super_pathway) not in vocabulary:
+                continue
+            # First non-empty wins, matching how the delivered set resolves a
+            # compound that appears once per library.
+            curated.setdefault(
+                compound,
+                {
+                    "super_pathway": canonical_pathway(super_pathway),
+                    "sub_pathway": canonical_pathway(row.get("Draft Subpathway")),
+                },
+            )
+    return curated
+
+
+def read_pathway_assignments(
+    root: Path, wanted: Iterable[str], curated: dict[str, dict[str, str]] | None = None
+) -> dict[str, dict[str, str]]:
+    """Each X-compound's pathway: curated where one exists, predicted otherwise."""
+
+    curated = curated or {}
     assignments: dict[str, dict[str, str]] = {}
     for compound in sorted(set(wanted)):
         candidates = root / compound / "data" / f"{compound.lower()}_top_candidates.csv"
@@ -171,9 +240,14 @@ def read_pathway_assignments(root: Path, wanted: Iterable[str]) -> dict[str, dic
             row = next(csv.DictReader(handle), None)
         if row is None:
             continue
+        known = curated.get(compound)
         assignments[compound] = {
-            "super_pathway": canonical_pathway(row.get("predicted_pathway")),
-            "sub_pathway": canonical_pathway(row.get("predicted_subpathway")),
+            "super_pathway": (known or {}).get("super_pathway")
+            or canonical_pathway(row.get("predicted_pathway")),
+            "sub_pathway": (known or {}).get("sub_pathway")
+            or canonical_pathway(row.get("predicted_subpathway")),
+            "pathway_source": "curated" if known else "predicted",
+            "predicted_super_pathway": canonical_pathway(row.get("predicted_pathway")),
             "confidence_tier": _clean(row.get("pathway_confidence_tier")) or "(none)",
             "assignment_status": _clean(row.get("pathway_assignment_status")) or "(none)",
         }
@@ -252,7 +326,10 @@ def build(
     common_only: bool = False,
     tier: str | None = None,
     weight_by_detection: bool = False,
+    restrict_to: set[str] | None = None,
 ) -> dict[str, Any]:
+    if restrict_to is not None:
+        panel = [row for row in panel if row["chemical_id"] in restrict_to]
     if common_only:
         baseline = [row for row in panel if row["gdp_bucket"] in COMMON_BUCKETS]
     else:
@@ -288,6 +365,25 @@ def build(
     }
 
 
+def pathway_source_split(assignments: dict[str, dict[str, str]]) -> dict[str, Any]:
+    """How many added pathways are known versus predicted, and how far they differ.
+
+    The disagreement rate is the point: it is what the table would have been
+    built on had the curated labels been ignored.
+    """
+
+    curated = [row for row in assignments.values() if row.get("pathway_source") == "curated"]
+    disagree = [
+        row for row in curated if row["super_pathway"] != row.get("predicted_super_pathway")
+    ]
+    return {
+        "curated": len(curated),
+        "predicted": len(assignments) - len(curated),
+        "curated_disagreeing_with_prediction": len(disagree),
+        "curated_agreement_rate": round(1 - len(disagree) / len(curated), 4) if curated else None,
+    }
+
+
 def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="") as handle:
@@ -310,6 +406,17 @@ def main() -> None:
         action="store_true",
         help="weight each compound by how often it is detected rather than counting it once",
     )
+    parser.add_argument(
+        "--inclusion-list",
+        type=Path,
+        default=None,
+        help="restrict the known side to the curated fecal panel in this workbook",
+    )
+    parser.add_argument(
+        "--no-curated-pathways",
+        action="store_true",
+        help="predict every X-compound's pathway even where a curated one exists",
+    )
     args = parser.parse_args()
 
     for path in (args.global_workbook, args.detection_history):
@@ -320,9 +427,25 @@ def main() -> None:
 
     panel = read_global_panel(args.global_workbook)
     detection = read_detection_history(args.detection_history)
-    assignments = read_pathway_assignments(args.reports_root, detection)
+    # Global is the reference taxonomy, so it also decides which curated labels
+    # are chemical classes rather than curation notes.
+    vocabulary = {row["super_pathway"] for row in panel if row["super_pathway"] != "(unassigned)"}
+    curated = {} if args.no_curated_pathways else read_curated_pathways(KNOWN_X_CSV, vocabulary)
+    assignments = read_pathway_assignments(args.reports_root, detection, curated)
 
-    primary = build(panel, detection, assignments, weight_by_detection=args.weight_by_detection)
+    restrict_to = None
+    if args.inclusion_list is not None:
+        if not args.inclusion_list.is_file():
+            raise SystemExit(f"missing input: {args.inclusion_list}")
+        restrict_to = read_inclusion_list(args.inclusion_list)
+
+    primary = build(
+        panel,
+        detection,
+        assignments,
+        weight_by_detection=args.weight_by_detection,
+        restrict_to=restrict_to,
+    )
     summary: dict[str, Any] = {
         "method": (
             "Chemical-pathway composition of human feces, recomputed with X-compound "
@@ -333,13 +456,18 @@ def main() -> None:
         ),
         "detection_basis": {
             "identified": f"{GDP_BUCKET_COLUMN} != {NEVER!r} in {GLOBAL_SHEET!r}",
+            "known_side": "curated fecal inclusion list"
+            if restrict_to is not None
+            else "every metabolite the panel detects in feces",
             "x_compounds": "present in the human-feces detection history",
             "counting": "detection-rate weighted"
             if args.weight_by_detection
             else "one compound, one count",
         },
+        "x_compound_pathway_source": pathway_source_split(assignments),
         "coverage": {
             "global_panel_rows": len(panel),
+            "known_side_size": len(restrict_to) if restrict_to is not None else len(panel),
             "identified_detected_in_feces": primary["n_identified_detected"],
             "x_compounds_in_detection_history": len(detection),
             "x_compounds_with_an_assignment": len(assignments),
@@ -368,10 +496,17 @@ def main() -> None:
     (args.out_dir / f"{stem}.json").write_text(json.dumps(summary, indent=2) + "\n")
 
     print(
-        f"[feces-pathway] identified detected in feces (GDP): "
+        f"[feces-pathway] known detected in feces (GDP): "
         f"{primary['n_identified_detected']}  +  X-compounds added: "
         f"{primary['n_x_compounds_added']}"
     )
+    split = summary["x_compound_pathway_source"]
+    if split["curated"]:
+        print(
+            f"[feces-pathway] X pathways: {split['curated']} curated, {split['predicted']} "
+            f"predicted; the curated ones agree with the prediction "
+            f"{split['curated_agreement_rate']:.1%} of the time"
+        )
     print()
     header = (
         f"{'Chemical pathway':<40s} {'ident':>6s} {'base%':>7s} {'+X':>5s} {'new%':>7s} "
