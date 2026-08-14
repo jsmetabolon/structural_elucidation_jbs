@@ -360,9 +360,12 @@ def main() -> None:
         ]
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    write_csv(args.out_dir / "feces_pathway_update.csv", primary["super_pathway"])
-    write_csv(args.out_dir / "feces_pathway_update_subpathway.csv", primary["sub_pathway"])
-    (args.out_dir / "feces_pathway_update.json").write_text(json.dumps(summary, indent=2) + "\n")
+    # The two counting modes answer different questions and are both worth
+    # keeping, so they are named apart rather than overwriting each other.
+    stem = "feces_pathway_update_weighted" if args.weight_by_detection else "feces_pathway_update"
+    write_csv(args.out_dir / f"{stem}.csv", primary["super_pathway"])
+    write_csv(args.out_dir / f"{stem}_subpathway.csv", primary["sub_pathway"])
+    (args.out_dir / f"{stem}.json").write_text(json.dumps(summary, indent=2) + "\n")
 
     print(
         f"[feces-pathway] identified detected in feces (GDP): "
@@ -388,7 +391,7 @@ def main() -> None:
         "* the pipeline never predicts this class, so its share falls only because the "
         "denominator grew"
     )
-    print(f"[feces-pathway] wrote {args.out_dir}/feces_pathway_update.csv")
+    print(f"[feces-pathway] wrote {args.out_dir}/{stem}.csv")
 
 
 if __name__ == "__main__":

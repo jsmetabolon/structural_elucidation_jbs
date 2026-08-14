@@ -1,0 +1,13 @@
+chemical_pathway,identified_detected,baseline_pct,x_compounds_added,updated_total,updated_pct,delta_pct_points,outside_predicted_vocabulary
+Lipid,385.0366,35.4,91.3684,476.405,32.87,-2.52,FALSE
+Amino Acid,240.3902,22.1,82.7193,323.1095,22.3,0.2,FALSE
+Xenobiotics,175.7927,16.16,80.9298,256.7225,17.72,1.55,FALSE
+Peptide,41.8659,3.85,77.2807,119.1466,8.22,4.37,FALSE
+Nucleotide,63.6098,5.85,9.0175,72.6273,5.01,-0.84,FALSE
+Secondary metabolism,62.1098,5.71,0.0,62.1098,4.29,-1.42,TRUE
+Carbohydrate,42.6829,3.92,7.5263,50.2092,3.46,-0.46,FALSE
+Cofactors and Vitamins,39.9024,3.67,8.2807,48.1831,3.32,-0.34,FALSE
+Energy,11.5732,1.06,3.2105,14.7837,1.02,-0.04,FALSE
+Partially Characterized Molecules,12.6585,1.16,1.0351,13.6936,0.94,-0.22,FALSE
+"Cofactors, Prosthetic Groups, Electron Carriers",10.061,0.92,0.0,10.061,0.69,-0.23,TRUE
+Hormone metabolism,2.1098,0.19,0.0,2.1098,0.15,-0.05,TRUE

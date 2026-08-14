@@ -80,12 +80,61 @@ Detection is read from **GDP** (Global Discovery Panel), column
 `GDP Bucket - hFecal` on sheet `GLOBAL 20260129`, not from the narrower MFP
 columns beside it.
 
-### Measured result
+### Two ways to count, and they differ
 
 Baseline is the 2,265 named metabolites the Global panel detects in feces at all
 (bucket other than `Never`, out of 5,189). Added are the 704 X-compounds that
 appear in the feces detection history and have a delivered report; one of the
 705, `X-25434`, has no report.
+
+How much each compound contributes is a real choice, not a detail:
+
+- **By compound.** Every compound counts once, whether it turns up in every
+  sample or one. This describes the *inventory*: how many distinct things of
+  each class the matrix can contain.
+- **By detection frequency** (`--weight-by-detection`). Each compound
+  contributes the fraction of studies it is seen in. This describes what is
+  actually *present* in a typical sample.
+
+The two sources use different denominators — Global fecal detection is over 82
+SSIDs and the X-compound history over 57 sets — so rates are comparable between
+them while raw detection counts are not. The weighting uses rates for that
+reason.
+
+Both are written out: `feces_pathway_update.csv` and
+`feces_pathway_update_weighted.csv`.
+
+### Measured result, by detection frequency
+
+The frequency-weighted view, which is the one that answers "what is in feces"
+rather than "what could be":
+
+| Chemical pathway | Baseline | Updated | Delta |
+|---|---:|---:|---:|
+| Lipid | 35.40% | 32.87% | −2.52 |
+| Amino Acid | 22.10% | 22.30% | +0.20 |
+| Xenobiotics | 16.16% | 17.72% | +1.55 |
+| Peptide | 3.85% | 8.22% | **+4.37** |
+| Nucleotide | 5.85% | 5.01% | −0.84 |
+| Secondary metabolism | 5.71% | 4.29% | −1.42 \* |
+| Carbohydrate | 3.92% | 3.46% | −0.46 |
+| Cofactors and Vitamins | 3.67% | 3.32% | −0.34 |
+| Energy | 1.06% | 1.02% | −0.04 |
+| Partially Characterized Molecules | 1.16% | 0.94% | −0.22 |
+| Cofactors, Prosthetic Groups, Electron Carriers | 0.92% | 0.69% | −0.23 \* |
+| Hormone metabolism | 0.19% | 0.15% | −0.05 \* |
+
+Weighting changes the **baseline** more than it changes the update. Xenobiotics
+falls from 26.23% to 16.16% and Amino Acid rises from 15.76% to 22.10% before a
+single X-compound is added: the panel lists many xenobiotics that each turn up
+rarely, and fewer amino acids that turn up almost always. Counting compounds and
+counting detections are answering different questions, and the xenobiotic-heavy
+inventory is the one that does not survive the switch.
+
+Peptide gets *larger* under weighting, +4.37 against +3.70, so the finding does
+not depend on which counting rule is chosen.
+
+### Measured result, by compound
 
 | Chemical pathway | Identified | Baseline | +X | Updated | Delta |
 |---|---:|---:|---:|---:|---:|
@@ -108,6 +157,12 @@ movement reflects a growing denominator, not anything about feces.
 The one substantive shift is **Peptide, roughly doubling from 3.4% to 7.1%**.
 Everything else moves by about a point or less, and most of the negative moves
 are dilution rather than displacement.
+
+Note that shares are compositional and must total 100%, so adding 704 compounds
+to 2,265 grows the denominator by 31% and any class that does not gain at least
+that proportionally shows a smaller share while losing nothing. Lipid is the
+clearest case: it takes 182 additions, the second most of any class, and still
+falls 2.10 points because Peptide grew faster.
 
 ### How much to trust it
 

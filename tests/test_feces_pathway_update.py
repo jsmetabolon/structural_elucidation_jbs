@@ -149,3 +149,25 @@ def test_an_x_compound_not_detected_in_feces_is_not_added():
     assignments = {"X-1": assignment("Lipid"), "X-elsewhere": assignment("Lipid")}
     result = F.build(panel, {"X-1": 0.9}, assignments)
     assert result["n_x_compounds_added"] == 1
+
+
+def test_weighting_moves_the_baseline_not_just_the_addition():
+    """Which is why both counting modes are kept rather than one overwriting the other.
+
+    A panel lists many xenobiotics each seen rarely and fewer amino acids seen
+    almost always. Counting compounds ranks xenobiotics higher; counting
+    detections reverses it, before a single X-compound is added.
+    """
+
+    panel = [
+        metabolite("Xenobiotics", rate=0.05),
+        metabolite("Xenobiotics", rate=0.05),
+        metabolite("Amino Acid", rate=1.0),
+    ]
+    by_compound = {r["chemical_pathway"]: r for r in F.build(panel, {}, {})["super_pathway"]}
+    by_detection = {
+        r["chemical_pathway"]: r
+        for r in F.build(panel, {}, {}, weight_by_detection=True)["super_pathway"]
+    }
+    assert by_compound["Xenobiotics"]["baseline_pct"] > by_compound["Amino Acid"]["baseline_pct"]
+    assert by_detection["Amino Acid"]["baseline_pct"] > by_detection["Xenobiotics"]["baseline_pct"]
