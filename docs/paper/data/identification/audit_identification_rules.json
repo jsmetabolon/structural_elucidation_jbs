@@ -1,0 +1,182 @@
+{
+  "inputs": [
+    "lib209_negative_neutral_mass_hypotheses.csv",
+    "lib305_negative_neutral_mass_hypotheses.csv",
+    "lib400_positive_neutral_mass_hypotheses.csv",
+    "lib402_positive_neutral_mass_hypotheses.csv"
+  ],
+  "totals": {
+    "hypothesis_rows": 10568,
+    "features": 4483,
+    "controls": 2482,
+    "rows_with_parseable_ion_label": 5988,
+    "recomputed_mz_echoes_parent_mz": 8774,
+    "recomputed_mz_blank": 1794,
+    "recomputed_mz_disagrees_with_parent_mz": 0
+  },
+  "adduct_arithmetic": {
+    "by_family": {
+      "adduct_or_cluster": {
+        "rows": 292,
+        "derivable_rows": 292,
+        "vs_label": {
+          "over_10mda": 292
+        },
+        "median_error_vs_label_da": 21.981918,
+        "max_error_vs_label_da": 62.00216,
+        "matches_plain_protonation_within_10mda": 292
+      },
+      "consensus_or_fallback": {
+        "rows": 4535,
+        "derivable_rows": 0,
+        "vs_label": {},
+        "median_error_vs_label_da": null,
+        "max_error_vs_label_da": null,
+        "matches_plain_protonation_within_10mda": 4527
+      },
+      "isotopologue": {
+        "rows": 2707,
+        "derivable_rows": 2707,
+        "vs_label": {
+          "over_10mda": 2707
+        },
+        "median_error_vs_label_da": 1.00355,
+        "max_error_vs_label_da": 63.00565,
+        "matches_plain_protonation_within_10mda": 2707
+      },
+      "multimer": {
+        "rows": 450,
+        "derivable_rows": 450,
+        "vs_label": {
+          "over_10mda": 450
+        },
+        "median_error_vs_label_da": 144.83468,
+        "max_error_vs_label_da": 253.142711,
+        "matches_plain_protonation_within_10mda": 450
+      },
+      "multiply_charged": {
+        "rows": 269,
+        "derivable_rows": 269,
+        "vs_label": {
+          "over_10mda": 269
+        },
+        "median_error_vs_label_da": 458.2741,
+        "max_error_vs_label_da": 896.90882,
+        "matches_plain_protonation_within_10mda": 269
+      },
+      "numeric_offset": {
+        "rows": 431,
+        "derivable_rows": 431,
+        "vs_label": {
+          "over_10mda": 431
+        },
+        "median_error_vs_label_da": 62.99575,
+        "max_error_vs_label_da": 820.88066,
+        "matches_plain_protonation_within_10mda": 431
+      },
+      "protonated": {
+        "rows": 1839,
+        "derivable_rows": 1839,
+        "vs_label": {
+          "agrees_within_1mda": 1839
+        },
+        "median_error_vs_label_da": 0.0,
+        "max_error_vs_label_da": 0.0,
+        "matches_plain_protonation_within_10mda": 1839
+      },
+      "unparsed": {
+        "rows": 45,
+        "derivable_rows": 0,
+        "vs_label": {},
+        "median_error_vs_label_da": null,
+        "max_error_vs_label_da": null,
+        "matches_plain_protonation_within_10mda": 19
+      }
+    },
+    "rows_following_their_own_label": 1839,
+    "rows_following_plain_protonation": 10534,
+    "rows_total": 10568,
+    "share_following_plain_protonation": 0.9968
+  },
+  "charge_and_multimer": {
+    "multiply_charged": {
+      "rows": 269,
+      "controls": 194,
+      "stored_mass_follows_label_within_10mda": 0,
+      "median_error_vs_label_da": 458.2741,
+      "max_error_vs_label_da": 896.9088
+    },
+    "multimer": {
+      "rows": 450,
+      "controls": 235,
+      "stored_mass_follows_label_within_10mda": 0,
+      "median_error_vs_label_da": 144.8347,
+      "max_error_vs_label_da": 253.1427
+    },
+    "declared_charge_values": {
+      "1": 5764,
+      "2": 269,
+      "None": 4535
+    },
+    "declared_charge_matches_label": 5988,
+    "declared_multiplier_matches_label": 5988
+  },
+  "isotope_evidence": {
+    "features_total": 4483,
+    "features_with_isotope_evidence": 2115,
+    "features_by_hinted_element": {
+      "C": 2088,
+      "O": 620,
+      "S": 167,
+      "N": 45,
+      "Cl": 18,
+      "Br": 5
+    },
+    "features_with_halogen_evidence": 20,
+    "halogen_controls": [
+      "X-21315",
+      "X-22776",
+      "X-22931",
+      "X-23000",
+      "X-23194",
+      "X-23262",
+      "X-23265",
+      "X-23268",
+      "X-23358",
+      "X-24063",
+      "X-24064",
+      "X-24156",
+      "X-24545",
+      "X-24933",
+      "X-24968",
+      "X-25844",
+      "X-25846",
+      "X-25954",
+      "X-25979"
+    ],
+    "isotopologue_hypothesis_rows": 2707,
+    "isotopologue_rows_with_shift_applied": 0
+  },
+  "unparsed_labels": {
+    "CHRO_LIB:M+1": 4,
+    "CHRO_LIB:M+21": 2,
+    "CHRO_LIB:M+104": 2,
+    "CHRO_LIB:M+106": 2,
+    "CHRO_LIB:M+2": 2,
+    "CHRO_LIB:M+20.9748": 1,
+    "CHRO_LIB:M+39": 1,
+    "CHRO_LIB:M+0.9720": 1,
+    "CHRO_LIB:M+62": 1,
+    "CHRO_LIB:M+31.0182": 1,
+    "CHRO_LIB:M+374.0620": 1,
+    "CHRO_LIB:M+400.0861": 1,
+    "CHRO_LIB:M+12.9708": 1,
+    "CHRO_LIB:M+265.1476": 1,
+    "CHRO_LIB:M+376": 1,
+    "CHRO_LIB:M+61.9885": 1,
+    "CHRO_LIB:M+25": 1,
+    "CHRO_LIB:M+67": 1,
+    "CHRO_LIB:M+69": 1,
+    "CHRO_LIB:M+126": 1
+  }
+}
