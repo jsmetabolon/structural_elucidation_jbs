@@ -204,6 +204,36 @@ Spread between the highest and lowest median across the fine sub-level letters (
 | `5` | 1,315 | 0.5587 | 0.6125 | 0.7253 |
 | `KNOWN` | 43 | 0.6125 | 0.6689 | 0.8756 |
 
+## 4b. The one derived sub-letter, against the curated letter it reuses
+
+Same-formula multiplicity among the top candidates is a real semantic signal and not a score bin, so deriving a positional-isomer label from it is a different kind of claim from banding a score. The question here is narrower: the derived label takes the name `3A`, which a curator already uses, so does it select the same compounds. Rule: `msi_level == 3 and n_isomers >= 2`.
+
+| | Count |
+|---|---:|
+| Derived `3A` | 2,129 |
+| Share of all Level 3 | 85.5% |
+| Curated `3A` | 358 |
+| Derived `3A` that a curator also labeled at all | 1,245 |
+| ...of those, curated `3A` | 201 |
+
+Agreement with the curator, over the compounds a curator labeled: **16.1%** of derived `3A` carry curated `3A`, and **56.1%** of curated `3A` is recovered.
+
+Curated letters actually carried by the compounds the rule labels `3A`:
+
+| Curated letter | n |
+|---|---:|
+| `5` | 623 |
+| `3A` | 201 |
+| `3B` | 149 |
+| `3C` | 103 |
+| `2C` | 89 |
+| `4` | 45 |
+| `4?` | 34 |
+| `KNOWN` | 18 |
+| `Released` | 4 |
+| `Artifact` | 1 |
+| `Exclude` | 1 |
+
 ## 5. What is ordered
 
 For contrast, the coarse MSI level on the same truth-verified cohort. Level 1 is correct by construction; the rest is what the evidence rule achieves on its own.

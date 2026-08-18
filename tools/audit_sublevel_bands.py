@@ -50,6 +50,7 @@ import confidence as C  # noqa: E402  (path insert above is deliberate)
 csv.field_size_limit(10**7)
 
 DEFAULT_EXEC_SUMMARY = PROJECT_ROOT / "docs" / "paper" / "data" / "exec_summary" / "exec_summary_by_compound.csv"
+DEFAULT_TOP10 = PROJECT_ROOT / "docs" / "paper" / "data" / "exec_summary" / "exec_summary_top10.csv"
 DEFAULT_OUT_DIR = PROJECT_ROOT / "docs" / "paper" / "data" / "identification"
 
 # The per-compound scores a sub-level scheme could be cut from. ``overall`` is the
@@ -400,6 +401,84 @@ def curated_sublevel_separation(rows: list[dict], column: str, min_n: int = 25) 
     }
 
 
+# --- section 6: the one derived sub-letter ------------------------------------
+
+# The candidate-confidence rework derives exactly one fine sub-letter, on the
+# grounds that same-formula multiplicity among the top candidates is a real
+# semantic signal rather than a score bin - which it is. The question this
+# section asks is narrower: the derived label reuses the curated letter ``3A``,
+# so does it mean the same thing.
+DERIVED_3A_MIN_ISOMERS = 2
+
+
+def same_formula_multiplicity(rows: list[dict]) -> int:
+    """Top-10 candidates sharing the rank-1 predicted formula."""
+    top = sorted(rows, key=lambda r: _num(r.get("rank")) or 1e9)[:10]
+    if not top:
+        return 0
+    formula = str(top[0].get("candidate_formula") or "").strip()
+    if not formula:
+        return 0
+    return sum(1 for r in top if str(r.get("candidate_formula") or "").strip() == formula)
+
+
+def derived_3a_agreement(rows: list[dict], top10: list[dict]) -> dict[str, object]:
+    """Does the derived ``3A`` agree with the curated ``3A`` whose name it takes?
+
+    A derived label and a curated label that share a letter will be read as the
+    same claim. They are only the same claim if they select the same compounds.
+    """
+    by_compound: dict[str, list[dict]] = defaultdict(list)
+    for row in top10:
+        by_compound[str(row.get("x_compound_id") or "").strip()].append(row)
+    multiplicity = {cid: same_formula_multiplicity(group) for cid, group in by_compound.items()}
+
+    level_3 = [r for r in rows if str(r.get("msi_level") or "").strip() == "3"]
+    derived = [
+        r for r in level_3
+        if multiplicity.get(str(r.get("x_compound_id") or "").strip(), 0) >= DERIVED_3A_MIN_ISOMERS
+    ]
+
+    def has_curated_3a(row: dict) -> bool:
+        return any(p.strip() == "3A" for p in str(row.get("metabolon_sublevel") or "").split(";"))
+
+    def has_any_curated(row: dict) -> bool:
+        return bool(str(row.get("metabolon_sublevel") or "").strip())
+
+    curated_3a = [r for r in rows if has_curated_3a(r)]
+    derived_ids = {str(r.get("x_compound_id") or "").strip() for r in derived}
+    # Precision is only meaningful over compounds a curator actually labeled;
+    # an uncurated compound is not a disagreement, it is an absence.
+    derived_curated = [r for r in derived if has_any_curated(r)]
+    derived_and_curated_3a = [r for r in derived_curated if has_curated_3a(r)]
+    curated_3a_recovered = [r for r in curated_3a if str(r.get("x_compound_id") or "").strip() in derived_ids]
+
+    letters: Counter = Counter()
+    for r in derived_curated:
+        for piece in str(r.get("metabolon_sublevel") or "").split(";"):
+            piece = piece.strip()
+            if piece:
+                letters[piece] += 1
+
+    return {
+        "rule": f"msi_level == 3 and n_isomers >= {DERIVED_3A_MIN_ISOMERS}",
+        "derived_3a": len(derived),
+        "level_3_total": len(level_3),
+        "share_of_level_3": round(len(derived) / len(level_3), 4) if level_3 else None,
+        "curated_3a_total": len(curated_3a),
+        "derived_with_any_curated_letter": len(derived_curated),
+        "derived_that_are_curated_3a": len(derived_and_curated_3a),
+        "precision_vs_curated": (
+            round(len(derived_and_curated_3a) / len(derived_curated), 4) if derived_curated else None
+        ),
+        "curated_3a_also_derived": len(curated_3a_recovered),
+        "recall_vs_curated": (
+            round(len(curated_3a_recovered) / len(curated_3a), 4) if curated_3a else None
+        ),
+        "curated_letters_inside_derived_3a": dict(letters.most_common()),
+    }
+
+
 # --- assembly ----------------------------------------------------------------
 
 
@@ -432,7 +511,7 @@ def _reanchor_equivalence(per_score: dict) -> dict[str, object]:
     }
 
 
-def audit(rows: list[dict]) -> dict[str, object]:
+def audit(rows: list[dict], top10: list[dict] | None = None) -> dict[str, object]:
     raw_recovery = raw_evidence_rows(rows)
     truth = [
         r for r in rows
@@ -502,6 +581,7 @@ def audit(rows: list[dict]) -> dict[str, object]:
         "reanchor_equivalence": _reanchor_equivalence(per_score),
         "scores": per_score,
         "accuracy_by_msi_level": accuracy_by_level,
+        "derived_3a": derived_3a_agreement(rows, top10) if top10 else None,
         "monotone_margin": MONOTONE_MARGIN,
     }
 
@@ -707,6 +787,40 @@ def render_markdown(result: dict) -> str:
             add(f"| `{sublevel}` | {stats['n']:,} | {stats['p25']} | {stats['median']} | {stats['p75']} |")
         add("")
 
+    derived = result.get("derived_3a")
+    if derived:
+        add("## 4b. The one derived sub-letter, against the curated letter it reuses")
+        add("")
+        add(
+            "Same-formula multiplicity among the top candidates is a real semantic signal and not a "
+            "score bin, so deriving a positional-isomer label from it is a different kind of claim "
+            "from banding a score. The question here is narrower: the derived label takes the name "
+            f"`3A`, which a curator already uses, so does it select the same compounds. Rule: "
+            f"`{derived['rule']}`."
+        )
+        add("")
+        add("| | Count |")
+        add("|---|---:|")
+        add(f"| Derived `3A` | {derived['derived_3a']:,} |")
+        add(f"| Share of all Level 3 | {_pct(derived['share_of_level_3'])} |")
+        add(f"| Curated `3A` | {derived['curated_3a_total']:,} |")
+        add(f"| Derived `3A` that a curator also labeled at all | {derived['derived_with_any_curated_letter']:,} |")
+        add(f"| ...of those, curated `3A` | {derived['derived_that_are_curated_3a']:,} |")
+        add("")
+        add(
+            f"Agreement with the curator, over the compounds a curator labeled: "
+            f"**{_pct(derived['precision_vs_curated'])}** of derived `3A` carry curated `3A`, and "
+            f"**{_pct(derived['recall_vs_curated'])}** of curated `3A` is recovered."
+        )
+        add("")
+        add("Curated letters actually carried by the compounds the rule labels `3A`:")
+        add("")
+        add("| Curated letter | n |")
+        add("|---|---:|")
+        for letter, count in derived["curated_letters_inside_derived_3a"].items():
+            add(f"| `{letter}` | {count:,} |")
+        add("")
+
     add("## 5. What is ordered")
     add("")
     add(
@@ -727,6 +841,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--exec-summary", type=Path, default=DEFAULT_EXEC_SUMMARY,
                         help="per-compound exec summary CSV (default: the committed one)")
+    parser.add_argument("--exec-summary-top10", type=Path, default=DEFAULT_TOP10,
+                        help="per-candidate exec summary CSV, for the derived-3A section")
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR,
                         help="directory for audit_sublevel_bands.json / .md")
     args = parser.parse_args(argv)
@@ -738,7 +854,12 @@ def main(argv: list[str] | None = None) -> int:
     if not rows:
         parser.error(f"exec summary is empty: {args.exec_summary}")
 
-    result = audit(rows)
+    top10: list[dict] = []
+    if args.exec_summary_top10.exists():
+        with args.exec_summary_top10.open(newline="") as handle:
+            top10 = list(csv.DictReader(handle))
+
+    result = audit(rows, top10)
     args.out_dir.mkdir(parents=True, exist_ok=True)
     (args.out_dir / "audit_sublevel_bands.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     (args.out_dir / "audit_sublevel_bands.md").write_text(render_markdown(result))

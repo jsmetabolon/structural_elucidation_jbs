@@ -178,6 +178,68 @@ def test_reanchoring_cannot_change_a_rank_statistic():
     assert platt["median_correct"] != raw_side["median_correct"]
 
 
+# --- the one derived sub-letter -----------------------------------------------
+
+
+def candidate(cid, rank, formula):
+    return {"x_compound_id": cid, "rank": str(rank), "candidate_formula": formula}
+
+
+def test_multiplicity_counts_top10_candidates_sharing_the_rank1_formula():
+    rows = [candidate("X-1", 1, "C6H12O6"), candidate("X-1", 2, "C6H12O6"), candidate("X-1", 3, "C5H10O5")]
+    assert T.same_formula_multiplicity(rows) == 2
+
+
+def test_multiplicity_is_zero_without_a_rank1_formula():
+    assert T.same_formula_multiplicity([candidate("X-1", 1, "")]) == 0
+    assert T.same_formula_multiplicity([]) == 0
+
+
+def test_multiplicity_reads_rank_order_not_row_order():
+    rows = [candidate("X-1", 3, "C5H10O5"), candidate("X-1", 1, "C6H12O6"), candidate("X-1", 2, "C6H12O6")]
+    assert T.same_formula_multiplicity(rows) == 2
+
+
+def test_derived_3a_agreement_is_measured_only_over_curated_compounds():
+    """An uncurated compound is an absence, not a disagreement."""
+    rows = [
+        {"x_compound_id": "X-1", "msi_level": "3", "metabolon_sublevel": "3A"},
+        {"x_compound_id": "X-2", "msi_level": "3", "metabolon_sublevel": "5"},
+        {"x_compound_id": "X-3", "msi_level": "3", "metabolon_sublevel": ""},
+        {"x_compound_id": "X-4", "msi_level": "4", "metabolon_sublevel": "3A"},
+    ]
+    top10 = []
+    for cid in ("X-1", "X-2", "X-3"):
+        top10 += [candidate(cid, 1, "C6H12O6"), candidate(cid, 2, "C6H12O6")]
+    top10 += [candidate("X-4", 1, "C6H12O6"), candidate("X-4", 2, "C6H12O6")]
+    result = T.derived_3a_agreement(rows, top10)
+    # X-4 is Level 4, so the rule does not fire on it despite the multiplicity.
+    assert result["derived_3a"] == 3
+    assert result["derived_with_any_curated_letter"] == 2
+    assert result["precision_vs_curated"] == 0.5
+    # Curated 3A includes the Level 4 compound, which the rule cannot reach.
+    assert result["curated_3a_total"] == 2
+    assert result["recall_vs_curated"] == 0.5
+
+
+def test_a_single_candidate_does_not_trigger_the_isomer_rule():
+    rows = [{"x_compound_id": "X-1", "msi_level": "3", "metabolon_sublevel": "3A"}]
+    result = T.derived_3a_agreement(rows, [candidate("X-1", 1, "C6H12O6")])
+    assert result["derived_3a"] == 0
+
+
+def test_committed_audit_records_the_derived_3a_disagreement():
+    """Guards the D-series recommendation that the derived letter needs its own name."""
+    payload = json.loads(
+        (ROOT / "docs" / "paper" / "data" / "identification" / "audit_sublevel_bands.json").read_text()
+    )
+    derived = payload["derived_3a"]
+    assert derived["share_of_level_3"] > 0.5, "the rule no longer fires on most of Level 3"
+    assert derived["precision_vs_curated"] < 0.5, (
+        "derived 3A now agrees with the curated letter; re-read the naming recommendation"
+    )
+
+
 # --- the committed artifact ---------------------------------------------------
 
 

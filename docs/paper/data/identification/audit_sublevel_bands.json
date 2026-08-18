@@ -29,6 +29,31 @@
     "truth_verified": 255,
     "truth_verified_correct": 67
   },
+  "derived_3a": {
+    "curated_3a_also_derived": 201,
+    "curated_3a_total": 358,
+    "curated_letters_inside_derived_3a": {
+      "2C": 89,
+      "3A": 201,
+      "3B": 149,
+      "3C": 103,
+      "4": 45,
+      "4?": 34,
+      "5": 623,
+      "Artifact": 1,
+      "Exclude": 1,
+      "KNOWN": 18,
+      "Released": 4
+    },
+    "derived_3a": 2129,
+    "derived_that_are_curated_3a": 201,
+    "derived_with_any_curated_letter": 1245,
+    "level_3_total": 2489,
+    "precision_vs_curated": 0.1614,
+    "recall_vs_curated": 0.5615,
+    "rule": "msi_level == 3 and n_isomers >= 2",
+    "share_of_level_3": 0.8554
+  },
   "monotone_margin": 0.02,
   "platt_reachability": {
     "cutoffs": {
