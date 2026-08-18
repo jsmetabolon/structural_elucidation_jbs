@@ -100,11 +100,10 @@ the fine letters `2C`, `3A`, `3B`, `3C`:
 | `evidence_confidence` | 0.0024 |
 
 Both are inside the noise. This reproduces, on a different cohort and by a
-different method, the conclusion already reached in
-[docs/msi_sublevel_findings.md](msi_sublevel_findings.md) on branch
-`cursor/candidate-confidence-rework-f8a2`: a derived rubric reproduces the
-curated letter only 9.5% of the time and inverts the fine ordering at the top of
-Level 3.
+different method, the conclusion already reached in `docs/msi_sublevel_findings.md`
+on branch `cursor/candidate-confidence-rework-f8a2` (not merged, so there is
+nothing to link to here): a derived rubric reproduces the curated letter only
+9.5% of the time and inverts the fine ordering at the top of Level 3.
 
 ## 4. `2a`/`2b` are not confidence bands in the scheme being cited
 

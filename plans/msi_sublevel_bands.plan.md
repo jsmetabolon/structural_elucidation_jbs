@@ -279,10 +279,9 @@ repo does not have. Write the handoff for the three missing inputs:
 3. **Candidate-versus-observed diagnostic fragment matching**, computed from the
    observed spectra rather than predicted ones.
 
-The same three are already named in
-[docs/msi_sublevel_findings.md](../docs/msi_sublevel_findings.md) section 5 on
-`cursor/candidate-confidence-rework-f8a2`; reconcile with it rather than
-duplicating it.
+The same three are already named in section 5 of `docs/msi_sublevel_findings.md`
+on `cursor/candidate-confidence-rework-f8a2` (unmerged, so there is nothing to
+link to yet); reconcile with it rather than duplicating it.
 
 ## Verification for the whole plan
 
