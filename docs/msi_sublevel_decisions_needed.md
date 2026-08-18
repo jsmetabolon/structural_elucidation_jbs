@@ -249,6 +249,48 @@ though `2c` and `2C` were different buckets, and lists `Exclude`, `Artifact` and
 that describes it, or demote the float and expose the boolean. Replace the count
 table with the generator in stage 2 of the plan.
 
+## Merge order
+
+Three lines of work are outstanding and two of them touch the same files, so the
+order matters. It cuts across decisions 1 and 7 rather than belonging to either.
+
+**1. [PR #35](https://github.com/jsmetabolon/structural_elucidation_jbs/pull/35),
+the audit, first.** It has *zero* file overlap with either other branch, so it
+cannot conflict, and it is the measurement the other two are judged against.
+Merging it first means the CI regenerate-and-diff gate is already in place when
+they land.
+
+**2. [PR #6](https://github.com/jsmetabolon/structural_elucidation_jbs/pull/6)
+next, split per the commit routing above.** It is an open PR with a running cost;
+`cursor/evidence-confidence-calculation-012b` is not even an open PR and needs
+amendment before it can go anywhere.
+
+**3. `cursor/evidence-confidence-calculation-012b` last, amended.** Two overlaps
+to expect, both with PR #6 and neither large: `structural_elucidation/pipeline/rerank.py`
+(PR #6 adds 23 lines, this adds 18 and removes 4) and
+`docs/pipeline_refinement_handoff.md`. Merging PR #6 first means resolving them
+once, in the direction of the branch that has already been reviewed.
+
+### One thing to expect when 012b lands
+
+It regenerates `docs/paper/data/exec_summary/exec_summary_by_compound.csv` and
+`exec_summary_top10.csv`, which are the audit's inputs, and adds a
+`rank1_evidence_confidence_basis` column. So
+`docs/paper/data/identification/audit_sublevel_bands.{json,md}` must be
+regenerated in the same commit. CI enforces this — `tools/audit_sublevel_bands.py`
+is in the regenerate-and-diff block — so the failure mode is a red build rather
+than a stale conclusion.
+
+**The conclusions themselves survive the refresh.** Running the audit against
+012b's regenerated tables reproduces every load-bearing result unchanged:
+`TIER_HIGH` still unreachable, the re-anchor still fixing reachability and not
+ordering with AUC 0.378 either side, derived `3A` still at 16.1% agreement, and
+no band scheme ordered for any of the three scores. The only figure that moves is
+`evidence_confidence`, whose whole-cohort AUC goes from 0.4762 to 0.5794 because
+that branch canonicalises the column — still with no ordered bands, so decision 7
+is unaffected. None of the findings here is an artifact of which exec-summary
+revision you read.
+
 ## Answered without a person
 
 **Which score drives the bands.** Neither. Both failure modes are properties of
