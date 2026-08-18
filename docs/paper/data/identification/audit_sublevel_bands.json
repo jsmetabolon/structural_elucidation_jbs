@@ -1,0 +1,1131 @@
+{
+  "accuracy_by_msi_level": {
+    "L1": {
+      "correct": 44,
+      "n": 44,
+      "p_correct": 1.0
+    },
+    "L2": {
+      "correct": 1,
+      "n": 30,
+      "p_correct": 0.0333
+    },
+    "L3": {
+      "correct": 17,
+      "n": 128,
+      "p_correct": 0.1328
+    },
+    "L4": {
+      "correct": 5,
+      "n": 53,
+      "p_correct": 0.0943
+    }
+  },
+  "cohort": {
+    "compounds": 3897,
+    "model_scored": 211,
+    "model_scored_correct": 23,
+    "policy_pinned_level_1": 44,
+    "truth_verified": 255,
+    "truth_verified_correct": 67
+  },
+  "monotone_margin": 0.02,
+  "platt_reachability": {
+    "cutoffs": {
+      "TIER_HIGH": {
+        "cutoff": 0.65,
+        "raw_evidence_required": 1.1336,
+        "reachable": false
+      },
+      "TIER_LOW": {
+        "cutoff": 0.38,
+        "raw_evidence_required": 0.5461,
+        "reachable": true
+      },
+      "TIER_MODERATE": {
+        "cutoff": 0.48,
+        "raw_evidence_required": 0.7631,
+        "reachable": true
+      }
+    },
+    "evidence_score_max": 0.5907,
+    "evidence_score_min": 0.1794,
+    "platt_a": 1.887084,
+    "platt_b": -1.520154,
+    "unreachable_cutoffs": [
+      "TIER_HIGH"
+    ]
+  },
+  "scores": {
+    "candidate_confidence": {
+      "band_schemes": {
+        "empirical_terciles": {
+          "by_msi_level": {
+            "1": {
+              "a": 44,
+              "b": 0,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "2": {
+              "a": 37,
+              "b": 156,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "3": {
+              "a": 781,
+              "b": 570,
+              "below": 380,
+              "c": 758,
+              "missing": 0
+            },
+            "4": {
+              "a": 0,
+              "b": 0,
+              "below": 737,
+              "c": 428,
+              "missing": 0
+            },
+            "5": {
+              "a": 0,
+              "b": 0,
+              "below": 3,
+              "c": 3,
+              "missing": 0
+            }
+          },
+          "cuts": [
+            0.55,
+            0.46,
+            0.4
+          ],
+          "note": "roughly equal-sized bands over the model-scored population",
+          "occupancy": {
+            "counts": {
+              "a": 862,
+              "b": 726,
+              "below": 1120,
+              "c": 1189,
+              "missing": 0
+            },
+            "empty_bands": [],
+            "shares": {
+              "a": 0.2212,
+              "b": 0.1863,
+              "below": 0.2874,
+              "c": 0.3051,
+              "missing": 0.0
+            }
+          },
+          "precision_all_truth": {
+            "bands": {
+              "a": {
+                "correct": 47,
+                "n": 67,
+                "p_correct": 0.7015
+              },
+              "b": {
+                "correct": 2,
+                "n": 47,
+                "p_correct": 0.0426
+              },
+              "below": {
+                "correct": 12,
+                "n": 63,
+                "p_correct": 0.1905
+              },
+              "c": {
+                "correct": 6,
+                "n": 78,
+                "p_correct": 0.0769
+              }
+            },
+            "inversions": [
+              "b<c",
+              "c<below"
+            ],
+            "monotone": false
+          },
+          "precision_model_scored": {
+            "bands": {
+              "a": {
+                "correct": 3,
+                "n": 23,
+                "p_correct": 0.1304
+              },
+              "b": {
+                "correct": 2,
+                "n": 47,
+                "p_correct": 0.0426
+              },
+              "below": {
+                "correct": 12,
+                "n": 63,
+                "p_correct": 0.1905
+              },
+              "c": {
+                "correct": 6,
+                "n": 78,
+                "p_correct": 0.0769
+              }
+            },
+            "inversions": [
+              "b<c",
+              "c<below"
+            ],
+            "monotone": false
+          }
+        },
+        "identification_tiers": {
+          "by_msi_level": {
+            "1": {
+              "a": 44,
+              "b": 0,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "2": {
+              "a": 0,
+              "b": 172,
+              "below": 0,
+              "c": 21,
+              "missing": 0
+            },
+            "3": {
+              "a": 0,
+              "b": 1246,
+              "below": 181,
+              "c": 1062,
+              "missing": 0
+            },
+            "4": {
+              "a": 0,
+              "b": 0,
+              "below": 380,
+              "c": 785,
+              "missing": 0
+            },
+            "5": {
+              "a": 0,
+              "b": 0,
+              "below": 3,
+              "c": 3,
+              "missing": 0
+            }
+          },
+          "cuts": [
+            0.65,
+            0.48,
+            0.38
+          ],
+          "note": "TIER_HIGH / TIER_MODERATE / TIER_LOW, the cutoffs the report tiers already use",
+          "occupancy": {
+            "counts": {
+              "a": 44,
+              "b": 1418,
+              "below": 564,
+              "c": 1871,
+              "missing": 0
+            },
+            "empty_bands": [],
+            "shares": {
+              "a": 0.0113,
+              "b": 0.3639,
+              "below": 0.1447,
+              "c": 0.4801,
+              "missing": 0.0
+            }
+          },
+          "precision_all_truth": {
+            "bands": {
+              "a": {
+                "correct": 44,
+                "n": 44,
+                "p_correct": 1.0
+              },
+              "b": {
+                "correct": 4,
+                "n": 66,
+                "p_correct": 0.0606
+              },
+              "below": {
+                "correct": 8,
+                "n": 34,
+                "p_correct": 0.2353
+              },
+              "c": {
+                "correct": 11,
+                "n": 111,
+                "p_correct": 0.0991
+              }
+            },
+            "inversions": [
+              "b<c",
+              "c<below"
+            ],
+            "monotone": false
+          },
+          "precision_model_scored": {
+            "bands": {
+              "a": {
+                "correct": 0,
+                "n": 0,
+                "p_correct": null
+              },
+              "b": {
+                "correct": 4,
+                "n": 66,
+                "p_correct": 0.0606
+              },
+              "below": {
+                "correct": 8,
+                "n": 34,
+                "p_correct": 0.2353
+              },
+              "c": {
+                "correct": 11,
+                "n": 111,
+                "p_correct": 0.0991
+              }
+            },
+            "inversions": [
+              "b<c",
+              "c<below"
+            ],
+            "monotone": false
+          }
+        },
+        "reachable_ceiling": {
+          "by_msi_level": {
+            "1": {
+              "a": 44,
+              "b": 0,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "2": {
+              "a": 7,
+              "b": 165,
+              "below": 0,
+              "c": 21,
+              "missing": 0
+            },
+            "3": {
+              "a": 382,
+              "b": 864,
+              "below": 380,
+              "c": 863,
+              "missing": 0
+            },
+            "4": {
+              "a": 0,
+              "b": 0,
+              "below": 737,
+              "c": 428,
+              "missing": 0
+            },
+            "5": {
+              "a": 0,
+              "b": 0,
+              "below": 3,
+              "c": 3,
+              "missing": 0
+            }
+          },
+          "cuts": [
+            0.585,
+            0.48,
+            0.4
+          ],
+          "note": "top band lowered to sit inside the Platt-reachable range",
+          "occupancy": {
+            "counts": {
+              "a": 433,
+              "b": 1029,
+              "below": 1120,
+              "c": 1315,
+              "missing": 0
+            },
+            "empty_bands": [],
+            "shares": {
+              "a": 0.1111,
+              "b": 0.264,
+              "below": 0.2874,
+              "c": 0.3374,
+              "missing": 0.0
+            }
+          },
+          "precision_all_truth": {
+            "bands": {
+              "a": {
+                "correct": 47,
+                "n": 56,
+                "p_correct": 0.8393
+              },
+              "b": {
+                "correct": 1,
+                "n": 54,
+                "p_correct": 0.0185
+              },
+              "below": {
+                "correct": 12,
+                "n": 63,
+                "p_correct": 0.1905
+              },
+              "c": {
+                "correct": 7,
+                "n": 82,
+                "p_correct": 0.0854
+              }
+            },
+            "inversions": [
+              "b<c",
+              "c<below"
+            ],
+            "monotone": false
+          },
+          "precision_model_scored": {
+            "bands": {
+              "a": {
+                "correct": 3,
+                "n": 12,
+                "p_correct": 0.25
+              },
+              "b": {
+                "correct": 1,
+                "n": 54,
+                "p_correct": 0.0185
+              },
+              "below": {
+                "correct": 12,
+                "n": 63,
+                "p_correct": 0.1905
+              },
+              "c": {
+                "correct": 7,
+                "n": 82,
+                "p_correct": 0.0854
+              }
+            },
+            "inversions": [
+              "b<c",
+              "c<below"
+            ],
+            "monotone": false
+          }
+        }
+      },
+      "column": "rank1_candidate_confidence",
+      "curated_sublevel_separation": {
+        "fine_median_spread": 0.0139,
+        "fine_sublevels": [
+          "2C",
+          "3A",
+          "3B",
+          "3C"
+        ],
+        "median_spread": 0.5618,
+        "per_sublevel": {
+          "2C": {
+            "median": 0.4221,
+            "n": 163,
+            "p25": 0.3913,
+            "p75": 0.4925
+          },
+          "3A": {
+            "median": 0.4157,
+            "n": 358,
+            "p25": 0.3849,
+            "p75": 0.5007
+          },
+          "3B": {
+            "median": 0.4209,
+            "n": 253,
+            "p25": 0.3922,
+            "p75": 0.4718
+          },
+          "3C": {
+            "median": 0.4082,
+            "n": 175,
+            "p25": 0.3877,
+            "p75": 0.4546
+          },
+          "4": {
+            "median": 0.4088,
+            "n": 107,
+            "p25": 0.3861,
+            "p75": 0.4926
+          },
+          "4?": {
+            "median": 0.4268,
+            "n": 64,
+            "p25": 0.3997,
+            "p75": 0.5363
+          },
+          "5": {
+            "median": 0.4099,
+            "n": 1315,
+            "p25": 0.3856,
+            "p75": 0.4622
+          },
+          "KNOWN": {
+            "median": 0.5372,
+            "n": 70,
+            "p25": 0.4211,
+            "p75": 0.97
+          },
+          "Released": {
+            "median": 0.97,
+            "n": 25,
+            "p25": 0.5849,
+            "p75": 0.97
+          }
+        }
+      },
+      "deciles_model_scored": [
+        {
+          "correct": 5,
+          "decile": 1,
+          "n": 21,
+          "p_correct": 0.2381,
+          "score_max": 0.3691,
+          "score_min": 0.2741
+        },
+        {
+          "correct": 5,
+          "decile": 2,
+          "n": 21,
+          "p_correct": 0.2381,
+          "score_max": 0.3878,
+          "score_min": 0.3694
+        },
+        {
+          "correct": 2,
+          "decile": 3,
+          "n": 21,
+          "p_correct": 0.0952,
+          "score_max": 0.3999,
+          "score_min": 0.3878
+        },
+        {
+          "correct": 2,
+          "decile": 4,
+          "n": 21,
+          "p_correct": 0.0952,
+          "score_max": 0.4106,
+          "score_min": 0.4002
+        },
+        {
+          "correct": 0,
+          "decile": 5,
+          "n": 21,
+          "p_correct": 0.0,
+          "score_max": 0.4229,
+          "score_min": 0.4149
+        },
+        {
+          "correct": 3,
+          "decile": 6,
+          "n": 21,
+          "p_correct": 0.1429,
+          "score_max": 0.4364,
+          "score_min": 0.4229
+        },
+        {
+          "correct": 2,
+          "decile": 7,
+          "n": 21,
+          "p_correct": 0.0952,
+          "score_max": 0.4843,
+          "score_min": 0.4374
+        },
+        {
+          "correct": 0,
+          "decile": 8,
+          "n": 21,
+          "p_correct": 0.0,
+          "score_max": 0.533,
+          "score_min": 0.4863
+        },
+        {
+          "correct": 1,
+          "decile": 9,
+          "n": 21,
+          "p_correct": 0.0476,
+          "score_max": 0.5537,
+          "score_min": 0.5347
+        },
+        {
+          "correct": 3,
+          "decile": 10,
+          "n": 22,
+          "p_correct": 0.1364,
+          "score_max": 0.585,
+          "score_min": 0.5648
+        }
+      ],
+      "discrimination_all_truth": {
+        "auc": 0.7865,
+        "median_correct": 0.97,
+        "median_incorrect": 0.4246,
+        "n_correct": 67,
+        "n_incorrect": 188
+      },
+      "discrimination_model_scored": {
+        "auc": 0.378,
+        "median_correct": 0.3999,
+        "median_incorrect": 0.4246,
+        "n_correct": 23,
+        "n_incorrect": 188
+      },
+      "distribution": {
+        "p0": 0.2144,
+        "p10": 0.3716,
+        "p100": 0.97,
+        "p25": 0.3963,
+        "p50": 0.4322,
+        "p75": 0.5346,
+        "p90": 0.585,
+        "p95": 0.585
+      },
+      "label": "candidate_confidence (report overall, Platt-scaled)",
+      "n_present": 3897,
+      "share_at_or_above_0_98": 0.0
+    },
+    "evidence_confidence": {
+      "band_schemes": {
+        "empirical_terciles": {
+          "by_msi_level": {
+            "1": {
+              "a": 26,
+              "b": 2,
+              "below": 16,
+              "c": 0,
+              "missing": 0
+            },
+            "2": {
+              "a": 193,
+              "b": 0,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "3": {
+              "a": 2183,
+              "b": 121,
+              "below": 147,
+              "c": 38,
+              "missing": 0
+            },
+            "4": {
+              "a": 415,
+              "b": 127,
+              "below": 546,
+              "c": 77,
+              "missing": 0
+            },
+            "5": {
+              "a": 0,
+              "b": 2,
+              "below": 4,
+              "c": 0,
+              "missing": 0
+            }
+          },
+          "cuts": [
+            0.55,
+            0.46,
+            0.4
+          ],
+          "note": "roughly equal-sized bands over the model-scored population",
+          "occupancy": {
+            "counts": {
+              "a": 2817,
+              "b": 252,
+              "below": 713,
+              "c": 115,
+              "missing": 0
+            },
+            "empty_bands": [],
+            "shares": {
+              "a": 0.7229,
+              "b": 0.0647,
+              "below": 0.183,
+              "c": 0.0295,
+              "missing": 0.0
+            }
+          },
+          "precision_all_truth": {
+            "bands": {
+              "a": {
+                "correct": 49,
+                "n": 197,
+                "p_correct": 0.2487
+              },
+              "b": {
+                "correct": 2,
+                "n": 12,
+                "p_correct": 0.1667
+              },
+              "below": {
+                "correct": 16,
+                "n": 45,
+                "p_correct": 0.3556
+              },
+              "c": {
+                "correct": 0,
+                "n": 1,
+                "p_correct": 0.0
+              }
+            },
+            "inversions": [
+              "c<below"
+            ],
+            "monotone": false
+          },
+          "precision_model_scored": {
+            "bands": {
+              "a": {
+                "correct": 23,
+                "n": 171,
+                "p_correct": 0.1345
+              },
+              "b": {
+                "correct": 0,
+                "n": 10,
+                "p_correct": 0.0
+              },
+              "below": {
+                "correct": 0,
+                "n": 29,
+                "p_correct": 0.0
+              },
+              "c": {
+                "correct": 0,
+                "n": 1,
+                "p_correct": 0.0
+              }
+            },
+            "inversions": [],
+            "monotone": false
+          }
+        },
+        "identification_tiers": {
+          "by_msi_level": {
+            "1": {
+              "a": 25,
+              "b": 2,
+              "below": 16,
+              "c": 1,
+              "missing": 0
+            },
+            "2": {
+              "a": 191,
+              "b": 2,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "3": {
+              "a": 1963,
+              "b": 318,
+              "below": 129,
+              "c": 79,
+              "missing": 0
+            },
+            "4": {
+              "a": 382,
+              "b": 110,
+              "below": 523,
+              "c": 150,
+              "missing": 0
+            },
+            "5": {
+              "a": 0,
+              "b": 2,
+              "below": 4,
+              "c": 0,
+              "missing": 0
+            }
+          },
+          "cuts": [
+            0.65,
+            0.48,
+            0.38
+          ],
+          "note": "TIER_HIGH / TIER_MODERATE / TIER_LOW, the cutoffs the report tiers already use",
+          "occupancy": {
+            "counts": {
+              "a": 2561,
+              "b": 434,
+              "below": 672,
+              "c": 230,
+              "missing": 0
+            },
+            "empty_bands": [],
+            "shares": {
+              "a": 0.6572,
+              "b": 0.1114,
+              "below": 0.1724,
+              "c": 0.059,
+              "missing": 0.0
+            }
+          },
+          "precision_all_truth": {
+            "bands": {
+              "a": {
+                "correct": 48,
+                "n": 190,
+                "p_correct": 0.2526
+              },
+              "b": {
+                "correct": 2,
+                "n": 16,
+                "p_correct": 0.125
+              },
+              "below": {
+                "correct": 16,
+                "n": 44,
+                "p_correct": 0.3636
+              },
+              "c": {
+                "correct": 1,
+                "n": 5,
+                "p_correct": 0.2
+              }
+            },
+            "inversions": [
+              "b<c",
+              "c<below"
+            ],
+            "monotone": false
+          },
+          "precision_model_scored": {
+            "bands": {
+              "a": {
+                "correct": 23,
+                "n": 165,
+                "p_correct": 0.1394
+              },
+              "b": {
+                "correct": 0,
+                "n": 14,
+                "p_correct": 0.0
+              },
+              "below": {
+                "correct": 0,
+                "n": 28,
+                "p_correct": 0.0
+              },
+              "c": {
+                "correct": 0,
+                "n": 4,
+                "p_correct": 0.0
+              }
+            },
+            "inversions": [],
+            "monotone": false
+          }
+        },
+        "reachable_ceiling": {
+          "by_msi_level": {
+            "1": {
+              "a": 26,
+              "b": 1,
+              "below": 16,
+              "c": 1,
+              "missing": 0
+            },
+            "2": {
+              "a": 193,
+              "b": 0,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "3": {
+              "a": 2097,
+              "b": 184,
+              "below": 147,
+              "c": 61,
+              "missing": 0
+            },
+            "4": {
+              "a": 405,
+              "b": 87,
+              "below": 546,
+              "c": 127,
+              "missing": 0
+            },
+            "5": {
+              "a": 0,
+              "b": 2,
+              "below": 4,
+              "c": 0,
+              "missing": 0
+            }
+          },
+          "cuts": [
+            0.585,
+            0.48,
+            0.4
+          ],
+          "note": "top band lowered to sit inside the Platt-reachable range",
+          "occupancy": {
+            "counts": {
+              "a": 2721,
+              "b": 274,
+              "below": 713,
+              "c": 189,
+              "missing": 0
+            },
+            "empty_bands": [],
+            "shares": {
+              "a": 0.6982,
+              "b": 0.0703,
+              "below": 0.183,
+              "c": 0.0485,
+              "missing": 0.0
+            }
+          },
+          "precision_all_truth": {
+            "bands": {
+              "a": {
+                "correct": 49,
+                "n": 193,
+                "p_correct": 0.2539
+              },
+              "b": {
+                "correct": 1,
+                "n": 13,
+                "p_correct": 0.0769
+              },
+              "below": {
+                "correct": 16,
+                "n": 45,
+                "p_correct": 0.3556
+              },
+              "c": {
+                "correct": 1,
+                "n": 4,
+                "p_correct": 0.25
+              }
+            },
+            "inversions": [
+              "b<c",
+              "c<below"
+            ],
+            "monotone": false
+          },
+          "precision_model_scored": {
+            "bands": {
+              "a": {
+                "correct": 23,
+                "n": 167,
+                "p_correct": 0.1377
+              },
+              "b": {
+                "correct": 0,
+                "n": 12,
+                "p_correct": 0.0
+              },
+              "below": {
+                "correct": 0,
+                "n": 29,
+                "p_correct": 0.0
+              },
+              "c": {
+                "correct": 0,
+                "n": 3,
+                "p_correct": 0.0
+              }
+            },
+            "inversions": [],
+            "monotone": false
+          }
+        }
+      },
+      "column": "rank1_evidence_confidence",
+      "curated_sublevel_separation": {
+        "fine_median_spread": 0.0024,
+        "fine_sublevels": [
+          "2C",
+          "3A",
+          "3B",
+          "3C"
+        ],
+        "median_spread": 0.1048,
+        "per_sublevel": {
+          "2C": {
+            "median": 0.9981,
+            "n": 163,
+            "p25": 0.9902,
+            "p75": 0.9992
+          },
+          "3A": {
+            "median": 0.9957,
+            "n": 358,
+            "p25": 0.5106,
+            "p75": 0.9986
+          },
+          "3B": {
+            "median": 0.9978,
+            "n": 253,
+            "p25": 0.9903,
+            "p75": 0.9988
+          },
+          "3C": {
+            "median": 0.9965,
+            "n": 175,
+            "p25": 0.8676,
+            "p75": 0.9989
+          },
+          "4": {
+            "median": 0.998,
+            "n": 107,
+            "p25": 0.9925,
+            "p75": 0.9994
+          },
+          "4?": {
+            "median": 0.998,
+            "n": 64,
+            "p25": 0.6975,
+            "p75": 0.9989
+          },
+          "5": {
+            "median": 0.9952,
+            "n": 1315,
+            "p25": 0.4616,
+            "p75": 0.9987
+          },
+          "KNOWN": {
+            "median": 0.9958,
+            "n": 70,
+            "p25": 0.0,
+            "p75": 0.9993
+          },
+          "Released": {
+            "median": 0.8933,
+            "n": 25,
+            "p25": 0.7189,
+            "p75": 0.9987
+          }
+        }
+      },
+      "deciles_model_scored": [
+        {
+          "correct": 0,
+          "decile": 1,
+          "n": 21,
+          "p_correct": 0.0,
+          "score_max": 0.0,
+          "score_min": 0.0
+        },
+        {
+          "correct": 0,
+          "decile": 2,
+          "n": 21,
+          "p_correct": 0.0,
+          "score_max": 0.5557,
+          "score_min": 0.0
+        },
+        {
+          "correct": 1,
+          "decile": 3,
+          "n": 21,
+          "p_correct": 0.0476,
+          "score_max": 0.9955,
+          "score_min": 0.5617
+        },
+        {
+          "correct": 3,
+          "decile": 4,
+          "n": 21,
+          "p_correct": 0.1429,
+          "score_max": 0.9971,
+          "score_min": 0.9955
+        },
+        {
+          "correct": 3,
+          "decile": 5,
+          "n": 21,
+          "p_correct": 0.1429,
+          "score_max": 0.998,
+          "score_min": 0.9971
+        },
+        {
+          "correct": 3,
+          "decile": 6,
+          "n": 21,
+          "p_correct": 0.1429,
+          "score_max": 0.9988,
+          "score_min": 0.9981
+        },
+        {
+          "correct": 3,
+          "decile": 7,
+          "n": 21,
+          "p_correct": 0.1429,
+          "score_max": 0.9992,
+          "score_min": 0.9988
+        },
+        {
+          "correct": 3,
+          "decile": 8,
+          "n": 21,
+          "p_correct": 0.1429,
+          "score_max": 0.9994,
+          "score_min": 0.9992
+        },
+        {
+          "correct": 4,
+          "decile": 9,
+          "n": 21,
+          "p_correct": 0.1905,
+          "score_max": 0.9999,
+          "score_min": 0.9995
+        },
+        {
+          "correct": 3,
+          "decile": 10,
+          "n": 22,
+          "p_correct": 0.1364,
+          "score_max": 1.0,
+          "score_min": 0.9999
+        }
+      ],
+      "discrimination_all_truth": {
+        "auc": 0.4762,
+        "median_correct": 0.9969,
+        "median_incorrect": 0.9979,
+        "n_correct": 67,
+        "n_incorrect": 188
+      },
+      "discrimination_model_scored": {
+        "auc": 0.6566,
+        "median_correct": 0.999,
+        "median_incorrect": 0.9979,
+        "n_correct": 23,
+        "n_incorrect": 188
+      },
+      "distribution": {
+        "p0": 0.0,
+        "p10": 0.0,
+        "p100": 1.0,
+        "p25": 0.5,
+        "p50": 0.9962,
+        "p75": 0.9987,
+        "p90": 0.9995,
+        "p95": 0.9998
+      },
+      "label": "evidence_confidence (pipeline candidate score / matrix \"Confidence Score\")",
+      "n_present": 3897,
+      "share_at_or_above_0_98": 0.6243
+    }
+  }
+}
