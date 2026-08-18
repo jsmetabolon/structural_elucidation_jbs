@@ -249,17 +249,20 @@ def _precision(subset: list[dict], column: str, cuts) -> dict[str, object]:
     return {"bands": per_band, "monotone": monotone, "inversions": inversions}
 
 
+def _median(values: list[float]) -> float | None:
+    return round(sorted(values)[len(values) // 2], 4) if values else None
+
+
 def discrimination(rows: list[dict], column: str) -> dict[str, object]:
     positive = [_num(r.get(column)) for r in rows if _truthy(r.get("matched_at_rank_1"))]
     negative = [_num(r.get(column)) for r in rows if not _truthy(r.get("matched_at_rank_1"))]
     positive = [v for v in positive if v is not None]
     negative = [v for v in negative if v is not None]
-    median = (lambda xs: round(sorted(xs)[len(xs) // 2], 4) if xs else None)
     return {
         "n_correct": len(positive),
         "n_incorrect": len(negative),
-        "median_correct": median(positive),
-        "median_incorrect": median(negative),
+        "median_correct": _median(positive),
+        "median_incorrect": _median(negative),
         "auc": _auc(positive, negative),
     }
 
