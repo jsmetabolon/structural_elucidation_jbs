@@ -154,22 +154,31 @@ Three things are defensible today, in decreasing order of confidence:
 Bands become answerable once the score they are cut on is monotone with
 correctness over its own output. Concretely, one of:
 
-- **Recalibrate the Platt fit** so the score spans a usable range. The current
-  `(A, B)` predate the retention axis and were fit in-sample on 92 controls; the
-  ceiling at 0.5907 is a direct consequence. This is the smallest change and it
-  fixes section 1, but on its own it will not fix section 2 — rescaling a score
-  that is inverted leaves it inverted.
+- **Rescale the score** so it spans a usable range, either by re-fitting the
+  Platt `(A, B)` or by re-anchoring to the pre-Platt `raw_evidence` as
+  [PR #6](https://github.com/jsmetabolon/structural_elucidation_jbs/pull/6) does.
+  This fixes section 1 and nothing else, and that is now measured rather than
+  asserted. Section 1b of the audit recovers `raw_evidence` by inverting the
+  Platt map: the top band goes from 44 reports to 1,996, so reachability is
+  genuinely fixed, while AUC stays at **0.378 to four decimal places** because
+  `sigmoid(A · raw + B)` is strictly increasing and cannot reorder anything.
+  Rescaling a score that is inverted leaves it inverted.
 - **Establish a monotone per-candidate probability**, e.g. the isotonic
-  `rerank_score_calibrated` that `candidate_confidence_column` on branch
-  `cursor/candidate-confidence-rework-f8a2` prefers when present, validated
-  out-of-sample on a truth cohort larger than 211.
+  `rerank_score_calibrated` that `candidate_confidence_column` on PR #6 prefers
+  when present, validated out-of-sample on a truth cohort larger than 211. Note
+  that any validation figure quoted for `raw_evidence` is a figure for the Platt
+  score under another name, so it inherits the same dependence on the 44
+  policy-pinned reports.
 - **Acquire the evidence the sub-letters actually name** — a reference MS²
   spectral library, observed retention time per X-compound, and diagnostic
   fragment matching. This is the only route that yields `2a`/`2b` as the cited
   scheme defines them rather than as a renamed score bin.
 
 The ordered work for each of these is in
-[plans/msi_sublevel_bands.plan.md](../plans/msi_sublevel_bands.plan.md).
+[plans/msi_sublevel_bands.plan.md](../plans/msi_sublevel_bands.plan.md). Which of
+them to fund, and the six other decisions this work needs from a person, are in
+[docs/msi_sublevel_decisions_needed.md](msi_sublevel_decisions_needed.md) with an
+owner and a recommendation each.
 
 ## Reproducing
 
@@ -178,6 +187,8 @@ python3 tools/audit_sublevel_bands.py
 ```
 
 Read-only, standard library only, and reproducible from committed inputs. It
-reads `docs/paper/data/exec_summary/exec_summary_by_compound.csv` and the
-constants in `structural_elucidation/reports/confidence.py`, and rewrites the two
-artifacts under `docs/paper/data/identification/`.
+reads the two `docs/paper/data/exec_summary/` tables and the constants in
+`structural_elucidation/reports/confidence.py`, and rewrites the two artifacts
+under `docs/paper/data/identification/`. Point it at another revision of those
+tables with `--exec-summary` and `--exec-summary-top10` to check that a finding
+is not an artifact of one snapshot.
