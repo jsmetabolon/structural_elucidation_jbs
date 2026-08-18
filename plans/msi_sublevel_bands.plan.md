@@ -1,6 +1,6 @@
 ---
 name: MSI sub-levels and their confidence bands
-overview: 'Ship the part of the Metabolon-style sub-level table that the delivered evidence supports - the curated SubLevel surfaced rather than derived, a generated level-by-sub-level count table, and a definition CSV that records what each letter requires - and hold the score-derived 2a/2b/2c banding until the score it would be cut from is monotone with correctness. Neither candidate score is today: evidence_confidence is flat above 0.98 and candidate_confidence is inverted (AUC 0.378) on its own output.'
+overview: 'Ship the part of the Metabolon-style sub-level table that the delivered evidence supports - the curated SubLevel surfaced rather than derived, a generated level-by-sub-level count table, and a definition CSV that records what each letter requires - and hold the score-derived 2a/2b/2c banding until the score it would be cut from is monotone with correctness. Neither candidate score is today: evidence_confidence is flat above 0.98 and candidate_confidence is inverted (AUC 0.378) on its own output. Much of the shippable half already exists on PR #6 and should be merged rather than rebuilt; the decisions that gate the rest are in docs/msi_sublevel_decisions_needed.md.'
 todos:
   - id: definition-csv
     content: 'Write docs/paper/data/identification/msi_sublevel_definitions.csv recording each level and sub-level, the evidence it requires, whether that evidence is computable in this repo today, and the source it comes from - definitions only, no assignment'
@@ -9,22 +9,25 @@ todos:
     content: 'Write tools/build_msi_level_counts.py to generate docs/paper/data/msi_level_counts.csv from data/known_X.csv plus the delivered exec summary, replacing the hand-committed copy on cursor/evidence-confidence-calculation-012b, and add it to the CI regenerate-and-diff step'
     status: pending
   - id: surface-curated
-    content: 'Surface the curated SubLevel on the report card and master index as a labeled cross-reference next to metabolon_level, withheld for the 1,403 compounds that have none rather than defaulted'
+    content: 'Already built on PR #6 (commits 4599439, 9e6e359): merge the curated SubLevel surfacing and the index Curated column rather than rebuilding them, holding the Match conf column for decision 2'
+    status: pending
+  - id: rename-derived-3a
+    content: 'Rename PR #6 derived 3A to what it measures. The rule fires on 85.5% of Level 3 and agrees with the curated letter 16.1% of the time, so it must not share the name or the field'
     status: pending
   - id: availability-flag
     content: 'Replace the "Confidence Score" reading of evidence_confidence in the matrix workbook with the one distinction it actually makes - evidence present versus absent at the zero boundary - and relabel the column accordingly'
     status: pending
   - id: recalibrate-platt
-    content: 'Re-fit the Platt (A, B) against the retention axis on a bundle that carries axis-level columns, so the evidence score spans a usable range and TIER_HIGH stops being unreachable; measure the tier and MSI distribution shift before adopting'
+    content: 'Re-fit the Platt (A, B) against the retention axis on a bundle that carries axis-level columns. Now optional for reachability, since PR #6 un-deflation already achieves that for display; still needed if the tier constants are to keep their meaning'
     status: pending
   - id: monotone-score
-    content: 'Establish a per-candidate probability that is monotone with correctness out-of-sample - candidate the isotonic rerank_score_calibrated from cursor/candidate-confidence-rework-f8a2 - and gate it on the sub-level band audit reporting ordered bands'
+    content: 'Establish a per-candidate probability that is monotone with correctness out-of-sample - candidate the isotonic rerank_score_calibrated from PR #6 - and gate it on the sub-level band audit reporting ordered bands. Note the re-anchor already on that branch is a rescale and was measured not to change AUC'
     status: pending
   - id: derive-bands
     content: 'Only once monotone-score passes: choose cutoffs from the calibrated score by equal-precision bands rather than round numbers, and assign MSI Sub-level from them'
     status: pending
   - id: evidence-handoff
-    content: 'Write the upstream handoff for the three inputs the Schymanski sub-letters actually name: a reference MS2 spectral library, observed retention time per X-compound, and candidate-versus-observed diagnostic fragment matching'
+    content: 'Already written on PR #6 (commit 9dd75e8) for the three inputs the Schymanski sub-letters name - reference MS2 spectral library, observed retention time, diagnostic fragment matching. Merge it rather than duplicating it; gate the acquisition itself on decision 4'
     status: pending
 isProject: false
 ---
@@ -37,6 +40,15 @@ with the conclusions written up in
 [docs/msi_sublevel_band_findings.md](../docs/msi_sublevel_band_findings.md).
 Read that findings document first; this plan assumes its four results and does
 not re-derive them.
+
+**Revised after finding PR #6.** This plan was first written without knowing that
+[PR #6](https://github.com/jsmetabolon/structural_elucidation_jbs/pull/6) had
+been open as a draft since 15 July with much of stages 3, 6 and 8 already built
+and tested. Those stages are now *merge* tasks rather than *build* tasks, and are
+marked as such below. The decision of what to do with that branch, along with the
+six others this work needs from a person, is in
+[docs/msi_sublevel_decisions_needed.md](../docs/msi_sublevel_decisions_needed.md);
+that document is the entry point, and this one is the work that follows from it.
 
 ## Goal
 
@@ -100,15 +112,17 @@ or every downstream audit becomes a statement about policy instead of evidence.
    inputs.** CI runs the audit tools and then `git diff --exit-code`
    (`.github/workflows/publication-checks.yml`), so any new generator must be
    deterministic — sort keys, round floats, never embed a timestamp.
-2. **Two work streams live on unmerged branches** and stages 4 and 5 depend on
-   them. `candidate_confidence` is *read* by `tools/build_exec_summary.py:242`
-   on `main` but produced by nothing on `main`; its producer
-   (`candidate_confidence_column`, which prefers an isotonic
-   `rerank_score_calibrated`) is on `cursor/candidate-confidence-rework-f8a2`.
-   The matrix workbook `tools/build_all_metabolites_matrix_workbook.py` and the
-   hand-committed `docs/paper/data/msi_level_counts.csv` are on
-   `cursor/evidence-confidence-calculation-012b`. Confirm the merge state before
-   starting either stage.
+2. **Two work streams live off `main`, and most of this plan depends on one of
+   them.** [PR #6](https://github.com/jsmetabolon/structural_elucidation_jbs/pull/6)
+   carries stages 3, 3b, 8 and half of 6, plus the producer for
+   `candidate_confidence` — which `tools/build_exec_summary.py:242` reads on
+   `main` while nothing on `main` writes it. The matrix workbook
+   `tools/build_all_metabolites_matrix_workbook.py` and the hand-committed
+   `docs/paper/data/msi_level_counts.csv` are on
+   `cursor/evidence-confidence-calculation-012b`, which is not an open PR.
+   Merge order is decision 7; confirm the state of both before starting any
+   stage, because rebuilding what already exists is the main way this work goes
+   wrong.
 3. **The truth cohort is small and selected.** 255 truth-verified compounds, 211
    once the pinned ones are held out, 23 of those correct. Any cutoff fitted on
    it must be validated out-of-sample; in-sample fitting on 92 controls is how
@@ -176,23 +190,49 @@ reconcile against `msi_level_distribution` in
 `docs/paper/data/presentation/audit_presentation_summary.json`
 (L1 44, L2 193, L3 2,489, L4 1,165, L5 6); re-running the tool produces no diff.
 
-## Stage 3 — Surface the curated sub-level (`surface-curated`)
+## Stage 3 — Merge the curated sub-level surfacing (`surface-curated`)
+
+**Already built on PR #6. This is a merge, not a build.** Commit `4599439`
+renders the curated `SubLevel` on the report card and `9e6e359` adds the index
+column; both are tested. Do not reimplement them.
 
 2,494 of 3,897 delivered compounds carry a curated `SubLevel`, 949 of them a
-fine letter. It is expert-labeled and authoritative, and it needs no model. It
-is already read by `tools/build_exec_summary.py::load_metabolon_levels` and
-already lands in both exec-summary CSVs as `metabolon_sublevel`; the missing
-piece is the report surface.
+fine letter. It is expert-labeled and authoritative and needs no model, which is
+why this stage is unblocked while everything score-derived is not.
 
-Render it next to the existing Metabolon-level cross-reference in
-`scored_parameters_section_html` and as a column in the master index
-(`structural_elucidation/reports/index_render.py`). Label it as Metabolon's
-curated assignment, not as this pipeline's output — the same way
-`metabolon_level` is already labeled. Withhold it where absent.
+Two amendments on the way in, both from
+[docs/msi_sublevel_decisions_needed.md](../docs/msi_sublevel_decisions_needed.md):
+
+- **Hold the `Match conf` column** from `9e6e359`. It surfaces
+  `candidate_confidence` as a client include/exclude control, which decision 2
+  has to clear first. The `Curated` column beside it is unaffected.
+- **Rename the derived `3A`** from `4599439` before it ships — stage 3b.
 
 **Verification:** a report whose compound has no curated sub-level shows no
-sub-level row at all; `tools/diff_source_vs_patched.py` parity markers still
-match; the count of reports showing a sub-level equals 2,494.
+sub-level row at all rather than a default; `tools/diff_source_vs_patched.py`
+parity markers still match; the count of reports showing a sub-level equals
+2,494.
+
+## Stage 3b — Rename the derived `3A` (`rename-derived-3a`)
+
+PR #6 derives one fine sub-letter, `3A`, from same-formula multiplicity among
+the top candidates (`msi_level == 3 and n_isomers >= 2`). The underlying signal
+is real and semantic rather than a score bin, which is what makes it defensible
+where the other letters are not. The name is the problem.
+
+Measured in section 4b of the audit: the rule fires on 2,129 reports, **85.5% of
+all Level 3**, against 358 curated `3A`. Of the 1,245 it labels that a curator
+also labeled, only **16.1%** carry curated `3A` — the largest group inside it is
+623 compounds the curator called Level `5`. Two labels sharing a letter and
+selecting different compounds will be read as one claim.
+
+Rename it to what it measures — isomeric ambiguity — give it its own field, and
+never render it in the position the curated letter occupies.
+
+**Verification:** no artifact contains a derived value in the same column as
+`metabolon_sublevel`; `test_committed_audit_records_the_derived_3a_disagreement`
+still passes, and if it starts failing the rename decision needs re-reading
+rather than the assertion deleting.
 
 ## Stage 4 — Relabel the availability flag (`availability-flag`)
 
@@ -220,8 +260,19 @@ axis-level columns — the same bundle `tools/audit_thresholds.py` needs to
 populate its currently `not_evaluated` `msi_rule` block — using
 `tools/calibrate_confidence.py`.
 
-This fixes reachability. **It will not fix ordering.** Platt scaling is monotone,
-so rescaling an inverted score leaves it inverted; stage 6 is not optional.
+**Demoted to optional, and here is why.** PR #6's un-deflation already solves
+reachability for display purposes by re-anchoring rank 1 to the pre-Platt
+`raw_evidence`, which spans 0.117 to 0.990 and puts 1,996 reports above 0.65
+instead of 44. So this stage is no longer the only route to a populated top
+band. It is still worth doing if the tier constants are to keep meaning what
+they say, since `TIER_HIGH` currently names a tier that cannot occur.
+
+**It will not fix ordering, and that is now measured rather than argued.**
+Section 1b of the audit recovers `raw_evidence` by inverting the Platt map and
+finds AUC identical to four decimal places, 0.378 either way, because
+`sigmoid(A · raw + B)` is strictly increasing. Any monotone rescale — a new
+`(A, B)` included — leaves an inverted score inverted. Stage 6 is not optional.
+
 Adopting a new `(A, B)` moves every tier boundary and therefore the reported tier
 distribution, so measure before adopting.
 
@@ -235,12 +286,22 @@ The gate for the whole original request. Produce a per-candidate probability
 that is monotone with correctness *out-of-sample*, and prove it.
 
 Leading candidate: the isotonic `rerank_score_calibrated` that
-`candidate_confidence_column` on `cursor/candidate-confidence-rework-f8a2`
-already prefers when the column exists. Isotonic regression is the right shape
-for this — it is monotone by construction — but it is fitted per source and the
-current cohort is small enough to overfit, so validation must be out-of-sample
-or leave-one-out, matching what `tools/audit_structure_predictions.py` does for
-the structure axis.
+`candidate_confidence_column` on PR #6 already prefers when the column exists.
+Isotonic regression is the right shape for this — it is monotone by construction
+— but it is fitted per source and the current cohort is small enough to overfit,
+so validation must be out-of-sample or leave-one-out, matching what
+`tools/audit_structure_predictions.py` does for the structure axis.
+
+**What is already done on PR #6 does not count towards this stage.** That branch
+re-anchors rank 1 to `raw_evidence` and cites AUC ~0.79, but section 1b of the
+audit shows the re-anchor is a monotone rescale that leaves AUC at 0.378, and the
+0.79 is the whole-cohort figure carried by the 44 policy-pinned reports. The
+un-deflation is worth merging on display grounds and changes nothing here.
+
+The cohort is the binding constraint, not the method: 211 model-scored
+truth-verified reports of which 23 are correct. See decision 5 in
+[docs/msi_sublevel_decisions_needed.md](../docs/msi_sublevel_decisions_needed.md)
+for why that is the same budget line as the mass-axis truth-set expansion.
 
 **Exit criterion, and it is a hard one:** `tools/audit_sublevel_bands.py` reports
 `monotone: true` for at least one band scheme on the model-scored cohort, with
@@ -263,13 +324,18 @@ the answer should not be round numbers:
   source column, the way the matrix workbook already carries
   `MSI Sub-level Source`.
 - Report agreement with the curated letter as a headline number. The prior
-  attempt on `cursor/candidate-confidence-rework-f8a2` reached 9.5% exact.
+  attempt on PR #6 reached 9.5% exact for the fine letters, and its derived `3A`
+  reached 16.1% against the curated `3A` (stage 3b). Those are the bars to beat.
 
-## Stage 8 — Upstream evidence handoff (`evidence-handoff`)
+## Stage 8 — Merge the upstream evidence handoff (`evidence-handoff`)
+
+**Already written on PR #6, commit `9dd75e8`. Merge it rather than duplicating
+it**; reconcile with `docs/msi_sublevel_findings.md` on that branch, which is
+where the analysis behind it lives.
 
 Stages 5–7 can produce a defensible *graded* sub-level. They cannot produce
 `2a`/`2b` as Schymanski defines them, because those name evidence types this
-repo does not have. Write the handoff for the three missing inputs:
+repo does not have. The three missing inputs:
 
 1. A **reference MS² spectral library** — the thing that distinguishes `2a` from
    `2b`, and the 2-series from the 3-series.
@@ -279,9 +345,9 @@ repo does not have. Write the handoff for the three missing inputs:
 3. **Candidate-versus-observed diagnostic fragment matching**, computed from the
    observed spectra rather than predicted ones.
 
-The same three are already named in section 5 of `docs/msi_sublevel_findings.md`
-on `cursor/candidate-confidence-rework-f8a2` (unmerged, so there is nothing to
-link to yet); reconcile with it rather than duplicating it.
+Acquiring them is decision 6, and it is gated on decision 4: if the sub-level
+scheme in the screenshot is illustrative rather than a specification, this may
+not be wanted at all.
 
 ## Verification for the whole plan
 
@@ -297,22 +363,18 @@ link to yet); reconcile with it rather than duplicating it.
 
 ## Unresolved questions
 
-1. **Is the sub-level scheme in the screenshot Metabolon's or a slide's?** The
-   requested vocabulary (`2a`, `2b`, `5a`, and ranges like `2a (0.9–1.0)`) does
-   not appear in `data/known_X.csv`, which has `2C` and `3A`–`3D` only. If a real
-   Metabolon sub-level specification exists, it should replace stage 1's
-   reconstruction — that would change what the definition CSV says and possibly
-   make some cells computable that this plan marks as blocked.
-2. **What is the sub-level for, commercially?** An include/exclude filter for a
-   client data set and a display grade have different requirements: a filter
-   needs a defensible cut point, a display grade needs an ordered scale. The
-   screenshot's `INCLUDE IN DATA SET` / `INCLUDE IN PATHWAYS` columns suggest the
-   former, which stage 3 plus a curated-letter filter would already serve
-   without stages 5–7.
-3. **Does `5a` mean anything here?** No `5A` exists in the curated data and MSI
-   Level 5 is 6 delivered reports. If it is a real bucket, it needs a definition
-   before it needs a range.
-4. **Which `(A, B)` bundle?** Stage 5 needs a report bundle carrying axis-level
-   columns, and this checkout does not have one — the same gap that leaves
-   `msi_rule` unevaluated in `docs/paper/data/thresholds/audit_thresholds_summary.json`.
-   Locating it is a prerequisite, not part of the stage.
+The seven that need a person now live in
+[docs/msi_sublevel_decisions_needed.md](../docs/msi_sublevel_decisions_needed.md)
+with an owner, a deferral cost and a recommendation each, rather than being
+listed here without one. In short: what happens to PR #6 (decision 1), whether
+`candidate_confidence` may be a client filter (2), whether the sub-level is a
+filter or a display grade (3), whether the screenshot is a real specification
+(4), and whether to fund the score fix (5) or the upstream evidence (6). Decision
+7 covers the matrix workbook and the hand-committed count table.
+
+One question is genuinely a prerequisite rather than a decision, so it stays
+here. **Which bundle carries axis-level columns?** Stage 5 needs one and this
+checkout has none — the same gap that leaves `msi_rule` unevaluated in
+`docs/paper/data/thresholds/audit_thresholds_summary.json`. PR #6 regenerated a
+full 3,897-report bundle and describes it as ready to upload pending a signed
+URL, so that is the first place to look.
