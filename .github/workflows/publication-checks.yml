@@ -12,6 +12,9 @@ on:
       - "docs/**"
       - "tools/**"
       - "tests/**"
+      # The identification-rule audit derives from the committed feature rows, so a
+      # re-export of those has to re-run it or the committed artifact goes stale.
+      - "data/feature_rows/**"
       - "requirements.txt"
       - ".github/workflows/publication-checks.yml"
   workflow_dispatch:
@@ -49,6 +52,7 @@ jobs:
           python3 tools/analyze_library_stratification.py
           python3 tools/audit_thresholds.py
           python3 tools/audit_rt_feasibility.py
+          python3 tools/audit_identification_rules.py
           python3 tools/build_parameter_table.py
           python3 tools/paper_figures.py \
             --structure docs/paper/data/structure/audit_structure_summary.json \
@@ -79,7 +83,8 @@ jobs:
             tests/test_paper_audits.py \
             tests/test_publication_analyses.py \
             tests/test_threshold_audit.py \
-            tests/test_rt_feasibility.py
+            tests/test_rt_feasibility.py \
+            tests/test_identification_rules.py
 
   lint:
     runs-on: ubuntu-latest
@@ -101,6 +106,7 @@ jobs:
             tools/analyze_library_stratification.py \
             tools/analyze_selective_prediction.py \
             tools/analyze_taxonomy_harmonization.py \
+            tools/audit_identification_rules.py \
             tools/audit_rt_feasibility.py \
             tools/audit_thresholds.py \
             tools/build_manuscript_docx.py \
