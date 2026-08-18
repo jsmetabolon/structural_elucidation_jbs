@@ -91,6 +91,36 @@ That cost is being paid now.
 claim from the description wherever it appears, since it describes a cohort
 nobody filters on.
 
+### Commit-level routing
+
+Ten of the fifteen commits merge unchanged. Three need a wording or naming
+amendment, one needs splitting, and none needs to be abandoned.
+
+| Commit | Disposition |
+|---|---|
+| `2d13f6a` rank-consistent candidate-confidence helper + audit | merge |
+| `01d3c85` rank-consistent candidate confidence in the widget | merge |
+| `6dbcdf5` emit per-rank `candidate_confidence` into the sidecar | merge — closes a live gap, see below |
+| `dcb6cf5` v2 candidate-score patcher | merge |
+| `dd5c764` monotonicity, ties and patcher tests | merge |
+| `56b9159` emit monotone `candidate_confidence` from the reranker | merge |
+| `d025edd` reports-tree-only refresh | merge |
+| `394c748` cover canonical `X_<id>.html`, preserve evidence on refresh | merge |
+| `d79417c` rank-1 tie rate | merge |
+| `6806176` real-bundle before/after | merge |
+| `9dd75e8` handoff for the evidence the fine sub-levels need | merge |
+| `e175b43` sub-level feasibility and defensibility audit | merge — conclusions corroborated independently |
+| `efa280c` un-deflate the best match, "N of 10" | **amend** the justification: it cites AUC ~0.79 for `raw_evidence`, which is the whole-cohort figure |
+| `4599439` surface curated `SubLevel` + derived `3A` | **split**: curated surfacing merges as is; the derived `3A` needs a name that is not `3A` |
+| `9e6e359` index `Curated` + `Match conf` columns | **split**: `Curated` merges; `Match conf` is gated on decision 2 |
+
+One merge is worth calling out because it fixes something already broken on
+`main` rather than adding anything. `tools/build_exec_summary.py:242` reads
+`candidate_confidence` out of the confidence sidecar, and nothing on `main`
+writes it — `6dbcdf5` is the missing producer. Until it lands, that column
+resolves to empty for any freshly enriched bundle, and the populated values in
+the committed exec summary came from a bundle enriched off this branch.
+
 ## Decision 2: may `candidate_confidence` be a client-facing include/exclude score — needs a person
 
 **Owner: product and commercial.**
@@ -242,4 +272,5 @@ curator called Level `5`. The underlying signal — multiple same-formula
 candidates in the top 10 — is real and worth surfacing as isomeric ambiguity.
 It is not the curator's `3A`, and sharing the letter guarantees it is read as
 though it were. This one is a naming fix, not a research problem, and it belongs
-with decision 1.
+with decision 1: rename it to what it measures — isomeric ambiguity — keep it in
+a field of its own, and never render it where the curated letter goes.
