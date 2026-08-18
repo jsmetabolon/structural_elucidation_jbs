@@ -2,7 +2,7 @@
 
 Self-contained handoff for the next agent/engineer. The report layer
 (`structural_elucidation/reports/`) and its delivered bundle now surface the best
-available evidence and an honest, calibrated identification confidence. The four
+available evidence and an honest, calibrated identification confidence. The
 items below cannot be fixed in the report layer alone - they require changes in
 the upstream inference/reranking pipeline (not runnable in the report VM) or new
 data. Each item lists the goal, current evidence, where it plugs in, ordered
@@ -215,6 +215,154 @@ Context you need:
   it as a huge mass error.
 - Verify: `charge_state_suspects` reports zero, and no report reaches MSI Level 1
   while carrying an unexplained integer mass ratio.
+
+## 7. `evidence_confidence` is 0-filled for generators that never emit it
+- Goal: stop reporting an absent measurement as a measured zero, and stop the
+  reranker penalising candidates for which the score was simply never computed.
+  Code for this landed in this repo (see "What is already done" below); what
+  remains is a re-run, part of which is possible on the report VM and part of
+  which is not (see "Where each step can run").
+- Evidence, measured on the delivered 3,897-report bundle
+  (`reports/*/data/<slug>_top_candidates.csv`):
+  - **3,213 of 34,306 candidate rows (9.4%) carry `evidence_confidence = 0.0`,
+    504 of them at rank 1.** Whether a row is zero is decided entirely by which
+    generator produced it, not by the evidence available for it.
+  - Generators that always populate it: `library_anchored_candidates_v1`
+    (18,433 rows, 0 zeros), `peptide_first_denovo_v1` (9,533, 0), `balanced`
+    (2,584, 0), `wgcna_seeded_v1`, `mlims_anchored_candidates_v1`,
+    `mass_aware_combinatorial_v1`, `mlims_strict_overlay_v1`, and the other
+    targeted-chemistry tracks.
+  - Generators that never populate it: the retrieval/decoder tracks
+    (`ec2_bundle_retrieval_selfies_v1` 1,497 zeros, `retrieval_fallback` 924,
+    `selfies_fallback` 227) and the single-operator chemistry enumerators
+    (`dehydro_v1` 218, `hydroxyl_v1` 124, `methylation_v1` 113, `demethyl_v1` 49,
+    `n_acetyl_v1`, `nucleoside_v1`, `glucuronide_v1`, `carnitine_acyl_v1`,
+    `glycine_v1`, `peptide_first_v1`).
+  - **All 527 enumerator zeros carry a nonzero `formula_prior_score`**, so the
+    canonical definition would score them ~0.999. The zero is contradicted by the
+    row's own other columns.
+  - Mechanism: `pool_v1.dedup` coerced the score columns with
+    `numeric(work, col, default=0.0)`, so a generator that omits the column is
+    indistinguishable from one that measured nothing. Nothing downstream could
+    tell the two apart.
+  - Not an MS2-availability artefact: `X-18345` has an MS2 spectrum scoring 0.98
+    and still reports 0.0, while 269 of 600 sampled compounds with no MS2 at all
+    have a nonzero rank-1 score.
+  - Consequence beyond display: `evidence_confidence` is a trained reranker
+    feature (`rerank.FEATURE_COLUMNS`), carries 0.12 in `rerank.heuristic_score`,
+    and is an F2 promotion-gate input (`chemistry/diagnostics.py`). Affected rows
+    were docked up to ~0.12 of rerank score against an otherwise identical
+    library-anchored candidate.
+  - User-visible symptom that surfaced this: 16 truth controls at MSI Level 1
+    ("Confirmed (authentic standard)", `candidate_confidence` 0.97) display an
+    evidence confidence of 0.0 — e.g. `X-12127`, whose rank-1 candidate is the
+    correct structure at Tanimoto 1.0 with `formula_prior_score` 1.0,
+    `mass_match_score` 1.0 and zero mass error.
+- Second defect found alongside it, **not** fixed: the column has two different
+  definitions in-tree. `pipeline/candidates.py` uses
+  `max(formula_prior, forward, ms2_match, nce_pipeline) + 0.05 * ms1_supported`,
+  while `chemistry/conjugates.py` uses `0.35 + 0.35 * formula_prior + 0.15 * ms1`,
+  and `chemistry/diagnostics.py` documents a third meaning (chemistry-class
+  diagnostic `evidence_score` joined onto truth-blind rows). The conjugate
+  formula is live in the delivered data: every nonzero `n_acetyl_v1` row reads
+  0.699 = `0.35 + 0.35 * 0.997`. So the column is not on one scale even where it
+  is populated. Unifying it changes existing nonzero values and therefore needs
+  the same retrain, which is why it was left as a decision rather than folded in.
+- What is already done in this repo (no pipeline run required to review):
+  - `structural_elucidation/chemistry/evidence.py` — the canonical definition
+    (`evidence_confidence`) plus `backfill_evidence_confidence`, which returns a
+    completed score and a per-row basis of `emitted` / `backfilled` /
+    `unavailable`. `pipeline/candidates.py` now calls the shared helper instead of
+    its own inline copy.
+  - `pipeline/pool_v1.py` — `apply_evidence_backfill` runs on the final pool
+    (after `dedup`, so the per-term maxima it aggregates are the inputs the
+    definition needs) on both the standard and `--base-unified-pool-csv` paths.
+    Writes `evidence_confidence_basis` and reports `n_evidence_backfilled` /
+    `n_evidence_unavailable` in `unified_candidate_pool_summary.json`. Toggle with
+    `--no-evidence-backfill`.
+  - `pipeline/rerank.py` — `add_features` repeats the backfill (idempotent) so a
+    pool CSV written before this change cannot feed 0.0 into the model. Toggle
+    with `--no-evidence-backfill`.
+  - `tests/test_evidence_backfill.py` — 12 tests, pass locally without
+    rdkit/sklearn.
+  - Deliberate guard, do not "simplify" it away: a formula prior is only
+    recomputed when a **finite target neutral mass** is available.
+    `formula_prior_score` falls back to element-ratio plausibility alone when the
+    mass is missing and returns 0.65 for any well-formed formula, which would
+    manufacture evidence for the ~1,151 retrieval/fallback rows that carry no
+    mass at all. Those rows are labelled `unavailable` and left at 0.0.
+- Measured effect on the real pools, which are on the report VM under
+  `../spec2mol_merged_fullrun_metabolon_only/models/` (v14 and v20, all four
+  scopes). **Every zero row recovers a score; none is `unavailable`**, because the
+  pool carries `target_neutral_mass` on 78.6% of rows plus three alternates that
+  cover most of the rest:
+  - `unified_candidate_pool_v14_lib209_negative`: 16,032 of 40,179 rows were zero
+    (39.9%), all 16,032 backfilled, 1,607 controls. The pool stage ran in 9.5 s
+    via `--base-unified-pool-csv` and reported `acceptance_pass: true`.
+  - `unified_pool_v20_lib209_negative`: 1,836 of 10,392 zero (17.7%), all
+    recovered. Largest zero source is
+    `peptide_first_v1_1|peptide_first_v1_1_verifier` (1,629 rows, median new
+    score 0.931), then `nce_direct_v1` (128, median 0.467) and `hydroxyl_v1`
+    (66, median 0.976).
+  - Other v20 scopes carry zeros in the same proportion and are ready to run:
+    lib305 953/2,190, lib400 4,105/9,043, lib402 534/999.
+  - A dry run over the delivered report sidecars instead recovers only 977 of
+    3,213 (30.4%), because those sidecars drop `target_neutral_mass` on the
+    retrieval rows. Quote the pool figure, not the sidecar one.
+- Where each step can run. The pool stage and a rerank A/B are runnable on the
+  report VM against the pools above, using the pipeline's own environment
+  (`../spec2mol_merged_fullrun_metabolon_only/.venv/bin/python`: Python 3.10,
+  pandas 1.5.3, sklearn 1.6.1, rdkit 2026.03.3, torch 1.12). The 12 tests in
+  `tests/test_evidence_backfill.py` pass under that interpreter as well as under
+  the repo's own Python 3.14, so the helper is safe on pandas 1.5. What is *not*
+  reproducible locally is the delivered 3,897-compound bundle: the local pools
+  cover 2,169 controls (v14, four scopes) and 624 (v20), and
+  `run_full_pipeline_ec2.sh` preflight fails here on `merged_encoder/`,
+  `decoder/`, `references/*.pkl` and the 19 per-source `candidate_metrics_all.csv`
+  inputs. Published recovery figures can only be re-measured on EC2.
+- Ordered steps:
+  1. Local, done: read-only dry run per scope, recording recovered vs
+     `unavailable` per source. If a source recovers 0, check its column names
+     against `FORMULA_COLUMNS` / `NEUTRAL_MASS_COLUMNS` before adding an alias.
+  2. Local: re-run `pool_v1` per scope with `--base-unified-pool-csv` and check
+     `n_evidence_backfilled` > 0 and `n_evidence_unavailable` in the summary JSON.
+     Done for v14 lib209; the other three scopes remain.
+  3. Local A/B: `tools/ab_evidence_backfill_rerank.py` trains `rerank` twice on
+     the same pool, with and without `--evidence-backfill`, and reports the
+     rank-1/top-10 counts, which controls crossed Tanimoto 0.70 in either
+     direction, and how much the model leans on the feature in each arm. Feed it
+     the **unpopulated** pool so the arms differ only in feature values. It
+     symlinks `known_X.csv` and `known_X_all_available_structures_simple.csv`
+     from `data/` into the repo root for the run (`rerank.run` hardcodes them
+     there) and removes the links afterwards. `data/known_X.csv` is
+     byte-identical to the pipeline tree's copy; the structures file is **not**,
+     so both arms deliberately use the `data/` version. Scope caveat: only 55 of
+     the 58 lib209 truth controls appear in the v14 pool, so this shows
+     direction, not a publishable rate.
+  4. EC2: retrain `rerank` per scope on the full inputs. `evidence_confidence` is
+     a model feature, so the model must be refit, not merely re-applied: LOOCV,
+     the G3 gate and the per-source isotonic calibrators all regenerate.
+  5. EC2: compare recovery against the published baseline — 44/92 rank 1 (47.8%),
+     64.1% top 3, 73.9% top 10. Decide before running whether a drop is
+     acceptable; the fix is correctness-motivated, so ranks may move both ways.
+  6. EC2: re-run the F2 promotion gate; candidates that previously failed it now
+     carry evidence and may promote.
+  7. Regenerate reports and re-export `tools/build_exec_summary.py` and the paper
+     artifacts.
+  8. Display half, still open: carry `evidence_confidence_basis` into the report
+     sidecars and have `tools/patch_candidate_scores.py` / `compound.py` and
+     `build_exec_summary.py` render blank rather than `0.0` for `unavailable`
+     rows, so an uncomputed score never again reads as a measured zero.
+- Verify: no row in the regenerated pool has `evidence_confidence = 0.0` with a
+  nonzero `formula_prior_score`; every `0.0` carries basis `unavailable`; the 16
+  MSI Level-1 controls listed above no longer show 0.0; recovery figures are
+  re-measured and the manuscript numbers updated if they moved.
+- Open questions: (a) is the `candidates.py` max-based definition the one to
+  standardise on, and should `conjugates.py` be migrated to it (changes existing
+  nonzero values); (b) should the retrieval/fallback tracks compute a formula
+  prior at generation time so they stop being structurally unscoreable; (c) does
+  the F2 gate's numeric-to-tier mapping in `chemistry/diagnostics.py` still hold
+  once ~1,000 more rows carry a score.
 
 ## Cross-cutting: from-source regeneration + render_html parity task
 Once items 1-4 land upstream, prefer regenerating reports from source

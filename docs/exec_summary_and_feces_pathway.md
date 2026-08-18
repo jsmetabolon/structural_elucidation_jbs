@@ -118,8 +118,9 @@ with a pathway, so nothing is lost in the join.
 
 Baseline is the 2,265 named metabolites the Global panel detects in feces at all
 (bucket other than `Never`, out of 5,189). Added are the 704 X-compounds that
-appear in the feces detection history and have a delivered report; one of the
-705, `X-25434`, has no report.
+appear in the feces detection history and have a delivered report with a pathway
+annotation; one of the 705, `X-25434`, has no report. Reported averages always
+include both sides.
 
 How much each compound contributes is a real choice, not a detail:
 
@@ -127,21 +128,32 @@ How much each compound contributes is a real choice, not a detail:
   sample or one. This describes the *inventory*: how many distinct things of
   each class the matrix can contain.
 - **By detection frequency** (`--weight-by-detection`). Each compound
-  contributes the fraction of studies it is seen in. This describes what is
-  actually *present* in a typical sample.
+  contributes the fraction of studies it is seen in. For a pathway the reported
+  average is the **expected number of metabolites detected**:
+  `Σ detection_rate` over knowns and pathway-annotated X-compounds in that
+  pathway. Five metabolites each seen 20% of the time contribute 1.0. That sum
+  is the average. Weighted exports do **not** carry an `updated_pct` share
+  column; compositional shares remain only on the by-compound counting mode.
 
 The two sources use different denominators — Global fecal detection is over 82
 SSIDs and the X-compound history over 57 sets — so rates are comparable between
 them while raw detection counts are not. The weighting uses rates for that
 reason.
 
-Both are written out: `feces_pathway_update.csv` and
-`feces_pathway_update_weighted.csv`.
+Both are written out: `feces_pathway_update.csv` /
+`feces_pathway_update_subpathway.csv` and
+`feces_pathway_update_weighted.csv` /
+`feces_pathway_update_weighted_subpathway.csv`. The weighted CSVs carry
+`avg_metabolites_detected_known`, `avg_metabolites_detected_x`, and
+`avg_metabolites_detected` (known + X) at both super-pathway and sub-pathway
+level, each rounded to the nearest integer. `feces_pathway_update_weighted.xlsx`
+puts the same results in one workbook, with `Pathway` and `Subpathway` tabs.
 
-### All four views
+### All four views (compositional shares)
 
 Previous to updated, in percentage points, across both denominators and both
-counting rules:
+counting rules. These are shares of detection mass (or of compound counts), not
+the average metabolite detections:
 
 | Chemical pathway | Panel, by compound | Panel, weighted | Global, by compound | Global, weighted |
 |---|---:|---:|---:|---:|
@@ -171,33 +183,68 @@ not statements about feces.
 
 ### Measured result, by detection frequency
 
-The frequency-weighted view, which is the one that answers "what is in feces"
-rather than "what could be":
+The frequency-weighted view answers "how many metabolites of each class are
+detected in a typical sample": each cell is the sum of detection rates for
+knowns and pathway-annotated X-compounds in that pathway (Global denominator):
 
-| Chemical pathway | Baseline | Updated | Delta |
+| Chemical pathway | Known avg | +X avg | Avg metabolites detected |
 |---|---:|---:|---:|
-| Lipid | 35.40% | 31.60% | −3.80 |
-| Amino Acid | 22.10% | 22.96% | +0.86 |
-| Xenobiotics | 16.16% | 17.19% | +1.03 |
-| Peptide | 3.85% | 9.22% | **+5.37** |
-| Nucleotide | 5.85% | 5.26% | −0.59 |
-| Secondary metabolism | 5.71% | 4.29% | −1.42 \* |
-| Cofactors and Vitamins | 3.67% | 3.58% | −0.08 |
-| Carbohydrate | 3.92% | 3.24% | −0.68 |
-| Energy | 1.06% | 0.96% | −0.10 |
-| Partially Characterized Molecules | 1.16% | 0.87% | −0.29 \* |
-| Cofactors, Prosthetic Groups, Electron Carriers | 0.92% | 0.69% | −0.23 \* |
-| Hormone metabolism | 0.19% | 0.15% | −0.05 \* |
+| Lipid | 385 | 73 | 458 |
+| Amino Acid | 240 | 92 | 333 |
+| Xenobiotics | 176 | 73 | 249 |
+| Peptide | 42 | 92 | **134** |
+| Nucleotide | 64 | 13 | 76 |
+| Secondary metabolism | 62 | 0 | 62 \* |
+| Cofactors and Vitamins | 40 | 12 | 52 |
+| Carbohydrate | 43 | 4 | 47 |
+| Energy | 12 | 2 | 14 |
+| Partially Characterized Molecules | 13 | 0 | 13 \* |
+| Cofactors, Prosthetic Groups, Electron Carriers | 10 | 0 | 10 \* |
+| Hormone metabolism | 2 | 0 | 2 \* |
 
-Weighting changes the **baseline** more than it changes the update. Xenobiotics
-falls from 26.23% to 16.16% and Amino Acid rises from 15.76% to 22.10% before a
-single X-compound is added: the panel lists many xenobiotics that each turn up
-rarely, and fewer amino acids that turn up almost always. Counting compounds and
-counting detections are answering different questions, and the xenobiotic-heavy
-inventory is the one that does not survive the switch.
+Peptide's average rises from 42 known detections to 134 once X-compounds
+are included — more than a threefold increase in expected detections. Weighting
+changes the **baseline share under by-compound counting** more than it changes
+the absolute averages: xenobiotics fall from 26.23% to 16.16% of compound-count
+share and amino acids rise from 15.76% to 22.10% before a single X-compound is
+added when that inventory is re-expressed as detection rates, because the panel
+lists many xenobiotics that each turn up rarely and fewer amino acids that turn
+up almost always. Counting compounds and summing detection rates answer different
+questions; the xenobiotic-heavy inventory is the one that does not survive the
+switch.
 
-Peptide gets *larger* under weighting, +5.37 against +4.57, so the finding does
-not depend on which counting rule is chosen.
+The Peptide finding does not depend on which counting rule is chosen: its
+absolute average rises under weighting, and its by-compound share rises +4.57
+points.
+
+### Measured result, by detection frequency (sub-pathway)
+
+The same sum-of-rates average, at sub-pathway resolution. Written to
+the `Subpathway` tab of `feces_pathway_update_weighted.xlsx` and to
+`feces_pathway_update_weighted_subpathway.csv` (223 sub-pathways on the Global
+denominator). Top fifteen by expected metabolites detected:
+
+| Sub-pathway | Known avg | +X avg | Avg metabolites detected |
+|---|---:|---:|---:|
+| Food Component/Plant | 81 | 37 | 118 |
+| Dipeptide | 27 | 29 | 57 |
+| Polypeptide | 3 | 46 | 49 |
+| Chemical | 13 | 15 | 28 |
+| Tryptophan Metabolism | 14 | 13 | 27 |
+| Fatty Acid, Dicarboxylate | 13 | 13 | 26 |
+| Secondary Bile Acid Metabolism | 20 | 5 | 24 |
+| Steroid | 23 | 0 | 23 \* |
+| Benzoate Metabolism | 11 | 11 | 22 |
+| Bile acids | 21 | 0 | 21 \* |
+| Glutamate, Arginine, and Proline Metabolism | 21 | 0 | 21 \* |
+| Lysine Metabolism | 16 | 4 | 20 |
+| Fatty acid, hydroxy | 19 | 0 | 19 \* |
+| Fatty Acid, Monohydroxy | 9 | 8 | 17 |
+| Aspartate family (OAA derived) | 16 | 0 | 16 \* |
+
+The Peptide super-pathway rise shows up here as **Dipeptide** (27 → 57)
+and especially **Polypeptide** (3 → 49): almost all of the polypeptide
+average is from pathway-annotated X-compounds.
 
 ### Measured result, by compound
 
@@ -253,8 +300,10 @@ to both.
 
 Two further caveats hold regardless of tier. Compounds are counted once each
 regardless of detection frequency, with `--weight-by-detection` as the
-alternative; and the sheet spells `Secondary metabolism` two ways, which the
-tool collapses so one class does not report as two.
+alternative that reports expected metabolites detected (`Σ` detection rates for
+knowns plus pathway-annotated X-compounds); and the sheet spells
+`Secondary metabolism` two ways, which the tool collapses so one class does not
+report as two.
 
 Double counting was checked and is negligible. The Global panel contains no
 X-compounds by name, and of the 704 added only one, `X-24643` annotated as

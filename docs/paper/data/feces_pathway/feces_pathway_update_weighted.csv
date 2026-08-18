@@ -1,13 +1,13 @@
-chemical_pathway,identified_detected,baseline_pct,x_compounds_added,updated_total,updated_pct,delta_pct_points,outside_predicted_vocabulary
-Lipid,385.0366,35.4,72.8421,457.8787,31.6,-3.8,FALSE
-Amino Acid,240.3902,22.1,92.2982,332.6885,22.96,0.86,FALSE
-Xenobiotics,175.7927,16.16,73.2982,249.0909,17.19,1.03,FALSE
-Peptide,41.8659,3.85,91.7193,133.5852,9.22,5.37,FALSE
-Nucleotide,63.6098,5.85,12.5439,76.1536,5.26,-0.59,FALSE
-Secondary metabolism,62.1098,5.71,0.0,62.1098,4.29,-1.42,TRUE
-Cofactors and Vitamins,39.9024,3.67,12.0351,51.9375,3.58,-0.08,FALSE
-Carbohydrate,42.6829,3.92,4.2632,46.9461,3.24,-0.68,FALSE
-Energy,11.5732,1.06,2.3684,13.9416,0.96,-0.1,FALSE
-Partially Characterized Molecules,12.6585,1.16,0.0,12.6585,0.87,-0.29,TRUE
-"Cofactors, Prosthetic Groups, Electron Carriers",10.061,0.92,0.0,10.061,0.69,-0.23,TRUE
-Hormone metabolism,2.1098,0.19,0.0,2.1098,0.15,-0.05,TRUE
+chemical_pathway,identified_detected,baseline_pct,x_compounds_added,updated_total,outside_predicted_vocabulary,avg_metabolites_detected_known,avg_metabolites_detected_x,avg_metabolites_detected
+Lipid,385,35.4,73,458,FALSE,385,73,458
+Amino Acid,240,22.1,92,333,FALSE,240,92,333
+Xenobiotics,176,16.16,73,249,FALSE,176,73,249
+Peptide,42,3.85,92,134,FALSE,42,92,134
+Nucleotide,64,5.85,13,76,FALSE,64,13,76
+Secondary metabolism,62,5.71,0,62,TRUE,62,0,62
+Cofactors and Vitamins,40,3.67,12,52,FALSE,40,12,52
+Carbohydrate,43,3.92,4,47,FALSE,43,4,47
+Energy,12,1.06,2,14,FALSE,12,2,14
+Partially Characterized Molecules,13,1.16,0,13,TRUE,13,0,13
+"Cofactors, Prosthetic Groups, Electron Carriers",10,0.92,0,10,TRUE,10,0,10
+Hormone metabolism,2,0.19,0,2,TRUE,2,0,2

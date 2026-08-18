@@ -31,6 +31,7 @@ from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegressionCV
 
 from structural_elucidation.chemistry.diagnostics import TRUTH_BLIND_COMBO_SOURCES
+from structural_elucidation.chemistry.evidence import BASIS_COLUMN, backfill_evidence_confidence
 from structural_elucidation.utils.denovo import canonicalize_smiles
 from structural_elucidation.evaluation.failure_modes import best_tanimoto_for_smiles, load_x_controls
 from structural_elucidation.evaluation.rerank_assembly import eval_reranked, write_denovo_report
@@ -173,9 +174,20 @@ def add_wgcna_features(df: pd.DataFrame, wgcna_consensus: pd.DataFrame | None = 
     )
 
 
-def add_features(df: pd.DataFrame, wgcna_consensus: pd.DataFrame | None = None) -> pd.DataFrame:
-    """Fill missing feature columns and derive rank/source-density scores."""
+def add_features(
+    df: pd.DataFrame, wgcna_consensus: pd.DataFrame | None = None, *, evidence_backfill: bool = True
+) -> pd.DataFrame:
+    """Fill missing feature columns and derive rank/source-density scores.
+
+    The evidence backfill repeats the pool stage's work so a pool CSV written
+    before that stage gained it cannot feed 0.0 into the model as though the
+    generator had measured no evidence. It is idempotent on a backfilled pool.
+    """
     out = df.copy()
+    if evidence_backfill and not out.empty:
+        score, basis = backfill_evidence_confidence(out)
+        out["evidence_confidence"] = score
+        out[BASIS_COLUMN] = basis
     out["min_source_rank_score"] = 1.0 / numeric(out, "min_source_rank", default=999999).clip(lower=1.0)
     out["n_source_rows_score"] = np.log1p(numeric(out, "n_source_rows", default=1.0)).clip(lower=0.0, upper=5.0) / 5.0
     for col in FEATURE_COLUMNS:
@@ -504,7 +516,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     )
     if wgcna_soft_prior:
         pool = add_wgcna_features(pool, wgcna_consensus)
-    pool = add_labels(add_features(pool), controls)
+    evidence_backfill = bool(getattr(args, "evidence_backfill", True))
+    pool = add_labels(add_features(pool, evidence_backfill=evidence_backfill), controls)
     selection_mode = str(getattr(args, "model_selection_mode", "auto"))
     if not bool(getattr(args, "v8_regularized", True)) and selection_mode == "auto":
         selection_mode = "gbm"
@@ -551,7 +564,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         if not non_s0_predictions.empty:
             if wgcna_soft_prior:
                 non_s0_predictions = add_wgcna_features(non_s0_predictions, wgcna_consensus)
-            non_s0_predictions = add_features(non_s0_predictions)
+            non_s0_predictions = add_features(non_s0_predictions, evidence_backfill=evidence_backfill)
             if model is not None and pool["label_ge_0p7"].nunique() >= 2:
                 non_s0_predictions["unified_final_score"] = _predict_proba(model, non_s0_predictions)
             else:
@@ -738,6 +751,7 @@ def main() -> None:
     parser.add_argument("--wgcna-soft-prior", action="store_true")
     parser.add_argument("--class-match-score-feature", action="store_true")
     parser.add_argument("--drop-novelty-score", action="store_true")
+    parser.add_argument("--evidence-backfill", action=argparse.BooleanOptionalAction, default=True)
     run(parser.parse_args())
 
 

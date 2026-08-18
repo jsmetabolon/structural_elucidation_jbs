@@ -63,6 +63,18 @@ Each X-compound moves through several distinct evidence layers:
 
 MS2 and authentic-standard evidence are more specific than formula or library proximity. A high raw rank score or exact database source must not be read as confirmation by itself. The report keeps these quantities separate so reviewers can inspect the complete evidence stack.
 
+The delivered reports require a specific caveat on the mass axis. Their
+`mass_match_score` values were not produced by the 0.001–0.005 Da function
+formerly documented in `inference.predict`. Most were produced by
+`chemistry.conjugates.linear_mass_match_score` with a 1.0 Da default, while some
+candidate generators used 5.0 or 0.005 Da. These scales differ by as much as
+1,000-fold, so delivered mass scores are internally consistent within a
+generator but are not directly comparable across all candidate sources. The
+raw `abs_mass_error_da` is the safer quantity to inspect. The discrepancy,
+measured impact, and recommended correction are recorded in
+`docs/mass_axis_decisions_needed.md` and
+`docs/paper/data/thresholds/audit_mass_policy.json`.
+
 ## Installation
 
 Clone the repository, create an environment, install dependencies, and fetch the large model/data assets:
@@ -180,6 +192,23 @@ The report outputs are:
 - `output/reports/index.html`: searchable/sortable master report index.
 - `output/reports/reports_index.csv` and `batch_summary.json`: flat inventory and build status.
 
+The delivered-set audit and summary outputs are:
+
+- `docs/paper/data/exec_summary/exec_summary_top10.csv`: all top-ten candidate
+  rows for 3,897 X-compounds, including rank, candidate scores, mass error,
+  truth basis, Tanimoto, and an indication of which candidate best matched the
+  available answer.
+- `docs/paper/data/exec_summary/exec_summary_by_compound.csv`: one-row
+  compound-level rollup of the same export.
+- `docs/paper/data/parameters/evidence_parameters.csv`: the scored evidence
+  axes, weights, strength bands, definitions, report language, and
+  consequences (Table S10).
+- `docs/paper/data/thresholds/audit_mass_policy.json`: candidate-level replay
+  of the delivered mass scorers and proposed mass-policy interventions.
+- `docs/paper/data/feces_pathway/feces_pathway_update_weighted.xlsx`: expected
+  metabolites detected by pathway and subpathway, with known and
+  pathway-annotated X-compound contributions on separate workbook tabs.
+
 ## How To Interpret Results
 
 All structural outputs should be treated according to their evidence:
@@ -188,6 +217,9 @@ All structural outputs should be treated according to their evidence:
 - Top 3 and top 10 capture useful alternatives, including isomers that may be indistinguishable without stronger MS2 or retention evidence.
 - The raw rank score is a relative ordering value, not a match probability.
 - The aggregate identification-confidence score is exploratory; leave-one-out calibration is weak.
+- Delivered `mass_match_score` values come from mixed tolerances and must not
+  be interpreted as one common instrumental-accuracy scale; use
+  `abs_mass_error_da` and the mass-policy audit for comparisons.
 - MSI-style L1–L3 reports may show a structure, while L4–L5 deliberately withhold a structure and report formula/mass only.
 - Direct pathway lookup is taxonomy consistency by construction; neighbor-consensus assignments should be interpreted using their pathway-confidence tier and provenance.
 - Public reports omit observed fragment-ion detail; internal reports retain aggregate spectral evidence.
@@ -202,7 +234,35 @@ On the available 92 truth-verified controls, structural recovery at Tanimoto ≥
 
 Across the delivered 3,897-report set, 2,726 reports (70.0%) present a structure at MSI-style L1–L3 and 1,171 (30.0%) withhold one at L4–L5. The exploratory confidence model has leave-one-out Brier score 0.255 and should not be interpreted as an externally calibrated probability.
 
+The complete top-ten export contains 34,296 candidate rows. It reproduces the
+same truth-control recovery figures above. Among the 163 Level 2C compounds,
+only 26 have a reference formula; 23 of those 26 have a top-ten candidate with
+the same formula. The remaining 3,642 compounds have neither structural truth
+nor an assessable Level 2C formula and are left blank rather than counted as
+false.
+
+The mass-policy audit found that the delivered candidate sources were scored
+under incompatible mass tolerances. Correct candidates have median mass error
+1.07 ppm, and 81.4% are within 5 ppm; correct-versus-incorrect separation is
+about 22 percentage points at 2–5 ppm but reverses at the shipped 1.0 Da
+window. Replaying a hard mass gate does not improve rank-1 recovery, however:
+the useful measurement and the proposed intervention are different questions.
+The recommended next step is to unify candidate sources onto one
+instrument-scale scorer, then rerun and recalibrate rather than tuning the
+current mixed-scale gate.
+
 For biochemical taxonomy, 1,459 exact-reference cases are direct lookups and are not independent accuracy tests. Among 644 neighbor-consensus assignments with independent labels, agreement is 52.2% for super-pathway and 18.8% for subpathway. Read those against the annotation ceiling rather than against a perfect score: on 267 controls whose structure is identical to a reference entry, where the label is copied and the assignment is right by construction, the reference database and the independent labels agree only 62.5% at super-pathway and 34.8% at subpathway. Intrinsic leave-one-out validation of the neighbor-vote mechanism is 86.7% super-pathway and 71.1% subpathway, but does not include all production priors and overrides.
+
+The feces pathway update combines 5,189 named Global-panel metabolites with
+705 X-compounds in the feces detection history (5,894 records in the full
+comparison universe). Of those, 2,265 named metabolites are detected in feces
+and 704 X-compounds have a report and usable pathway annotation, so 2,969
+records drive the weighted averages. Each pathway value is the sum of
+per-metabolite detection rates, rounded to the nearest integer. For example,
+Peptide rises from 42 expected known-metabolite detections to 134 after adding
+the pathway-annotated X-compounds; at subpathway level, Dipeptide rises 27 to 57
+and Polypeptide 3 to 49. These are expected detection counts, not compositional
+percentages.
 
 The authoritative P0 and P1 cohort source files are separate from this 92-control set and must be evaluated independently when available.
 
@@ -211,6 +271,12 @@ The authoritative P0 and P1 cohort source files are separate from this 92-contro
 - `README.md`: installation, module layout, quick start, outputs, and report commands.
 - `docs/compound_report_workflow.md`: report-builder internals, evidence sections, networks, and batch generation.
 - `docs/pipeline_refinement_handoff.md`: current upstream limitations and prioritized refinements.
+- `docs/mass_axis_decisions_needed.md`: delivered mass-scorer discrepancy,
+  measured ppm behavior, and decisions for correction and validation.
+- `docs/exec_summary_and_feces_pathway.md`: complete top-ten export and
+  known-plus-X feces pathway/subpathway detection analysis.
+- `docs/paper/data/parameters/evidence_parameters.csv`: evidence ranges,
+  definitions, report language, and consequences.
 - `docs/paper/manuscript.md`: scientific validation, limitations, and interpretation.
 - `docs/paper/supplement/supplementary_information.md`: cohort definitions, detailed tables, and provenance gaps.
 - `docs/pcm_prediction_handoff.md`: constrained prediction workflow for Partially Characterized Molecules.

@@ -26,6 +26,12 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from structural_elucidation.chemistry.evidence import (
+    BASIS_BACKFILLED,
+    BASIS_COLUMN,
+    BASIS_UNAVAILABLE,
+    backfill_evidence_confidence,
+)
 from structural_elucidation.utils.denovo import canonicalize_smiles
 from structural_elucidation.paths import REPO_ROOT, resolve
 from structural_elucidation.utils.domain import dataframe_to_markdown, write_csv, write_json
@@ -231,6 +237,25 @@ def s0_controls_for_scope(path: Path, lib_id: int) -> set[str]:
     return set(df[tiers.str.contains("S0", na=False)]["x_compound_id"].astype(str))
 
 
+def apply_evidence_backfill(pool: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, int]]:
+    """Complete ``evidence_confidence`` for rows whose generator never emitted it.
+
+    Runs after :func:`dedup` so the per-term maxima it aggregates are the inputs
+    the canonical definition needs, and so the recorded basis belongs to the same
+    row as the score.
+    """
+    stats = {"n_evidence_backfilled": 0, "n_evidence_unavailable": 0}
+    if pool.empty:
+        return pool, stats
+    out = pool.copy()
+    score, basis = backfill_evidence_confidence(out)
+    out["evidence_confidence"] = score
+    out[BASIS_COLUMN] = basis
+    stats["n_evidence_backfilled"] = int(basis.eq(BASIS_BACKFILLED).sum())
+    stats["n_evidence_unavailable"] = int(basis.eq(BASIS_UNAVAILABLE).sum())
+    return out, stats
+
+
 def dedup(df: pd.DataFrame) -> pd.DataFrame:
     """Collapse duplicate (control, SMILES) rows, aggregating scores and source flags."""
     if df.empty:
@@ -379,6 +404,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         resolve(args.isotope_signals_csv, repo_root) if getattr(args, "isotope_signals_csv", None) else None
     )
     pool, isotope_stats = join_isotope_signals(pool, isotope_signals_path)
+    evidence_stats = {"n_evidence_backfilled": 0, "n_evidence_unavailable": 0}
+    if bool(getattr(args, "evidence_backfill", True)):
+        pool, evidence_stats = apply_evidence_backfill(pool)
     n_isotope_formula_impossible_dropped = 0
     if bool(getattr(args, "isotope_filter_impossible", True)) and not pool.empty:
         # Drop structures whose formula is incompatible with observed isotope ratios.
@@ -448,6 +476,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "n_isotope_signal_rows": int(isotope_stats.get("n_isotope_signal_rows", 0)),
         "n_isotope_joined_rows": int(isotope_stats.get("n_isotope_joined_rows", 0)),
         "n_isotope_formula_impossible_dropped": int(n_isotope_formula_impossible_dropped),
+        "n_evidence_backfilled": int(evidence_stats.get("n_evidence_backfilled", 0)),
+        "n_evidence_unavailable": int(evidence_stats.get("n_evidence_unavailable", 0)),
         "n_current_winners_present": n_present,
         "n_current_winners_expected": n_expected,
         "acceptance_pass": bool(n_expected == 0 or n_present >= min(25, n_expected)),
@@ -493,6 +523,7 @@ def main() -> None:
     parser.add_argument("--isotope-signals-csv", type=Path, default=None)
     parser.add_argument("--base-unified-pool-csv", type=Path, default=None)
     parser.add_argument("--isotope-filter-impossible", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--evidence-backfill", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--lib-id", type=int, default=209)
     parser.add_argument("--ion-mode", default="negative")
     payload = run(parser.parse_args())

@@ -123,6 +123,71 @@ def test_a_compound_with_neither_reference_is_not_assessable():
     assert context["truth_basis"] == E.BASIS_NONE
 
 
+# --- evidence_confidence display backfill ------------------------------------
+
+
+def test_emitted_evidence_is_kept_as_is():
+    value, basis = E._display_evidence({"evidence_confidence": "0.5", "formula_prior_score": "1.0"})
+    assert (value, basis) == (0.5, E.EVIDENCE_EMITTED)
+
+
+def test_zero_evidence_is_backfilled_from_the_formula_prior():
+    """The truth controls read 0.0 while carrying a formula prior of 1.0."""
+
+    value, basis = E._display_evidence({"evidence_confidence": "0.0", "formula_prior_score": "1.0"})
+    assert value == 1.0
+    assert basis == E.EVIDENCE_BACKFILLED
+
+
+def test_no_computable_evidence_is_blank_not_zero():
+    value, basis = E._display_evidence({"evidence_confidence": "0.0"})
+    assert value is None
+    assert basis == E.EVIDENCE_UNAVAILABLE
+
+
+def test_formula_and_mass_hypothesis_recompute_a_prior():
+    """The protected_peptide_permutation rank-1s (e.g. X-21410) carry only a
+    formula and a mass hypothesis; the canonical prior must still recover them."""
+
+    value, basis = E._display_evidence(
+        {
+            "evidence_confidence": "0.0",
+            "formula_prior_score": "0.0",
+            "predicted_formula": "C19H30O6S",
+            "mass_hypothesis_neutral_mass": "386.176916466621",
+        }
+    )
+    assert basis == E.EVIDENCE_BACKFILLED
+    assert value > 0.99
+
+
+def test_ms1_support_adds_the_small_bonus():
+    value, _ = E._display_evidence(
+        {"evidence_confidence": "", "ms2_match_score": "0.42", "ms1_buddy_supported": "True"}
+    )
+    assert abs(value - 0.47) < 1e-9
+
+
+def test_display_evidence_does_not_drift_from_the_canonical_definition():
+    """The pure-stdlib display path must match chemistry/evidence.py exactly."""
+
+    import pandas as pd  # noqa: PLC0415
+    from structural_elucidation.chemistry.evidence import backfill_evidence_confidence  # noqa: PLC0415
+
+    rows = [
+        {"evidence_confidence": "0.0", "formula_prior_score": "1.0"},
+        {"evidence_confidence": "0.0", "formula_prior_score": "0.968185"},
+        {"evidence_confidence": "0.5", "formula_prior_score": "1.0"},
+        {"evidence_confidence": "0.0", "ms2_match_score": "0.42", "ms1_buddy_supported": "True"},
+        {"evidence_confidence": "0.0", "predicted_formula": "C19H30O6S", "mass_hypothesis_neutral_mass": "386.1769"},
+        {"evidence_confidence": "0.0"},
+    ]
+    canonical, _ = backfill_evidence_confidence(pd.DataFrame(rows))
+    for index, row in enumerate(rows):
+        value, _ = E._display_evidence(row)
+        assert abs((value or 0.0) - float(canonical.iloc[index])) < 1e-6
+
+
 # --- the match flag ----------------------------------------------------------
 
 
