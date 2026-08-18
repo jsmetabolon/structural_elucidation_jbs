@@ -124,6 +124,12 @@ laboratory verdicts come from `data/curation_ledger.csv`, the only place a
 reviewer's finding enters the model; a failed authentic-standard run recorded
 there caps the level at 4 and withdraws the name.
 
+The evidence rules behind that level — what counts as an isotope peak, when a
+halogen may be claimed, which molecular formulas are reachable, and how a
+precursor m/z becomes a neutral mass — are written down with their constants and
+their current enforcement status in
+[docs/identification_rules.md](docs/identification_rules.md).
+
 ## Batch reports for all X compounds
 
 Generate one report bundle per `control_id` found in the rerank CSVs, plus a master `index.html`:
