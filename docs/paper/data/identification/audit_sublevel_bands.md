@@ -16,6 +16,20 @@ The evidence score is `sigmoid(A * raw + B)` with A=1.887084, B=-1.520154, and `
 
 **`TIER_HIGH` cannot be reached by the evidence model at all.** A report only lands above it through a policy override - `CONFIRMED_OVERALL` for an authentic standard, or the curator-identity promotion - so a top band cut there holds exactly the reports that are already Level 1.
 
+## 1b. What re-anchoring rank 1 to `raw_evidence` does, and does not, fix
+
+The candidate widget can re-anchor its rank-1 value from the Platt `overall` to the pre-Platt `raw_evidence`, because `overall` caps near the ceiling above and deflates strong best matches. `raw_evidence` is recovered here by inverting the Platt map, `raw = (logit(overall) - B) / A`, for the 3,853 reports whose headline is the model's own output. The other 44 carry a policy-pinned headline that inverts to a raw score above 1.0, which no weighted average of 0..1 axes can produce, so they are left unset rather than clamped.
+
+| | Platt `overall` | Re-anchored `raw_evidence` |
+|---|---:|---:|
+| Median | 0.4322 | 0.6577 |
+| Reports in the top band at 0.65 | 44 | 1,996 |
+| AUC on model-scored reports | 0.378 | 0.378 |
+
+**Reachability: fixed.** The tier cutoffs sit inside the raw scale, so the top band stops being empty. **Ordering: unchanged.** `sigmoid(A * raw + B)` is strictly increasing, so the two scores rank every report identically and AUC is the same number for both. Re-anchoring is a rescale, and rescaling a score that is inverted leaves it inverted.
+
+So a validation figure quoted for `raw_evidence` is a figure for the Platt score under another name. Any such figure that looks discriminative is being carried by the policy-pinned reports, which are correct by construction.
+
 ## 2. Where the population lands
 
 ### `candidate_confidence`
@@ -45,6 +59,20 @@ evidence_confidence (pipeline candidate score / matrix "Confidence Score"). Colu
 | identification_tiers | 0.65 / 0.48 / 0.38 | 2,561 | 434 | 230 | 672 | none |
 | reachable_ceiling | 0.585 / 0.48 / 0.4 | 2,721 | 274 | 189 | 713 | none |
 | empirical_terciles | 0.55 / 0.46 / 0.4 | 2,817 | 252 | 115 | 713 | none |
+
+### `raw_evidence`
+
+raw_evidence (pre-Platt axis average; the candidate-widget re-anchor). Column `_raw_evidence`, 3,853 values present.
+
+| p0 | p10 | p25 | p50 | p75 | p90 | p100 | >=0.98 |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0.1174 | 0.5263 | 0.5812 | 0.6577 | 0.8716 | 0.9875 | 0.9897 | 18.5% |
+
+| Band scheme | Cuts | a | b | c | below | Empty bands |
+|---|---|---:|---:|---:|---:|---|
+| identification_tiers | 0.65 / 0.48 / 0.38 | 1,996 | 1,714 | 112 | 31 | none |
+| reachable_ceiling | 0.585 / 0.48 / 0.4 | 2,844 | 866 | 110 | 33 | none |
+| empirical_terciles | 0.55 / 0.46 / 0.4 | 3,244 | 500 | 76 | 33 | none |
 
 ## 3. Are the bands ordered by correctness
 
@@ -100,6 +128,31 @@ Model-scored reports by score decile:
 | 9 | 0.9995-0.9999 | 21 | 4 | 19.1% |
 | 10 | 0.9999-1.0 | 22 | 3 | 13.6% |
 
+### `raw_evidence`
+
+AUC over all truth-verified reports **0.378**, over model-scored reports alone **0.378** (0.50 is no discrimination; below 0.50 is discrimination with the sign reversed).
+
+| Band scheme | a | b | c | below | Ordered |
+|---|---:|---:|---:|---:|---|
+| identification_tiers | 7.4% | 12.7% | 40.0% | 0.0% | **no** |
+| reachable_ceiling | 8.3% | 16.7% | 40.0% | 0.0% | **no** |
+| empirical_terciles | 8.5% | 20.7% | 50.0% | 0.0% | **no** |
+
+Model-scored reports by score decile:
+
+| Decile | Score range | n | Correct | P(correct) |
+|---:|---|---:|---:|---:|
+| 1 | 0.2895-0.5215 | 21 | 5 | 23.8% |
+| 2 | 0.5222-0.5636 | 21 | 5 | 23.8% |
+| 3 | 0.5636-0.5905 | 21 | 2 | 9.5% |
+| 4 | 0.5911-0.614 | 21 | 2 | 9.5% |
+| 5 | 0.6234-0.6408 | 21 | 0 | 0.0% |
+| 6 | 0.6408-0.67 | 21 | 3 | 14.3% |
+| 7 | 0.6722-0.7723 | 21 | 2 | 9.5% |
+| 8 | 0.7765-0.8756 | 21 | 0 | 0.0% |
+| 9 | 0.8792-0.9198 | 21 | 1 | 4.8% |
+| 10 | 0.9437-0.9875 | 22 | 3 | 13.6% |
+
 ## 4. Do the curated sub-levels separate on either score
 
 Metabolon's curated `SubLevel` in `data/known_X.csv` is the only ground truth for what a sub-level means here. If a score could be banded into sub-levels, the curated letters would separate on it.
@@ -135,6 +188,21 @@ Spread between the highest and lowest median across the fine sub-level letters (
 | `5` | 1,315 | 0.4616 | 0.9952 | 0.9987 |
 | `KNOWN` | 70 | 0.0 | 0.9958 | 0.9993 |
 | `Released` | 25 | 0.7189 | 0.8933 | 0.9987 |
+
+### `raw_evidence`
+
+Spread between the highest and lowest median across the fine sub-level letters (`2C`, `3A`, `3B`, `3C`): **0.0304**. Across every curated value including the bare levels and curation states: 0.0602.
+
+| Curated SubLevel | n | p25 | Median | p75 |
+|---|---:|---:|---:|---:|
+| `2C` | 163 | 0.5714 | 0.6391 | 0.7897 |
+| `3A` | 358 | 0.5571 | 0.6251 | 0.807 |
+| `3B` | 253 | 0.5734 | 0.6365 | 0.7457 |
+| `3C` | 175 | 0.5634 | 0.6087 | 0.7091 |
+| `4` | 107 | 0.5598 | 0.6101 | 0.7899 |
+| `4?` | 64 | 0.59 | 0.6493 | 0.8826 |
+| `5` | 1,315 | 0.5587 | 0.6125 | 0.7253 |
+| `KNOWN` | 43 | 0.6125 | 0.6689 | 0.8756 |
 
 ## 5. What is ordered
 

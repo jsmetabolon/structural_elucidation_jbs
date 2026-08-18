@@ -17,6 +17,7 @@ def load_tool(name: str):
 
 
 T = load_tool("audit_sublevel_bands")
+C = T.C
 
 
 def row(score, *, level="3", correct=False, truth=True, sublevel=""):
@@ -136,6 +137,60 @@ def test_a_compound_carrying_two_sublevels_counts_in_both():
     assert result["per_sublevel"]["3B"]["n"] == 30
 
 
+# --- recovering raw_evidence --------------------------------------------------
+
+
+def test_raw_evidence_round_trips_through_the_platt_map():
+    """Recovery has to invert the forward map the confidence model applies."""
+    for raw in (0.15, 0.4, 0.6609, 0.95):
+        overall = C._sigmoid(C.PLATT_A * raw + C.PLATT_B)
+        rows = [row(round(overall, 6))]
+        T.raw_evidence_rows(rows)
+        assert abs(float(rows[0][T.RAW_EVIDENCE_COLUMN]) - raw) < 1e-4
+
+
+def test_a_policy_pinned_headline_is_left_unset_rather_than_clamped():
+    """Inverting a pinned value gives raw > 1, which no axis average can produce."""
+    rows = [row(0.97, level="1"), row(1.0, level="1"), row(0.4322)]
+    recovery = T.raw_evidence_rows(rows)
+    assert rows[0][T.RAW_EVIDENCE_COLUMN] == ""
+    assert rows[1][T.RAW_EVIDENCE_COLUMN] == ""
+    assert rows[2][T.RAW_EVIDENCE_COLUMN] != ""
+    assert recovery["recovered"] == 1
+    assert recovery["unrecoverable_policy_pinned"] == 2
+
+
+def test_reanchoring_cannot_change_a_rank_statistic():
+    """The measurement behind the re-anchor claim: a rescale is not a fix.
+
+    Built so the two scores disagree in scale but not in order, which is what
+    inverting a strictly monotone map guarantees.
+    """
+    rows = []
+    for i in range(40):
+        raw = 0.2 + 0.02 * i
+        overall = C._sigmoid(C.PLATT_A * raw + C.PLATT_B)
+        rows.append(row(round(overall, 6), correct=i < 10))
+    T.raw_evidence_rows(rows)
+    platt = T.discrimination(rows, "rank1_candidate_confidence")
+    raw_side = T.discrimination(rows, T.RAW_EVIDENCE_COLUMN)
+    assert platt["auc"] == raw_side["auc"]
+    assert platt["median_correct"] != raw_side["median_correct"]
+
+
+# --- the committed artifact ---------------------------------------------------
+
+
+def test_committed_audit_shows_the_reanchor_fixing_only_reachability():
+    payload = json.loads(
+        (ROOT / "docs" / "paper" / "data" / "identification" / "audit_sublevel_bands.json").read_text()
+    )
+    eq = payload["reanchor_equivalence"]
+    assert eq["auc_unchanged"] is True, "re-anchoring changed a rank statistic; re-read the findings"
+    assert eq["fixes_reachability"] is True
+    assert eq["fixes_ordering"] is False
+
+
 # --- the committed artifact ---------------------------------------------------
 
 
@@ -145,7 +200,7 @@ def test_committed_audit_records_the_two_blocking_findings():
         (ROOT / "docs" / "paper" / "data" / "identification" / "audit_sublevel_bands.json").read_text()
     )
     assert payload["platt_reachability"]["unreachable_cutoffs"] == ["TIER_HIGH"]
-    for key in ("candidate_confidence", "evidence_confidence"):
+    for key in ("candidate_confidence", "evidence_confidence", "raw_evidence"):
         schemes = payload["scores"][key]["band_schemes"]
         assert not any(s["precision_model_scored"]["monotone"] for s in schemes.values()), (
             f"{key} now orders its bands; re-read the findings before relying on them"

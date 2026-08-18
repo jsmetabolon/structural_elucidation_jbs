@@ -52,10 +52,15 @@ csv.field_size_limit(10**7)
 DEFAULT_EXEC_SUMMARY = PROJECT_ROOT / "docs" / "paper" / "data" / "exec_summary" / "exec_summary_by_compound.csv"
 DEFAULT_OUT_DIR = PROJECT_ROOT / "docs" / "paper" / "data" / "identification"
 
-# The two per-compound scores a sub-level scheme could be cut from. ``overall``
-# is the report headline (the exec summary carries it re-anchored at rank 1 as
+# The per-compound scores a sub-level scheme could be cut from. ``overall`` is the
+# report headline (the exec summary carries it at rank 1 as
 # ``rank1_candidate_confidence``); ``evidence_confidence`` is the pipeline's own
-# candidate score, which the matrix workbook surfaces as "Confidence Score".
+# candidate score, which the matrix workbook surfaces as "Confidence Score";
+# ``raw_evidence`` is the pre-Platt weighted axis average, which the candidate
+# widget on the candidate-confidence rework re-anchors rank 1 to. The third is
+# reconstructed rather than read - see :func:`raw_evidence_rows`.
+RAW_EVIDENCE_COLUMN = "_raw_evidence"
+
 SCORES = {
     "candidate_confidence": {
         "column": "rank1_candidate_confidence",
@@ -64,6 +69,10 @@ SCORES = {
     "evidence_confidence": {
         "column": "rank1_evidence_confidence",
         "label": "evidence_confidence (pipeline candidate score / matrix \"Confidence Score\")",
+    },
+    "raw_evidence": {
+        "column": RAW_EVIDENCE_COLUMN,
+        "label": "raw_evidence (pre-Platt axis average; the candidate-widget re-anchor)",
     },
 }
 
@@ -157,6 +166,61 @@ def _band_of(value: float | None, cuts) -> str:
         if value >= cut:
             return letter
     return BELOW
+
+
+# --- recovering the pre-Platt score ------------------------------------------
+
+
+def raw_evidence_rows(rows: list[dict]) -> dict[str, object]:
+    """Recover ``raw_evidence`` per compound by inverting the Platt map, in place.
+
+    The candidate-confidence rework re-anchors the report's rank-1 value from the
+    Platt ``overall`` to ``raw_evidence``, on the grounds that ``overall`` caps
+    near 0.59 and deflates strong best matches. That is a real display defect and
+    the re-anchor fixes it. What it cannot do is change the ordering:
+    ``overall = sigmoid(A * raw + B)`` with ``A > 0`` is strictly increasing, so
+    the two scores rank every report identically and every rank statistic - AUC
+    included - is the same number for both.
+
+    Rather than assert that, this recovers ``raw = (logit(overall) - B) / A`` and
+    measures it, so the claim is checked rather than argued. The reconstruction is
+    exact wherever ``overall`` is the model's own output.
+
+    It is *not* recoverable where a policy override replaced ``overall``: an
+    authentic-standard confirmation pins the headline, and inverting a pinned
+    value yields a raw score above 1.0, which no weighted average of 0..1 axes can
+    produce. Those are left unset rather than clamped, because clamping would
+    invent a value for exactly the reports whose influence is in question.
+    """
+    ceiling = C._sigmoid(C.PLATT_A + C.PLATT_B)
+    floor = C._sigmoid(C.PLATT_B)
+    recovered = 0
+    unrecoverable = 0
+    for row in rows:
+        overall = _num(row.get("rank1_candidate_confidence"))
+        if overall is None or overall <= 0.0 or overall >= 1.0:
+            row[RAW_EVIDENCE_COLUMN] = ""
+            unrecoverable += 1
+            continue
+        raw = (math.log(overall / (1.0 - overall)) - C.PLATT_B) / C.PLATT_A
+        if raw > 1.0 or raw < 0.0:
+            row[RAW_EVIDENCE_COLUMN] = ""
+            unrecoverable += 1
+            continue
+        row[RAW_EVIDENCE_COLUMN] = f"{raw:.6f}"
+        recovered += 1
+    values = [v for v in (_num(r.get(RAW_EVIDENCE_COLUMN)) for r in rows) if v is not None]
+    return {
+        "recovered": recovered,
+        "unrecoverable_policy_pinned": unrecoverable,
+        "platt_floor": round(floor, 4),
+        "platt_ceiling": round(ceiling, 4),
+        "distribution": _quantiles(values),
+        "note": (
+            "raw = (logit(overall) - B) / A. Strictly monotone in overall, so every "
+            "rank statistic is identical between the two."
+        ),
+    }
 
 
 # --- section 1: is the cutoff reachable at all -------------------------------
@@ -339,7 +403,37 @@ def curated_sublevel_separation(rows: list[dict], column: str, min_n: int = 25) 
 # --- assembly ----------------------------------------------------------------
 
 
+def _reanchor_equivalence(per_score: dict) -> dict[str, object]:
+    """Does re-anchoring rank 1 to ``raw_evidence`` change what the score can do.
+
+    Two separate questions, and the answers differ, which is the whole point of
+    reporting them together. Re-anchoring moves the score onto a scale where the
+    tier cutoffs are reachable, so it fixes the empty top band. It leaves every
+    ordering statistic untouched, so it does not fix the inverted bands.
+    """
+    platt = per_score["candidate_confidence"]
+    raw = per_score["raw_evidence"]
+    platt_auc = platt["discrimination_model_scored"]["auc"]
+    raw_auc = raw["discrimination_model_scored"]["auc"]
+    platt_top = platt["band_schemes"]["identification_tiers"]["occupancy"]["counts"]["a"]
+    raw_top = raw["band_schemes"]["identification_tiers"]["occupancy"]["counts"]["a"]
+    return {
+        "auc_model_scored_platt": platt_auc,
+        "auc_model_scored_raw": raw_auc,
+        "auc_unchanged": platt_auc == raw_auc,
+        "top_band_platt": platt_top,
+        "top_band_raw": raw_top,
+        "median_platt": platt["distribution"].get("p50"),
+        "median_raw": raw["distribution"].get("p50"),
+        "fixes_reachability": raw_top > platt_top,
+        "fixes_ordering": any(
+            scheme["precision_model_scored"]["monotone"] for scheme in raw["band_schemes"].values()
+        ),
+    }
+
+
 def audit(rows: list[dict]) -> dict[str, object]:
+    raw_recovery = raw_evidence_rows(rows)
     truth = [
         r for r in rows
         if str(r.get("truth_basis") or "").strip() and str(r.get("reference_answer") or "").strip()
@@ -404,6 +498,8 @@ def audit(rows: list[dict]) -> dict[str, object]:
             "model_scored_correct": sum(_truthy(r.get("matched_at_rank_1")) for r in model_scored),
         },
         "platt_reachability": platt_reachability(),
+        "raw_evidence_recovery": raw_recovery,
+        "reanchor_equivalence": _reanchor_equivalence(per_score),
         "scores": per_score,
         "accuracy_by_msi_level": accuracy_by_level,
         "monotone_margin": MONOTONE_MARGIN,
@@ -464,6 +560,57 @@ def render_markdown(result: dict) -> str:
             "the evidence model at all.** A report only lands above it through a policy override - "
             "`CONFIRMED_OVERALL` for an authentic standard, or the curator-identity promotion - so a "
             "top band cut there holds exactly the reports that are already Level 1."
+        )
+        add("")
+
+    recovery = result["raw_evidence_recovery"]
+    eq = result["reanchor_equivalence"]
+    add("## 1b. What re-anchoring rank 1 to `raw_evidence` does, and does not, fix")
+    add("")
+    add(
+        "The candidate widget can re-anchor its rank-1 value from the Platt `overall` to the "
+        "pre-Platt `raw_evidence`, because `overall` caps near the ceiling above and deflates "
+        "strong best matches. `raw_evidence` is recovered here by inverting the Platt map, "
+        f"`raw = (logit(overall) - B) / A`, for the {recovery['recovered']:,} reports whose "
+        f"headline is the model's own output. The other {recovery['unrecoverable_policy_pinned']:,} "
+        "carry a policy-pinned headline that inverts to a raw score above 1.0, which no weighted "
+        "average of 0..1 axes can produce, so they are left unset rather than clamped."
+    )
+    add("")
+    add("| | Platt `overall` | Re-anchored `raw_evidence` |")
+    add("|---|---:|---:|")
+    add(f"| Median | {eq['median_platt']} | {eq['median_raw']} |")
+    add(f"| Reports in the top band at 0.65 | {eq['top_band_platt']:,} | {eq['top_band_raw']:,} |")
+    add(f"| AUC on model-scored reports | {eq['auc_model_scored_platt']} | {eq['auc_model_scored_raw']} |")
+    add("")
+    verdict = []
+    verdict.append(
+        "**Reachability: fixed.**" if eq["fixes_reachability"]
+        else "**Reachability: not fixed.**"
+    )
+    verdict.append(
+        "The tier cutoffs sit inside the raw scale, so the top band stops being empty."
+        if eq["fixes_reachability"] else
+        "The top band is no better populated on the raw scale."
+    )
+    verdict.append(
+        "**Ordering: unchanged.**" if eq["auc_unchanged"]
+        else "**Ordering: changed.**"
+    )
+    verdict.append(
+        "`sigmoid(A * raw + B)` is strictly increasing, so the two scores rank every report "
+        "identically and AUC is the same number for both. Re-anchoring is a rescale, and "
+        "rescaling a score that is inverted leaves it inverted."
+        if eq["auc_unchanged"] else
+        "The two scores do not rank reports identically, which needs explaining before either is used."
+    )
+    add(" ".join(verdict))
+    add("")
+    if not eq["fixes_ordering"]:
+        add(
+            "So a validation figure quoted for `raw_evidence` is a figure for the Platt score under "
+            "another name. Any such figure that looks discriminative is being carried by the "
+            "policy-pinned reports, which are correct by construction."
         )
         add("")
 
