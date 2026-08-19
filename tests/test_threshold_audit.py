@@ -61,6 +61,45 @@ def test_the_recommendation_names_the_raw_score_when_calibration_does_not_help()
     assert "raw evidence score" in block["recommendation"]
 
 
+def test_degeneracy_check_needs_levels_to_say_anything():
+    assert T.positive_class_degeneracy([_control(0.5, True, "exact")], None)["status"] == "not_evaluated"
+
+
+def test_a_cohort_whose_positives_are_all_level_1_is_flagged():
+    rows = [_control(0.9, True, "exact"), _control(0.2, False, "exact")]
+    rows[0]["control_id"], rows[1]["control_id"] = "X-1", "X-2"
+    result = T.positive_class_degeneracy(rows, {"X-1": "1", "X-2": "3"})
+    assert result["positive_class_is_level_1"] is True
+    assert result["usable_for_non_level_1_reports"] is False
+    assert result["correct_outside_level_1"] == 0
+
+
+def test_a_cohort_with_correct_calls_outside_level_1_is_usable():
+    rows = [_control(0.9, True, "exact"), _control(0.8, True, "exact"), _control(0.2, False, "exact")]
+    for row, cid in zip(rows, ("X-1", "X-2", "X-3")):
+        row["control_id"] = cid
+    result = T.positive_class_degeneracy(rows, {"X-1": "1", "X-2": "3", "X-3": "3"})
+    assert result["positive_class_is_level_1"] is False
+    assert result["usable_for_non_level_1_reports"] is True
+    assert result["correct_outside_level_1"] == 1
+
+
+def test_the_committed_cohort_cannot_validate_a_tier_for_unconfirmed_reports():
+    """The finding that stops a High tier being set from this data.
+
+    If this ever flips, the truth cohort has grown correct calls outside Level 1
+    and the High question genuinely reopens - so the assertion is the trigger,
+    not an invariant to preserve.
+    """
+    committed = json.loads(
+        (ROOT / "docs" / "paper" / "data" / "thresholds" / "audit_thresholds_summary.json").read_text()
+    )
+    block = committed["source_stratification"]["positive_class_degeneracy"]
+    assert block["positive_class_is_level_1"] is True
+    assert block["correct_outside_level_1"] == 0
+    assert block["usable_for_non_level_1_reports"] is False
+
+
 def test_committed_per_source_calibration_keeps_raw_above_both_calibrations():
     """Guards the A3 conclusion: bands belong on the raw score, within a source."""
     committed = json.loads(
@@ -226,9 +265,11 @@ def test_committed_threshold_audit_matches_a_fresh_computation():
     scores = [float(row["loo_probability_full"]) for row in scored]
     labels = [T._truthy(row.get("top1_correct_0p70", "")) for row in scored]
 
+    levels = T.load_msi_levels(ROOT / "docs/paper/data/exec_summary/exec_summary_by_compound.csv")
+
     assert T.score_cutoff_sweep(scores, labels) == committed["score_cutoff"]
     assert T.candidate_depth_sweep(rows) == committed["candidate_depth"]
-    assert T.source_stratification(rows) == committed["source_stratification"]
+    assert T.source_stratification(rows, levels) == committed["source_stratification"]
 
 
 def test_committed_audit_shows_the_score_does_not_order_correctness():

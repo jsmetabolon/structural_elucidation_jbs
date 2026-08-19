@@ -180,7 +180,21 @@ def score_cutoff_sweep(
     }
 
 
-def source_stratification(rows: list[dict[str, str]]) -> dict[str, Any]:
+def load_msi_levels(path: Path) -> dict[str, str]:
+    """Per-compound MSI level, keyed by compound id. Missing file is not an error."""
+    if not path.exists():
+        return {}
+    with path.open(newline="") as handle:
+        return {
+            str(row.get("x_compound_id", "")).strip(): str(row.get("msi_level", "")).strip()
+            for row in csv.DictReader(handle)
+            if str(row.get("x_compound_id", "")).strip()
+        }
+
+
+def source_stratification(
+    rows: list[dict[str, str]], levels: dict[str, str] | None = None
+) -> dict[str, Any]:
     """Test whether pooling the two candidate sources is what flattens the score.
 
     Exact catalog hits and de novo predictions have opposite base rates, and the
@@ -235,6 +249,59 @@ def source_stratification(rows: list[dict[str, str]]) -> dict[str, Any]:
         "within_source_auc_range": [min(within), max(within)] if within else None,
         "confounded": bool(within and pooled is not None and pooled < min(within)),
         "per_source_calibration": per_source_calibration(rows),
+        "positive_class_degeneracy": positive_class_degeneracy(rows, levels),
+    }
+
+
+def positive_class_degeneracy(
+    rows: list[dict[str, str]], levels: dict[str, str] | None
+) -> dict[str, Any]:
+    """Does this cohort's "correct" label coincide with MSI Level 1?
+
+    It does, and it invalidates every AUC on this page as evidence about the
+    reports a confidence tier is for.
+
+    The 92 controls are Metabolon Level-1 compounds - that is what makes them a
+    truth set - and ``assign_msi_level`` returns Level 1 exactly when a Level-1
+    standard's top candidate matches it. So "the pipeline got this right" and
+    "this report is Level 1" are the same event here, and a score that separates
+    the positive class is separating the already-confirmed.
+
+    That is fine for asking whether the pipeline recovers known compounds. It
+    cannot answer whether a score orders correctness among the reports nobody has
+    a standard for, which is the entire population a High tier would apply to.
+    Measured rather than reasoned, because the promising within-source AUCs above
+    invite exactly the opposite conclusion.
+    """
+    if not levels:
+        return {
+            "status": "not_evaluated",
+            "reason": "no per-compound MSI levels supplied; pass --exec-summary to evaluate",
+        }
+    matched = [row for row in rows if str(row.get("control_id", "")).strip() in levels]
+    if not matched:
+        return {"status": "not_evaluated", "reason": "no control ids joined to the exec summary"}
+    positives = [row for row in matched if _truthy(row.get("top1_correct_0p70", ""))]
+    level_1 = [row for row in matched if levels[str(row["control_id"]).strip()].strip() == "1"]
+    positive_ids = {str(row["control_id"]).strip() for row in positives}
+    level_1_ids = {str(row["control_id"]).strip() for row in level_1}
+    non_pinned_positives = len(positive_ids - level_1_ids)
+    return {
+        "n_joined": len(matched),
+        "n_correct": len(positive_ids),
+        "n_msi_level_1": len(level_1_ids),
+        "correct_and_level_1": len(positive_ids & level_1_ids),
+        "correct_outside_level_1": non_pinned_positives,
+        "positive_class_is_level_1": bool(positive_ids and positive_ids == level_1_ids),
+        "usable_for_non_level_1_reports": bool(non_pinned_positives),
+        "note": (
+            "Every correct call in this cohort is MSI Level 1, so any AUC here measures "
+            "separation of the already-confirmed rather than ordering of correctness. It "
+            "cannot support a confidence tier for reports without a standard."
+            if positive_ids and positive_ids == level_1_ids
+            else f"{non_pinned_positives} correct calls sit outside Level 1, so the cohort "
+                 "carries some signal about unconfirmed reports."
+        ),
     }
 
 
@@ -611,6 +678,28 @@ def render_markdown(summary: dict[str, Any]) -> str:
             "one can reach. A cutoff above that range names a tier no report can enter.",
         ]
 
+    degeneracy = strat.get("positive_class_degeneracy") or {}
+    if degeneracy.get("positive_class_is_level_1"):
+        lines += [
+            "",
+            "### What none of these AUCs can tell you",
+            "",
+            f"All {degeneracy['n_correct']} correct calls in this cohort are MSI Level 1, and so are "
+            f"exactly the same {degeneracy['n_msi_level_1']} reports - the sets coincide, with "
+            f"{degeneracy['correct_outside_level_1']} correct calls outside Level 1.",
+            "",
+            "That is structural rather than unlucky. These controls are Metabolon Level-1 compounds, "
+            "which is what makes them a truth set, and a report reaches MSI Level 1 exactly when a "
+            "Level-1 standard's top candidate matches it. So \"the pipeline got this right\" and "
+            "\"this report is already confirmed\" are the same event, and every AUC above is "
+            "measuring how well a score separates the already-confirmed.",
+            "",
+            "It follows that this cohort cannot establish a confidence tier for reports without a "
+            "standard, which is the whole population such a tier is for. The within-source numbers "
+            "invite the opposite reading, which is why this is measured and stated here rather than "
+            "left to the reader.",
+        ]
+
     lines += ["", "## How many candidates to display", ""]
     depth = summary["candidate_depth"]
     lines += [
@@ -673,10 +762,20 @@ def main() -> None:
         default=None,
         help="Report bundle to read axis-level evidence from when the controls CSV lacks it.",
     )
+    parser.add_argument(
+        "--exec-summary",
+        type=Path,
+        default=Path("docs/paper/data/exec_summary/exec_summary_by_compound.csv"),
+        help=(
+            "Per-compound exec summary, joined to the controls to check whether this cohort's "
+            "correct calls are all MSI Level 1. They are, and it bounds what the AUCs can mean."
+        ),
+    )
     parser.add_argument("--out-dir", type=Path, default=Path("docs/paper/data/thresholds"))
     args = parser.parse_args()
 
     rows = load_controls(args.structure_controls)
+    levels = load_msi_levels(args.exec_summary)
     scored = [row for row in rows if _float(row.get("loo_probability_full")) is not None]
     scores = [float(row["loo_probability_full"]) for row in scored]
     labels = [_truthy(row.get("top1_correct_0p70", "")) for row in scored]
@@ -699,7 +798,7 @@ def main() -> None:
             "axis_source": axis_source if records else None,
         },
         "score_cutoff": score_cutoff_sweep(scores, labels),
-        "source_stratification": source_stratification(rows),
+        "source_stratification": source_stratification(rows, levels),
         "candidate_depth": candidate_depth_sweep(rows),
         "msi_rule": msi_rule_sweep(records)
         if records

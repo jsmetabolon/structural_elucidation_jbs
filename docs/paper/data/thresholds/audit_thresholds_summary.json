@@ -289,6 +289,16 @@
       "per_source_beats_pooled": true,
       "per_source_beats_raw": false,
       "recommendation": "band the raw evidence score per source; calibration is not adding ordering"
+    },
+    "positive_class_degeneracy": {
+      "n_joined": 92,
+      "n_correct": 44,
+      "n_msi_level_1": 44,
+      "correct_and_level_1": 44,
+      "correct_outside_level_1": 0,
+      "positive_class_is_level_1": true,
+      "usable_for_non_level_1_reports": false,
+      "note": "Every correct call in this cohort is MSI Level 1, so any AUC here measures separation of the already-confirmed rather than ordering of correctness. It cannot support a confidence tier for reports without a standard."
     }
   },
   "candidate_depth": {

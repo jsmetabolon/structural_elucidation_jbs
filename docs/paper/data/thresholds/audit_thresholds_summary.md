@@ -44,6 +44,14 @@ Leave-one-out throughout: a single Platt fit is monotone, so an in-sample "calib
 
 The in-sample fit per source is recorded in the JSON, including the score range each one can reach. A cutoff above that range names a tier no report can enter.
 
+### What none of these AUCs can tell you
+
+All 44 correct calls in this cohort are MSI Level 1, and so are exactly the same 44 reports - the sets coincide, with 0 correct calls outside Level 1.
+
+That is structural rather than unlucky. These controls are Metabolon Level-1 compounds, which is what makes them a truth set, and a report reaches MSI Level 1 exactly when a Level-1 standard's top candidate matches it. So "the pipeline got this right" and "this report is already confirmed" are the same event, and every AUC above is measuring how well a score separates the already-confirmed.
+
+It follows that this cohort cannot establish a confidence tier for reports without a standard, which is the whole population such a tier is for. The within-source numbers invite the opposite reading, which is why this is measured and stated here rather than left to the reader.
+
 ## How many candidates to display
 
 Each control has one correct structure, so a list of N puts `N - hit rate`
