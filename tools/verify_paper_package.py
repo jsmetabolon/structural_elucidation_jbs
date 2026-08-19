@@ -30,6 +30,19 @@ STALE_EXEMPT_NAMES = frozenset(
     }
 )
 
+# Tier order as Results renders it. ``High`` is absent from the artifact whenever
+# no report reaches it, which is the current state, so the phrase builder reads
+# through ``.get`` rather than indexing.
+TIER_ORDER = ("Confirmed", "High", "Moderate", "Low", "Tentative")
+
+# Wording in the Figure 4 caption that argues *from* the High tier being empty.
+# If a recalibration or a cutoff change ever fills that tier, these sentences
+# become false, and rewriting them is a different job from renumbering a count.
+EMPTY_HIGH_CLAIMS = (
+    "leaves the strongest confidence tier empty",
+    "explicitly shown as empty",
+)
+
 
 def audit_statistics(
     structure: dict[str, Any],
@@ -58,6 +71,41 @@ def audit_statistics(
         "super-pathway annotation ceiling": f"{100 * ceiling['super']['accuracy']:.1f}%",
         "subpathway annotation ceiling": f"{100 * ceiling['sub']['accuracy']:.1f}%",
     }
+
+
+def tier_distribution_phrase(presentation: dict[str, Any]) -> str:
+    """The identification-confidence tier distribution as Results renders it."""
+
+    tiers = presentation["tier_distribution"]
+    return " / ".join(f"{name} {int(tiers.get(name, 0)):,}" for name in TIER_ORDER)
+
+
+def tier_errors(manuscript: str, presentation: dict[str, Any]) -> list[str]:
+    """Check the manuscript's tier claims against the presentation audit.
+
+    Nothing else does. ``audit_statistics`` covers recovery, the shown/withheld
+    split and pathway agreement, and the supplement's Table S2 is regenerated
+    from this same artifact, so the tier sentence in Results and the caption
+    beside it were the only tier claims in the package that could drift without
+    anything noticing.
+
+    They cannot go through ``audit_statistics`` because that dict is asserted
+    against three documents and only the manuscript quotes the distribution.
+    """
+    problems: list[str] = []
+    phrase = tier_distribution_phrase(presentation)
+    if phrase not in manuscript:
+        problems.append(f"manuscript tier distribution drifted from the audit artifact: expected {phrase}")
+    high = int(presentation["tier_distribution"].get("High", 0))
+    if high:
+        for claim in EMPTY_HIGH_CLAIMS:
+            if claim in manuscript:
+                problems.append(
+                    f"manuscript still says the High tier is empty ('{claim}') while the audit "
+                    f"reports {high:,}; the Figure 4 caption argues from that emptiness and needs "
+                    "rewriting, not renumbering"
+                )
+    return problems
 
 
 def main() -> None:
@@ -241,6 +289,8 @@ def main() -> None:
     # and the operations overview could diverge from it without anything noticing.
     loo_path = paper / "data/pathway/audit_pathway_loo.json"
     presentation_path = paper / "data/presentation/audit_presentation_summary.json"
+    if presentation_path.exists():
+        errors.extend(tier_errors(manuscript, json.loads(presentation_path.read_text())))
     if all(path.exists() for path in (structure_path, pathway_path, loo_path, presentation_path)):
         statistics = audit_statistics(
             json.loads(structure_path.read_text()),

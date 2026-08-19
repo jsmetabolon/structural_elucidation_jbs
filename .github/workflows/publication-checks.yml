@@ -86,7 +86,8 @@ jobs:
             tests/test_threshold_audit.py \
             tests/test_rt_feasibility.py \
             tests/test_identification_rules.py \
-            tests/test_sublevel_bands.py
+            tests/test_sublevel_bands.py \
+            tests/test_paper_tier_guard.py
 
   lint:
     runs-on: ubuntu-latest
