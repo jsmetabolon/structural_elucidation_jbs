@@ -13,8 +13,6 @@ import importlib.util
 import sys
 from pathlib import Path
 
-import numpy as np
-
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -41,8 +39,8 @@ CONTROLS = ROOT / "docs" / "paper" / "data" / "structure" / "audit_structure_con
 
 def controls():
     rows = list(csv.DictReader(CONTROLS.open(newline="")))
-    raw = np.array([float(r["raw_full"]) for r in rows])
-    y = np.array([1.0 if str(r["top1_correct_0p70"]).strip().lower() in {"true", "1"} else 0.0 for r in rows])
+    raw = [float(r["raw_full"]) for r in rows]
+    y = [1.0 if str(r["top1_correct_0p70"]).strip().lower() in {"true", "1"} else 0.0 for r in rows]
     return rows, raw, y
 
 
@@ -80,20 +78,20 @@ def test_the_fit_converges_well_inside_the_iteration_cap():
 
 def test_a_single_class_stratum_is_reported_not_fitted():
     """Logistic regression has no finite solution here; do not return the iteration cap."""
-    fit = M.fit_platt(np.array([0.1, 0.5, 0.9]), np.array([1.0, 1.0, 1.0]))
+    fit = M.fit_platt([0.1, 0.5, 0.9], [1.0, 1.0, 1.0])
     assert fit.degenerate is True
     assert fit.converged is False
     assert "same class" in fit.note
 
 
 def test_a_constant_score_is_reported_not_fitted():
-    fit = M.fit_platt(np.array([0.5, 0.5, 0.5]), np.array([1.0, 0.0, 1.0]))
+    fit = M.fit_platt([0.5, 0.5, 0.5], [1.0, 0.0, 1.0])
     assert fit.degenerate is True
     assert "constant" in fit.note
 
 
 def test_an_empty_stratum_is_reported_not_fitted():
-    fit = M.fit_platt(np.array([]), np.array([]))
+    fit = M.fit_platt([], [])
     assert fit.degenerate is True
     assert fit.n == 0
 
@@ -144,7 +142,7 @@ def test_per_source_fits_the_committed_controls_into_separated_ranges():
 
 
 def test_fit_serializes_with_the_context_needed_to_judge_it():
-    fit = M.fit_platt(np.array([0.2, 0.4, 0.6, 0.8]), np.array([0.0, 0.0, 1.0, 1.0]))
+    fit = M.fit_platt([0.2, 0.4, 0.6, 0.8], [0.0, 0.0, 1.0, 1.0])
     blob = fit.as_dict()
     for key in ("platt_A", "platt_B", "n", "base_rate", "converged", "iterations",
                 "max_gradient", "degenerate", "reachable_score_range"):

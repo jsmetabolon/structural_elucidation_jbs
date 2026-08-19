@@ -33,8 +33,7 @@ import math
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-
-import numpy as np
+from typing import Sequence
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "structural_elucidation" / "reports"))
 import confidence as C  # noqa: E402
@@ -113,8 +112,25 @@ def _sigmoid(z: float) -> float:
     return 1.0 / (1.0 + math.exp(-z))
 
 
-def fit_platt(raw: np.ndarray, y: np.ndarray) -> PlattFit:
+def _mean(values: Sequence[float]) -> float:
+    return sum(values) / len(values) if values else 0.0
+
+
+def _stdev(values: Sequence[float]) -> float:
+    if not values:
+        return 0.0
+    mu = _mean(values)
+    return math.sqrt(sum((v - mu) ** 2 for v in values) / len(values))
+
+
+def fit_platt(raw: Sequence[float], y: Sequence[float]) -> PlattFit:
     """Fit ``P(correct) = sigmoid(A * raw + B)`` by gradient descent.
+
+    Pure standard library, so ``tools/audit_thresholds.py`` can import it and
+    measure the same fit the calibration ships rather than reimplementing it.
+    Two implementations of one fit would let the measurement drift away from the
+    thing it measures, which is the failure mode the swept-versus-delivered note
+    in ``confidence.MsiThresholds`` already warns about.
 
     Returns a :class:`PlattFit` rather than a bare pair so the caller can tell a
     converged fit from one that ran out of iterations, and a real fit from a
@@ -124,39 +140,40 @@ def fit_platt(raw: np.ndarray, y: np.ndarray) -> PlattFit:
     solution - the logistic keeps pushing the slope outward - so it is reported as
     degenerate instead of returning whatever the iteration cap happened to reach.
     """
-    raw = np.asarray(raw, dtype=float)
-    y = np.asarray(y, dtype=float)
-    n = int(raw.size)
-    base = float(y.mean()) if n else 0.0
+    raw = [float(v) for v in raw]
+    y = [float(v) for v in y]
+    n = len(raw)
+    base = _mean(y)
     if n == 0:
         return PlattFit(0.0, 0.0, 0, 0.0, False, 0, float("nan"), True, "no labeled records")
-    if y.min() == y.max():
+    if min(y) == max(y):
         return PlattFit(
             0.0, 0.0, n, base, False, 0, float("nan"), True,
             f"all {n} labels are the same class; no finite fit exists",
         )
-    if raw.std() == 0.0:
+    sd_raw = _stdev(raw)
+    if sd_raw == 0.0:
         return PlattFit(
             0.0, 0.0, n, base, False, 0, float("nan"), True,
             f"raw score is constant across all {n} records; nothing to order",
         )
 
-    x = (raw - raw.mean()) / (raw.std() + 1e-9)
+    mu, sd = _mean(raw), sd_raw + 1e-9
+    x = [(v - mu) / sd for v in raw]
     a, b = 1.0, 0.0
     grad = float("nan")
     used = FIT_ITERATIONS
     converged = False
     for step in range(FIT_ITERATIONS):
-        p = 1.0 / (1.0 + np.exp(-(a * x + b)))
-        ga = float(np.mean((p - y) * x))
-        gb = float(np.mean(p - y))
+        residual = [_sigmoid(a * xi + b) - yi for xi, yi in zip(x, y)]
+        ga = _mean([r * xi for r, xi in zip(residual, x)])
+        gb = _mean(residual)
         grad = max(abs(ga), abs(gb))
         if grad < FIT_TOLERANCE:
             used, converged = step, True
             break
         a -= FIT_LEARNING_RATE * ga
         b -= FIT_LEARNING_RATE * gb
-    mu, sd = float(raw.mean()), float(raw.std() + 1e-9)
     fit_a, fit_b = a / sd, b - a * mu / sd
     return PlattFit(
         a=float(fit_a),
@@ -168,6 +185,27 @@ def fit_platt(raw: np.ndarray, y: np.ndarray) -> PlattFit:
         max_gradient=grad,
         reachable=(_sigmoid(fit_b), _sigmoid(fit_a + fit_b)),
     )
+
+
+def loo_probabilities(raw: Sequence[float], y: Sequence[float]) -> list[float | None]:
+    """Leave-one-out calibrated probability for each record.
+
+    Each point is scored by a fit that never saw it, which is the only honest way
+    to read a calibration off 42 or 50 controls. It also makes the result a
+    genuinely different ordering from the raw score rather than a monotone
+    rescale of it: a single fit applied to the whole stratum cannot change any
+    rank statistic, so an in-sample "calibrated AUC" would just restate the raw
+    one.
+    """
+    raw = [float(v) for v in raw]
+    y = [float(v) for v in y]
+    out: list[float | None] = []
+    for i in range(len(raw)):
+        rest_raw = raw[:i] + raw[i + 1:]
+        rest_y = y[:i] + y[i + 1:]
+        fit = fit_platt(rest_raw, rest_y)
+        out.append(None if fit.degenerate else _sigmoid(fit.a * raw[i] + fit.b))
+    return out
 
 
 def collect_records(root: Path) -> list[dict]:
@@ -199,8 +237,8 @@ def collect_records(root: Path) -> list[dict]:
 def fit_records(records: list[dict]) -> PlattFit:
     """Fit one Platt scaling over the labeled records handed to it."""
     return fit_platt(
-        np.array([r["raw"] for r in records], dtype=float),
-        np.array([float(r["correct"]) for r in records], dtype=float),
+        [r["raw"] for r in records],
+        [float(r["correct"]) for r in records],
     )
 
 

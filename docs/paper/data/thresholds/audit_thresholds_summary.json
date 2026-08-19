@@ -237,7 +237,59 @@
       0.6719,
       0.7784
     ],
-    "confounded": true
+    "confounded": true,
+    "per_source_calibration": {
+      "method": "Leave-one-out rank AUC inside each candidate source under three orderings: the raw evidence score, the pooled calibration, and a calibration fitted within the source. Leave-one-out throughout, because a single Platt fit is monotone and would leave every rank statistic equal to the raw score.",
+      "strata": {
+        "exact": {
+          "n": 42,
+          "base_rate": 0.381,
+          "auc_raw": 0.6719,
+          "auc_pooled_loo": 0.5168,
+          "auc_per_source_loo": 0.5216,
+          "in_sample_fit": {
+            "platt_A": 3.960152,
+            "platt_B": -3.980161,
+            "n": 42,
+            "base_rate": 0.381,
+            "converged": true,
+            "iterations": 179,
+            "max_gradient": 9.932e-09,
+            "degenerate": false,
+            "note": "",
+            "reachable_score_range": [
+              0.0183,
+              0.495
+            ]
+          }
+        },
+        "predicted": {
+          "n": 50,
+          "base_rate": 0.56,
+          "auc_raw": 0.7784,
+          "auc_pooled_loo": 0.6753,
+          "auc_per_source_loo": 0.7386,
+          "in_sample_fit": {
+            "platt_A": 11.490592,
+            "platt_B": -7.347069,
+            "n": 50,
+            "base_rate": 0.56,
+            "converged": true,
+            "iterations": 281,
+            "max_gradient": 9.501e-09,
+            "degenerate": false,
+            "note": "",
+            "reachable_score_range": [
+              0.0006,
+              0.9844
+            ]
+          }
+        }
+      },
+      "per_source_beats_pooled": true,
+      "per_source_beats_raw": false,
+      "recommendation": "band the raw evidence score per source; calibration is not adding ordering"
+    }
   },
   "candidate_depth": {
     "correctness": "correct structure within the displayed list at truth Tanimoto >= 0.70",

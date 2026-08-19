@@ -30,6 +30,20 @@ The pooled curve is flatter than either source on its own, so the score is order
 | exact | 42 | 38.1% | 0.902 | 0.672 | 0.517 |
 | predicted | 50 | 56.0% | 0.660 | 0.778 | 0.675 |
 
+### Does calibrating per source recover the ordering
+
+Leave-one-out throughout: a single Platt fit is monotone, so an in-sample "calibrated AUC" would restate the raw one rather than test anything.
+
+| Source | n | Base rate | Raw AUC | Pooled-calibration AUC | Per-source-calibration AUC |
+|---|---:|---:|---:|---:|---:|
+| exact | 42 | 38.1% | 0.672 | 0.517 | 0.522 |
+| predicted | 50 | 56.0% | 0.778 | 0.675 | 0.739 |
+
+**Band the raw evidence score per source; calibration is not adding ordering.**
+ Splitting the calibration does help - it beats the pooled fit in every stratum - but the uncalibrated evidence score beats both, in every stratum. So the Platt step is spending ordering rather than adding calibration, and a tier boundary belongs on the raw score within a source.
+
+The in-sample fit per source is recorded in the JSON, including the score range each one can reach. A cutoff above that range names a tier no report can enter.
+
 ## How many candidates to display
 
 Each control has one correct structure, so a list of N puts `N - hit rate`

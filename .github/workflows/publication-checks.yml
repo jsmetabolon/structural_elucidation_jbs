@@ -114,6 +114,7 @@ jobs:
             tools/audit_rt_feasibility.py \
             tools/audit_sublevel_bands.py \
             tools/audit_thresholds.py \
+            tools/calibrate_confidence.py \
             tools/build_manuscript_docx.py \
             tools/build_paper_claim_audit.py \
             tools/build_paper_supplement.py \

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -16,6 +17,59 @@ def load_tool(name: str):
 
 
 T = load_tool("audit_thresholds")
+
+
+# --- per-source calibration ---------------------------------------------------
+
+
+def _control(raw, correct, source):
+    return {"raw_full": str(raw), "top1_correct_0p70": "True" if correct else "False", "source": source}
+
+
+def test_per_source_calibration_needs_a_source_column():
+    result = T.per_source_calibration([_control(0.5, True, "")])
+    assert result["status"] == "not_evaluated"
+
+
+def test_per_source_calibration_measures_each_source_separately():
+    rows = (
+        [_control(0.2 + 0.05 * i, i > 4, "exact") for i in range(10)]
+        + [_control(0.3 + 0.04 * i, i > 4, "predicted") for i in range(10)]
+    )
+    result = T.per_source_calibration(rows)
+    assert set(result["strata"]) == {"exact", "predicted"}
+    for block in result["strata"].values():
+        assert block["n"] == 10
+        assert block["auc_raw"] is not None
+        assert block["auc_per_source_loo"] is not None
+
+
+def test_a_perfectly_ordering_raw_score_reads_as_such():
+    rows = [_control(0.1 * i, i >= 5, "exact") for i in range(10)]
+    result = T.per_source_calibration(rows)
+    assert result["strata"]["exact"]["auc_raw"] == 1.0
+
+
+def test_the_recommendation_names_the_raw_score_when_calibration_does_not_help():
+    """The committed cohort's answer, and the one the tool has to be able to give."""
+    committed = json.loads(
+        (ROOT / "docs" / "paper" / "data" / "thresholds" / "audit_thresholds_summary.json").read_text()
+    )
+    block = committed["source_stratification"]["per_source_calibration"]
+    assert block["per_source_beats_pooled"] is True
+    assert block["per_source_beats_raw"] is False
+    assert "raw evidence score" in block["recommendation"]
+
+
+def test_committed_per_source_calibration_keeps_raw_above_both_calibrations():
+    """Guards the A3 conclusion: bands belong on the raw score, within a source."""
+    committed = json.loads(
+        (ROOT / "docs" / "paper" / "data" / "thresholds" / "audit_thresholds_summary.json").read_text()
+    )
+    for source, block in committed["source_stratification"]["per_source_calibration"]["strata"].items():
+        assert block["auc_raw"] > block["auc_pooled_loo"], source
+        assert block["auc_raw"] > block["auc_per_source_loo"], source
+        assert block["auc_per_source_loo"] > block["auc_pooled_loo"], source
 
 
 def test_auc_is_one_for_a_perfectly_ordering_score():

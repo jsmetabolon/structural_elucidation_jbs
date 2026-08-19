@@ -43,6 +43,11 @@ from typing import Any, Iterable, Sequence
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "structural_elucidation" / "reports"))
 import confidence as C  # noqa: E402
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+# The Platt fit is imported rather than reimplemented so the measurement below
+# cannot drift away from the calibration it is measuring.
+import calibrate_confidence as CAL  # noqa: E402
+
 # Thresholds on the calibrated evidence score. 0.10 is the value that prompted
 # this audit; 0.38/0.48/0.65 are the tier cutoffs the reports use today.
 SCORE_GRID = (0.10, 0.20, 0.30, 0.38, 0.45, 0.48, 0.55, 0.60, 0.65, 0.70)
@@ -229,6 +234,112 @@ def source_stratification(rows: list[dict[str, str]]) -> dict[str, Any]:
         "pooled_auc": pooled,
         "within_source_auc_range": [min(within), max(within)] if within else None,
         "confounded": bool(within and pooled is not None and pooled < min(within)),
+        "per_source_calibration": per_source_calibration(rows),
+    }
+
+
+def per_source_calibration(rows: list[dict[str, str]]) -> dict[str, Any]:
+    """Does fitting the calibration per source actually recover the lost ordering?
+
+    ``source_stratification`` above reports that pooling flattens the score and
+    recommends calibrating per source. This measures whether that works, because
+    a recommendation nobody checked is how the pooled fit got shipped.
+
+    Three orderings are compared inside each stratum:
+
+    - ``raw`` - the evidence score, uncalibrated.
+    - ``pooled_loo`` - the shipped approach, one calibration over both sources.
+    - ``per_source_loo`` - one calibration fitted inside the stratum.
+
+    All three are leave-one-out where they are calibrated at all. That is not a
+    nicety: a single Platt fit is monotone, so applying one in-sample would leave
+    every rank statistic identical to ``raw`` and the comparison would be
+    vacuous. Only a per-point refit produces a genuinely different ordering, and
+    only a held-out one says anything about a report the fit has not seen.
+
+    The number that decides the question is ``per_source_beats_pooled``. If
+    calibration cannot beat the raw score either, the honest reading is that the
+    Platt step is costing signal rather than adding calibration, and the bands
+    belong on the raw score.
+    """
+    usable = [
+        row for row in rows
+        if _float(row.get("raw_full")) is not None and str(row.get("source", "")).strip()
+    ]
+    if not usable:
+        return {"status": "not_evaluated", "reason": "no rows carry both raw_full and a source"}
+
+    def label(row: dict[str, str]) -> bool:
+        return _truthy(row.get("top1_correct_0p70", ""))
+
+    sources = sorted({str(row.get("source", "")).strip() for row in usable})
+    pooled_loo = CAL.loo_probabilities(
+        [float(row["raw_full"]) for row in usable], [float(label(row)) for row in usable]
+    )
+    pooled_by_id = {id(row): value for row, value in zip(usable, pooled_loo)}
+
+    strata: dict[str, Any] = {}
+    for source in sources:
+        subset = [row for row in usable if str(row.get("source", "")).strip() == source]
+        raw = [float(row["raw_full"]) for row in subset]
+        labels = [label(row) for row in subset]
+        own = CAL.loo_probabilities(raw, [float(v) for v in labels])
+        fit = CAL.fit_platt(raw, [float(v) for v in labels])
+
+        def scored(values: Sequence[float | None]) -> float | None:
+            pairs = [(v, lab) for v, lab in zip(values, labels) if v is not None]
+            if not pairs:
+                return None
+            area = auc([v for v, _ in pairs], [lab for _, lab in pairs])
+            return round(area, 4) if area is not None else None
+
+        strata[source] = {
+            "n": len(subset),
+            "base_rate": round(sum(labels) / len(labels), 4) if labels else None,
+            "auc_raw": scored(raw),
+            "auc_pooled_loo": scored([pooled_by_id[id(row)] for row in subset]),
+            "auc_per_source_loo": scored(own),
+            "in_sample_fit": fit.as_dict(),
+        }
+
+    def gathered(key: str) -> list[float]:
+        return [block[key] for block in strata.values() if block.get(key) is not None]
+
+    per_source = gathered("auc_per_source_loo")
+    pooled_auc = gathered("auc_pooled_loo")
+    raw_auc = gathered("auc_raw")
+    beats_pooled = bool(
+        per_source and pooled_auc and len(per_source) == len(pooled_auc)
+        and all(
+            block["auc_per_source_loo"] > block["auc_pooled_loo"]
+            for block in strata.values()
+            if block.get("auc_per_source_loo") is not None and block.get("auc_pooled_loo") is not None
+        )
+    )
+    beats_raw = bool(
+        per_source and raw_auc
+        and all(
+            block["auc_per_source_loo"] > block["auc_raw"]
+            for block in strata.values()
+            if block.get("auc_per_source_loo") is not None and block.get("auc_raw") is not None
+        )
+    )
+    return {
+        "method": (
+            "Leave-one-out rank AUC inside each candidate source under three orderings: the raw "
+            "evidence score, the pooled calibration, and a calibration fitted within the source. "
+            "Leave-one-out throughout, because a single Platt fit is monotone and would leave "
+            "every rank statistic equal to the raw score."
+        ),
+        "strata": strata,
+        "per_source_beats_pooled": beats_pooled,
+        "per_source_beats_raw": beats_raw,
+        "recommendation": (
+            "calibrate per source" if beats_pooled and beats_raw else
+            "band the raw evidence score per source; calibration is not adding ordering"
+            if beats_pooled else
+            "neither calibration helps on this cohort"
+        ),
     }
 
 
@@ -463,6 +574,43 @@ def render_markdown(summary: dict[str, Any]) -> str:
             f"| {stratum} | {raw['n']} | {raw['base_rate']:.1%} | {raw['median_score']:.3f} | "
             f"{raw['auc']:.3f} | {calibrated['auc']:.3f} |"
         )
+
+    per_source = strat.get("per_source_calibration") or {}
+    if per_source.get("strata"):
+        lines += [
+            "",
+            "### Does calibrating per source recover the ordering",
+            "",
+            "Leave-one-out throughout: a single Platt fit is monotone, so an in-sample "
+            "\"calibrated AUC\" would restate the raw one rather than test anything.",
+            "",
+            "| Source | n | Base rate | Raw AUC | Pooled-calibration AUC | Per-source-calibration AUC |",
+            "|---|---:|---:|---:|---:|---:|",
+        ]
+
+        def cell(value: Any) -> str:
+            return "n/a" if value is None else f"{value:.3f}"
+
+        for source, block in per_source["strata"].items():
+            lines.append(
+                f"| {source} | {block['n']} | {block['base_rate']:.1%} | "
+                f"{cell(block['auc_raw'])} | {cell(block['auc_pooled_loo'])} | "
+                f"{cell(block['auc_per_source_loo'])} |"
+            )
+        lines += ["", f"**{per_source['recommendation'].capitalize()}.**"]
+        if per_source.get("per_source_beats_pooled") and not per_source.get("per_source_beats_raw"):
+            lines.append(
+                " Splitting the calibration does help - it beats the pooled fit in every "
+                "stratum - but the uncalibrated evidence score beats both, in every stratum. "
+                "So the Platt step is spending ordering rather than adding calibration, and a "
+                "tier boundary belongs on the raw score within a source."
+            )
+        lines += [
+            "",
+            "The in-sample fit per source is recorded in the JSON, including the score range each "
+            "one can reach. A cutoff above that range names a tier no report can enter.",
+        ]
+
     lines += ["", "## How many candidates to display", ""]
     depth = summary["candidate_depth"]
     lines += [
