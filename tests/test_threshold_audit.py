@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -16,6 +19,137 @@ def load_tool(name: str):
 
 
 T = load_tool("audit_thresholds")
+
+
+# --- per-source calibration ---------------------------------------------------
+
+
+def _control(raw, correct, source):
+    return {"raw_full": str(raw), "top1_correct_0p70": "True" if correct else "False", "source": source}
+
+
+def test_per_source_calibration_needs_a_source_column():
+    result = T.per_source_calibration([_control(0.5, True, "")])
+    assert result["status"] == "not_evaluated"
+
+
+def test_per_source_calibration_measures_each_source_separately():
+    rows = (
+        [_control(0.2 + 0.05 * i, i > 4, "exact") for i in range(10)]
+        + [_control(0.3 + 0.04 * i, i > 4, "predicted") for i in range(10)]
+    )
+    result = T.per_source_calibration(rows)
+    assert set(result["strata"]) == {"exact", "predicted"}
+    for block in result["strata"].values():
+        assert block["n"] == 10
+        assert block["auc_raw"] is not None
+        assert block["auc_per_source_loo"] is not None
+
+
+def test_a_perfectly_ordering_raw_score_reads_as_such():
+    rows = [_control(0.1 * i, i >= 5, "exact") for i in range(10)]
+    result = T.per_source_calibration(rows)
+    assert result["strata"]["exact"]["auc_raw"] == 1.0
+
+
+def test_the_recommendation_names_the_raw_score_when_calibration_does_not_help():
+    """The committed cohort's answer, and the one the tool has to be able to give."""
+    committed = json.loads(
+        (ROOT / "docs" / "paper" / "data" / "thresholds" / "audit_thresholds_summary.json").read_text()
+    )
+    block = committed["source_stratification"]["per_source_calibration"]
+    assert block["per_source_beats_pooled"] is True
+    assert block["per_source_beats_raw"] is False
+    assert "raw evidence score" in block["recommendation"]
+
+
+# --- retune traps -------------------------------------------------------------
+
+
+def test_the_sweep_grid_always_contains_the_tier_cutoffs():
+    """A retuned cutoff off the hand-written grid used to vanish from the artifact."""
+    for value in (T.C.TIER_LOW, T.C.TIER_MODERATE, T.C.TIER_HIGH):
+        assert round(value, 4) in T.SCORE_GRID
+
+
+def test_named_operating_points_are_keyed_by_tier_not_by_value():
+    """Keys embedding the number would assert the old cutoff after a retune."""
+    for name in T.NAMED_SCORE_POINTS:
+        if name.startswith("tier_"):
+            assert not any(character.isdigit() for character in name), name
+
+
+def test_unpicking_the_grid_union_fails_at_import_rather_than_silently():
+    original = dict(T.NAMED_SCORE_POINTS)
+    T.NAMED_SCORE_POINTS["tier_high"] = 0.6123
+    try:
+        with pytest.raises(AssertionError, match="off the sweep grid"):
+            T._assert_named_points_are_on_the_grid()
+    finally:
+        T.NAMED_SCORE_POINTS.clear()
+        T.NAMED_SCORE_POINTS.update(original)
+
+
+def test_a_deliberately_narrow_grid_may_still_omit_a_named_point():
+    """Unit callers pass narrow grids on purpose; only the default grid is guarded."""
+    assert T._named_points([{"threshold": 0.9}], (0.9,)) == {}
+
+
+def test_every_named_point_survives_a_sweep_on_the_default_grid():
+    scores = [0.05 * i for i in range(20)]
+    labels = [i % 2 == 0 for i in range(20)]
+    result = T.score_cutoff_sweep(scores, labels)
+    assert set(result["named_operating_points"]) == set(T.NAMED_SCORE_POINTS)
+
+
+def test_degeneracy_check_needs_levels_to_say_anything():
+    assert T.positive_class_degeneracy([_control(0.5, True, "exact")], None)["status"] == "not_evaluated"
+
+
+def test_a_cohort_whose_positives_are_all_level_1_is_flagged():
+    rows = [_control(0.9, True, "exact"), _control(0.2, False, "exact")]
+    rows[0]["control_id"], rows[1]["control_id"] = "X-1", "X-2"
+    result = T.positive_class_degeneracy(rows, {"X-1": "1", "X-2": "3"})
+    assert result["positive_class_is_level_1"] is True
+    assert result["usable_for_non_level_1_reports"] is False
+    assert result["correct_outside_level_1"] == 0
+
+
+def test_a_cohort_with_correct_calls_outside_level_1_is_usable():
+    rows = [_control(0.9, True, "exact"), _control(0.8, True, "exact"), _control(0.2, False, "exact")]
+    for row, cid in zip(rows, ("X-1", "X-2", "X-3")):
+        row["control_id"] = cid
+    result = T.positive_class_degeneracy(rows, {"X-1": "1", "X-2": "3", "X-3": "3"})
+    assert result["positive_class_is_level_1"] is False
+    assert result["usable_for_non_level_1_reports"] is True
+    assert result["correct_outside_level_1"] == 1
+
+
+def test_the_committed_cohort_cannot_validate_a_tier_for_unconfirmed_reports():
+    """The finding that stops a High tier being set from this data.
+
+    If this ever flips, the truth cohort has grown correct calls outside Level 1
+    and the High question genuinely reopens - so the assertion is the trigger,
+    not an invariant to preserve.
+    """
+    committed = json.loads(
+        (ROOT / "docs" / "paper" / "data" / "thresholds" / "audit_thresholds_summary.json").read_text()
+    )
+    block = committed["source_stratification"]["positive_class_degeneracy"]
+    assert block["positive_class_is_level_1"] is True
+    assert block["correct_outside_level_1"] == 0
+    assert block["usable_for_non_level_1_reports"] is False
+
+
+def test_committed_per_source_calibration_keeps_raw_above_both_calibrations():
+    """Guards the A3 conclusion: bands belong on the raw score, within a source."""
+    committed = json.loads(
+        (ROOT / "docs" / "paper" / "data" / "thresholds" / "audit_thresholds_summary.json").read_text()
+    )
+    for source, block in committed["source_stratification"]["per_source_calibration"]["strata"].items():
+        assert block["auc_raw"] > block["auc_pooled_loo"], source
+        assert block["auc_raw"] > block["auc_per_source_loo"], source
+        assert block["auc_per_source_loo"] > block["auc_pooled_loo"], source
 
 
 def test_auc_is_one_for_a_perfectly_ordering_score():
@@ -172,9 +306,11 @@ def test_committed_threshold_audit_matches_a_fresh_computation():
     scores = [float(row["loo_probability_full"]) for row in scored]
     labels = [T._truthy(row.get("top1_correct_0p70", "")) for row in scored]
 
+    levels = T.load_msi_levels(ROOT / "docs/paper/data/exec_summary/exec_summary_by_compound.csv")
+
     assert T.score_cutoff_sweep(scores, labels) == committed["score_cutoff"]
     assert T.candidate_depth_sweep(rows) == committed["candidate_depth"]
-    assert T.source_stratification(rows) == committed["source_stratification"]
+    assert T.source_stratification(rows, levels) == committed["source_stratification"]
 
 
 def test_committed_audit_shows_the_score_does_not_order_correctness():

@@ -43,15 +43,48 @@ from typing import Any, Iterable, Sequence
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "structural_elucidation" / "reports"))
 import confidence as C  # noqa: E402
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+# The Platt fit is imported rather than reimplemented so the measurement below
+# cannot drift away from the calibration it is measuring.
+import calibrate_confidence as CAL  # noqa: E402
+
 # Thresholds on the calibrated evidence score. 0.10 is the value that prompted
-# this audit; 0.38/0.48/0.65 are the tier cutoffs the reports use today.
-SCORE_GRID = (0.10, 0.20, 0.30, 0.38, 0.45, 0.48, 0.55, 0.60, 0.65, 0.70)
+# this audit. The tier cutoffs are unioned into the grid rather than written into
+# it by hand, because the named points below are looked up by exact membership: a
+# retuned cutoff that no longer appeared in a hand-maintained grid would be
+# dropped from the artifact silently rather than failing.
+BASE_SCORE_GRID = (0.10, 0.20, 0.30, 0.45, 0.55, 0.60, 0.70)
+# Keys name the tier, not its current value. They used to embed the number
+# ("tier_high_0.65"), so a retune left three keys in the committed JSON - and in
+# the test that compares against it - asserting cutoffs that no longer existed.
 NAMED_SCORE_POINTS = {
     "proposed_0.10": 0.10,
-    "tier_low_0.38": C.TIER_LOW,
-    "tier_moderate_0.48": C.TIER_MODERATE,
-    "tier_high_0.65": C.TIER_HIGH,
+    "tier_low": C.TIER_LOW,
+    "tier_moderate": C.TIER_MODERATE,
+    "tier_high": C.TIER_HIGH,
 }
+SCORE_GRID = tuple(sorted(set(BASE_SCORE_GRID) | {round(v, 4) for v in NAMED_SCORE_POINTS.values()}))
+
+
+def _assert_named_points_are_on_the_grid() -> None:
+    """Fail at import if a named cutoff could drop out of the artifact.
+
+    The sweep reports named operating points by looking them up in the grid, so a
+    cutoff missing from it is omitted rather than reported. The union above makes
+    that impossible; this is what notices if someone unpicks the union.
+    """
+    missing = {
+        name: value
+        for name, value in NAMED_SCORE_POINTS.items()
+        if round(float(value), 4) not in SCORE_GRID
+    }
+    if missing:
+        raise AssertionError(
+            f"named operating points are off the sweep grid and would be dropped: {missing}"
+        )
+
+
+_assert_named_points_are_on_the_grid()
 # Report depths the committed audit records recovery for.
 DEPTH_GRID = (1, 3, 10)
 # MSI L2 boundary candidates. The L2 rule is the one that decides whether a
@@ -167,15 +200,42 @@ def score_cutoff_sweep(
         "auc": round(area, 4) if area is not None else None,
         "auc_ci95": bootstrap_auc_ci(scores, labels),
         "grid": points,
-        "named_operating_points": {
-            name: next(point for point in points if point["threshold"] == round(value, 4))
-            for name, value in NAMED_SCORE_POINTS.items()
-            if any(point["threshold"] == round(value, 4) for point in points)
-        },
+        "named_operating_points": _named_points(points, grid),
     }
 
 
-def source_stratification(rows: list[dict[str, str]]) -> dict[str, Any]:
+def _named_points(points: list[dict[str, Any]], grid: Sequence[float]) -> dict[str, Any]:
+    """Pull the named cutoffs out of the sweep.
+
+    A named point absent from the grid is omitted, which is right for a caller
+    that deliberately passes a narrow grid. What must never happen is the
+    *default* grid losing a tier cutoff after a retune, and that is prevented by
+    construction: :data:`SCORE_GRID` unions the constants in, and
+    :func:`_assert_named_points_are_on_the_grid` checks it at import.
+    """
+    by_threshold = {point["threshold"]: point for point in points}
+    return {
+        name: by_threshold[round(float(value), 4)]
+        for name, value in NAMED_SCORE_POINTS.items()
+        if round(float(value), 4) in by_threshold
+    }
+
+
+def load_msi_levels(path: Path) -> dict[str, str]:
+    """Per-compound MSI level, keyed by compound id. Missing file is not an error."""
+    if not path.exists():
+        return {}
+    with path.open(newline="") as handle:
+        return {
+            str(row.get("x_compound_id", "")).strip(): str(row.get("msi_level", "")).strip()
+            for row in csv.DictReader(handle)
+            if str(row.get("x_compound_id", "")).strip()
+        }
+
+
+def source_stratification(
+    rows: list[dict[str, str]], levels: dict[str, str] | None = None
+) -> dict[str, Any]:
     """Test whether pooling the two candidate sources is what flattens the score.
 
     Exact catalog hits and de novo predictions have opposite base rates, and the
@@ -229,6 +289,165 @@ def source_stratification(rows: list[dict[str, str]]) -> dict[str, Any]:
         "pooled_auc": pooled,
         "within_source_auc_range": [min(within), max(within)] if within else None,
         "confounded": bool(within and pooled is not None and pooled < min(within)),
+        "per_source_calibration": per_source_calibration(rows),
+        "positive_class_degeneracy": positive_class_degeneracy(rows, levels),
+    }
+
+
+def positive_class_degeneracy(
+    rows: list[dict[str, str]], levels: dict[str, str] | None
+) -> dict[str, Any]:
+    """Does this cohort's "correct" label coincide with MSI Level 1?
+
+    It does, and it invalidates every AUC on this page as evidence about the
+    reports a confidence tier is for.
+
+    The 92 controls are Metabolon Level-1 compounds - that is what makes them a
+    truth set - and ``assign_msi_level`` returns Level 1 exactly when a Level-1
+    standard's top candidate matches it. So "the pipeline got this right" and
+    "this report is Level 1" are the same event here, and a score that separates
+    the positive class is separating the already-confirmed.
+
+    That is fine for asking whether the pipeline recovers known compounds. It
+    cannot answer whether a score orders correctness among the reports nobody has
+    a standard for, which is the entire population a High tier would apply to.
+    Measured rather than reasoned, because the promising within-source AUCs above
+    invite exactly the opposite conclusion.
+    """
+    if not levels:
+        return {
+            "status": "not_evaluated",
+            "reason": "no per-compound MSI levels supplied; pass --exec-summary to evaluate",
+        }
+    matched = [row for row in rows if str(row.get("control_id", "")).strip() in levels]
+    if not matched:
+        return {"status": "not_evaluated", "reason": "no control ids joined to the exec summary"}
+    positives = [row for row in matched if _truthy(row.get("top1_correct_0p70", ""))]
+    level_1 = [row for row in matched if levels[str(row["control_id"]).strip()].strip() == "1"]
+    positive_ids = {str(row["control_id"]).strip() for row in positives}
+    level_1_ids = {str(row["control_id"]).strip() for row in level_1}
+    non_pinned_positives = len(positive_ids - level_1_ids)
+    return {
+        "n_joined": len(matched),
+        "n_correct": len(positive_ids),
+        "n_msi_level_1": len(level_1_ids),
+        "correct_and_level_1": len(positive_ids & level_1_ids),
+        "correct_outside_level_1": non_pinned_positives,
+        "positive_class_is_level_1": bool(positive_ids and positive_ids == level_1_ids),
+        "usable_for_non_level_1_reports": bool(non_pinned_positives),
+        "note": (
+            "Every correct call in this cohort is MSI Level 1, so any AUC here measures "
+            "separation of the already-confirmed rather than ordering of correctness. It "
+            "cannot support a confidence tier for reports without a standard."
+            if positive_ids and positive_ids == level_1_ids
+            else f"{non_pinned_positives} correct calls sit outside Level 1, so the cohort "
+                 "carries some signal about unconfirmed reports."
+        ),
+    }
+
+
+def per_source_calibration(rows: list[dict[str, str]]) -> dict[str, Any]:
+    """Does fitting the calibration per source actually recover the lost ordering?
+
+    ``source_stratification`` above reports that pooling flattens the score and
+    recommends calibrating per source. This measures whether that works, because
+    a recommendation nobody checked is how the pooled fit got shipped.
+
+    Three orderings are compared inside each stratum:
+
+    - ``raw`` - the evidence score, uncalibrated.
+    - ``pooled_loo`` - the shipped approach, one calibration over both sources.
+    - ``per_source_loo`` - one calibration fitted inside the stratum.
+
+    All three are leave-one-out where they are calibrated at all. That is not a
+    nicety: a single Platt fit is monotone, so applying one in-sample would leave
+    every rank statistic identical to ``raw`` and the comparison would be
+    vacuous. Only a per-point refit produces a genuinely different ordering, and
+    only a held-out one says anything about a report the fit has not seen.
+
+    The number that decides the question is ``per_source_beats_pooled``. If
+    calibration cannot beat the raw score either, the honest reading is that the
+    Platt step is costing signal rather than adding calibration, and the bands
+    belong on the raw score.
+    """
+    usable = [
+        row for row in rows
+        if _float(row.get("raw_full")) is not None and str(row.get("source", "")).strip()
+    ]
+    if not usable:
+        return {"status": "not_evaluated", "reason": "no rows carry both raw_full and a source"}
+
+    def label(row: dict[str, str]) -> bool:
+        return _truthy(row.get("top1_correct_0p70", ""))
+
+    sources = sorted({str(row.get("source", "")).strip() for row in usable})
+    pooled_loo = CAL.loo_probabilities(
+        [float(row["raw_full"]) for row in usable], [float(label(row)) for row in usable]
+    )
+    pooled_by_id = {id(row): value for row, value in zip(usable, pooled_loo)}
+
+    strata: dict[str, Any] = {}
+    for source in sources:
+        subset = [row for row in usable if str(row.get("source", "")).strip() == source]
+        raw = [float(row["raw_full"]) for row in subset]
+        labels = [label(row) for row in subset]
+        own = CAL.loo_probabilities(raw, [float(v) for v in labels])
+        fit = CAL.fit_platt(raw, [float(v) for v in labels])
+
+        def scored(values: Sequence[float | None]) -> float | None:
+            pairs = [(v, lab) for v, lab in zip(values, labels) if v is not None]
+            if not pairs:
+                return None
+            area = auc([v for v, _ in pairs], [lab for _, lab in pairs])
+            return round(area, 4) if area is not None else None
+
+        strata[source] = {
+            "n": len(subset),
+            "base_rate": round(sum(labels) / len(labels), 4) if labels else None,
+            "auc_raw": scored(raw),
+            "auc_pooled_loo": scored([pooled_by_id[id(row)] for row in subset]),
+            "auc_per_source_loo": scored(own),
+            "in_sample_fit": fit.as_dict(),
+        }
+
+    def gathered(key: str) -> list[float]:
+        return [block[key] for block in strata.values() if block.get(key) is not None]
+
+    per_source = gathered("auc_per_source_loo")
+    pooled_auc = gathered("auc_pooled_loo")
+    raw_auc = gathered("auc_raw")
+    beats_pooled = bool(
+        per_source and pooled_auc and len(per_source) == len(pooled_auc)
+        and all(
+            block["auc_per_source_loo"] > block["auc_pooled_loo"]
+            for block in strata.values()
+            if block.get("auc_per_source_loo") is not None and block.get("auc_pooled_loo") is not None
+        )
+    )
+    beats_raw = bool(
+        per_source and raw_auc
+        and all(
+            block["auc_per_source_loo"] > block["auc_raw"]
+            for block in strata.values()
+            if block.get("auc_per_source_loo") is not None and block.get("auc_raw") is not None
+        )
+    )
+    return {
+        "method": (
+            "Leave-one-out rank AUC inside each candidate source under three orderings: the raw "
+            "evidence score, the pooled calibration, and a calibration fitted within the source. "
+            "Leave-one-out throughout, because a single Platt fit is monotone and would leave "
+            "every rank statistic equal to the raw score."
+        ),
+        "strata": strata,
+        "per_source_beats_pooled": beats_pooled,
+        "per_source_beats_raw": beats_raw,
+        "recommendation": (
+            "calibrate per source" if beats_pooled and beats_raw else
+            "band the raw evidence score per source; calibration is not adding ordering"
+            if beats_pooled else
+            "neither calibration helps on this cohort"
+        ),
     }
 
 
@@ -463,6 +682,65 @@ def render_markdown(summary: dict[str, Any]) -> str:
             f"| {stratum} | {raw['n']} | {raw['base_rate']:.1%} | {raw['median_score']:.3f} | "
             f"{raw['auc']:.3f} | {calibrated['auc']:.3f} |"
         )
+
+    per_source = strat.get("per_source_calibration") or {}
+    if per_source.get("strata"):
+        lines += [
+            "",
+            "### Does calibrating per source recover the ordering",
+            "",
+            "Leave-one-out throughout: a single Platt fit is monotone, so an in-sample "
+            "\"calibrated AUC\" would restate the raw one rather than test anything.",
+            "",
+            "| Source | n | Base rate | Raw AUC | Pooled-calibration AUC | Per-source-calibration AUC |",
+            "|---|---:|---:|---:|---:|---:|",
+        ]
+
+        def cell(value: Any) -> str:
+            return "n/a" if value is None else f"{value:.3f}"
+
+        for source, block in per_source["strata"].items():
+            lines.append(
+                f"| {source} | {block['n']} | {block['base_rate']:.1%} | "
+                f"{cell(block['auc_raw'])} | {cell(block['auc_pooled_loo'])} | "
+                f"{cell(block['auc_per_source_loo'])} |"
+            )
+        lines += ["", f"**{per_source['recommendation'].capitalize()}.**"]
+        if per_source.get("per_source_beats_pooled") and not per_source.get("per_source_beats_raw"):
+            lines.append(
+                " Splitting the calibration does help - it beats the pooled fit in every "
+                "stratum - but the uncalibrated evidence score beats both, in every stratum. "
+                "So the Platt step is spending ordering rather than adding calibration, and a "
+                "tier boundary belongs on the raw score within a source."
+            )
+        lines += [
+            "",
+            "The in-sample fit per source is recorded in the JSON, including the score range each "
+            "one can reach. A cutoff above that range names a tier no report can enter.",
+        ]
+
+    degeneracy = strat.get("positive_class_degeneracy") or {}
+    if degeneracy.get("positive_class_is_level_1"):
+        lines += [
+            "",
+            "### What none of these AUCs can tell you",
+            "",
+            f"All {degeneracy['n_correct']} correct calls in this cohort are MSI Level 1, and so are "
+            f"exactly the same {degeneracy['n_msi_level_1']} reports - the sets coincide, with "
+            f"{degeneracy['correct_outside_level_1']} correct calls outside Level 1.",
+            "",
+            "That is structural rather than unlucky. These controls are Metabolon Level-1 compounds, "
+            "which is what makes them a truth set, and a report reaches MSI Level 1 exactly when a "
+            "Level-1 standard's top candidate matches it. So \"the pipeline got this right\" and "
+            "\"this report is already confirmed\" are the same event, and every AUC above is "
+            "measuring how well a score separates the already-confirmed.",
+            "",
+            "It follows that this cohort cannot establish a confidence tier for reports without a "
+            "standard, which is the whole population such a tier is for. The within-source numbers "
+            "invite the opposite reading, which is why this is measured and stated here rather than "
+            "left to the reader.",
+        ]
+
     lines += ["", "## How many candidates to display", ""]
     depth = summary["candidate_depth"]
     lines += [
@@ -525,10 +803,20 @@ def main() -> None:
         default=None,
         help="Report bundle to read axis-level evidence from when the controls CSV lacks it.",
     )
+    parser.add_argument(
+        "--exec-summary",
+        type=Path,
+        default=Path("docs/paper/data/exec_summary/exec_summary_by_compound.csv"),
+        help=(
+            "Per-compound exec summary, joined to the controls to check whether this cohort's "
+            "correct calls are all MSI Level 1. They are, and it bounds what the AUCs can mean."
+        ),
+    )
     parser.add_argument("--out-dir", type=Path, default=Path("docs/paper/data/thresholds"))
     args = parser.parse_args()
 
     rows = load_controls(args.structure_controls)
+    levels = load_msi_levels(args.exec_summary)
     scored = [row for row in rows if _float(row.get("loo_probability_full")) is not None]
     scores = [float(row["loo_probability_full"]) for row in scored]
     labels = [_truthy(row.get("top1_correct_0p70", "")) for row in scored]
@@ -551,7 +839,7 @@ def main() -> None:
             "axis_source": axis_source if records else None,
         },
         "score_cutoff": score_cutoff_sweep(scores, labels),
-        "source_stratification": source_stratification(rows),
+        "source_stratification": source_stratification(rows, levels),
         "candidate_depth": candidate_depth_sweep(rows),
         "msi_rule": msi_rule_sweep(records)
         if records

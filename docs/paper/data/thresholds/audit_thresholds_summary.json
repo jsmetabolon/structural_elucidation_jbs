@@ -148,7 +148,7 @@
         "coverage": 1.0,
         "lift_over_base_rate": 0.0
       },
-      "tier_low_0.38": {
+      "tier_low": {
         "n": 86,
         "correct": 41,
         "accuracy": 0.4767,
@@ -160,7 +160,7 @@
         "coverage": 0.9348,
         "lift_over_base_rate": -0.0016
       },
-      "tier_moderate_0.48": {
+      "tier_moderate": {
         "n": 44,
         "correct": 22,
         "accuracy": 0.5,
@@ -172,7 +172,7 @@
         "coverage": 0.4783,
         "lift_over_base_rate": 0.0217
       },
-      "tier_high_0.65": {
+      "tier_high": {
         "n": 0,
         "correct": 0,
         "accuracy": null,
@@ -237,7 +237,69 @@
       0.6719,
       0.7784
     ],
-    "confounded": true
+    "confounded": true,
+    "per_source_calibration": {
+      "method": "Leave-one-out rank AUC inside each candidate source under three orderings: the raw evidence score, the pooled calibration, and a calibration fitted within the source. Leave-one-out throughout, because a single Platt fit is monotone and would leave every rank statistic equal to the raw score.",
+      "strata": {
+        "exact": {
+          "n": 42,
+          "base_rate": 0.381,
+          "auc_raw": 0.6719,
+          "auc_pooled_loo": 0.5168,
+          "auc_per_source_loo": 0.5216,
+          "in_sample_fit": {
+            "platt_A": 3.960152,
+            "platt_B": -3.980161,
+            "n": 42,
+            "base_rate": 0.381,
+            "converged": true,
+            "iterations": 179,
+            "max_gradient": 9.932e-09,
+            "degenerate": false,
+            "note": "",
+            "reachable_score_range": [
+              0.0183,
+              0.495
+            ]
+          }
+        },
+        "predicted": {
+          "n": 50,
+          "base_rate": 0.56,
+          "auc_raw": 0.7784,
+          "auc_pooled_loo": 0.6753,
+          "auc_per_source_loo": 0.7386,
+          "in_sample_fit": {
+            "platt_A": 11.490592,
+            "platt_B": -7.347069,
+            "n": 50,
+            "base_rate": 0.56,
+            "converged": true,
+            "iterations": 281,
+            "max_gradient": 9.501e-09,
+            "degenerate": false,
+            "note": "",
+            "reachable_score_range": [
+              0.0006,
+              0.9844
+            ]
+          }
+        }
+      },
+      "per_source_beats_pooled": true,
+      "per_source_beats_raw": false,
+      "recommendation": "band the raw evidence score per source; calibration is not adding ordering"
+    },
+    "positive_class_degeneracy": {
+      "n_joined": 92,
+      "n_correct": 44,
+      "n_msi_level_1": 44,
+      "correct_and_level_1": 44,
+      "correct_outside_level_1": 0,
+      "positive_class_is_level_1": true,
+      "usable_for_non_level_1_reports": false,
+      "note": "Every correct call in this cohort is MSI Level 1, so any AUC here measures separation of the already-confirmed rather than ordering of correctness. It cannot support a confidence tier for reports without a standard."
+    }
   },
   "candidate_depth": {
     "correctness": "correct structure within the displayed list at truth Tanimoto >= 0.70",
