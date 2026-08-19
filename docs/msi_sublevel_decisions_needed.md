@@ -13,6 +13,12 @@ written down: a month of finished sub-level work is sitting unmerged in
 its central validation claim does not survive holding out the reports that are
 correct by construction.
 
+One item moved while this was being written. Decision 7 was a question about an
+unmerged branch; that branch reached `main` in `27e1f60`, so it is now a fix to
+shipped code. Every measurement here has been recomputed against the post-merge
+tables and none of the conclusions changed — see "What the 012b merge did to this
+audit" below.
+
 The measurement is [tools/audit_sublevel_bands.py](../tools/audit_sublevel_bands.py),
 regenerating [docs/paper/data/identification/audit_sublevel_bands.json](paper/data/identification/audit_sublevel_bands.json).
 The reasoning is in [docs/msi_sublevel_band_findings.md](msi_sublevel_band_findings.md).
@@ -226,12 +232,18 @@ statement worth being able to make to a client with a reason attached.
 **Recommendation: gate on decision 4.** If the slide is illustrative this may not
 be wanted at all.
 
-## Decision 7: what happens to `cursor/evidence-confidence-calculation-012b` — needs a person
+## Decision 7: the matrix workbook's "Confidence Score" — needs a person
 
 **Owner: whoever owns the client workbook.**
 
-The branch is not an open PR and carries two things that should not ship as they
-stand. `tools/build_all_metabolites_matrix_workbook.py` presents
+**Now a fix rather than a gate.** This was written while
+`cursor/evidence-confidence-calculation-012b` was an unmerged branch; it landed
+on `main` in `27e1f60` before the decision was taken, so both items below are
+shipped code. Neither is hard to change and neither has reached a client yet as
+far as this repository can tell, but the deferral cost is no longer zero.
+
+It carries two things that should not have shipped as they stand.
+`tools/build_all_metabolites_matrix_workbook.py` presents
 `rank1_evidence_confidence` in a column headed **Confidence Score**, and that
 column is 62.4% saturated above 0.98 and flat against truth above 0.9955. The
 single real distinction it makes is at zero: the bottom two deciles sit at
@@ -243,53 +255,64 @@ generator behind it, so it cannot be refreshed or checked. It mixes case as
 though `2c` and `2C` were different buckets, and lists `Exclude`, `Artifact` and
 `Internal Standard` as if they were sub-levels.
 
-**If deferred:** nothing ships, which is the safe direction here.
+**If deferred:** the workbook keeps presenting an evidence-availability flag as a
+confidence score, and the count table stays unrefreshable. Both are on `main`
+now, so deferring means shipping them rather than not shipping them — which
+inverts the usual direction of caution on this page.
 
-**Recommendation: do not ship the column under that name.** Rename to something
-that describes it, or demote the float and expose the boolean. Replace the count
-table with the generator in stage 2 of the plan.
+**Recommendation: rename the column on `main`.** Something that describes it, or
+demote the float and expose the boolean beside it; update the workbook's
+`Data_Dictionary` sheet, which currently reads "Canonical rank-1
+evidence_confidence". Replace the count table with the generator in stage 2 of
+the plan. Note the numbers above are recomputed against the post-merge tables and
+still hold: the column's AUC improved to 0.5794 whole-cohort when 012b
+canonicalised it, and it still bands into nothing ordered.
 
 ## Merge order
 
 Three lines of work are outstanding and two of them touch the same files, so the
 order matters. It cuts across decisions 1 and 7 rather than belonging to either.
 
+**`cursor/evidence-confidence-calculation-012b` merged to `main` in `27e1f60`
+while this was being written**, ahead of the order recommended here and without
+the amendment decision 7 asks for. That is not reversible work and there is no
+need to reverse it, but it changes what decision 7 is about: the matrix workbook
+and its `Confidence Score` column are now on `main` rather than pending on a
+branch, so the question is a fix to shipped code rather than a gate on a merge.
+
+Two lines of work remain, and the order is unchanged for them.
+
 **1. [PR #35](https://github.com/jsmetabolon/structural_elucidation_jbs/pull/35),
-the audit, first.** It has *zero* file overlap with either other branch, so it
-cannot conflict, and it is the measurement the other two are judged against.
-Merging it first means the CI regenerate-and-diff gate is already in place when
-they land.
+the audit, first.** Zero file overlap with PR #6, so it cannot conflict, and it
+is the measurement PR #6 is judged against. Merging it first means the CI
+regenerate-and-diff gate is in place before PR #6 lands.
 
 **2. [PR #6](https://github.com/jsmetabolon/structural_elucidation_jbs/pull/6)
-next, split per the commit routing above.** It is an open PR with a running cost;
-`cursor/evidence-confidence-calculation-012b` is not even an open PR and needs
-amendment before it can go anywhere.
+next, split per the commit routing above.** Now that 012b is on `main`, expect
+the two overlaps it used to have with 012b to appear as conflicts against `main`
+instead: `structural_elucidation/pipeline/rerank.py` (PR #6 adds 23 lines, 012b
+changed 18 and removed 4) and `docs/pipeline_refinement_handoff.md`. Neither is
+large, but PR #6 was branched before 012b existed, so resolve them deliberately
+rather than taking either side wholesale.
 
-**3. `cursor/evidence-confidence-calculation-012b` last, amended.** Two overlaps
-to expect, both with PR #6 and neither large: `structural_elucidation/pipeline/rerank.py`
-(PR #6 adds 23 lines, this adds 18 and removes 4) and
-`docs/pipeline_refinement_handoff.md`. Merging PR #6 first means resolving them
-once, in the direction of the branch that has already been reviewed.
+### What the 012b merge did to this audit
 
-### One thing to expect when 012b lands
-
-It regenerates `docs/paper/data/exec_summary/exec_summary_by_compound.csv` and
-`exec_summary_top10.csv`, which are the audit's inputs, and adds a
+It regenerated `docs/paper/data/exec_summary/exec_summary_by_compound.csv` and
+`exec_summary_top10.csv`, which are this audit's inputs, and added a
 `rank1_evidence_confidence_basis` column. So
-`docs/paper/data/identification/audit_sublevel_bands.{json,md}` must be
-regenerated in the same commit. CI enforces this — `tools/audit_sublevel_bands.py`
+`docs/paper/data/identification/audit_sublevel_bands.{json,md}` had to be
+regenerated on top of the merge. CI catches this — `tools/audit_sublevel_bands.py`
 is in the regenerate-and-diff block — so the failure mode is a red build rather
-than a stale conclusion.
+than a stale conclusion, and that is what happened.
 
-**The conclusions themselves survive the refresh.** Running the audit against
-012b's regenerated tables reproduces every load-bearing result unchanged:
-`TIER_HIGH` still unreachable, the re-anchor still fixing reachability and not
-ordering with AUC 0.378 either side, derived `3A` still at 16.1% agreement, and
-no band scheme ordered for any of the three scores. The only figure that moves is
-`evidence_confidence`, whose whole-cohort AUC goes from 0.4762 to 0.5794 because
-that branch canonicalises the column — still with no ordered bands, so decision 7
-is unaffected. None of the findings here is an artifact of which exec-summary
-revision you read.
+**The conclusions themselves survived the refresh.** Every load-bearing result
+reproduces unchanged: `TIER_HIGH` still unreachable, the re-anchor still fixing
+reachability and not ordering with AUC 0.378 either side, derived `3A` still at
+16.1% agreement, and no band scheme ordered for any of the three scores. The only
+figure that moves is `evidence_confidence`, whose AUC goes from 0.4762 to 0.5794
+whole-cohort and 0.6566 to 0.6005 model-scored, because that branch canonicalises
+the column. Still no ordered bands, so no decision here changes. None of these
+findings is an artifact of which exec-summary revision you read.
 
 ## Answered without a person
 

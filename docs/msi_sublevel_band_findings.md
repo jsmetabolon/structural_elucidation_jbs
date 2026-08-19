@@ -137,9 +137,8 @@ Three things are defensible today, in decreasing order of confidence:
 1. **The curated `SubLevel`, surfaced not derived.** 2,494 of the 3,897
    delivered compounds carry an expert letter from `data/known_X.csv`, 949 of
    them a fine letter (`2C`, `3A`–`3D`). It is authoritative and needs no model.
-   This also makes a live `msi_level_counts.csv` computable now — the copy on
-   branch `cursor/evidence-confidence-calculation-012b` was hand-committed with
-   no generator behind it.
+   This also makes a live `msi_level_counts.csv` computable now — the copy that
+   reached `main` in `27e1f60` was hand-committed, with no generator behind it.
 2. **The coarse MSI level 1–5**, which is already assigned for 100% of reports.
    One caveat that should not be buried: on this truth-verified cohort it is not
    cleanly monotone either — L2 is 3.3% correct (n=30) against L3 at 13.3%

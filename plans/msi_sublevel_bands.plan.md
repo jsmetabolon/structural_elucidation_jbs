@@ -6,7 +6,7 @@ todos:
     content: 'Write docs/paper/data/identification/msi_sublevel_definitions.csv recording each level and sub-level, the evidence it requires, whether that evidence is computable in this repo today, and the source it comes from - definitions only, no assignment'
     status: pending
   - id: counts-generator
-    content: 'Write tools/build_msi_level_counts.py to generate docs/paper/data/msi_level_counts.csv from data/known_X.csv plus the delivered exec summary, replacing the hand-committed copy on cursor/evidence-confidence-calculation-012b, and add it to the CI regenerate-and-diff step'
+    content: 'Write tools/build_msi_level_counts.py to generate docs/paper/data/msi_level_counts.csv from data/known_X.csv plus the delivered exec summary, replacing the hand-committed copy now on main, and add it to the CI regenerate-and-diff step'
     status: pending
   - id: surface-curated
     content: 'Already built on PR #6 (commits 4599439, 9e6e359): merge the curated SubLevel surfacing and the index Curated column rather than rebuilding them, holding the Match conf column for decision 2'
@@ -112,17 +112,16 @@ or every downstream audit becomes a statement about policy instead of evidence.
    inputs.** CI runs the audit tools and then `git diff --exit-code`
    (`.github/workflows/publication-checks.yml`), so any new generator must be
    deterministic — sort keys, round floats, never embed a timestamp.
-2. **Two work streams live off `main`, and most of this plan depends on one of
-   them.** [PR #6](https://github.com/jsmetabolon/structural_elucidation_jbs/pull/6)
-   carries stages 3, 3b, 8 and half of 6, plus the producer for
+2. **Most of this plan already exists on
+   [PR #6](https://github.com/jsmetabolon/structural_elucidation_jbs/pull/6),
+   unmerged.** It carries stages 3, 3b, 8 and half of 6, plus the producer for
    `candidate_confidence` — which `tools/build_exec_summary.py:242` reads on
-   `main` while nothing on `main` writes it. The matrix workbook
-   `tools/build_all_metabolites_matrix_workbook.py` and the hand-committed
-   `docs/paper/data/msi_level_counts.csv` are on
-   `cursor/evidence-confidence-calculation-012b`, which is not an open PR.
-   Merge order is decision 7; confirm the state of both before starting any
-   stage, because rebuilding what already exists is the main way this work goes
-   wrong.
+   `main` while nothing on `main` writes it. Check it before starting any stage:
+   rebuilding what already exists is the main way this work goes wrong.
+   The other stream, `cursor/evidence-confidence-calculation-012b`, reached
+   `main` in `27e1f60` ahead of the recommended order and without the amendment
+   decision 7 asks for, so the matrix workbook and the hand-committed
+   `docs/paper/data/msi_level_counts.csv` are shipped rather than pending.
 3. **The truth cohort is small and selected.** 255 truth-verified compounds, 211
    once the pinned ones are held out, 23 of those correct. Any cutoff fitted on
    it must be validated out-of-sample; in-sample fitting on 92 controls is how
@@ -164,10 +163,9 @@ names MS² library matching or retention time.
 
 ## Stage 2 — Generated level counts (`counts-generator`)
 
-`docs/paper/data/msi_level_counts.csv` on
-`cursor/evidence-confidence-calculation-012b` is a hand-committed table with no
-generator behind it, which means it cannot be refreshed and cannot be checked.
-Replace it with `tools/build_msi_level_counts.py`.
+`docs/paper/data/msi_level_counts.csv`, on `main` since `27e1f60`, is a
+hand-committed table with no generator behind it, so it can be neither refreshed
+nor checked. Replace it with `tools/build_msi_level_counts.py`.
 
 Inputs: `data/known_X.csv` for the curated level and sub-level, and
 `docs/paper/data/exec_summary/exec_summary_by_compound.csv` for the delivered

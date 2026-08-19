@@ -48,17 +48,17 @@ candidate_confidence (report overall, Platt-scaled). Column `rank1_candidate_con
 
 ### `evidence_confidence`
 
-evidence_confidence (pipeline candidate score / matrix "Confidence Score"). Column `rank1_evidence_confidence`, 3,897 values present.
+evidence_confidence (pipeline candidate score / matrix "Confidence Score"). Column `rank1_evidence_confidence`, 3,508 values present.
 
 | p0 | p10 | p25 | p50 | p75 | p90 | p100 | >=0.98 |
 |---:|---:|---:|---:|---:|---:|---:|---:|
-| 0.0 | 0.0 | 0.5 | 0.9962 | 0.9987 | 0.9995 | 1.0 | 62.4% |
+| 0.2169 | 0.468 | 0.679 | 0.9974 | 0.9989 | 0.9996 | 1.0 | 72.0% |
 
 | Band scheme | Cuts | a | b | c | below | Empty bands |
 |---|---|---:|---:|---:|---:|---|
-| identification_tiers | 0.65 / 0.48 / 0.38 | 2,561 | 434 | 230 | 672 | none |
-| reachable_ceiling | 0.585 / 0.48 / 0.4 | 2,721 | 274 | 189 | 713 | none |
-| empirical_terciles | 0.55 / 0.46 / 0.4 | 2,817 | 252 | 115 | 713 | none |
+| identification_tiers | 0.65 / 0.48 / 0.38 | 2,659 | 437 | 244 | 168 | none |
+| reachable_ceiling | 0.585 / 0.48 / 0.4 | 2,822 | 274 | 203 | 209 | none |
+| empirical_terciles | 0.55 / 0.46 / 0.4 | 2,918 | 266 | 115 | 209 | none |
 
 ### `raw_evidence`
 
@@ -105,28 +105,28 @@ Model-scored reports by score decile:
 
 ### `evidence_confidence`
 
-AUC over all truth-verified reports **0.4762**, over model-scored reports alone **0.6566** (0.50 is no discrimination; below 0.50 is discrimination with the sign reversed).
+AUC over all truth-verified reports **0.5794**, over model-scored reports alone **0.6005** (0.50 is no discrimination; below 0.50 is discrimination with the sign reversed).
 
 | Band scheme | a | b | c | below | Ordered |
 |---|---:|---:|---:|---:|---|
-| identification_tiers | 13.9% | 0.0% | 0.0% | 0.0% | **no** |
-| reachable_ceiling | 13.8% | 0.0% | 0.0% | 0.0% | **no** |
-| empirical_terciles | 13.5% | 0.0% | 0.0% | 0.0% | **no** |
+| identification_tiers | 13.3% | 0.0% | 0.0% | 0.0% | **no** |
+| reachable_ceiling | 13.1% | 0.0% | 0.0% | 0.0% | **no** |
+| empirical_terciles | 12.8% | 0.0% | 0.0% | 0.0% | **no** |
 
 Model-scored reports by score decile:
 
 | Decile | Score range | n | Correct | P(correct) |
 |---:|---|---:|---:|---:|
-| 1 | 0.0-0.0 | 21 | 0 | 0.0% |
-| 2 | 0.0-0.5557 | 21 | 0 | 0.0% |
-| 3 | 0.5617-0.9955 | 21 | 1 | 4.8% |
-| 4 | 0.9955-0.9971 | 21 | 3 | 14.3% |
-| 5 | 0.9971-0.998 | 21 | 3 | 14.3% |
-| 6 | 0.9981-0.9988 | 21 | 3 | 14.3% |
-| 7 | 0.9988-0.9992 | 21 | 3 | 14.3% |
-| 8 | 0.9992-0.9994 | 21 | 3 | 14.3% |
-| 9 | 0.9995-0.9999 | 21 | 4 | 19.1% |
-| 10 | 0.9999-1.0 | 22 | 3 | 13.6% |
+| 1 | 0.338-0.5557 | 19 | 0 | 0.0% |
+| 2 | 0.5617-0.9952 | 20 | 1 | 5.0% |
+| 3 | 0.9955-0.9969 | 19 | 3 | 15.8% |
+| 4 | 0.9969-0.9977 | 20 | 3 | 15.0% |
+| 5 | 0.9977-0.9986 | 20 | 2 | 10.0% |
+| 6 | 0.9986-0.9989 | 19 | 2 | 10.5% |
+| 7 | 0.999-0.9992 | 20 | 2 | 10.0% |
+| 8 | 0.9993-0.9996 | 19 | 4 | 21.1% |
+| 9 | 0.9996-0.9999 | 20 | 4 | 20.0% |
+| 10 | 0.9999-1.0 | 20 | 2 | 10.0% |
 
 ### `raw_evidence`
 
@@ -175,19 +175,19 @@ Spread between the highest and lowest median across the fine sub-level letters (
 
 ### `evidence_confidence`
 
-Spread between the highest and lowest median across the fine sub-level letters (`2C`, `3A`, `3B`, `3C`): **0.0024**. Across every curated value including the bare levels and curation states: 0.1048.
+Spread between the highest and lowest median across the fine sub-level letters (`2C`, `3A`, `3B`, `3C`): **0.0014**. Across every curated value including the bare levels and curation states: 0.0062.
 
 | Curated SubLevel | n | p25 | Median | p75 |
 |---|---:|---:|---:|---:|
-| `2C` | 163 | 0.9902 | 0.9981 | 0.9992 |
-| `3A` | 358 | 0.5106 | 0.9957 | 0.9986 |
-| `3B` | 253 | 0.9903 | 0.9978 | 0.9988 |
-| `3C` | 175 | 0.8676 | 0.9965 | 0.9989 |
-| `4` | 107 | 0.9925 | 0.998 | 0.9994 |
-| `4?` | 64 | 0.6975 | 0.998 | 0.9989 |
-| `5` | 1,315 | 0.4616 | 0.9952 | 0.9987 |
-| `KNOWN` | 70 | 0.0 | 0.9958 | 0.9993 |
-| `Released` | 25 | 0.7189 | 0.8933 | 0.9987 |
+| `2C` | 152 | 0.9965 | 0.9986 | 0.9994 |
+| `3A` | 323 | 0.8685 | 0.9972 | 0.9989 |
+| `3B` | 249 | 0.9949 | 0.9979 | 0.9988 |
+| `3C` | 168 | 0.9919 | 0.9978 | 0.9991 |
+| `4` | 99 | 0.9973 | 0.9984 | 0.9996 |
+| `4?` | 55 | 0.9976 | 0.9987 | 0.9994 |
+| `5` | 1,198 | 0.5798 | 0.9971 | 0.9988 |
+| `KNOWN` | 65 | 0.9958 | 0.9991 | 1.0 |
+| `Released` | 25 | 0.7739 | 0.9929 | 1.0 |
 
 ### `raw_evidence`
 

@@ -655,9 +655,9 @@
         "empirical_terciles": {
           "by_msi_level": {
             "1": {
-              "a": 26,
-              "b": 2,
-              "below": 16,
+              "a": 41,
+              "b": 3,
+              "below": 0,
               "c": 0,
               "missing": 0
             },
@@ -669,18 +669,18 @@
               "missing": 0
             },
             "3": {
-              "a": 2183,
-              "b": 121,
-              "below": 147,
+              "a": 2212,
+              "b": 122,
+              "below": 89,
               "c": 38,
-              "missing": 0
+              "missing": 28
             },
             "4": {
-              "a": 415,
-              "b": 127,
-              "below": 546,
+              "a": 472,
+              "b": 139,
+              "below": 116,
               "c": 77,
-              "missing": 0
+              "missing": 361
             },
             "5": {
               "a": 0,
@@ -698,37 +698,37 @@
           "note": "roughly equal-sized bands over the model-scored population",
           "occupancy": {
             "counts": {
-              "a": 2817,
-              "b": 252,
-              "below": 713,
+              "a": 2918,
+              "b": 266,
+              "below": 209,
               "c": 115,
-              "missing": 0
+              "missing": 389
             },
             "empty_bands": [],
             "shares": {
-              "a": 0.7229,
-              "b": 0.0647,
-              "below": 0.183,
+              "a": 0.7488,
+              "b": 0.0683,
+              "below": 0.0536,
               "c": 0.0295,
-              "missing": 0.0
+              "missing": 0.0998
             }
           },
           "precision_all_truth": {
             "bands": {
               "a": {
-                "correct": 49,
-                "n": 197,
-                "p_correct": 0.2487
+                "correct": 64,
+                "n": 220,
+                "p_correct": 0.2909
               },
               "b": {
-                "correct": 2,
-                "n": 12,
-                "p_correct": 0.1667
+                "correct": 3,
+                "n": 16,
+                "p_correct": 0.1875
               },
               "below": {
-                "correct": 16,
-                "n": 45,
-                "p_correct": 0.3556
+                "correct": 0,
+                "n": 3,
+                "p_correct": 0.0
               },
               "c": {
                 "correct": 0,
@@ -736,26 +736,24 @@
                 "p_correct": 0.0
               }
             },
-            "inversions": [
-              "c<below"
-            ],
+            "inversions": [],
             "monotone": false
           },
           "precision_model_scored": {
             "bands": {
               "a": {
                 "correct": 23,
-                "n": 171,
-                "p_correct": 0.1345
+                "n": 179,
+                "p_correct": 0.1285
               },
               "b": {
                 "correct": 0,
-                "n": 10,
+                "n": 13,
                 "p_correct": 0.0
               },
               "below": {
                 "correct": 0,
-                "n": 29,
+                "n": 3,
                 "p_correct": 0.0
               },
               "c": {
@@ -771,10 +769,10 @@
         "identification_tiers": {
           "by_msi_level": {
             "1": {
-              "a": 25,
+              "a": 40,
               "b": 2,
-              "below": 16,
-              "c": 1,
+              "below": 0,
+              "c": 2,
               "missing": 0
             },
             "2": {
@@ -785,18 +783,18 @@
               "missing": 0
             },
             "3": {
-              "a": 1963,
+              "a": 1992,
               "b": 318,
-              "below": 129,
-              "c": 79,
-              "missing": 0
+              "below": 71,
+              "c": 80,
+              "missing": 28
             },
             "4": {
-              "a": 382,
-              "b": 110,
-              "below": 523,
-              "c": 150,
-              "missing": 0
+              "a": 436,
+              "b": 113,
+              "below": 93,
+              "c": 162,
+              "missing": 361
             },
             "5": {
               "a": 0,
@@ -814,27 +812,27 @@
           "note": "TIER_HIGH / TIER_MODERATE / TIER_LOW, the cutoffs the report tiers already use",
           "occupancy": {
             "counts": {
-              "a": 2561,
-              "b": 434,
-              "below": 672,
-              "c": 230,
-              "missing": 0
+              "a": 2659,
+              "b": 437,
+              "below": 168,
+              "c": 244,
+              "missing": 389
             },
             "empty_bands": [],
             "shares": {
-              "a": 0.6572,
-              "b": 0.1114,
-              "below": 0.1724,
-              "c": 0.059,
-              "missing": 0.0
+              "a": 0.6823,
+              "b": 0.1121,
+              "below": 0.0431,
+              "c": 0.0626,
+              "missing": 0.0998
             }
           },
           "precision_all_truth": {
             "bands": {
               "a": {
-                "correct": 48,
-                "n": 190,
-                "p_correct": 0.2526
+                "correct": 63,
+                "n": 213,
+                "p_correct": 0.2958
               },
               "b": {
                 "correct": 2,
@@ -842,19 +840,18 @@
                 "p_correct": 0.125
               },
               "below": {
-                "correct": 16,
-                "n": 44,
-                "p_correct": 0.3636
+                "correct": 0,
+                "n": 2,
+                "p_correct": 0.0
               },
               "c": {
-                "correct": 1,
-                "n": 5,
-                "p_correct": 0.2
+                "correct": 2,
+                "n": 9,
+                "p_correct": 0.2222
               }
             },
             "inversions": [
-              "b<c",
-              "c<below"
+              "b<c"
             ],
             "monotone": false
           },
@@ -862,8 +859,8 @@
             "bands": {
               "a": {
                 "correct": 23,
-                "n": 165,
-                "p_correct": 0.1394
+                "n": 173,
+                "p_correct": 0.1329
               },
               "b": {
                 "correct": 0,
@@ -872,12 +869,12 @@
               },
               "below": {
                 "correct": 0,
-                "n": 28,
+                "n": 2,
                 "p_correct": 0.0
               },
               "c": {
                 "correct": 0,
-                "n": 4,
+                "n": 7,
                 "p_correct": 0.0
               }
             },
@@ -888,10 +885,10 @@
         "reachable_ceiling": {
           "by_msi_level": {
             "1": {
-              "a": 26,
+              "a": 41,
               "b": 1,
-              "below": 16,
-              "c": 1,
+              "below": 0,
+              "c": 2,
               "missing": 0
             },
             "2": {
@@ -902,18 +899,18 @@
               "missing": 0
             },
             "3": {
-              "a": 2097,
+              "a": 2126,
               "b": 184,
-              "below": 147,
-              "c": 61,
-              "missing": 0
+              "below": 89,
+              "c": 62,
+              "missing": 28
             },
             "4": {
-              "a": 405,
+              "a": 462,
               "b": 87,
-              "below": 546,
-              "c": 127,
-              "missing": 0
+              "below": 116,
+              "c": 139,
+              "missing": 361
             },
             "5": {
               "a": 0,
@@ -931,27 +928,27 @@
           "note": "top band lowered to sit inside the Platt-reachable range",
           "occupancy": {
             "counts": {
-              "a": 2721,
+              "a": 2822,
               "b": 274,
-              "below": 713,
-              "c": 189,
-              "missing": 0
+              "below": 209,
+              "c": 203,
+              "missing": 389
             },
             "empty_bands": [],
             "shares": {
-              "a": 0.6982,
+              "a": 0.7241,
               "b": 0.0703,
-              "below": 0.183,
-              "c": 0.0485,
-              "missing": 0.0
+              "below": 0.0536,
+              "c": 0.0521,
+              "missing": 0.0998
             }
           },
           "precision_all_truth": {
             "bands": {
               "a": {
-                "correct": 49,
-                "n": 193,
-                "p_correct": 0.2539
+                "correct": 64,
+                "n": 216,
+                "p_correct": 0.2963
               },
               "b": {
                 "correct": 1,
@@ -959,19 +956,18 @@
                 "p_correct": 0.0769
               },
               "below": {
-                "correct": 16,
-                "n": 45,
-                "p_correct": 0.3556
+                "correct": 0,
+                "n": 3,
+                "p_correct": 0.0
               },
               "c": {
-                "correct": 1,
-                "n": 4,
+                "correct": 2,
+                "n": 8,
                 "p_correct": 0.25
               }
             },
             "inversions": [
-              "b<c",
-              "c<below"
+              "b<c"
             ],
             "monotone": false
           },
@@ -979,8 +975,8 @@
             "bands": {
               "a": {
                 "correct": 23,
-                "n": 167,
-                "p_correct": 0.1377
+                "n": 175,
+                "p_correct": 0.1314
               },
               "b": {
                 "correct": 0,
@@ -989,12 +985,12 @@
               },
               "below": {
                 "correct": 0,
-                "n": 29,
+                "n": 3,
                 "p_correct": 0.0
               },
               "c": {
                 "correct": 0,
-                "n": 3,
+                "n": 6,
                 "p_correct": 0.0
               }
             },
@@ -1005,68 +1001,68 @@
       },
       "column": "rank1_evidence_confidence",
       "curated_sublevel_separation": {
-        "fine_median_spread": 0.0024,
+        "fine_median_spread": 0.0014,
         "fine_sublevels": [
           "2C",
           "3A",
           "3B",
           "3C"
         ],
-        "median_spread": 0.1048,
+        "median_spread": 0.0062,
         "per_sublevel": {
           "2C": {
-            "median": 0.9981,
-            "n": 163,
-            "p25": 0.9902,
-            "p75": 0.9992
+            "median": 0.9986,
+            "n": 152,
+            "p25": 0.9965,
+            "p75": 0.9994
           },
           "3A": {
-            "median": 0.9957,
-            "n": 358,
-            "p25": 0.5106,
-            "p75": 0.9986
+            "median": 0.9972,
+            "n": 323,
+            "p25": 0.8685,
+            "p75": 0.9989
           },
           "3B": {
-            "median": 0.9978,
-            "n": 253,
-            "p25": 0.9903,
+            "median": 0.9979,
+            "n": 249,
+            "p25": 0.9949,
             "p75": 0.9988
           },
           "3C": {
-            "median": 0.9965,
-            "n": 175,
-            "p25": 0.8676,
-            "p75": 0.9989
+            "median": 0.9978,
+            "n": 168,
+            "p25": 0.9919,
+            "p75": 0.9991
           },
           "4": {
-            "median": 0.998,
-            "n": 107,
-            "p25": 0.9925,
-            "p75": 0.9994
+            "median": 0.9984,
+            "n": 99,
+            "p25": 0.9973,
+            "p75": 0.9996
           },
           "4?": {
-            "median": 0.998,
-            "n": 64,
-            "p25": 0.6975,
-            "p75": 0.9989
+            "median": 0.9987,
+            "n": 55,
+            "p25": 0.9976,
+            "p75": 0.9994
           },
           "5": {
-            "median": 0.9952,
-            "n": 1315,
-            "p25": 0.4616,
-            "p75": 0.9987
+            "median": 0.9971,
+            "n": 1198,
+            "p25": 0.5798,
+            "p75": 0.9988
           },
           "KNOWN": {
-            "median": 0.9958,
-            "n": 70,
-            "p25": 0.0,
-            "p75": 0.9993
+            "median": 0.9991,
+            "n": 65,
+            "p25": 0.9958,
+            "p75": 1.0
           },
           "Released": {
-            "median": 0.8933,
+            "median": 0.9929,
             "n": 25,
-            "p25": 0.7189,
-            "p75": 0.9987
+            "p25": 0.7739,
+            "p75": 1.0
           }
         }
       },
@@ -1074,111 +1070,111 @@
         {
           "correct": 0,
           "decile": 1,
-          "n": 21,
-          "p_correct": 0.0,
-          "score_max": 0.0,
-          "score_min": 0.0
-        },
-        {
-          "correct": 0,
-          "decile": 2,
-          "n": 21,
+          "n": 19,
           "p_correct": 0.0,
           "score_max": 0.5557,
-          "score_min": 0.0
+          "score_min": 0.338
         },
         {
           "correct": 1,
-          "decile": 3,
-          "n": 21,
-          "p_correct": 0.0476,
-          "score_max": 0.9955,
+          "decile": 2,
+          "n": 20,
+          "p_correct": 0.05,
+          "score_max": 0.9952,
           "score_min": 0.5617
         },
         {
           "correct": 3,
-          "decile": 4,
-          "n": 21,
-          "p_correct": 0.1429,
-          "score_max": 0.9971,
+          "decile": 3,
+          "n": 19,
+          "p_correct": 0.1579,
+          "score_max": 0.9969,
           "score_min": 0.9955
         },
         {
           "correct": 3,
+          "decile": 4,
+          "n": 20,
+          "p_correct": 0.15,
+          "score_max": 0.9977,
+          "score_min": 0.9969
+        },
+        {
+          "correct": 2,
           "decile": 5,
-          "n": 21,
-          "p_correct": 0.1429,
-          "score_max": 0.998,
-          "score_min": 0.9971
+          "n": 20,
+          "p_correct": 0.1,
+          "score_max": 0.9986,
+          "score_min": 0.9977
         },
         {
-          "correct": 3,
+          "correct": 2,
           "decile": 6,
-          "n": 21,
-          "p_correct": 0.1429,
-          "score_max": 0.9988,
-          "score_min": 0.9981
+          "n": 19,
+          "p_correct": 0.1053,
+          "score_max": 0.9989,
+          "score_min": 0.9986
         },
         {
-          "correct": 3,
+          "correct": 2,
           "decile": 7,
-          "n": 21,
-          "p_correct": 0.1429,
+          "n": 20,
+          "p_correct": 0.1,
           "score_max": 0.9992,
-          "score_min": 0.9988
+          "score_min": 0.999
         },
         {
-          "correct": 3,
+          "correct": 4,
           "decile": 8,
-          "n": 21,
-          "p_correct": 0.1429,
-          "score_max": 0.9994,
-          "score_min": 0.9992
+          "n": 19,
+          "p_correct": 0.2105,
+          "score_max": 0.9996,
+          "score_min": 0.9993
         },
         {
           "correct": 4,
           "decile": 9,
-          "n": 21,
-          "p_correct": 0.1905,
+          "n": 20,
+          "p_correct": 0.2,
           "score_max": 0.9999,
-          "score_min": 0.9995
+          "score_min": 0.9996
         },
         {
-          "correct": 3,
+          "correct": 2,
           "decile": 10,
-          "n": 22,
-          "p_correct": 0.1364,
+          "n": 20,
+          "p_correct": 0.1,
           "score_max": 1.0,
           "score_min": 0.9999
         }
       ],
       "discrimination_all_truth": {
-        "auc": 0.4762,
-        "median_correct": 0.9969,
-        "median_incorrect": 0.9979,
+        "auc": 0.5794,
+        "median_correct": 0.9988,
+        "median_incorrect": 0.9985,
         "n_correct": 67,
-        "n_incorrect": 188
+        "n_incorrect": 173
       },
       "discrimination_model_scored": {
-        "auc": 0.6566,
+        "auc": 0.6005,
         "median_correct": 0.999,
-        "median_incorrect": 0.9979,
+        "median_incorrect": 0.9985,
         "n_correct": 23,
-        "n_incorrect": 188
+        "n_incorrect": 173
       },
       "distribution": {
-        "p0": 0.0,
-        "p10": 0.0,
+        "p0": 0.2169,
+        "p10": 0.468,
         "p100": 1.0,
-        "p25": 0.5,
-        "p50": 0.9962,
-        "p75": 0.9987,
-        "p90": 0.9995,
-        "p95": 0.9998
+        "p25": 0.679,
+        "p50": 0.9974,
+        "p75": 0.9989,
+        "p90": 0.9996,
+        "p95": 0.9999
       },
       "label": "evidence_confidence (pipeline candidate score / matrix \"Confidence Score\")",
-      "n_present": 3897,
-      "share_at_or_above_0_98": 0.6243
+      "n_present": 3508,
+      "share_at_or_above_0_98": 0.7204
     },
     "raw_evidence": {
       "band_schemes": {
