@@ -148,7 +148,7 @@
         "coverage": 1.0,
         "lift_over_base_rate": 0.0
       },
-      "tier_low_0.38": {
+      "tier_low": {
         "n": 86,
         "correct": 41,
         "accuracy": 0.4767,
@@ -160,7 +160,7 @@
         "coverage": 0.9348,
         "lift_over_base_rate": -0.0016
       },
-      "tier_moderate_0.48": {
+      "tier_moderate": {
         "n": 44,
         "correct": 22,
         "accuracy": 0.5,
@@ -172,7 +172,7 @@
         "coverage": 0.4783,
         "lift_over_base_rate": 0.0217
       },
-      "tier_high_0.65": {
+      "tier_high": {
         "n": 0,
         "correct": 0,
         "accuracy": null,

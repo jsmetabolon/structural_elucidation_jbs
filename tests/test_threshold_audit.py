@@ -5,6 +5,8 @@ import importlib.util
 import json
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -59,6 +61,45 @@ def test_the_recommendation_names_the_raw_score_when_calibration_does_not_help()
     assert block["per_source_beats_pooled"] is True
     assert block["per_source_beats_raw"] is False
     assert "raw evidence score" in block["recommendation"]
+
+
+# --- retune traps -------------------------------------------------------------
+
+
+def test_the_sweep_grid_always_contains_the_tier_cutoffs():
+    """A retuned cutoff off the hand-written grid used to vanish from the artifact."""
+    for value in (T.C.TIER_LOW, T.C.TIER_MODERATE, T.C.TIER_HIGH):
+        assert round(value, 4) in T.SCORE_GRID
+
+
+def test_named_operating_points_are_keyed_by_tier_not_by_value():
+    """Keys embedding the number would assert the old cutoff after a retune."""
+    for name in T.NAMED_SCORE_POINTS:
+        if name.startswith("tier_"):
+            assert not any(character.isdigit() for character in name), name
+
+
+def test_unpicking_the_grid_union_fails_at_import_rather_than_silently():
+    original = dict(T.NAMED_SCORE_POINTS)
+    T.NAMED_SCORE_POINTS["tier_high"] = 0.6123
+    try:
+        with pytest.raises(AssertionError, match="off the sweep grid"):
+            T._assert_named_points_are_on_the_grid()
+    finally:
+        T.NAMED_SCORE_POINTS.clear()
+        T.NAMED_SCORE_POINTS.update(original)
+
+
+def test_a_deliberately_narrow_grid_may_still_omit_a_named_point():
+    """Unit callers pass narrow grids on purpose; only the default grid is guarded."""
+    assert T._named_points([{"threshold": 0.9}], (0.9,)) == {}
+
+
+def test_every_named_point_survives_a_sweep_on_the_default_grid():
+    scores = [0.05 * i for i in range(20)]
+    labels = [i % 2 == 0 for i in range(20)]
+    result = T.score_cutoff_sweep(scores, labels)
+    assert set(result["named_operating_points"]) == set(T.NAMED_SCORE_POINTS)
 
 
 def test_degeneracy_check_needs_levels_to_say_anything():

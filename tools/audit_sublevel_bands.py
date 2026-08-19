@@ -660,7 +660,10 @@ def render_markdown(result: dict) -> str:
     add("| | Platt `overall` | Re-anchored `raw_evidence` |")
     add("|---|---:|---:|")
     add(f"| Median | {eq['median_platt']} | {eq['median_raw']} |")
-    add(f"| Reports in the top band at 0.65 | {eq['top_band_platt']:,} | {eq['top_band_raw']:,} |")
+    add(
+        f"| Reports in the top band at {C.TIER_HIGH} | {eq['top_band_platt']:,} "
+        f"| {eq['top_band_raw']:,} |"
+    )
     add(f"| AUC on model-scored reports | {eq['auc_model_scored_platt']} | {eq['auc_model_scored_raw']} |")
     add("")
     verdict = []

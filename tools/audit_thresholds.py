@@ -49,14 +49,42 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import calibrate_confidence as CAL  # noqa: E402
 
 # Thresholds on the calibrated evidence score. 0.10 is the value that prompted
-# this audit; 0.38/0.48/0.65 are the tier cutoffs the reports use today.
-SCORE_GRID = (0.10, 0.20, 0.30, 0.38, 0.45, 0.48, 0.55, 0.60, 0.65, 0.70)
+# this audit. The tier cutoffs are unioned into the grid rather than written into
+# it by hand, because the named points below are looked up by exact membership: a
+# retuned cutoff that no longer appeared in a hand-maintained grid would be
+# dropped from the artifact silently rather than failing.
+BASE_SCORE_GRID = (0.10, 0.20, 0.30, 0.45, 0.55, 0.60, 0.70)
+# Keys name the tier, not its current value. They used to embed the number
+# ("tier_high_0.65"), so a retune left three keys in the committed JSON - and in
+# the test that compares against it - asserting cutoffs that no longer existed.
 NAMED_SCORE_POINTS = {
     "proposed_0.10": 0.10,
-    "tier_low_0.38": C.TIER_LOW,
-    "tier_moderate_0.48": C.TIER_MODERATE,
-    "tier_high_0.65": C.TIER_HIGH,
+    "tier_low": C.TIER_LOW,
+    "tier_moderate": C.TIER_MODERATE,
+    "tier_high": C.TIER_HIGH,
 }
+SCORE_GRID = tuple(sorted(set(BASE_SCORE_GRID) | {round(v, 4) for v in NAMED_SCORE_POINTS.values()}))
+
+
+def _assert_named_points_are_on_the_grid() -> None:
+    """Fail at import if a named cutoff could drop out of the artifact.
+
+    The sweep reports named operating points by looking them up in the grid, so a
+    cutoff missing from it is omitted rather than reported. The union above makes
+    that impossible; this is what notices if someone unpicks the union.
+    """
+    missing = {
+        name: value
+        for name, value in NAMED_SCORE_POINTS.items()
+        if round(float(value), 4) not in SCORE_GRID
+    }
+    if missing:
+        raise AssertionError(
+            f"named operating points are off the sweep grid and would be dropped: {missing}"
+        )
+
+
+_assert_named_points_are_on_the_grid()
 # Report depths the committed audit records recovery for.
 DEPTH_GRID = (1, 3, 10)
 # MSI L2 boundary candidates. The L2 rule is the one that decides whether a
@@ -172,11 +200,24 @@ def score_cutoff_sweep(
         "auc": round(area, 4) if area is not None else None,
         "auc_ci95": bootstrap_auc_ci(scores, labels),
         "grid": points,
-        "named_operating_points": {
-            name: next(point for point in points if point["threshold"] == round(value, 4))
-            for name, value in NAMED_SCORE_POINTS.items()
-            if any(point["threshold"] == round(value, 4) for point in points)
-        },
+        "named_operating_points": _named_points(points, grid),
+    }
+
+
+def _named_points(points: list[dict[str, Any]], grid: Sequence[float]) -> dict[str, Any]:
+    """Pull the named cutoffs out of the sweep.
+
+    A named point absent from the grid is omitted, which is right for a caller
+    that deliberately passes a narrow grid. What must never happen is the
+    *default* grid losing a tier cutoff after a retune, and that is prevented by
+    construction: :data:`SCORE_GRID` unions the constants in, and
+    :func:`_assert_named_points_are_on_the_grid` checks it at import.
+    """
+    by_threshold = {point["threshold"]: point for point in points}
+    return {
+        name: by_threshold[round(float(value), 4)]
+        for name, value in NAMED_SCORE_POINTS.items()
+        if round(float(value), 4) in by_threshold
     }
 
 
