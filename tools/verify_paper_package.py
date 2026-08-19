@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import re
 import sys
@@ -104,6 +105,70 @@ def tier_errors(manuscript: str, presentation: dict[str, Any]) -> list[str]:
                     f"manuscript still says the High tier is empty ('{claim}') while the audit "
                     f"reports {high:,}; the Figure 4 caption argues from that emptiness and needs "
                     "rewriting, not renumbering"
+                )
+    return problems
+
+
+def downstream_tier_errors(paper: Path, presentation: dict[str, Any]) -> list[str]:
+    """Check the tier counts in artifacts CI cannot regenerate.
+
+    Table S2 and the Figure 4 SVG are rebuilt from this same artifact inside the
+    CI regenerate-and-diff step, so they cannot drift from it. ``baseline_claims``
+    and ``claim_evidence`` are not: both are written by
+    ``tools/build_paper_claim_audit.py``, which needs a report bundle, so a change
+    to the tier rule that is made without one leaves them asserting the old
+    distribution with nothing to notice.
+
+    The SVG is checked anyway. It bakes its counts in as literal text, and it is
+    the display item a reader is most likely to take the numbers from.
+    """
+    problems: list[str] = []
+    tiers = {name: int(presentation["tier_distribution"].get(name, 0)) for name in TIER_ORDER}
+    expected = {name: count for name, count in tiers.items() if count}
+
+    claims = paper / "supplement/baseline_claims.json"
+    if claims.exists():
+        blob = json.loads(claims.read_text())
+        entries = blob.get("claims") if isinstance(blob, dict) else None
+        for entry in entries or []:
+            if entry.get("claim_id") != "identification_confidence_tier_distribution":
+                continue
+            value = entry.get("value")
+            if isinstance(value, str):
+                try:
+                    value = json.loads(value)
+                except ValueError:
+                    value = None
+            if value != expected:
+                problems.append(
+                    f"baseline_claims.json tier distribution drifted from the audit artifact: "
+                    f"{value} != {expected}"
+                )
+
+    evidence = paper / "supplement/claim_evidence.csv"
+    if evidence.exists():
+        with evidence.open(newline="") as handle:
+            for row in csv.DictReader(handle):
+                if row.get("claim_id") != "identification_confidence_tier_distribution":
+                    continue
+                try:
+                    value = json.loads(row.get("value") or "")
+                except ValueError:
+                    value = None
+                if value != expected:
+                    problems.append(
+                        f"claim_evidence.csv tier distribution drifted from the audit artifact: "
+                        f"{value} != {expected}"
+                    )
+
+    figure = paper / "figures/fig4_identification_distributions.svg"
+    if figure.exists():
+        content = figure.read_text()
+        for name, count in tiers.items():
+            if f">{count} (" not in content:
+                problems.append(
+                    f"fig4 does not carry the current {name} tier count ({count}); "
+                    "regenerate it from the presentation audit"
                 )
     return problems
 
@@ -290,7 +355,9 @@ def main() -> None:
     loo_path = paper / "data/pathway/audit_pathway_loo.json"
     presentation_path = paper / "data/presentation/audit_presentation_summary.json"
     if presentation_path.exists():
-        errors.extend(tier_errors(manuscript, json.loads(presentation_path.read_text())))
+        presentation_blob = json.loads(presentation_path.read_text())
+        errors.extend(tier_errors(manuscript, presentation_blob))
+        errors.extend(downstream_tier_errors(paper, presentation_blob))
     if all(path.exists() for path in (structure_path, pathway_path, loo_path, presentation_path)):
         statistics = audit_statistics(
             json.loads(structure_path.read_text()),

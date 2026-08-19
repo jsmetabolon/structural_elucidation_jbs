@@ -80,6 +80,31 @@ def test_a_filled_high_tier_also_flags_the_caption_that_argues_from_emptiness():
     assert any("leaves the strongest confidence tier empty" in p for p in problems)
 
 
+# --- artifacts CI cannot regenerate -------------------------------------------
+
+PAPER = ROOT / "docs" / "paper"
+
+
+def test_the_committed_downstream_artifacts_agree_with_the_audit():
+    """baseline_claims and claim_evidence are bundle-gated, so nothing else checks them."""
+    assert V.downstream_tier_errors(PAPER, PRESENTATION) == []
+
+
+def test_a_drifted_downstream_claim_is_caught():
+    moved = json.loads(json.dumps(PRESENTATION))
+    moved["tier_distribution"]["Moderate"] += 7
+    problems = V.downstream_tier_errors(PAPER, moved)
+    assert any("baseline_claims.json" in p for p in problems), problems
+    assert any("claim_evidence.csv" in p for p in problems), problems
+
+
+def test_a_stale_figure_is_caught():
+    """Figure 4 bakes its counts in as text, and readers take numbers from it."""
+    moved = json.loads(json.dumps(PRESENTATION))
+    moved["tier_distribution"]["Tentative"] += 3
+    assert any("fig4" in p for p in V.downstream_tier_errors(PAPER, moved))
+
+
 def test_the_caption_guard_stays_quiet_while_high_is_empty():
     for claim in V.EMPTY_HIGH_CLAIMS:
         assert claim in MANUSCRIPT, f"caption wording changed; the guard now watches nothing: {claim}"
