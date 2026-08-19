@@ -53,6 +53,7 @@ jobs:
           python3 tools/audit_thresholds.py
           python3 tools/audit_rt_feasibility.py
           python3 tools/audit_identification_rules.py
+          python3 tools/audit_isomer_discrimination.py
           python3 tools/build_parameter_table.py
           python3 tools/paper_figures.py \
             --structure docs/paper/data/structure/audit_structure_summary.json \
@@ -84,7 +85,8 @@ jobs:
             tests/test_publication_analyses.py \
             tests/test_threshold_audit.py \
             tests/test_rt_feasibility.py \
-            tests/test_identification_rules.py
+            tests/test_identification_rules.py \
+            tests/test_isomer_discrimination.py
 
   lint:
     runs-on: ubuntu-latest
@@ -107,6 +109,7 @@ jobs:
             tools/analyze_selective_prediction.py \
             tools/analyze_taxonomy_harmonization.py \
             tools/audit_identification_rules.py \
+            tools/audit_isomer_discrimination.py \
             tools/audit_rt_feasibility.py \
             tools/audit_thresholds.py \
             tools/build_manuscript_docx.py \
