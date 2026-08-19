@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """Executive summary of the top ten candidates proposed for every X-compound.
 
-Read-only against a delivered report bundle. Pure standard library.
+Read-only against a delivered report bundle. The displayed ``evidence_confidence``
+is filled through the pipeline's own canonical definition
+(``structural_elucidation/chemistry/evidence.py``) so an uncomputed score renders
+blank rather than as a misleading ``0.0``, and a populated one matches the number
+the reranker consumes as a feature.
 
 Emits two CSVs:
 
@@ -49,6 +53,15 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+import pandas as pd  # noqa: E402  (imported after the sys.path bootstrap above)
+
+from structural_elucidation.chemistry.evidence import (  # noqa: E402
+    BASIS_BACKFILLED,
+    BASIS_EMITTED,
+    BASIS_UNAVAILABLE,
+    backfill_evidence_confidence,
+)
+
 csv.field_size_limit(10**9)
 
 # The published definition of a correct structure, matching audit_mass_policy.py
@@ -84,6 +97,7 @@ LONG_COLUMNS = [
     "candidate_confidence",
     "rank_score_relative",
     "evidence_confidence",
+    "evidence_confidence_basis",
     "mass_match_score",
     "abs_mass_error_da",
     "truth_basis",
@@ -113,6 +127,7 @@ ROLLUP_COLUMNS = [
     "rank1_candidate_confidence",
     "rank1_rank_score_relative",
     "rank1_evidence_confidence",
+    "rank1_evidence_confidence_basis",
     "rank1_mass_match_score",
 ]
 
@@ -132,6 +147,38 @@ def _clean(value: Any) -> str:
 
 def _round(value: float | None, places: int) -> str:
     return "" if value is None else f"{round(value, places)}"
+
+
+# evidence_confidence is only emitted by some candidate generators; the rest reach
+# the sidecar as 0.0 through the pool's missing-column fill, so an absent measurement
+# reads as a measured zero. Fill it through the pipeline's canonical definition so the
+# displayed number equals the reranker's own feature, and an uncomputed score renders
+# blank instead of 0.0. See structural_elucidation/chemistry/evidence.py.
+EVIDENCE_EMITTED = BASIS_EMITTED
+EVIDENCE_BACKFILLED = BASIS_BACKFILLED
+EVIDENCE_UNAVAILABLE = BASIS_UNAVAILABLE
+
+
+def _evidence_for_rows(rows: list[dict[str, Any]]) -> list[tuple[float | None, str]]:
+    """Canonical evidence_confidence + basis for a report's candidate rows.
+
+    ``value`` is ``None`` where basis is ``unavailable`` so the cell renders blank
+    rather than a misleading ``0.0``.
+    """
+    if not rows:
+        return []
+    score, basis = backfill_evidence_confidence(pd.DataFrame(rows))
+    out: list[tuple[float | None, str]] = []
+    for position in range(len(rows)):
+        label = str(basis.iloc[position])
+        value = None if label == EVIDENCE_UNAVAILABLE else float(score.iloc[position])
+        out.append((value, label))
+    return out
+
+
+def _display_evidence(row: dict[str, Any]) -> tuple[float | None, str]:
+    """Single-row convenience wrapper over :func:`_evidence_for_rows`."""
+    return _evidence_for_rows([row])[0]
 
 
 FORMULA_TOKEN = re.compile(r"([A-Z][a-z]?)(\d*)")
@@ -228,11 +275,13 @@ def read_report(directory: Path) -> dict[str, Any] | None:
     with candidates_csv.open(newline="") as handle:
         rows = list(csv.DictReader(handle))[:TOP_N]
 
+    evidence_by_position = _evidence_for_rows(rows)
     candidates = []
-    for row in rows:
+    for position, row in enumerate(rows):
         rank_value = _num(row.get("rank"))
         rank = int(rank_value) if rank_value is not None else len(candidates) + 1
         extra = evidence.get(rank, {})
+        evidence_value, evidence_basis = evidence_by_position[position]
         candidates.append(
             {
                 "rank": rank,
@@ -241,7 +290,8 @@ def read_report(directory: Path) -> dict[str, Any] | None:
                 or _clean(row.get("candidate_formula")),
                 "candidate_confidence": _num(extra.get("candidate_confidence")),
                 "rank_score_relative": _num(row.get("candidate_report_score")),
-                "evidence_confidence": _num(row.get("evidence_confidence")),
+                "evidence_confidence": evidence_value,
+                "evidence_confidence_basis": evidence_basis,
                 "mass_match_score": _num(row.get("mass_match_score")),
                 "abs_mass_error_da": _num(row.get("abs_mass_error_da")),
                 "truth_tanimoto": _num(row.get("truth_tanimoto")),
@@ -360,6 +410,7 @@ def build_rows(
                 "candidate_confidence": _round(candidate["candidate_confidence"], 4),
                 "rank_score_relative": _round(candidate["rank_score_relative"], 6),
                 "evidence_confidence": _round(candidate["evidence_confidence"], 6),
+                "evidence_confidence_basis": candidate.get("evidence_confidence_basis", ""),
                 "mass_match_score": _round(candidate["mass_match_score"], 6),
                 "abs_mass_error_da": _round(candidate["abs_mass_error_da"], 6),
                 "truth_basis": context["truth_basis"],
@@ -389,6 +440,7 @@ def build_rows(
         "rank1_candidate_confidence": _round(top.get("candidate_confidence"), 4),
         "rank1_rank_score_relative": _round(top.get("rank_score_relative"), 6),
         "rank1_evidence_confidence": _round(top.get("evidence_confidence"), 6),
+        "rank1_evidence_confidence_basis": top.get("evidence_confidence_basis", ""),
         "rank1_mass_match_score": _round(top.get("mass_match_score"), 6),
     }
     return rows, rollup

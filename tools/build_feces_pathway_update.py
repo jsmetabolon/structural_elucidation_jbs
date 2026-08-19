@@ -35,7 +35,9 @@ Two structural caveats that no confidence tier fixes:
   was trained to emit, so classes it never predicts are diluted purely by the
   denominator growing. Those classes are flagged in the output.
 - Compounds are counted once each, regardless of how often they are detected.
-  ``--weight-by-detection`` reports the alternative.
+  ``--weight-by-detection`` reports the alternative: the expected number of
+  metabolites detected in a pathway, the sum of each compound's detection rate
+  (knowns plus pathway-annotated X-compounds).
 
 Usage:
     python3 tools/build_feces_pathway_update.py \
@@ -260,10 +262,17 @@ def compose(
     level: str,
     weight_by_detection: bool,
 ) -> list[dict[str, Any]]:
-    """Per-pathway baseline, addition and updated share.
+    """Per-pathway baseline, addition and updated totals.
 
     ``baseline`` and ``added`` are already filtered to what counts as detected.
     Each record contributes 1, or its detection rate when weighting.
+
+    Under ``weight_by_detection``, the primary reported figure is
+    ``avg_metabolites_detected``: the sum of detection rates for knowns and
+    pathway-annotated X-compounds in that pathway (five metabolites each seen
+    20% of the time contribute 1.0), rounded to the nearest integer.
+    Compositional ``updated_pct`` is omitted in that mode; by-compound counting
+    still reports percentage shares.
     """
 
     key = "super_pathway" if level == "super" else "sub_pathway"
@@ -297,25 +306,50 @@ def compose(
     for pathway in sorted(set(base_totals) | set(add_totals)):
         base = base_totals.get(pathway, 0.0)
         extra = add_totals.get(pathway, 0.0)
+        combined = base + extra
         base_pct = (base / base_sum * 100) if base_sum else 0.0
-        updated_pct = ((base + extra) / updated_sum * 100) if updated_sum else 0.0
-        rows.append(
-            {
+        updated_pct = (combined / updated_sum * 100) if updated_sum else 0.0
+        if weight_by_detection:
+            known_avg = int(round(base))
+            x_avg = int(round(extra))
+            total_avg = int(round(combined))
+            row = {
                 "chemical_pathway": pathway,
-                "identified_detected": round(base, 4) if weight_by_detection else int(base),
+                "identified_detected": known_avg,
                 "baseline_pct": round(base_pct, 2),
-                "x_compounds_added": round(extra, 4) if weight_by_detection else int(extra),
-                "updated_total": round(base + extra, 4)
-                if weight_by_detection
-                else int(base + extra),
+                "x_compounds_added": x_avg,
+                "updated_total": total_avg,
+                # A class the pipeline never predicts can only lose share here,
+                # so its movement says nothing about feces.
+                "outside_predicted_vocabulary": str(
+                    pathway not in predicted_vocabulary
+                ).upper(),
+                # Primary reported average: expected metabolites detected = Σ rates,
+                # rounded to the nearest integer. No updated_pct: absolute averages
+                # always rise or stay flat when X are added; compositional shares
+                # do not, and were misleading here.
+                "avg_metabolites_detected_known": known_avg,
+                "avg_metabolites_detected_x": x_avg,
+                "avg_metabolites_detected": total_avg,
+            }
+        else:
+            row = {
+                "chemical_pathway": pathway,
+                "identified_detected": int(base),
+                "baseline_pct": round(base_pct, 2),
+                "x_compounds_added": int(extra),
+                "updated_total": int(combined),
                 "updated_pct": round(updated_pct, 2),
                 "delta_pct_points": round(updated_pct - base_pct, 2),
                 # A class the pipeline never predicts can only lose share here,
                 # so its movement says nothing about feces.
-                "outside_predicted_vocabulary": str(pathway not in predicted_vocabulary).upper(),
+                "outside_predicted_vocabulary": str(
+                    pathway not in predicted_vocabulary
+                ).upper(),
             }
-        )
-    return sorted(rows, key=lambda row: -float(row["updated_total"]))
+        rows.append(row)
+    sort_key = "avg_metabolites_detected" if weight_by_detection else "updated_total"
+    return sorted(rows, key=lambda row: -float(row[sort_key]))
 
 
 def build(
@@ -392,6 +426,44 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         writer.writerows(rows)
 
 
+def write_workbook(
+    path: Path,
+    pathways: list[dict[str, Any]],
+    subpathways: list[dict[str, Any]],
+) -> None:
+    """Write pathway and sub-pathway results as tabs in one workbook."""
+
+    import openpyxl
+    from openpyxl.styles import Font
+    from openpyxl.utils import get_column_letter
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    workbook = openpyxl.Workbook()
+    workbook.remove(workbook.active)
+
+    for title, rows in (("Pathway", pathways), ("Subpathway", subpathways)):
+        sheet = workbook.create_sheet(title)
+        fields = list(rows[0])
+        sheet.append(fields)
+        for row in rows:
+            sheet.append([row[field] for field in fields])
+
+        for cell in sheet[1]:
+            cell.font = Font(bold=True)
+        sheet.freeze_panes = "A2"
+        sheet.auto_filter.ref = sheet.dimensions
+        for column_index, field in enumerate(fields, start=1):
+            longest = max(
+                len(str(field)),
+                max((len(str(row[field])) for row in rows), default=0),
+            )
+            sheet.column_dimensions[get_column_letter(column_index)].width = min(
+                longest + 2, 48
+            )
+
+    workbook.save(path)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--global-workbook", type=Path, required=True)
@@ -404,7 +476,11 @@ def main() -> None:
     parser.add_argument(
         "--weight-by-detection",
         action="store_true",
-        help="weight each compound by how often it is detected rather than counting it once",
+        help=(
+            "report expected metabolites detected per pathway (sum of detection "
+            "rates for knowns and pathway-annotated X-compounds) rather than "
+            "counting each compound once"
+        ),
     )
     parser.add_argument(
         "--inclusion-list",
@@ -459,10 +535,18 @@ def main() -> None:
             "known_side": "curated fecal inclusion list"
             if restrict_to is not None
             else "every metabolite the panel detects in feces",
-            "x_compounds": "present in the human-feces detection history",
-            "counting": "detection-rate weighted"
-            if args.weight_by_detection
-            else "one compound, one count",
+            "x_compounds": (
+                "present in the human-feces detection history and carrying a "
+                "pathway annotation (curated-in-vocabulary or predicted)"
+            ),
+            "counting": (
+                "expected metabolites detected per pathway: sum of detection "
+                "rates for knowns plus pathway-annotated X-compounds, each "
+                "average rounded to the nearest integer "
+                "(no compositional updated_pct in this mode)"
+                if args.weight_by_detection
+                else "one compound, one count"
+            ),
         },
         "x_compound_pathway_source": pathway_source_split(assignments),
         "coverage": {
@@ -493,6 +577,11 @@ def main() -> None:
     stem = "feces_pathway_update_weighted" if args.weight_by_detection else "feces_pathway_update"
     write_csv(args.out_dir / f"{stem}.csv", primary["super_pathway"])
     write_csv(args.out_dir / f"{stem}_subpathway.csv", primary["sub_pathway"])
+    write_workbook(
+        args.out_dir / f"{stem}.xlsx",
+        primary["super_pathway"],
+        primary["sub_pathway"],
+    )
     (args.out_dir / f"{stem}.json").write_text(json.dumps(summary, indent=2) + "\n")
 
     print(
@@ -508,25 +597,45 @@ def main() -> None:
             f"{split['curated_agreement_rate']:.1%} of the time"
         )
     print()
-    header = (
-        f"{'Chemical pathway':<40s} {'ident':>6s} {'base%':>7s} {'+X':>5s} {'new%':>7s} "
-        f"{'delta':>7s}"
-    )
-    print(header)
-    print("-" * len(header))
-    for row in primary["super_pathway"]:
-        flag = " *" if row["outside_predicted_vocabulary"] == "TRUE" else ""
-        print(
-            f"{row['chemical_pathway']:<40s} {row['identified_detected']:>6} "
-            f"{row['baseline_pct']:>6.2f}% {row['x_compounds_added']:>5} "
-            f"{row['updated_pct']:>6.2f}% {row['delta_pct_points']:>+6.2f}{flag}"
+    if args.weight_by_detection:
+        header = (
+            f"{'Chemical pathway':<40s} {'known':>8s} {'+X':>8s} {'avg det':>8s}"
         )
-    print()
+        print(header)
+        print("-" * len(header))
+        for row in primary["super_pathway"]:
+            flag = " *" if row["outside_predicted_vocabulary"] == "TRUE" else ""
+            print(
+                f"{row['chemical_pathway']:<40s} "
+                f"{row['avg_metabolites_detected_known']:>8d} "
+                f"{row['avg_metabolites_detected_x']:>8d} "
+                f"{row['avg_metabolites_detected']:>8d}{flag}"
+            )
+        print()
+        print(
+            "avg det = expected metabolites detected (sum of detection rates for "
+            "knowns + pathway-annotated X-compounds)"
+        )
+    else:
+        header = (
+            f"{'Chemical pathway':<40s} {'ident':>6s} {'base%':>7s} {'+X':>5s} {'new%':>7s} "
+            f"{'delta':>7s}"
+        )
+        print(header)
+        print("-" * len(header))
+        for row in primary["super_pathway"]:
+            flag = " *" if row["outside_predicted_vocabulary"] == "TRUE" else ""
+            print(
+                f"{row['chemical_pathway']:<40s} {row['identified_detected']:>6} "
+                f"{row['baseline_pct']:>6.2f}% {row['x_compounds_added']:>5} "
+                f"{row['updated_pct']:>6.2f}% {row['delta_pct_points']:>+6.2f}{flag}"
+            )
+        print()
     print(
         "* the pipeline never predicts this class, so its share falls only because the "
         "denominator grew"
     )
-    print(f"[feces-pathway] wrote {args.out_dir}/{stem}.csv")
+    print(f"[feces-pathway] wrote {args.out_dir}/{stem}.csv and .xlsx")
 
 
 if __name__ == "__main__":

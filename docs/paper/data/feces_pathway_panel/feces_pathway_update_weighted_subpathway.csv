@@ -1,180 +1,180 @@
-chemical_pathway,identified_detected,baseline_pct,x_compounds_added,updated_total,updated_pct,delta_pct_points,outside_predicted_vocabulary
-Food Component/Plant,77.7561,14.77,36.7719,114.528,12.9,-1.87,FALSE
-Polypeptide,0.0,0.0,45.7368,45.7368,5.15,5.15,FALSE
-Dipeptide,2.378,0.45,29.4912,31.8693,3.59,3.14,FALSE
-Tryptophan Metabolism,11.439,2.17,13.2281,24.6671,2.78,0.61,FALSE
-Secondary Bile Acid Metabolism,19.8049,3.76,4.6491,24.454,2.75,-1.01,FALSE
-Benzoate Metabolism,10.3293,1.96,11.386,21.7152,2.45,0.48,FALSE
-Bile acids,21.0976,4.01,0.0,21.0976,2.38,-1.63,TRUE
-Chemical,2.8415,0.54,15.2982,18.1397,2.04,1.5,FALSE
-"Glutamate, Arginine, and Proline Metabolism",16.1585,3.07,0.0,16.1585,1.82,-1.25,TRUE
-"Fatty Acid, Dicarboxylate",2.3293,0.44,12.7018,15.031,1.69,1.25,FALSE
-Lysine Metabolism,9.8537,1.87,4.0175,13.8712,1.56,-0.31,FALSE
-Tyrosine Metabolism,3.0976,0.59,10.5789,13.6765,1.54,0.95,FALSE
-Phenylalanine Metabolism,9.0122,1.71,3.6842,12.6964,1.43,-0.28,FALSE
-"Leucine, Isoleucine and Valine Metabolism",2.0244,0.38,10.5439,12.5682,1.42,1.03,FALSE
-Histidine Metabolism,11.4756,2.18,0.8947,12.3703,1.39,-0.79,FALSE
-Unknown,0.0,0.0,12.1579,12.1579,1.37,1.37,FALSE
-"Aspartate, Threonine, Methionine Metabolism",11.8293,2.25,0.0,11.8293,1.33,-0.91,TRUE
-"Methionine, Cysteine, SAM and Taurine Metabolism",0.0,0.0,11.5789,11.5789,1.3,1.3,FALSE
-Ask Annie/Matt,0.0,0.0,10.2632,10.2632,1.16,1.16,FALSE
-Aromatic Compound Degradation,10.1585,1.93,0.0,10.1585,1.14,-0.79,TRUE
-Urea cycle; Arginine and Proline Metabolism,0.9756,0.19,8.8772,9.8528,1.11,0.92,FALSE
-Phenylpropanoids,9.7317,1.85,0.0,9.7317,1.1,-0.75,TRUE
-"Fatty Acid, Monohydroxy",0.9146,0.17,8.2807,9.1953,1.04,0.86,FALSE
-Branched Chain Amino Acid (Pyruvate derived) metabolism,9.1463,1.74,0.0,9.1463,1.03,-0.71,TRUE
-Bacterial/Fungal,6.1951,1.18,2.8596,9.0548,1.02,-0.16,FALSE
-"Fatty acid, hydroxy",8.9146,1.69,0.0,8.9146,1.0,-0.69,TRUE
-Polyamine Metabolism,6.4268,1.22,2.0351,8.4619,0.95,-0.27,FALSE
-Nicotinate and Nicotinamide Metabolism,4.5732,0.87,3.7368,8.31,0.94,0.07,FALSE
-Aspartate family (OAA derived),7.9024,1.5,0.0,7.9024,0.89,-0.61,TRUE
-Alkaloids,7.7195,1.47,0.0,7.7195,0.87,-0.6,TRUE
-"Serine, Glycine and Cysteine  Metabolism",7.7195,1.47,0.0,7.7195,0.87,-0.6,TRUE
-Phenylalanine and Tyrosine Metabolism,7.6829,1.46,0.0,7.6829,0.87,-0.59,TRUE
-TCA /Glyoxylate/ Methyl Citrate  Cycle,7.6341,1.45,0.0,7.6341,0.86,-0.59,TRUE
-Glutamate family (alpha-ketoglutarate derived),7.561,1.44,0.0,7.561,0.85,-0.58,TRUE
-Benzenoids,7.0976,1.35,0.0,7.0976,0.8,-0.55,TRUE
-Glutamate Metabolism,1.878,0.36,5.0,6.878,0.77,0.42,FALSE
-Medium Chain Fatty Acid,5.8537,1.11,0.9298,6.7835,0.76,-0.35,FALSE
-Terpenoids,6.7317,1.28,0.0,6.7317,0.76,-0.52,TRUE
-"Fatty acid, Dicarboxylate",6.4024,1.22,0.0,6.4024,0.72,-0.5,TRUE
-Primary Bile Acid Metabolism,5.3171,1.01,0.9298,6.2469,0.7,-0.31,FALSE
-Aromatic amino acid metabolism (PEP derived),5.9268,1.13,0.0,5.9268,0.67,-0.46,TRUE
-Long Chain Fatty Acid,5.8049,1.1,0.0,5.8049,0.65,-0.45,TRUE
-Aminosugar Metabolism,4.622,0.88,1.0526,5.6746,0.64,-0.24,FALSE
-Alanine and Aspartate Metabolism,0.9512,0.18,4.7193,5.6705,0.64,0.46,FALSE
-"Purine Metabolism, (Hypo)Xanthine/Inosine containing",4.9756,0.95,0.4561,5.4318,0.61,-0.33,FALSE
-"Purine Metabolism, Guanine containing",3.9878,0.76,1.4386,5.4264,0.61,-0.15,FALSE
-Steroid,5.3415,1.01,0.0,5.3415,0.6,-0.41,TRUE
-Androgenic Steroids,0.5732,0.11,4.6491,5.2223,0.59,0.48,FALSE
-Xanthine Metabolism,3.8415,0.73,1.3684,5.2099,0.59,-0.14,FALSE
-"Pyrimidine Metabolism, Cytidine containing",1.9878,0.38,2.9825,4.9703,0.56,0.18,FALSE
-"Pyrimidine Metabolism, Uracil containing",3.9878,0.76,0.7719,4.7597,0.54,-0.22,FALSE
-"Glycine, Serine and Threonine Metabolism",0.0,0.0,4.4912,4.4912,0.51,0.51,FALSE
-"Purine Metabolism, Adenine containing",2.8293,0.54,1.5789,4.4082,0.5,-0.04,FALSE
-Flavonoids,4.1463,0.79,0.0,4.1463,0.47,-0.32,TRUE
-Amines and polyamines,4.122,0.78,0.0,4.122,0.46,-0.32,TRUE
-Drug - Antibiotic,3.9878,0.76,0.0175,4.0053,0.45,-0.31,FALSE
-Fatty acid conjugate,3.939,0.75,0.0,3.939,0.44,-0.3,TRUE
-Ask Annie/Matt/Brian I,0.0,0.0,3.9123,3.9123,0.44,0.44,FALSE
-Hemoglobin and Porphyrin Metabolism,1.2561,0.24,2.6316,3.8877,0.44,0.2,FALSE
-Long Chain Monounsaturated Fatty Acid,3.7805,0.72,0.0,3.7805,0.43,-0.29,TRUE
-Orphan secondary metabolites,3.7317,0.71,0.0,3.7317,0.42,-0.29,TRUE
-Vitamin B6 Metabolism,2.7561,0.52,0.9123,3.6684,0.41,-0.11,FALSE
-Polyunsaturated Fatty Acid (n3 and n6),3.6463,0.69,0.0,3.6463,0.41,-0.28,TRUE
-Branched Chain Amino Acid (Aspartate derived) metabolism,3.5976,0.68,0.0,3.5976,0.41,-0.28,TRUE
-Lactoyl Amino Acid,1.6585,0.32,1.8596,3.5182,0.4,0.08,FALSE
-"Fructose, Mannose and Galactose Metabolism",3.5122,0.67,0.0,3.5122,0.4,-0.27,TRUE
-Dipeptide Derivative,3.4512,0.66,0.0,3.4512,0.39,-0.27,TRUE
-Acetylated Peptides,2.1829,0.41,1.0175,3.2005,0.36,-0.05,FALSE
-"Fatty Acid, Methyl Ester",0.0,0.0,3.193,3.193,0.36,0.36,FALSE
-Modified Peptides,0.0,0.0,3.193,3.193,0.36,0.36,FALSE
-Glycolysis and ED Pathway,3.1829,0.6,0.0,3.1829,0.36,-0.25,TRUE
-Choline metabolism,3.1463,0.6,0.0,3.1463,0.35,-0.24,TRUE
-"Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)",0.7561,0.14,2.3333,3.0894,0.35,0.2,FALSE
-Chemicals,2.939,0.56,0.0,2.939,0.33,-0.23,TRUE
-"Fatty Acid, Trihydroxy",0.0,0.0,2.9123,2.9123,0.33,0.33,FALSE
-Heme and Porphyrin Metabolism,2.9024,0.55,0.0,2.9024,0.33,-0.22,TRUE
-Phosphatidylcholine (PC),2.878,0.55,0.0,2.878,0.32,-0.22,TRUE
-Pantothenate and CoA Metabolism,2.8171,0.54,0.0,2.8171,0.32,-0.22,TRUE
-Ask DTS,0.0,0.0,2.7544,2.7544,0.31,0.31,FALSE
-Disaccharides and Oligosaccharides,2.3659,0.45,0.2807,2.6466,0.3,-0.15,FALSE
-Serine family (phosphoglycerate derived),2.6341,0.5,0.0,2.6341,0.3,-0.2,TRUE
-Inositol Metabolism,1.0,0.19,1.5789,2.5789,0.29,0.1,FALSE
-Pregnenolone Steroids,0.0,0.0,2.4035,2.4035,0.27,0.27,FALSE
-Chlorophyll and heme metabolism,2.378,0.45,0.0,2.378,0.27,-0.18,TRUE
-TCA Cycle,0.0,0.0,2.3684,2.3684,0.27,0.27,FALSE
-Eicosanoid,0.0,0.0,2.3333,2.3333,0.26,0.26,FALSE
-Long Chain Polyunsaturated Fatty Acid (n3 and n6),0.0,0.0,2.3333,2.3333,0.26,0.26,FALSE
-Lysolipid,2.2927,0.44,0.0,2.2927,0.26,-0.18,TRUE
-"Drug - Analgesics, Anesthetics",0.9268,0.18,1.3509,2.2777,0.26,0.08,FALSE
-Creatine Metabolism,1.9756,0.38,0.193,2.1686,0.24,-0.13,FALSE
-Auxin metabolism,2.1098,0.4,0.0,2.1098,0.24,-0.16,TRUE
-Phospholipid Metabolism,2.061,0.39,0.0,2.061,0.23,-0.16,TRUE
-Unknown Bile Acid,0.0,0.0,2.0526,2.0526,0.23,0.23,FALSE
-"Fatty Acid, Dihydroxy",0.9512,0.18,1.0877,2.0389,0.23,0.05,FALSE
-Serotonin Metabolism,2.0366,0.39,0.0,2.0366,0.23,-0.16,TRUE
-Glycogen Metabolism,1.8049,0.34,0.2281,2.0329,0.23,-0.11,FALSE
-Carnitine Metabolism,2.0,0.38,0.0,2.0,0.23,-0.15,TRUE
-"Pyrimidine Metabolism, Thymine containing",2.0,0.38,0.0,2.0,0.23,-0.15,TRUE
-Pyruvate Family derived,2.0,0.38,0.0,2.0,0.23,-0.15,TRUE
-Short Chain Fatty Acid,2.0,0.38,0.0,2.0,0.23,-0.15,TRUE
-Glutathione Metabolism,1.0122,0.19,0.9825,1.9947,0.22,0.03,FALSE
-Sphingolipid Synthesis,1.9878,0.38,0.0,1.9878,0.22,-0.15,TRUE
-Tocopherol Metabolism,0.2073,0.04,1.7719,1.9792,0.22,0.18,FALSE
-Gamma-glutamyl Amino Acid,1.0,0.19,0.8947,1.8947,0.21,0.02,FALSE
-Thiamine Metabolism,1.0,0.19,0.8947,1.8947,0.21,0.02,FALSE
-"Pyrimidine Metabolism, Orotate containing",1.8902,0.36,0.0,1.8902,0.21,-0.15,TRUE
-Riboflavin Metabolism,1.0,0.19,0.8772,1.8772,0.21,0.02,FALSE
-Pentose Metabolism,1.8049,0.34,0.0526,1.8575,0.21,-0.13,FALSE
-"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",0.0,0.0,1.807,1.807,0.2,0.2,FALSE
-Fatty Acid Metabolism (Acyl Glycine),0.0,0.0,1.7368,1.7368,0.2,0.2,FALSE
-Endocannabinoid,0.0,0.0,1.7018,1.7018,0.19,0.19,FALSE
-Unknown Steroid,0.0,0.0,1.6491,1.6491,0.19,0.19,FALSE
-"Drug - Antiinflammatory, Immunosuppressant",0.1585,0.03,1.4386,1.5971,0.18,0.15,FALSE
-Ceramides,0.0,0.0,1.5789,1.5789,0.18,0.18,FALSE
-Drug - Other,0.7439,0.14,0.8246,1.5685,0.18,0.04,FALSE
-Catecholamine Metabolism,1.561,0.3,0.0,1.561,0.18,-0.12,TRUE
-Corticosteroids,0.1585,0.03,1.2632,1.4217,0.16,0.13,FALSE
-Diacylglycerol,0.0,0.0,1.4035,1.4035,0.16,0.16,FALSE
-Fatty Acid Metabolism (also BCAA metabolism),1.3415,0.25,0.0,1.3415,0.15,-0.1,TRUE
-Galactosyl Glycerolipids,0.0,0.0,1.1754,1.1754,0.13,0.13,FALSE
-Phosphatidylethanolamine (PE),1.1463,0.22,0.0,1.1463,0.13,-0.09,TRUE
-Cyclic Dipeptide,0.0,0.0,1.1228,1.1228,0.13,0.13,FALSE
-"Sucrose, glucose,fructose metabolism",1.061,0.2,0.0,1.061,0.12,-0.08,TRUE
-Benzoxazinoids,1.0366,0.2,0.0,1.0366,0.12,-0.08,TRUE
-"Fatty Acid, Branched",1.0,0.19,0.0175,1.0175,0.11,-0.08,FALSE
-"Fatty Acid Metabolism (Acyl Carnitine, Long Chain Saturated)",1.0,0.19,0.0,1.0,0.11,-0.08,TRUE
-Glycerolipid Metabolism,1.0,0.19,0.0,1.0,0.11,-0.08,TRUE
-Photorespiration,1.0,0.19,0.0,1.0,0.11,-0.08,TRUE
-Sterol,0.0,0.0,1.0,1.0,0.11,0.11,FALSE
-Branched Chain Amino Acids (pyruvate derived),0.9878,0.19,0.0,0.9878,0.11,-0.08,TRUE
-Advanced Glycation End-product,0.0,0.0,0.9825,0.9825,0.11,0.11,FALSE
-"Glycolysis, Gluconeogenesis, and Pyruvate Metabolism",0.0,0.0,0.9825,0.9825,0.11,0.11,FALSE
-"Fatty Acid Metabolism (Acyl Carnitine, Monounsaturated)",0.9756,0.19,0.0,0.9756,0.11,-0.08,TRUE
-Branched Chain Amino Acids (OAA derived),0.9512,0.18,0.0,0.9512,0.11,-0.07,TRUE
-Drug - Topical Agents,0.9512,0.18,0.0,0.9512,0.11,-0.07,TRUE
-"Fatty Acid Metabolism (Acyl Carnitine, Dicarboxylate)",0.1098,0.02,0.8246,0.9343,0.11,0.08,FALSE
-Biotin Metabolism,0.9268,0.18,0.0,0.9268,0.1,-0.07,TRUE
-C5 branched dibasic acid metabolism,0.9268,0.18,0.0,0.9268,0.1,-0.07,TRUE
-Monoacylglycerol,0.0,0.0,0.9123,0.9123,0.1,0.1,FALSE
-Aromatic Amino Acid Synthesis,0.8902,0.17,0.0,0.8902,0.1,-0.07,TRUE
-Lyso-phospholipids,0.878,0.17,0.0,0.878,0.1,-0.07,TRUE
-Ascorbate and Aldarate Metabolism,0.0244,0.0,0.8421,0.8665,0.1,0.09,FALSE
-Nicotinate and nicotinamide metabolism,0.8659,0.16,0.0,0.8659,0.1,-0.07,TRUE
-Furan metabolism,0.8171,0.16,0.0,0.8171,0.09,-0.06,TRUE
-Glutathione metabolism,0.7927,0.15,0.0,0.7927,0.09,-0.06,TRUE
-Glycolysis,0.7805,0.15,0.0,0.7805,0.09,-0.06,TRUE
-Hexosylceramides (HCER),0.0,0.0,0.7544,0.7544,0.08,0.08,FALSE
-Unknown Sulfated Molecule,0.0,0.0,0.7368,0.7368,0.08,0.08,FALSE
-Fatty acid and sugar derivatives,0.6951,0.13,0.0,0.6951,0.08,-0.05,TRUE
-Pentose Phosphate Pathway,0.6951,0.13,0.0,0.6951,0.08,-0.05,TRUE
-Fatty Acid Metabolism (Acyl Glutamine),0.0,0.0,0.6316,0.6316,0.07,0.07,FALSE
-Sterols,0.5976,0.11,0.0,0.5976,0.07,-0.05,TRUE
-Tobacco Metabolite,0.0,0.0,0.5789,0.5789,0.07,0.07,FALSE
-Phospholipids,0.5732,0.11,0.0,0.5732,0.06,-0.04,TRUE
-Lysoplasmalogen,0.561,0.11,0.0,0.561,0.06,-0.04,TRUE
-Drug - Metabolic,0.4878,0.09,0.0702,0.558,0.06,-0.03,FALSE
-Unknown Aromatic Molecule,0.0,0.0,0.5439,0.5439,0.06,0.06,FALSE
-Drug - Cardiovascular,0.5,0.09,0.0351,0.5351,0.06,-0.03,FALSE
-Drug - Gastrointestinal,0.5244,0.1,0.0,0.5244,0.06,-0.04,TRUE
-Sphingomyelins,0.4512,0.09,0.0,0.4512,0.05,-0.03,TRUE
-Long Chain Saturated Fatty Acid,0.1585,0.03,0.2456,0.4042,0.05,0.02,FALSE
-Plasmalogen,0.3902,0.07,0.0,0.3902,0.04,-0.03,TRUE
-Unknown Carnitine Conjugate,0.0,0.0,0.3509,0.3509,0.04,0.04,FALSE
-Cyanogenic glucosides,0.2683,0.05,0.0,0.2683,0.03,-0.02,TRUE
-Tannins,0.2439,0.05,0.0,0.2439,0.03,-0.02,TRUE
-Pterin Metabolism,0.0,0.0,0.2105,0.2105,0.02,0.02,FALSE
-Lipoate Metabolism,0.1707,0.03,0.0,0.1707,0.02,-0.01,TRUE
-Vitamin A Metabolism,0.0,0.0,0.1579,0.1579,0.02,0.02,FALSE
-CoA metabolism,0.122,0.02,0.0,0.122,0.01,-0.01,TRUE
-Drug - Psychoactive,0.1098,0.02,0.0,0.1098,0.01,-0.01,TRUE
-Estrogenic Steroids,0.0,0.0,0.1053,0.1053,0.01,0.01,FALSE
-"Fatty Acid, Amide",0.0732,0.01,0.0,0.0732,0.01,-0.01,TRUE
-Drug - Antineoplastic,0.0488,0.01,0.0175,0.0663,0.01,-0.0,FALSE
-Mevalonate Metabolism,0.0,0.0,0.0526,0.0526,0.01,0.01,FALSE
-Folate Metabolism,0.0366,0.01,0.0,0.0366,0.0,-0.0,TRUE
-Fatty Acid Metabolism (also BCAA Metabolism),0.0,0.0,0.0351,0.0351,0.0,0.0,FALSE
-Partially Characterized Molecules,0.0244,0.0,0.0,0.0244,0.0,-0.0,TRUE
-Nucleotide Sugar,0.0,0.0,0.0175,0.0175,0.0,0.0,FALSE
-Amino sugar and nucleotide sugar,0.0122,0.0,0.0,0.0122,0.0,-0.0,TRUE
+chemical_pathway,identified_detected,baseline_pct,x_compounds_added,updated_total,outside_predicted_vocabulary,avg_metabolites_detected_known,avg_metabolites_detected_x,avg_metabolites_detected
+Food Component/Plant,78,14.77,37,115,FALSE,78,37,115
+Polypeptide,0,0.0,46,46,FALSE,0,46,46
+Dipeptide,2,0.45,29,32,FALSE,2,29,32
+Tryptophan Metabolism,11,2.17,13,25,FALSE,11,13,25
+Secondary Bile Acid Metabolism,20,3.76,5,24,FALSE,20,5,24
+Benzoate Metabolism,10,1.96,11,22,FALSE,10,11,22
+Bile acids,21,4.01,0,21,TRUE,21,0,21
+Chemical,3,0.54,15,18,FALSE,3,15,18
+"Glutamate, Arginine, and Proline Metabolism",16,3.07,0,16,TRUE,16,0,16
+"Fatty Acid, Dicarboxylate",2,0.44,13,15,FALSE,2,13,15
+Lysine Metabolism,10,1.87,4,14,FALSE,10,4,14
+Tyrosine Metabolism,3,0.59,11,14,FALSE,3,11,14
+Phenylalanine Metabolism,9,1.71,4,13,FALSE,9,4,13
+"Leucine, Isoleucine and Valine Metabolism",2,0.38,11,13,FALSE,2,11,13
+Histidine Metabolism,11,2.18,1,12,FALSE,11,1,12
+Unknown,0,0.0,12,12,FALSE,0,12,12
+"Aspartate, Threonine, Methionine Metabolism",12,2.25,0,12,TRUE,12,0,12
+"Methionine, Cysteine, SAM and Taurine Metabolism",0,0.0,12,12,FALSE,0,12,12
+Ask Annie/Matt,0,0.0,10,10,FALSE,0,10,10
+Aromatic Compound Degradation,10,1.93,0,10,TRUE,10,0,10
+Urea cycle; Arginine and Proline Metabolism,1,0.19,9,10,FALSE,1,9,10
+Phenylpropanoids,10,1.85,0,10,TRUE,10,0,10
+"Fatty Acid, Monohydroxy",1,0.17,8,9,FALSE,1,8,9
+Branched Chain Amino Acid (Pyruvate derived) metabolism,9,1.74,0,9,TRUE,9,0,9
+Bacterial/Fungal,6,1.18,3,9,FALSE,6,3,9
+"Fatty acid, hydroxy",9,1.69,0,9,TRUE,9,0,9
+Polyamine Metabolism,6,1.22,2,8,FALSE,6,2,8
+Nicotinate and Nicotinamide Metabolism,5,0.87,4,8,FALSE,5,4,8
+Aspartate family (OAA derived),8,1.5,0,8,TRUE,8,0,8
+Alkaloids,8,1.47,0,8,TRUE,8,0,8
+"Serine, Glycine and Cysteine  Metabolism",8,1.47,0,8,TRUE,8,0,8
+Phenylalanine and Tyrosine Metabolism,8,1.46,0,8,TRUE,8,0,8
+TCA /Glyoxylate/ Methyl Citrate  Cycle,8,1.45,0,8,TRUE,8,0,8
+Glutamate family (alpha-ketoglutarate derived),8,1.44,0,8,TRUE,8,0,8
+Benzenoids,7,1.35,0,7,TRUE,7,0,7
+Glutamate Metabolism,2,0.36,5,7,FALSE,2,5,7
+Medium Chain Fatty Acid,6,1.11,1,7,FALSE,6,1,7
+Terpenoids,7,1.28,0,7,TRUE,7,0,7
+"Fatty acid, Dicarboxylate",6,1.22,0,6,TRUE,6,0,6
+Primary Bile Acid Metabolism,5,1.01,1,6,FALSE,5,1,6
+Aromatic amino acid metabolism (PEP derived),6,1.13,0,6,TRUE,6,0,6
+Long Chain Fatty Acid,6,1.1,0,6,TRUE,6,0,6
+Aminosugar Metabolism,5,0.88,1,6,FALSE,5,1,6
+Alanine and Aspartate Metabolism,1,0.18,5,6,FALSE,1,5,6
+"Purine Metabolism, (Hypo)Xanthine/Inosine containing",5,0.95,0,5,FALSE,5,0,5
+"Purine Metabolism, Guanine containing",4,0.76,1,5,FALSE,4,1,5
+Steroid,5,1.01,0,5,TRUE,5,0,5
+Androgenic Steroids,1,0.11,5,5,FALSE,1,5,5
+Xanthine Metabolism,4,0.73,1,5,FALSE,4,1,5
+"Pyrimidine Metabolism, Cytidine containing",2,0.38,3,5,FALSE,2,3,5
+"Pyrimidine Metabolism, Uracil containing",4,0.76,1,5,FALSE,4,1,5
+"Glycine, Serine and Threonine Metabolism",0,0.0,4,4,FALSE,0,4,4
+"Purine Metabolism, Adenine containing",3,0.54,2,4,FALSE,3,2,4
+Flavonoids,4,0.79,0,4,TRUE,4,0,4
+Amines and polyamines,4,0.78,0,4,TRUE,4,0,4
+Drug - Antibiotic,4,0.76,0,4,FALSE,4,0,4
+Fatty acid conjugate,4,0.75,0,4,TRUE,4,0,4
+Ask Annie/Matt/Brian I,0,0.0,4,4,FALSE,0,4,4
+Hemoglobin and Porphyrin Metabolism,1,0.24,3,4,FALSE,1,3,4
+Long Chain Monounsaturated Fatty Acid,4,0.72,0,4,TRUE,4,0,4
+Orphan secondary metabolites,4,0.71,0,4,TRUE,4,0,4
+Vitamin B6 Metabolism,3,0.52,1,4,FALSE,3,1,4
+Polyunsaturated Fatty Acid (n3 and n6),4,0.69,0,4,TRUE,4,0,4
+Branched Chain Amino Acid (Aspartate derived) metabolism,4,0.68,0,4,TRUE,4,0,4
+Lactoyl Amino Acid,2,0.32,2,4,FALSE,2,2,4
+"Fructose, Mannose and Galactose Metabolism",4,0.67,0,4,TRUE,4,0,4
+Dipeptide Derivative,3,0.66,0,3,TRUE,3,0,3
+Acetylated Peptides,2,0.41,1,3,FALSE,2,1,3
+"Fatty Acid, Methyl Ester",0,0.0,3,3,FALSE,0,3,3
+Modified Peptides,0,0.0,3,3,FALSE,0,3,3
+Glycolysis and ED Pathway,3,0.6,0,3,TRUE,3,0,3
+Choline metabolism,3,0.6,0,3,TRUE,3,0,3
+"Fatty Acid Metabolism (Acyl Carnitine, Medium Chain)",1,0.14,2,3,FALSE,1,2,3
+Chemicals,3,0.56,0,3,TRUE,3,0,3
+"Fatty Acid, Trihydroxy",0,0.0,3,3,FALSE,0,3,3
+Heme and Porphyrin Metabolism,3,0.55,0,3,TRUE,3,0,3
+Phosphatidylcholine (PC),3,0.55,0,3,TRUE,3,0,3
+Pantothenate and CoA Metabolism,3,0.54,0,3,TRUE,3,0,3
+Ask DTS,0,0.0,3,3,FALSE,0,3,3
+Disaccharides and Oligosaccharides,2,0.45,0,3,FALSE,2,0,3
+Serine family (phosphoglycerate derived),3,0.5,0,3,TRUE,3,0,3
+Inositol Metabolism,1,0.19,2,3,FALSE,1,2,3
+Pregnenolone Steroids,0,0.0,2,2,FALSE,0,2,2
+Chlorophyll and heme metabolism,2,0.45,0,2,TRUE,2,0,2
+TCA Cycle,0,0.0,2,2,FALSE,0,2,2
+Eicosanoid,0,0.0,2,2,FALSE,0,2,2
+Long Chain Polyunsaturated Fatty Acid (n3 and n6),0,0.0,2,2,FALSE,0,2,2
+Lysolipid,2,0.44,0,2,TRUE,2,0,2
+"Drug - Analgesics, Anesthetics",1,0.18,1,2,FALSE,1,1,2
+Creatine Metabolism,2,0.38,0,2,FALSE,2,0,2
+Auxin metabolism,2,0.4,0,2,TRUE,2,0,2
+Phospholipid Metabolism,2,0.39,0,2,TRUE,2,0,2
+Unknown Bile Acid,0,0.0,2,2,FALSE,0,2,2
+"Fatty Acid, Dihydroxy",1,0.18,1,2,FALSE,1,1,2
+Serotonin Metabolism,2,0.39,0,2,TRUE,2,0,2
+Glycogen Metabolism,2,0.34,0,2,FALSE,2,0,2
+Carnitine Metabolism,2,0.38,0,2,TRUE,2,0,2
+"Pyrimidine Metabolism, Thymine containing",2,0.38,0,2,TRUE,2,0,2
+Pyruvate Family derived,2,0.38,0,2,TRUE,2,0,2
+Short Chain Fatty Acid,2,0.38,0,2,TRUE,2,0,2
+Glutathione Metabolism,1,0.19,1,2,FALSE,1,1,2
+Sphingolipid Synthesis,2,0.38,0,2,TRUE,2,0,2
+Tocopherol Metabolism,0,0.04,2,2,FALSE,0,2,2
+Gamma-glutamyl Amino Acid,1,0.19,1,2,FALSE,1,1,2
+Thiamine Metabolism,1,0.19,1,2,FALSE,1,1,2
+"Pyrimidine Metabolism, Orotate containing",2,0.36,0,2,TRUE,2,0,2
+Riboflavin Metabolism,1,0.19,1,2,FALSE,1,1,2
+Pentose Metabolism,2,0.34,0,2,FALSE,2,0,2
+"Fatty Acid Metabolism (Acyl Carnitine, Hydroxy)",0,0.0,2,2,FALSE,0,2,2
+Fatty Acid Metabolism (Acyl Glycine),0,0.0,2,2,FALSE,0,2,2
+Endocannabinoid,0,0.0,2,2,FALSE,0,2,2
+Unknown Steroid,0,0.0,2,2,FALSE,0,2,2
+"Drug - Antiinflammatory, Immunosuppressant",0,0.03,1,2,FALSE,0,1,2
+Ceramides,0,0.0,2,2,FALSE,0,2,2
+Drug - Other,1,0.14,1,2,FALSE,1,1,2
+Catecholamine Metabolism,2,0.3,0,2,TRUE,2,0,2
+Corticosteroids,0,0.03,1,1,FALSE,0,1,1
+Diacylglycerol,0,0.0,1,1,FALSE,0,1,1
+Fatty Acid Metabolism (also BCAA metabolism),1,0.25,0,1,TRUE,1,0,1
+Galactosyl Glycerolipids,0,0.0,1,1,FALSE,0,1,1
+Phosphatidylethanolamine (PE),1,0.22,0,1,TRUE,1,0,1
+Cyclic Dipeptide,0,0.0,1,1,FALSE,0,1,1
+"Sucrose, glucose,fructose metabolism",1,0.2,0,1,TRUE,1,0,1
+Benzoxazinoids,1,0.2,0,1,TRUE,1,0,1
+"Fatty Acid, Branched",1,0.19,0,1,FALSE,1,0,1
+"Fatty Acid Metabolism (Acyl Carnitine, Long Chain Saturated)",1,0.19,0,1,TRUE,1,0,1
+Glycerolipid Metabolism,1,0.19,0,1,TRUE,1,0,1
+Photorespiration,1,0.19,0,1,TRUE,1,0,1
+Sterol,0,0.0,1,1,FALSE,0,1,1
+Branched Chain Amino Acids (pyruvate derived),1,0.19,0,1,TRUE,1,0,1
+Advanced Glycation End-product,0,0.0,1,1,FALSE,0,1,1
+"Glycolysis, Gluconeogenesis, and Pyruvate Metabolism",0,0.0,1,1,FALSE,0,1,1
+"Fatty Acid Metabolism (Acyl Carnitine, Monounsaturated)",1,0.19,0,1,TRUE,1,0,1
+Branched Chain Amino Acids (OAA derived),1,0.18,0,1,TRUE,1,0,1
+Drug - Topical Agents,1,0.18,0,1,TRUE,1,0,1
+"Fatty Acid Metabolism (Acyl Carnitine, Dicarboxylate)",0,0.02,1,1,FALSE,0,1,1
+Biotin Metabolism,1,0.18,0,1,TRUE,1,0,1
+C5 branched dibasic acid metabolism,1,0.18,0,1,TRUE,1,0,1
+Monoacylglycerol,0,0.0,1,1,FALSE,0,1,1
+Aromatic Amino Acid Synthesis,1,0.17,0,1,TRUE,1,0,1
+Lyso-phospholipids,1,0.17,0,1,TRUE,1,0,1
+Ascorbate and Aldarate Metabolism,0,0.0,1,1,FALSE,0,1,1
+Nicotinate and nicotinamide metabolism,1,0.16,0,1,TRUE,1,0,1
+Furan metabolism,1,0.16,0,1,TRUE,1,0,1
+Glutathione metabolism,1,0.15,0,1,TRUE,1,0,1
+Glycolysis,1,0.15,0,1,TRUE,1,0,1
+Hexosylceramides (HCER),0,0.0,1,1,FALSE,0,1,1
+Unknown Sulfated Molecule,0,0.0,1,1,FALSE,0,1,1
+Fatty acid and sugar derivatives,1,0.13,0,1,TRUE,1,0,1
+Pentose Phosphate Pathway,1,0.13,0,1,TRUE,1,0,1
+Fatty Acid Metabolism (Acyl Glutamine),0,0.0,1,1,FALSE,0,1,1
+Sterols,1,0.11,0,1,TRUE,1,0,1
+Tobacco Metabolite,0,0.0,1,1,FALSE,0,1,1
+Phospholipids,1,0.11,0,1,TRUE,1,0,1
+Lysoplasmalogen,1,0.11,0,1,TRUE,1,0,1
+Drug - Metabolic,0,0.09,0,1,FALSE,0,0,1
+Unknown Aromatic Molecule,0,0.0,1,1,FALSE,0,1,1
+Drug - Cardiovascular,0,0.09,0,1,FALSE,0,0,1
+Drug - Gastrointestinal,1,0.1,0,1,TRUE,1,0,1
+Sphingomyelins,0,0.09,0,0,TRUE,0,0,0
+Long Chain Saturated Fatty Acid,0,0.03,0,0,FALSE,0,0,0
+Plasmalogen,0,0.07,0,0,TRUE,0,0,0
+Unknown Carnitine Conjugate,0,0.0,0,0,FALSE,0,0,0
+Cyanogenic glucosides,0,0.05,0,0,TRUE,0,0,0
+Tannins,0,0.05,0,0,TRUE,0,0,0
+Pterin Metabolism,0,0.0,0,0,FALSE,0,0,0
+Lipoate Metabolism,0,0.03,0,0,TRUE,0,0,0
+Vitamin A Metabolism,0,0.0,0,0,FALSE,0,0,0
+CoA metabolism,0,0.02,0,0,TRUE,0,0,0
+Drug - Psychoactive,0,0.02,0,0,TRUE,0,0,0
+Estrogenic Steroids,0,0.0,0,0,FALSE,0,0,0
+"Fatty Acid, Amide",0,0.01,0,0,TRUE,0,0,0
+Drug - Antineoplastic,0,0.01,0,0,FALSE,0,0,0
+Mevalonate Metabolism,0,0.0,0,0,FALSE,0,0,0
+Folate Metabolism,0,0.01,0,0,TRUE,0,0,0
+Fatty Acid Metabolism (also BCAA Metabolism),0,0.0,0,0,FALSE,0,0,0
+Partially Characterized Molecules,0,0.0,0,0,TRUE,0,0,0
+Nucleotide Sugar,0,0.0,0,0,FALSE,0,0,0
+Amino sugar and nucleotide sugar,0,0.0,0,0,TRUE,0,0,0

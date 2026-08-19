@@ -94,7 +94,83 @@ def test_weighting_counts_a_rarely_seen_compound_for_less():
     unweighted = {r["chemical_pathway"]: r for r in F.compose(baseline, added, "super", False)}
     weighted = {r["chemical_pathway"]: r for r in F.compose(baseline, added, "super", True)}
     assert unweighted["Amino Acid"]["updated_pct"] == 50.0
-    assert weighted["Amino Acid"]["updated_pct"] < 2.0
+    # 0.02 rounds to 0 expected detections; still far below the unweighted share.
+    assert weighted["Amino Acid"]["avg_metabolites_detected"] == 0
+    assert "updated_pct" not in weighted["Amino Acid"]
+    assert "avg_metabolites_detected" not in unweighted["Amino Acid"]
+
+
+def test_five_metabolites_at_twenty_percent_average_one_detected():
+    """Sum of detection rates is the reported average, not a compositional share."""
+
+    baseline = [metabolite("Peptide", rate=0.2) for _ in range(5)]
+    rows = F.compose(baseline, [], "super", True)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["avg_metabolites_detected_known"] == 1
+    assert row["avg_metabolites_detected_x"] == 0
+    assert row["avg_metabolites_detected"] == 1
+    assert row["updated_total"] == 1
+    assert "updated_pct" not in row
+
+
+def test_average_detections_include_knowns_and_pathway_annotated_x():
+    knowns = [metabolite("Peptide", rate=0.5), metabolite("Peptide", rate=0.5)]
+    added = [{"super_pathway": "Peptide", "sub_pathway": "s", "detection_rate": 0.2}]
+    row = {r["chemical_pathway"]: r for r in F.compose(knowns, added, "super", True)}["Peptide"]
+    assert row["avg_metabolites_detected_known"] == 1
+    assert row["avg_metabolites_detected_x"] == 0
+    assert row["avg_metabolites_detected"] == 1
+    assert "updated_pct" not in row
+
+
+def test_averages_are_rounded_to_the_nearest_integer():
+    knowns = [metabolite("Peptide", rate=0.6)]
+    added = [{"super_pathway": "Peptide", "sub_pathway": "s", "detection_rate": 0.6}]
+    row = {r["chemical_pathway"]: r for r in F.compose(knowns, added, "super", True)}["Peptide"]
+    assert row["avg_metabolites_detected_known"] == 1
+    assert row["avg_metabolites_detected_x"] == 1
+    assert row["avg_metabolites_detected"] == 1  # round(1.2) == 1
+    assert isinstance(row["avg_metabolites_detected"], int)
+
+
+def test_workbook_puts_pathways_and_subpathways_on_separate_tabs(tmp_path):
+    import openpyxl
+
+    known = metabolite("Peptide", rate=0.5)
+    known["sub_pathway"] = "Dipeptide"
+    added = [
+        {
+            "super_pathway": "Peptide",
+            "sub_pathway": "Dipeptide",
+            "detection_rate": 0.2,
+        }
+    ]
+    pathways = F.compose(
+        [known],
+        added,
+        "super",
+        True,
+    )
+    subpathways = F.compose(
+        [known],
+        added,
+        "sub",
+        True,
+    )
+    path = tmp_path / "feces_pathway_update_weighted.xlsx"
+    F.write_workbook(path, pathways, subpathways)
+
+    workbook = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    assert workbook.sheetnames == ["Pathway", "Subpathway"]
+    assert workbook["Pathway"]["A2"].value == "Peptide"
+    assert workbook["Pathway"]["I2"].value == 1
+    assert workbook["Subpathway"]["A2"].value == "Dipeptide"
+    assert workbook["Subpathway"]["I2"].value == 1
+    assert "updated_pct" not in [
+        cell.value for cell in next(workbook["Subpathway"].iter_rows())
+    ]
+    workbook.close()
 
 
 def test_a_record_with_no_detection_rate_is_reported_not_silently_dropped(capsys):
@@ -244,3 +320,6 @@ def test_weighting_moves_the_baseline_not_just_the_addition():
     }
     assert by_compound["Xenobiotics"]["baseline_pct"] > by_compound["Amino Acid"]["baseline_pct"]
     assert by_detection["Amino Acid"]["baseline_pct"] > by_detection["Xenobiotics"]["baseline_pct"]
+    assert by_detection["Amino Acid"]["avg_metabolites_detected"] == 1
+    assert by_detection["Xenobiotics"]["avg_metabolites_detected"] == 0
+    assert isinstance(by_detection["Amino Acid"]["avg_metabolites_detected"], int)

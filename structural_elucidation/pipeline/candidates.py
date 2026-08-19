@@ -34,6 +34,7 @@ from structural_elucidation.chemistry.conjugates import (
 )
 from structural_elucidation.utils.denovo import canonicalize_smiles, exact_mass_from_smiles, formula_from_smiles
 from structural_elucidation.evaluation.failure_modes import load_x_controls
+from structural_elucidation.chemistry.evidence import evidence_confidence
 from structural_elucidation.chemistry.formula import formula_prior_score
 from structural_elucidation.evaluation.rerank_assembly import eval_reranked, write_denovo_report
 from structural_elucidation.paths import REPO_ROOT, resolve
@@ -362,8 +363,12 @@ def append_candidate(
     nce_pipeline = safe_float(hit.get("nce_pipeline_score"), 0.0)
     ms1_supported = bool_value(target.get("ms1_buddy_supported"))
     # evidence_confidence feeds downstream rerank features and F2 promotion gates.
-    evidence = float(
-        np.clip(max(formula_prior, nce_forward, nce_ms2, nce_pipeline) + (0.05 if ms1_supported else 0.0), 0.0, 1.0)
+    evidence = evidence_confidence(
+        formula_prior=formula_prior,
+        forward_spectrum=nce_forward,
+        ms2_match=nce_ms2,
+        nce_pipeline=nce_pipeline,
+        ms1_supported=ms1_supported,
     )
     # Mass-heavy blend: library anchor is primarily a mass/formula rescue track.
     generation = float(
