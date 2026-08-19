@@ -110,6 +110,33 @@ same budget line as Decision 3 of
 asserts `correct_outside_level_1 == 0`. It is a trigger rather than an invariant:
 the day it fails, the truth set has gained the evidence this question needs.
 
+## What was left alone, and what now watches it
+
+No constant changed. `TIER_HIGH`, `TIER_MODERATE` and `TIER_LOW` are still
+0.65, 0.48 and 0.38, the tier distribution is unmoved, and every artifact
+downstream of it was checked rather than assumed: the presentation audit, Table
+S2, the Figure 4 SVG, `baseline_claims.json`, `claim_evidence.csv` and the
+manuscript prose all carry the same Confirmed 44 / High 0 / Moderate 1,416 /
+Low 1,344 / Tentative 1,093.
+
+Three pieces of machinery around the cutoffs were fixed, because each failed
+quietly and each would have mattered on the day someone does retune:
+
+- **`SCORE_GRID` no longer drops a cutoff.** Named operating points are looked
+  up in the grid by exact membership, and the grid was hand-maintained, so a
+  retuned cutoff that fell off it vanished from the artifact without raising.
+  The grid now unions the tier constants in, with an import-time check.
+- **The named-point keys no longer embed their values.** `tier_high_0.65` would
+  have kept asserting 0.65 in the committed JSON after a retune.
+- **The tier claims in the manuscript are now checked**, along with the two
+  bundle-gated artifacts (`baseline_claims.json`, `claim_evidence.csv`) that no
+  CI step regenerates. The Figure 4 caption gets its own check, because it
+  argues *from* the High tier being empty, so filling that tier makes it false
+  in a way renumbering does not fix.
+
+None of that changes a measurement. It means the next attempt at this question
+fails loudly instead of shipping artifacts that disagree with each other.
+
 ## Reproducing
 
 ```
