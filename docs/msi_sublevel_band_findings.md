@@ -143,7 +143,34 @@ Three things are defensible today, in decreasing order of confidence:
    One caveat that should not be buried: on this truth-verified cohort it is not
    cleanly monotone either — L2 is 3.3% correct (n=30) against L3 at 13.3%
    (n=128). The L2 cell is one correct call out of thirty, so it is thin, but it
-   is not evidence that the level ordering holds.
+   is not evidence that the level ordering holds. See the next section before
+   using Level 2 as a quality gate.
+
+### Level 2 is not a substitute for a confidence cutoff
+
+Worth stating separately, because "the score is unusable, so gate on MSI Level 2
+instead" is the natural next proposal and the evidence does not support it.
+
+Level 2 requires `struct >= STRUCT_MODERATE` (0.70), and the structure axis is
+**pinned to 1.0 for exact catalog matches** — `struct = 1.0 if source == "exact"`
+in `build_axes`. A de novo candidate has to earn 0.70 on real Tanimoto; a catalog
+hit is handed it. So Level 2 preferentially selects catalog matches, and catalog
+matches are the *least* reliable subgroup in this data: 38.1% correct against
+56.0% for de novo predictions
+([audit_structure_summary.json](paper/data/structure/audit_structure_summary.json),
+`source_subgroups`).
+
+That is not a theoretical concern. Joining the 92 structure controls to the
+delivered set, **all 9 of the Level 2 controls are `exact`-source, and none of
+them is correct** (0/9, 95% CI [0.0%, 29.9%]). `MS2_PROBABLE_EXACT` already
+raises the spectral bar for catalog hits for exactly this reason, and on this
+cohort it is not enough.
+
+A second thing that cohort shows: **all 44 of its correct rank-1 calls are Level
+1**, with L2 at 0/9, L3 at 0/25 and L4 at 0/14. Since Level 1 is defined as a
+Metabolon Level-1 standard whose top candidate matches, that is circular — which
+means the 92 controls cannot validate any level-based rubric at all. Use the
+255-compound delivered truth set for that, where L2 is 3.3% against L3's 13.3%.
 3. **A two-way split on `evidence_confidence`** at the zero boundary, which is
    the one distinction that score genuinely makes. It is a data-availability
    flag, and should be labeled as one rather than as confidence.
