@@ -1,0 +1,1714 @@
+{
+  "accuracy_by_msi_level": {
+    "L1": {
+      "correct": 44,
+      "n": 44,
+      "p_correct": 1.0
+    },
+    "L2": {
+      "correct": 1,
+      "n": 30,
+      "p_correct": 0.0333
+    },
+    "L3": {
+      "correct": 17,
+      "n": 128,
+      "p_correct": 0.1328
+    },
+    "L4": {
+      "correct": 5,
+      "n": 53,
+      "p_correct": 0.0943
+    }
+  },
+  "cohort": {
+    "compounds": 3897,
+    "model_scored": 211,
+    "model_scored_correct": 23,
+    "policy_pinned_level_1": 44,
+    "truth_verified": 255,
+    "truth_verified_correct": 67
+  },
+  "derived_3a": {
+    "curated_3a_also_derived": 201,
+    "curated_3a_total": 358,
+    "curated_letters_inside_derived_3a": {
+      "2C": 89,
+      "3A": 201,
+      "3B": 149,
+      "3C": 103,
+      "4": 45,
+      "4?": 34,
+      "5": 623,
+      "Artifact": 1,
+      "Exclude": 1,
+      "KNOWN": 18,
+      "Released": 4
+    },
+    "derived_3a": 2129,
+    "derived_that_are_curated_3a": 201,
+    "derived_with_any_curated_letter": 1245,
+    "level_3_total": 2489,
+    "precision_vs_curated": 0.1614,
+    "recall_vs_curated": 0.5615,
+    "rule": "msi_level == 3 and n_isomers >= 2",
+    "share_of_level_3": 0.8554
+  },
+  "monotone_margin": 0.02,
+  "platt_reachability": {
+    "cutoffs": {
+      "TIER_HIGH": {
+        "cutoff": 0.65,
+        "raw_evidence_required": 1.1336,
+        "reachable": false
+      },
+      "TIER_LOW": {
+        "cutoff": 0.38,
+        "raw_evidence_required": 0.5461,
+        "reachable": true
+      },
+      "TIER_MODERATE": {
+        "cutoff": 0.48,
+        "raw_evidence_required": 0.7631,
+        "reachable": true
+      }
+    },
+    "evidence_score_max": 0.5907,
+    "evidence_score_min": 0.1794,
+    "platt_a": 1.887084,
+    "platt_b": -1.520154,
+    "unreachable_cutoffs": [
+      "TIER_HIGH"
+    ]
+  },
+  "raw_evidence_recovery": {
+    "distribution": {
+      "p0": 0.1174,
+      "p10": 0.5263,
+      "p100": 0.9897,
+      "p25": 0.5812,
+      "p50": 0.6577,
+      "p75": 0.8716,
+      "p90": 0.9875,
+      "p95": 0.9875
+    },
+    "note": "raw = (logit(overall) - B) / A. Strictly monotone in overall, so every rank statistic is identical between the two.",
+    "platt_ceiling": 0.5907,
+    "platt_floor": 0.1794,
+    "recovered": 3853,
+    "unrecoverable_policy_pinned": 44
+  },
+  "reanchor_equivalence": {
+    "auc_model_scored_platt": 0.378,
+    "auc_model_scored_raw": 0.378,
+    "auc_unchanged": true,
+    "fixes_ordering": false,
+    "fixes_reachability": true,
+    "median_platt": 0.4322,
+    "median_raw": 0.6577,
+    "top_band_platt": 44,
+    "top_band_raw": 1996
+  },
+  "scores": {
+    "candidate_confidence": {
+      "band_schemes": {
+        "empirical_terciles": {
+          "by_msi_level": {
+            "1": {
+              "a": 44,
+              "b": 0,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "2": {
+              "a": 37,
+              "b": 156,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "3": {
+              "a": 781,
+              "b": 570,
+              "below": 380,
+              "c": 758,
+              "missing": 0
+            },
+            "4": {
+              "a": 0,
+              "b": 0,
+              "below": 737,
+              "c": 428,
+              "missing": 0
+            },
+            "5": {
+              "a": 0,
+              "b": 0,
+              "below": 3,
+              "c": 3,
+              "missing": 0
+            }
+          },
+          "cuts": [
+            0.55,
+            0.46,
+            0.4
+          ],
+          "note": "roughly equal-sized bands over the model-scored population",
+          "occupancy": {
+            "counts": {
+              "a": 862,
+              "b": 726,
+              "below": 1120,
+              "c": 1189,
+              "missing": 0
+            },
+            "empty_bands": [],
+            "shares": {
+              "a": 0.2212,
+              "b": 0.1863,
+              "below": 0.2874,
+              "c": 0.3051,
+              "missing": 0.0
+            }
+          },
+          "precision_all_truth": {
+            "bands": {
+              "a": {
+                "correct": 47,
+                "n": 67,
+                "p_correct": 0.7015
+              },
+              "b": {
+                "correct": 2,
+                "n": 47,
+                "p_correct": 0.0426
+              },
+              "below": {
+                "correct": 12,
+                "n": 63,
+                "p_correct": 0.1905
+              },
+              "c": {
+                "correct": 6,
+                "n": 78,
+                "p_correct": 0.0769
+              }
+            },
+            "inversions": [
+              "b<c",
+              "c<below"
+            ],
+            "monotone": false
+          },
+          "precision_model_scored": {
+            "bands": {
+              "a": {
+                "correct": 3,
+                "n": 23,
+                "p_correct": 0.1304
+              },
+              "b": {
+                "correct": 2,
+                "n": 47,
+                "p_correct": 0.0426
+              },
+              "below": {
+                "correct": 12,
+                "n": 63,
+                "p_correct": 0.1905
+              },
+              "c": {
+                "correct": 6,
+                "n": 78,
+                "p_correct": 0.0769
+              }
+            },
+            "inversions": [
+              "b<c",
+              "c<below"
+            ],
+            "monotone": false
+          }
+        },
+        "identification_tiers": {
+          "by_msi_level": {
+            "1": {
+              "a": 44,
+              "b": 0,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "2": {
+              "a": 0,
+              "b": 172,
+              "below": 0,
+              "c": 21,
+              "missing": 0
+            },
+            "3": {
+              "a": 0,
+              "b": 1246,
+              "below": 181,
+              "c": 1062,
+              "missing": 0
+            },
+            "4": {
+              "a": 0,
+              "b": 0,
+              "below": 380,
+              "c": 785,
+              "missing": 0
+            },
+            "5": {
+              "a": 0,
+              "b": 0,
+              "below": 3,
+              "c": 3,
+              "missing": 0
+            }
+          },
+          "cuts": [
+            0.65,
+            0.48,
+            0.38
+          ],
+          "note": "TIER_HIGH / TIER_MODERATE / TIER_LOW, the cutoffs the report tiers already use",
+          "occupancy": {
+            "counts": {
+              "a": 44,
+              "b": 1418,
+              "below": 564,
+              "c": 1871,
+              "missing": 0
+            },
+            "empty_bands": [],
+            "shares": {
+              "a": 0.0113,
+              "b": 0.3639,
+              "below": 0.1447,
+              "c": 0.4801,
+              "missing": 0.0
+            }
+          },
+          "precision_all_truth": {
+            "bands": {
+              "a": {
+                "correct": 44,
+                "n": 44,
+                "p_correct": 1.0
+              },
+              "b": {
+                "correct": 4,
+                "n": 66,
+                "p_correct": 0.0606
+              },
+              "below": {
+                "correct": 8,
+                "n": 34,
+                "p_correct": 0.2353
+              },
+              "c": {
+                "correct": 11,
+                "n": 111,
+                "p_correct": 0.0991
+              }
+            },
+            "inversions": [
+              "b<c",
+              "c<below"
+            ],
+            "monotone": false
+          },
+          "precision_model_scored": {
+            "bands": {
+              "a": {
+                "correct": 0,
+                "n": 0,
+                "p_correct": null
+              },
+              "b": {
+                "correct": 4,
+                "n": 66,
+                "p_correct": 0.0606
+              },
+              "below": {
+                "correct": 8,
+                "n": 34,
+                "p_correct": 0.2353
+              },
+              "c": {
+                "correct": 11,
+                "n": 111,
+                "p_correct": 0.0991
+              }
+            },
+            "inversions": [
+              "b<c",
+              "c<below"
+            ],
+            "monotone": false
+          }
+        },
+        "reachable_ceiling": {
+          "by_msi_level": {
+            "1": {
+              "a": 44,
+              "b": 0,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "2": {
+              "a": 7,
+              "b": 165,
+              "below": 0,
+              "c": 21,
+              "missing": 0
+            },
+            "3": {
+              "a": 382,
+              "b": 864,
+              "below": 380,
+              "c": 863,
+              "missing": 0
+            },
+            "4": {
+              "a": 0,
+              "b": 0,
+              "below": 737,
+              "c": 428,
+              "missing": 0
+            },
+            "5": {
+              "a": 0,
+              "b": 0,
+              "below": 3,
+              "c": 3,
+              "missing": 0
+            }
+          },
+          "cuts": [
+            0.585,
+            0.48,
+            0.4
+          ],
+          "note": "top band lowered to sit inside the Platt-reachable range",
+          "occupancy": {
+            "counts": {
+              "a": 433,
+              "b": 1029,
+              "below": 1120,
+              "c": 1315,
+              "missing": 0
+            },
+            "empty_bands": [],
+            "shares": {
+              "a": 0.1111,
+              "b": 0.264,
+              "below": 0.2874,
+              "c": 0.3374,
+              "missing": 0.0
+            }
+          },
+          "precision_all_truth": {
+            "bands": {
+              "a": {
+                "correct": 47,
+                "n": 56,
+                "p_correct": 0.8393
+              },
+              "b": {
+                "correct": 1,
+                "n": 54,
+                "p_correct": 0.0185
+              },
+              "below": {
+                "correct": 12,
+                "n": 63,
+                "p_correct": 0.1905
+              },
+              "c": {
+                "correct": 7,
+                "n": 82,
+                "p_correct": 0.0854
+              }
+            },
+            "inversions": [
+              "b<c",
+              "c<below"
+            ],
+            "monotone": false
+          },
+          "precision_model_scored": {
+            "bands": {
+              "a": {
+                "correct": 3,
+                "n": 12,
+                "p_correct": 0.25
+              },
+              "b": {
+                "correct": 1,
+                "n": 54,
+                "p_correct": 0.0185
+              },
+              "below": {
+                "correct": 12,
+                "n": 63,
+                "p_correct": 0.1905
+              },
+              "c": {
+                "correct": 7,
+                "n": 82,
+                "p_correct": 0.0854
+              }
+            },
+            "inversions": [
+              "b<c",
+              "c<below"
+            ],
+            "monotone": false
+          }
+        }
+      },
+      "column": "rank1_candidate_confidence",
+      "curated_sublevel_separation": {
+        "fine_median_spread": 0.0139,
+        "fine_sublevels": [
+          "2C",
+          "3A",
+          "3B",
+          "3C"
+        ],
+        "median_spread": 0.5618,
+        "per_sublevel": {
+          "2C": {
+            "median": 0.4221,
+            "n": 163,
+            "p25": 0.3913,
+            "p75": 0.4925
+          },
+          "3A": {
+            "median": 0.4157,
+            "n": 358,
+            "p25": 0.3849,
+            "p75": 0.5007
+          },
+          "3B": {
+            "median": 0.4209,
+            "n": 253,
+            "p25": 0.3922,
+            "p75": 0.4718
+          },
+          "3C": {
+            "median": 0.4082,
+            "n": 175,
+            "p25": 0.3877,
+            "p75": 0.4546
+          },
+          "4": {
+            "median": 0.4088,
+            "n": 107,
+            "p25": 0.3861,
+            "p75": 0.4926
+          },
+          "4?": {
+            "median": 0.4268,
+            "n": 64,
+            "p25": 0.3997,
+            "p75": 0.5363
+          },
+          "5": {
+            "median": 0.4099,
+            "n": 1315,
+            "p25": 0.3856,
+            "p75": 0.4622
+          },
+          "KNOWN": {
+            "median": 0.5372,
+            "n": 70,
+            "p25": 0.4211,
+            "p75": 0.97
+          },
+          "Released": {
+            "median": 0.97,
+            "n": 25,
+            "p25": 0.5849,
+            "p75": 0.97
+          }
+        }
+      },
+      "deciles_model_scored": [
+        {
+          "correct": 5,
+          "decile": 1,
+          "n": 21,
+          "p_correct": 0.2381,
+          "score_max": 0.3691,
+          "score_min": 0.2741
+        },
+        {
+          "correct": 5,
+          "decile": 2,
+          "n": 21,
+          "p_correct": 0.2381,
+          "score_max": 0.3878,
+          "score_min": 0.3694
+        },
+        {
+          "correct": 2,
+          "decile": 3,
+          "n": 21,
+          "p_correct": 0.0952,
+          "score_max": 0.3999,
+          "score_min": 0.3878
+        },
+        {
+          "correct": 2,
+          "decile": 4,
+          "n": 21,
+          "p_correct": 0.0952,
+          "score_max": 0.4106,
+          "score_min": 0.4002
+        },
+        {
+          "correct": 0,
+          "decile": 5,
+          "n": 21,
+          "p_correct": 0.0,
+          "score_max": 0.4229,
+          "score_min": 0.4149
+        },
+        {
+          "correct": 3,
+          "decile": 6,
+          "n": 21,
+          "p_correct": 0.1429,
+          "score_max": 0.4364,
+          "score_min": 0.4229
+        },
+        {
+          "correct": 2,
+          "decile": 7,
+          "n": 21,
+          "p_correct": 0.0952,
+          "score_max": 0.4843,
+          "score_min": 0.4374
+        },
+        {
+          "correct": 0,
+          "decile": 8,
+          "n": 21,
+          "p_correct": 0.0,
+          "score_max": 0.533,
+          "score_min": 0.4863
+        },
+        {
+          "correct": 1,
+          "decile": 9,
+          "n": 21,
+          "p_correct": 0.0476,
+          "score_max": 0.5537,
+          "score_min": 0.5347
+        },
+        {
+          "correct": 3,
+          "decile": 10,
+          "n": 22,
+          "p_correct": 0.1364,
+          "score_max": 0.585,
+          "score_min": 0.5648
+        }
+      ],
+      "discrimination_all_truth": {
+        "auc": 0.7865,
+        "median_correct": 0.97,
+        "median_incorrect": 0.4246,
+        "n_correct": 67,
+        "n_incorrect": 188
+      },
+      "discrimination_model_scored": {
+        "auc": 0.378,
+        "median_correct": 0.3999,
+        "median_incorrect": 0.4246,
+        "n_correct": 23,
+        "n_incorrect": 188
+      },
+      "distribution": {
+        "p0": 0.2144,
+        "p10": 0.3716,
+        "p100": 0.97,
+        "p25": 0.3963,
+        "p50": 0.4322,
+        "p75": 0.5346,
+        "p90": 0.585,
+        "p95": 0.585
+      },
+      "label": "candidate_confidence (report overall, Platt-scaled)",
+      "n_present": 3897,
+      "share_at_or_above_0_98": 0.0
+    },
+    "evidence_confidence": {
+      "band_schemes": {
+        "empirical_terciles": {
+          "by_msi_level": {
+            "1": {
+              "a": 41,
+              "b": 3,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "2": {
+              "a": 193,
+              "b": 0,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "3": {
+              "a": 2212,
+              "b": 122,
+              "below": 89,
+              "c": 38,
+              "missing": 28
+            },
+            "4": {
+              "a": 472,
+              "b": 139,
+              "below": 116,
+              "c": 77,
+              "missing": 361
+            },
+            "5": {
+              "a": 0,
+              "b": 2,
+              "below": 4,
+              "c": 0,
+              "missing": 0
+            }
+          },
+          "cuts": [
+            0.55,
+            0.46,
+            0.4
+          ],
+          "note": "roughly equal-sized bands over the model-scored population",
+          "occupancy": {
+            "counts": {
+              "a": 2918,
+              "b": 266,
+              "below": 209,
+              "c": 115,
+              "missing": 389
+            },
+            "empty_bands": [],
+            "shares": {
+              "a": 0.7488,
+              "b": 0.0683,
+              "below": 0.0536,
+              "c": 0.0295,
+              "missing": 0.0998
+            }
+          },
+          "precision_all_truth": {
+            "bands": {
+              "a": {
+                "correct": 64,
+                "n": 220,
+                "p_correct": 0.2909
+              },
+              "b": {
+                "correct": 3,
+                "n": 16,
+                "p_correct": 0.1875
+              },
+              "below": {
+                "correct": 0,
+                "n": 3,
+                "p_correct": 0.0
+              },
+              "c": {
+                "correct": 0,
+                "n": 1,
+                "p_correct": 0.0
+              }
+            },
+            "inversions": [],
+            "monotone": false
+          },
+          "precision_model_scored": {
+            "bands": {
+              "a": {
+                "correct": 23,
+                "n": 179,
+                "p_correct": 0.1285
+              },
+              "b": {
+                "correct": 0,
+                "n": 13,
+                "p_correct": 0.0
+              },
+              "below": {
+                "correct": 0,
+                "n": 3,
+                "p_correct": 0.0
+              },
+              "c": {
+                "correct": 0,
+                "n": 1,
+                "p_correct": 0.0
+              }
+            },
+            "inversions": [],
+            "monotone": false
+          }
+        },
+        "identification_tiers": {
+          "by_msi_level": {
+            "1": {
+              "a": 40,
+              "b": 2,
+              "below": 0,
+              "c": 2,
+              "missing": 0
+            },
+            "2": {
+              "a": 191,
+              "b": 2,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "3": {
+              "a": 1992,
+              "b": 318,
+              "below": 71,
+              "c": 80,
+              "missing": 28
+            },
+            "4": {
+              "a": 436,
+              "b": 113,
+              "below": 93,
+              "c": 162,
+              "missing": 361
+            },
+            "5": {
+              "a": 0,
+              "b": 2,
+              "below": 4,
+              "c": 0,
+              "missing": 0
+            }
+          },
+          "cuts": [
+            0.65,
+            0.48,
+            0.38
+          ],
+          "note": "TIER_HIGH / TIER_MODERATE / TIER_LOW, the cutoffs the report tiers already use",
+          "occupancy": {
+            "counts": {
+              "a": 2659,
+              "b": 437,
+              "below": 168,
+              "c": 244,
+              "missing": 389
+            },
+            "empty_bands": [],
+            "shares": {
+              "a": 0.6823,
+              "b": 0.1121,
+              "below": 0.0431,
+              "c": 0.0626,
+              "missing": 0.0998
+            }
+          },
+          "precision_all_truth": {
+            "bands": {
+              "a": {
+                "correct": 63,
+                "n": 213,
+                "p_correct": 0.2958
+              },
+              "b": {
+                "correct": 2,
+                "n": 16,
+                "p_correct": 0.125
+              },
+              "below": {
+                "correct": 0,
+                "n": 2,
+                "p_correct": 0.0
+              },
+              "c": {
+                "correct": 2,
+                "n": 9,
+                "p_correct": 0.2222
+              }
+            },
+            "inversions": [
+              "b<c"
+            ],
+            "monotone": false
+          },
+          "precision_model_scored": {
+            "bands": {
+              "a": {
+                "correct": 23,
+                "n": 173,
+                "p_correct": 0.1329
+              },
+              "b": {
+                "correct": 0,
+                "n": 14,
+                "p_correct": 0.0
+              },
+              "below": {
+                "correct": 0,
+                "n": 2,
+                "p_correct": 0.0
+              },
+              "c": {
+                "correct": 0,
+                "n": 7,
+                "p_correct": 0.0
+              }
+            },
+            "inversions": [],
+            "monotone": false
+          }
+        },
+        "reachable_ceiling": {
+          "by_msi_level": {
+            "1": {
+              "a": 41,
+              "b": 1,
+              "below": 0,
+              "c": 2,
+              "missing": 0
+            },
+            "2": {
+              "a": 193,
+              "b": 0,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "3": {
+              "a": 2126,
+              "b": 184,
+              "below": 89,
+              "c": 62,
+              "missing": 28
+            },
+            "4": {
+              "a": 462,
+              "b": 87,
+              "below": 116,
+              "c": 139,
+              "missing": 361
+            },
+            "5": {
+              "a": 0,
+              "b": 2,
+              "below": 4,
+              "c": 0,
+              "missing": 0
+            }
+          },
+          "cuts": [
+            0.585,
+            0.48,
+            0.4
+          ],
+          "note": "top band lowered to sit inside the Platt-reachable range",
+          "occupancy": {
+            "counts": {
+              "a": 2822,
+              "b": 274,
+              "below": 209,
+              "c": 203,
+              "missing": 389
+            },
+            "empty_bands": [],
+            "shares": {
+              "a": 0.7241,
+              "b": 0.0703,
+              "below": 0.0536,
+              "c": 0.0521,
+              "missing": 0.0998
+            }
+          },
+          "precision_all_truth": {
+            "bands": {
+              "a": {
+                "correct": 64,
+                "n": 216,
+                "p_correct": 0.2963
+              },
+              "b": {
+                "correct": 1,
+                "n": 13,
+                "p_correct": 0.0769
+              },
+              "below": {
+                "correct": 0,
+                "n": 3,
+                "p_correct": 0.0
+              },
+              "c": {
+                "correct": 2,
+                "n": 8,
+                "p_correct": 0.25
+              }
+            },
+            "inversions": [
+              "b<c"
+            ],
+            "monotone": false
+          },
+          "precision_model_scored": {
+            "bands": {
+              "a": {
+                "correct": 23,
+                "n": 175,
+                "p_correct": 0.1314
+              },
+              "b": {
+                "correct": 0,
+                "n": 12,
+                "p_correct": 0.0
+              },
+              "below": {
+                "correct": 0,
+                "n": 3,
+                "p_correct": 0.0
+              },
+              "c": {
+                "correct": 0,
+                "n": 6,
+                "p_correct": 0.0
+              }
+            },
+            "inversions": [],
+            "monotone": false
+          }
+        }
+      },
+      "column": "rank1_evidence_confidence",
+      "curated_sublevel_separation": {
+        "fine_median_spread": 0.0014,
+        "fine_sublevels": [
+          "2C",
+          "3A",
+          "3B",
+          "3C"
+        ],
+        "median_spread": 0.0062,
+        "per_sublevel": {
+          "2C": {
+            "median": 0.9986,
+            "n": 152,
+            "p25": 0.9965,
+            "p75": 0.9994
+          },
+          "3A": {
+            "median": 0.9972,
+            "n": 323,
+            "p25": 0.8685,
+            "p75": 0.9989
+          },
+          "3B": {
+            "median": 0.9979,
+            "n": 249,
+            "p25": 0.9949,
+            "p75": 0.9988
+          },
+          "3C": {
+            "median": 0.9978,
+            "n": 168,
+            "p25": 0.9919,
+            "p75": 0.9991
+          },
+          "4": {
+            "median": 0.9984,
+            "n": 99,
+            "p25": 0.9973,
+            "p75": 0.9996
+          },
+          "4?": {
+            "median": 0.9987,
+            "n": 55,
+            "p25": 0.9976,
+            "p75": 0.9994
+          },
+          "5": {
+            "median": 0.9971,
+            "n": 1198,
+            "p25": 0.5798,
+            "p75": 0.9988
+          },
+          "KNOWN": {
+            "median": 0.9991,
+            "n": 65,
+            "p25": 0.9958,
+            "p75": 1.0
+          },
+          "Released": {
+            "median": 0.9929,
+            "n": 25,
+            "p25": 0.7739,
+            "p75": 1.0
+          }
+        }
+      },
+      "deciles_model_scored": [
+        {
+          "correct": 0,
+          "decile": 1,
+          "n": 19,
+          "p_correct": 0.0,
+          "score_max": 0.5557,
+          "score_min": 0.338
+        },
+        {
+          "correct": 1,
+          "decile": 2,
+          "n": 20,
+          "p_correct": 0.05,
+          "score_max": 0.9952,
+          "score_min": 0.5617
+        },
+        {
+          "correct": 3,
+          "decile": 3,
+          "n": 19,
+          "p_correct": 0.1579,
+          "score_max": 0.9969,
+          "score_min": 0.9955
+        },
+        {
+          "correct": 3,
+          "decile": 4,
+          "n": 20,
+          "p_correct": 0.15,
+          "score_max": 0.9977,
+          "score_min": 0.9969
+        },
+        {
+          "correct": 2,
+          "decile": 5,
+          "n": 20,
+          "p_correct": 0.1,
+          "score_max": 0.9986,
+          "score_min": 0.9977
+        },
+        {
+          "correct": 2,
+          "decile": 6,
+          "n": 19,
+          "p_correct": 0.1053,
+          "score_max": 0.9989,
+          "score_min": 0.9986
+        },
+        {
+          "correct": 2,
+          "decile": 7,
+          "n": 20,
+          "p_correct": 0.1,
+          "score_max": 0.9992,
+          "score_min": 0.999
+        },
+        {
+          "correct": 4,
+          "decile": 8,
+          "n": 19,
+          "p_correct": 0.2105,
+          "score_max": 0.9996,
+          "score_min": 0.9993
+        },
+        {
+          "correct": 4,
+          "decile": 9,
+          "n": 20,
+          "p_correct": 0.2,
+          "score_max": 0.9999,
+          "score_min": 0.9996
+        },
+        {
+          "correct": 2,
+          "decile": 10,
+          "n": 20,
+          "p_correct": 0.1,
+          "score_max": 1.0,
+          "score_min": 0.9999
+        }
+      ],
+      "discrimination_all_truth": {
+        "auc": 0.5794,
+        "median_correct": 0.9988,
+        "median_incorrect": 0.9985,
+        "n_correct": 67,
+        "n_incorrect": 173
+      },
+      "discrimination_model_scored": {
+        "auc": 0.6005,
+        "median_correct": 0.999,
+        "median_incorrect": 0.9985,
+        "n_correct": 23,
+        "n_incorrect": 173
+      },
+      "distribution": {
+        "p0": 0.2169,
+        "p10": 0.468,
+        "p100": 1.0,
+        "p25": 0.679,
+        "p50": 0.9974,
+        "p75": 0.9989,
+        "p90": 0.9996,
+        "p95": 0.9999
+      },
+      "label": "evidence_confidence (pipeline candidate score / matrix \"Confidence Score\")",
+      "n_present": 3508,
+      "share_at_or_above_0_98": 0.7204
+    },
+    "raw_evidence": {
+      "band_schemes": {
+        "empirical_terciles": {
+          "by_msi_level": {
+            "1": {
+              "a": 0,
+              "b": 0,
+              "below": 0,
+              "c": 0,
+              "missing": 44
+            },
+            "2": {
+              "a": 193,
+              "b": 0,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "3": {
+              "a": 2283,
+              "b": 206,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "4": {
+              "a": 765,
+              "b": 294,
+              "below": 30,
+              "c": 76,
+              "missing": 0
+            },
+            "5": {
+              "a": 3,
+              "b": 0,
+              "below": 3,
+              "c": 0,
+              "missing": 0
+            }
+          },
+          "cuts": [
+            0.55,
+            0.46,
+            0.4
+          ],
+          "note": "roughly equal-sized bands over the model-scored population",
+          "occupancy": {
+            "counts": {
+              "a": 3244,
+              "b": 500,
+              "below": 33,
+              "c": 76,
+              "missing": 44
+            },
+            "empty_bands": [],
+            "shares": {
+              "a": 0.8324,
+              "b": 0.1283,
+              "below": 0.0085,
+              "c": 0.0195,
+              "missing": 0.0113
+            }
+          },
+          "precision_all_truth": {
+            "bands": {
+              "a": {
+                "correct": 15,
+                "n": 177,
+                "p_correct": 0.0847
+              },
+              "b": {
+                "correct": 6,
+                "n": 29,
+                "p_correct": 0.2069
+              },
+              "below": {
+                "correct": 0,
+                "n": 1,
+                "p_correct": 0.0
+              },
+              "c": {
+                "correct": 2,
+                "n": 4,
+                "p_correct": 0.5
+              }
+            },
+            "inversions": [
+              "a<b",
+              "b<c"
+            ],
+            "monotone": false
+          },
+          "precision_model_scored": {
+            "bands": {
+              "a": {
+                "correct": 15,
+                "n": 177,
+                "p_correct": 0.0847
+              },
+              "b": {
+                "correct": 6,
+                "n": 29,
+                "p_correct": 0.2069
+              },
+              "below": {
+                "correct": 0,
+                "n": 1,
+                "p_correct": 0.0
+              },
+              "c": {
+                "correct": 2,
+                "n": 4,
+                "p_correct": 0.5
+              }
+            },
+            "inversions": [
+              "a<b",
+              "b<c"
+            ],
+            "monotone": false
+          }
+        },
+        "identification_tiers": {
+          "by_msi_level": {
+            "1": {
+              "a": 0,
+              "b": 0,
+              "below": 0,
+              "c": 0,
+              "missing": 44
+            },
+            "2": {
+              "a": 193,
+              "b": 0,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "3": {
+              "a": 1801,
+              "b": 688,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "4": {
+              "a": 2,
+              "b": 1023,
+              "below": 29,
+              "c": 111,
+              "missing": 0
+            },
+            "5": {
+              "a": 0,
+              "b": 3,
+              "below": 2,
+              "c": 1,
+              "missing": 0
+            }
+          },
+          "cuts": [
+            0.65,
+            0.48,
+            0.38
+          ],
+          "note": "TIER_HIGH / TIER_MODERATE / TIER_LOW, the cutoffs the report tiers already use",
+          "occupancy": {
+            "counts": {
+              "a": 1996,
+              "b": 1714,
+              "below": 31,
+              "c": 112,
+              "missing": 44
+            },
+            "empty_bands": [],
+            "shares": {
+              "a": 0.5122,
+              "b": 0.4398,
+              "below": 0.008,
+              "c": 0.0287,
+              "missing": 0.0113
+            }
+          },
+          "precision_all_truth": {
+            "bands": {
+              "a": {
+                "correct": 7,
+                "n": 95,
+                "p_correct": 0.0737
+              },
+              "b": {
+                "correct": 14,
+                "n": 110,
+                "p_correct": 0.1273
+              },
+              "below": {
+                "correct": 0,
+                "n": 1,
+                "p_correct": 0.0
+              },
+              "c": {
+                "correct": 2,
+                "n": 5,
+                "p_correct": 0.4
+              }
+            },
+            "inversions": [
+              "a<b",
+              "b<c"
+            ],
+            "monotone": false
+          },
+          "precision_model_scored": {
+            "bands": {
+              "a": {
+                "correct": 7,
+                "n": 95,
+                "p_correct": 0.0737
+              },
+              "b": {
+                "correct": 14,
+                "n": 110,
+                "p_correct": 0.1273
+              },
+              "below": {
+                "correct": 0,
+                "n": 1,
+                "p_correct": 0.0
+              },
+              "c": {
+                "correct": 2,
+                "n": 5,
+                "p_correct": 0.4
+              }
+            },
+            "inversions": [
+              "a<b",
+              "b<c"
+            ],
+            "monotone": false
+          }
+        },
+        "reachable_ceiling": {
+          "by_msi_level": {
+            "1": {
+              "a": 0,
+              "b": 0,
+              "below": 0,
+              "c": 0,
+              "missing": 44
+            },
+            "2": {
+              "a": 193,
+              "b": 0,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "3": {
+              "a": 2137,
+              "b": 352,
+              "below": 0,
+              "c": 0,
+              "missing": 0
+            },
+            "4": {
+              "a": 511,
+              "b": 514,
+              "below": 30,
+              "c": 110,
+              "missing": 0
+            },
+            "5": {
+              "a": 3,
+              "b": 0,
+              "below": 3,
+              "c": 0,
+              "missing": 0
+            }
+          },
+          "cuts": [
+            0.585,
+            0.48,
+            0.4
+          ],
+          "note": "top band lowered to sit inside the Platt-reachable range",
+          "occupancy": {
+            "counts": {
+              "a": 2844,
+              "b": 866,
+              "below": 33,
+              "c": 110,
+              "missing": 44
+            },
+            "empty_bands": [],
+            "shares": {
+              "a": 0.7298,
+              "b": 0.2222,
+              "below": 0.0085,
+              "c": 0.0282,
+              "missing": 0.0113
+            }
+          },
+          "precision_all_truth": {
+            "bands": {
+              "a": {
+                "correct": 13,
+                "n": 157,
+                "p_correct": 0.0828
+              },
+              "b": {
+                "correct": 8,
+                "n": 48,
+                "p_correct": 0.1667
+              },
+              "below": {
+                "correct": 0,
+                "n": 1,
+                "p_correct": 0.0
+              },
+              "c": {
+                "correct": 2,
+                "n": 5,
+                "p_correct": 0.4
+              }
+            },
+            "inversions": [
+              "a<b",
+              "b<c"
+            ],
+            "monotone": false
+          },
+          "precision_model_scored": {
+            "bands": {
+              "a": {
+                "correct": 13,
+                "n": 157,
+                "p_correct": 0.0828
+              },
+              "b": {
+                "correct": 8,
+                "n": 48,
+                "p_correct": 0.1667
+              },
+              "below": {
+                "correct": 0,
+                "n": 1,
+                "p_correct": 0.0
+              },
+              "c": {
+                "correct": 2,
+                "n": 5,
+                "p_correct": 0.4
+              }
+            },
+            "inversions": [
+              "a<b",
+              "b<c"
+            ],
+            "monotone": false
+          }
+        }
+      },
+      "column": "_raw_evidence",
+      "curated_sublevel_separation": {
+        "fine_median_spread": 0.0304,
+        "fine_sublevels": [
+          "2C",
+          "3A",
+          "3B",
+          "3C"
+        ],
+        "median_spread": 0.0602,
+        "per_sublevel": {
+          "2C": {
+            "median": 0.6391,
+            "n": 163,
+            "p25": 0.5714,
+            "p75": 0.7897
+          },
+          "3A": {
+            "median": 0.6251,
+            "n": 358,
+            "p25": 0.5571,
+            "p75": 0.807
+          },
+          "3B": {
+            "median": 0.6365,
+            "n": 253,
+            "p25": 0.5734,
+            "p75": 0.7457
+          },
+          "3C": {
+            "median": 0.6087,
+            "n": 175,
+            "p25": 0.5634,
+            "p75": 0.7091
+          },
+          "4": {
+            "median": 0.6101,
+            "n": 107,
+            "p25": 0.5598,
+            "p75": 0.7899
+          },
+          "4?": {
+            "median": 0.6493,
+            "n": 64,
+            "p25": 0.59,
+            "p75": 0.8826
+          },
+          "5": {
+            "median": 0.6125,
+            "n": 1315,
+            "p25": 0.5587,
+            "p75": 0.7253
+          },
+          "KNOWN": {
+            "median": 0.6689,
+            "n": 43,
+            "p25": 0.6125,
+            "p75": 0.8756
+          }
+        }
+      },
+      "deciles_model_scored": [
+        {
+          "correct": 5,
+          "decile": 1,
+          "n": 21,
+          "p_correct": 0.2381,
+          "score_max": 0.5215,
+          "score_min": 0.2895
+        },
+        {
+          "correct": 5,
+          "decile": 2,
+          "n": 21,
+          "p_correct": 0.2381,
+          "score_max": 0.5636,
+          "score_min": 0.5222
+        },
+        {
+          "correct": 2,
+          "decile": 3,
+          "n": 21,
+          "p_correct": 0.0952,
+          "score_max": 0.5905,
+          "score_min": 0.5636
+        },
+        {
+          "correct": 2,
+          "decile": 4,
+          "n": 21,
+          "p_correct": 0.0952,
+          "score_max": 0.614,
+          "score_min": 0.5911
+        },
+        {
+          "correct": 0,
+          "decile": 5,
+          "n": 21,
+          "p_correct": 0.0,
+          "score_max": 0.6408,
+          "score_min": 0.6234
+        },
+        {
+          "correct": 3,
+          "decile": 6,
+          "n": 21,
+          "p_correct": 0.1429,
+          "score_max": 0.67,
+          "score_min": 0.6408
+        },
+        {
+          "correct": 2,
+          "decile": 7,
+          "n": 21,
+          "p_correct": 0.0952,
+          "score_max": 0.7723,
+          "score_min": 0.6722
+        },
+        {
+          "correct": 0,
+          "decile": 8,
+          "n": 21,
+          "p_correct": 0.0,
+          "score_max": 0.8756,
+          "score_min": 0.7765
+        },
+        {
+          "correct": 1,
+          "decile": 9,
+          "n": 21,
+          "p_correct": 0.0476,
+          "score_max": 0.9198,
+          "score_min": 0.8792
+        },
+        {
+          "correct": 3,
+          "decile": 10,
+          "n": 22,
+          "p_correct": 0.1364,
+          "score_max": 0.9875,
+          "score_min": 0.9437
+        }
+      ],
+      "discrimination_all_truth": {
+        "auc": 0.378,
+        "median_correct": 0.5905,
+        "median_incorrect": 0.6445,
+        "n_correct": 23,
+        "n_incorrect": 188
+      },
+      "discrimination_model_scored": {
+        "auc": 0.378,
+        "median_correct": 0.5905,
+        "median_incorrect": 0.6445,
+        "n_correct": 23,
+        "n_incorrect": 188
+      },
+      "distribution": {
+        "p0": 0.1174,
+        "p10": 0.5263,
+        "p100": 0.9897,
+        "p25": 0.5812,
+        "p50": 0.6577,
+        "p75": 0.8716,
+        "p90": 0.9875,
+        "p95": 0.9875
+      },
+      "label": "raw_evidence (pre-Platt axis average; the candidate-widget re-anchor)",
+      "n_present": 3853,
+      "share_at_or_above_0_98": 0.1848
+    }
+  }
+}
