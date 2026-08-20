@@ -211,6 +211,24 @@ def test_the_spectral_section_records_why_it_was_skipped():
         assert result["n_assessed"] == 0
 
 
+# --- the artifact has to be portable ------------------------------------------
+
+
+def test_recorded_input_paths_are_repo_relative():
+    """CI regenerates the committed JSON and diffs it, so an absolute path in the
+    artifact would fail on any checkout that is not the one that wrote it."""
+
+    recorded = A._repo_relative(ROOT / "data" / "feature_rows")
+    assert recorded == "data/feature_rows"
+    assert not Path(recorded).is_absolute()
+
+
+def test_a_path_outside_the_repo_does_not_leak_its_location():
+    recorded = A._repo_relative(Path("/tmp/somewhere/exec_summary_top10.csv"))
+    assert recorded == "exec_summary_top10.csv"
+    assert "/tmp" not in recorded
+
+
 def test_a_summary_serialises_to_json():
     """The audit writes JSON, so every value it produces has to be serialisable."""
 

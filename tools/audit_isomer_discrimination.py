@@ -60,6 +60,19 @@ TIE_COLUMNS = ("candidate_confidence", "evidence_confidence", "mass_match_score"
 TIE_PLACES = 4
 
 
+def _repo_relative(path: Path) -> str:
+    """Path as written in the artifact: relative to the repo, so it is portable.
+
+    The JSON is committed and CI regenerates it to check the two agree, so an
+    absolute path would make the artifact differ between any two checkouts.
+    """
+    resolved = Path(path).resolve()
+    try:
+        return resolved.relative_to(PROJECT_ROOT).as_posix()
+    except ValueError:
+        return resolved.name
+
+
 def _num(value: Any) -> float | None:
     try:
         number = float(value)
@@ -540,8 +553,8 @@ def build_summary(exec_summary: Path, feature_rows: Path) -> dict[str, Any]:
     features = load_features(feature_rows) if feature_rows.is_dir() else {}
     return {
         "inputs": {
-            "exec_summary": str(exec_summary),
-            "feature_rows_dir": str(feature_rows),
+            "exec_summary": _repo_relative(exec_summary),
+            "feature_rows_dir": _repo_relative(feature_rows),
             "n_compounds": len(grouped),
             "n_truth_controls": len(controls),
             "n_feature_rows": len(features),

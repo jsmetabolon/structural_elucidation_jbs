@@ -1,7 +1,7 @@
 {
   "inputs": {
-    "exec_summary": "/agent/repos/structural_elucidation_jbs/docs/paper/data/exec_summary/exec_summary_top10.csv",
-    "feature_rows_dir": "/agent/repos/structural_elucidation_jbs/data/feature_rows",
+    "exec_summary": "docs/paper/data/exec_summary/exec_summary_top10.csv",
+    "feature_rows_dir": "data/feature_rows",
     "n_compounds": 3897,
     "n_truth_controls": 92,
     "n_feature_rows": 2473
