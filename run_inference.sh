@@ -12,6 +12,15 @@ fi
 OUT_ROOT="${OUT_ROOT:-$REPO_ROOT/output/pipeline_equalization}"
 RUN_LIBS="${RUN_LIBS:-209,305,400,402}"
 START_AT="${START_AT:-verifier}"
+# JOBS>1 runs independent library scopes concurrently (per-scope logs under
+# OUT_ROOT). Per-stage worker counts are divided across concurrent scopes
+# unless explicitly provided.
+JOBS="${JOBS:-1}"
+TOTAL_CORES="$(nproc 2>/dev/null || echo 4)"
+default_stage_workers=$(( TOTAL_CORES / (JOBS > 0 ? JOBS : 1) ))
+(( default_stage_workers < 1 )) && default_stage_workers=1
+export SE_VERIFIER_WORKERS="${SE_VERIFIER_WORKERS:-$default_stage_workers}"
+export SE_RERANK_JOBS="${SE_RERANK_JOBS:-$default_stage_workers}"
 MERGED_IONS_CSV="${MERGED_IONS_CSV:-$REPO_ROOT/data/ions_unknown_merged_clean.csv}"
 FEATURE_TABLE="${FEATURE_TABLE:-$MERGED_IONS_CSV}"
 ADDUCT_LADDER="${ADDUCT_LADDER:-$REPO_ROOT/data/chrolib_adduct_ladder.csv}"
@@ -140,12 +149,47 @@ run_scope() {
     --model-selection-mode auto
 }
 
+run_scopes_parallel() {
+  local pending=("$@")
+  local overall=0
+  while (( ${#pending[@]} )); do
+    local batch=("${pending[@]:0:JOBS}")
+    pending=("${pending[@]:JOBS}")
+    local -A pid_of=()
+    local lib
+    for lib in "${batch[@]}"; do
+      echo "[run_inference] starting scope lib${lib} (log: $OUT_ROOT/lib${lib}_scope.log)"
+      run_scope "$lib" > "$OUT_ROOT/lib${lib}_scope.log" 2>&1 &
+      pid_of[$lib]=$!
+    done
+    for lib in "${batch[@]}"; do
+      if wait "${pid_of[$lib]}"; then
+        echo "[run_inference] scope lib${lib} completed"
+      else
+        local rc=$?
+        overall=$rc
+        echo "[run_inference] scope lib${lib} FAILED rc=$rc (see $OUT_ROOT/lib${lib}_scope.log)" >&2
+      fi
+    done
+  done
+  return "$overall"
+}
+
 mkdir -p "$OUT_ROOT"
 IFS=',' read -r -a libs <<< "$RUN_LIBS"
+clean_libs=()
 for lib in "${libs[@]}"; do
   lib=$(echo "$lib" | xargs)
   [[ -z "$lib" ]] && continue
-  run_scope "$lib"
+  clean_libs+=("$lib")
 done
+
+if (( JOBS > 1 && ${#clean_libs[@]} > 1 )); then
+  run_scopes_parallel "${clean_libs[@]}"
+else
+  for lib in "${clean_libs[@]}"; do
+    run_scope "$lib"
+  done
+fi
 
 echo "[run_inference] completed $(date -u +%Y-%m-%dT%H:%M:%SZ)"
