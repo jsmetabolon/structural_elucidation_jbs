@@ -21,6 +21,7 @@ default_stage_workers=$(( TOTAL_CORES / (JOBS > 0 ? JOBS : 1) ))
 (( default_stage_workers < 1 )) && default_stage_workers=1
 export SE_VERIFIER_WORKERS="${SE_VERIFIER_WORKERS:-$default_stage_workers}"
 export SE_RERANK_JOBS="${SE_RERANK_JOBS:-$default_stage_workers}"
+export SE_CANDIDATES_WORKERS="${SE_CANDIDATES_WORKERS:-$default_stage_workers}"
 MERGED_IONS_CSV="${MERGED_IONS_CSV:-$REPO_ROOT/data/ions_unknown_merged_clean.csv}"
 FEATURE_TABLE="${FEATURE_TABLE:-$MERGED_IONS_CSV}"
 ADDUCT_LADDER="${ADDUCT_LADDER:-$REPO_ROOT/data/chrolib_adduct_ladder.csv}"
