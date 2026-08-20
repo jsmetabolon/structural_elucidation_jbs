@@ -41,10 +41,30 @@ base_pool_for() {
   echo "$REPO_ROOT/data/base_pools/lib${lib}_${ion}.csv"
 }
 
-run_cmd() {
+TIMINGS_CSV="${TIMINGS_CSV:-$OUT_ROOT/stage_timings.csv}"
+
+record_timing() {
+  local stage="$1" lib="$2" seconds="$3" rc="$4"
+  if [[ ! -f "$TIMINGS_CSV" ]]; then
+    echo "timestamp_utc,stage,lib_id,seconds,exit_code" > "$TIMINGS_CSV"
+  fi
+  echo "$(date -u +%Y-%m-%dT%H:%M:%SZ),$stage,$lib,$seconds,$rc" >> "$TIMINGS_CSV"
+}
+
+run_stage() {
+  local stage="$1" lib="$2"
+  shift 2
   echo
   echo "+ $*"
-  "$@"
+  local start_ns end_ns rc=0
+  start_ns=$(date +%s%N)
+  if "$@"; then rc=0; else rc=$?; fi
+  end_ns=$(date +%s%N)
+  local seconds
+  seconds=$(awk -v s="$start_ns" -v e="$end_ns" 'BEGIN {printf "%.2f", (e - s) / 1e9}')
+  echo "[timing] stage=$stage lib=$lib seconds=$seconds exit=$rc"
+  record_timing "$stage" "$lib" "$seconds" "$rc"
+  return "$rc"
 }
 
 append_existing() {
@@ -81,7 +101,7 @@ run_scope() {
   local la_path="$OUT_ROOT/library_anchored_lib${lib}/runs/library_anchored_v1/track_control_blind/lib_${lib}_${ion}/selfies_profiles/strict_1da/candidate_metrics_all.csv"
 
   if [[ "$START_AT" != "verifier" ]]; then
-    run_cmd "$PY" -m structural_elucidation.pipeline.candidates \
+    run_stage candidates "$lib" "$PY" -m structural_elucidation.pipeline.candidates \
       --output-root "$OUT_ROOT/library_anchored_lib${lib}" \
       --diagnosis-csv "$manifest" \
       --feature-rows "$feature_rows" \
@@ -96,7 +116,7 @@ run_scope() {
     return 0
   fi
 
-  run_cmd "$PY" -m structural_elucidation.pipeline.verify \
+  run_stage verify "$lib" "$PY" -m structural_elucidation.pipeline.verify \
     --output-root "$OUT_ROOT/verifier_lib${lib}" \
     --observed-lookup "$observed_lookup" \
     --all-x-observed-lookup "$observed_lookup" \
@@ -104,7 +124,7 @@ run_scope() {
     --input-candidate-metrics "$inputs" \
     --lib-id "$lib" --ion-mode "$ion" --include-all-x
 
-  run_cmd "$PY" -m structural_elucidation.pipeline.pool \
+  run_stage pool "$lib" "$PY" -m structural_elucidation.pipeline.pool \
     --output-root "$OUT_ROOT/unified_pool_lib${lib}" \
     --scored-candidates "$OUT_ROOT/verifier_lib${lib}/scored_candidates.csv" \
     --base-unified-pool-csv "$base_pool" \
@@ -112,7 +132,7 @@ run_scope() {
     --lib-id "$lib" --ion-mode "$ion" \
     --include-all-x
 
-  run_cmd "$PY" -m structural_elucidation.pipeline.rerank \
+  run_stage rerank "$lib" "$PY" -m structural_elucidation.pipeline.rerank \
     --unified-pool "$OUT_ROOT/unified_pool_lib${lib}/unified_candidates_per_control.csv" \
     --non-s0-pool "$OUT_ROOT/unified_pool_lib${lib}/unified_candidates_per_control_non_s0.csv" \
     --output-root "$OUT_ROOT/rerank_lib${lib}" \

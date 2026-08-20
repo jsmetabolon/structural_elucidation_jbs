@@ -46,6 +46,7 @@ from structural_elucidation.utils.domain import (
     write_json,
     xid_from_feature_key,
 )
+from structural_elucidation.utils.timing import stage_timer
 
 # ── Default library paths and run label ──────────────────────────────
 DEFAULT_HMDB: Path = REPO_ROOT / "vendor/nce/elucidation/table_builders/hmdb_minimal.csv"
@@ -657,7 +658,9 @@ def main() -> None:
     parser.add_argument("--max-products-per-reaction", type=int, default=3)
     parser.add_argument("--max-candidates-per-feature", type=int, default=250)
     parser.add_argument("--top-k", type=int, default=10)
-    run(parser.parse_args())
+    args = parser.parse_args()
+    with stage_timer("candidates", lib_id=int(args.lib_id), ion_mode=str(args.ion_mode)):
+        run(args)
 
 
 if __name__ == "__main__":

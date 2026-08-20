@@ -29,6 +29,7 @@ from structural_elucidation.utils.denovo import canonicalize_smiles
 from structural_elucidation.nce.verifier_v2 import annotate_predicted_spectrum_scores_v2
 from structural_elucidation.paths import REPO_ROOT, resolve
 from structural_elucidation.utils.domain import dataframe_to_markdown, write_csv, write_json
+from structural_elucidation.utils.timing import stage_timer
 
 # ── Default verifier input paths (lib 209 negative) ──────────────────
 DEFAULT_INPUTS: tuple[str, ...] = (
@@ -576,7 +577,9 @@ def main() -> None:
         "--all-x-observed-lookup", type=Path, default=Path("models/observed_ms2_lookup_v8/per_control_all_x.csv")
     )
     parser.add_argument("--verbose", action="store_true")
-    payload = run(parser.parse_args())
+    args = parser.parse_args()
+    with stage_timer("verify", lib_id=int(args.lib_id), ion_mode=str(args.ion_mode)):
+        payload = run(args)
     raise SystemExit(0 if payload["acceptance_pass"] else 2)
 
 

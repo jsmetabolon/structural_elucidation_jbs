@@ -37,6 +37,7 @@ from structural_elucidation.evaluation.failure_modes import best_tanimoto_for_sm
 from structural_elucidation.evaluation.rerank_assembly import eval_reranked, write_denovo_report
 from structural_elucidation.paths import REPO_ROOT, resolve
 from structural_elucidation.utils.domain import dataframe_to_markdown, write_csv, write_json
+from structural_elucidation.utils.timing import stage_timer
 
 # ── Reranker feature columns and defaults ────────────────────────────
 FEATURE_COLUMNS: list[str] = [
@@ -752,7 +753,9 @@ def main() -> None:
     parser.add_argument("--class-match-score-feature", action="store_true")
     parser.add_argument("--drop-novelty-score", action="store_true")
     parser.add_argument("--evidence-backfill", action=argparse.BooleanOptionalAction, default=True)
-    run(parser.parse_args())
+    args = parser.parse_args()
+    with stage_timer("rerank", lib_id=int(args.lib_id), ion_mode=str(args.ion_mode)):
+        run(args)
 
 
 if __name__ == "__main__":

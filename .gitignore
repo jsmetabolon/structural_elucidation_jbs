@@ -25,6 +25,10 @@ vendor/nce/elucidation/table_builders/HMDB_36_classyfire_21_annotations.csv
 vendor/nce/elucidation/table_builders/hmdb_minimal.csv
 vendor/nce/elucidation/table_builders/hmdb_spreadsheet.csv
 *.log
+# GET links for fetch_get_assets.sh may carry presigned-URL secrets
+get_links.env
+# Persistent verifier score cache (regenerated data artifact)
+cache/
 # Report audit pulls and archives (large, regenerated data artifacts)
 _audit_pull/
 *.tgz
