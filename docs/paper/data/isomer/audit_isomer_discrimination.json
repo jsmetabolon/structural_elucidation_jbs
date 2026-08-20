@@ -1,0 +1,494 @@
+{
+  "inputs": {
+    "exec_summary": "/agent/repos/structural_elucidation_jbs/docs/paper/data/exec_summary/exec_summary_top10.csv",
+    "feature_rows_dir": "/agent/repos/structural_elucidation_jbs/data/feature_rows",
+    "n_compounds": 3897,
+    "n_truth_controls": 92,
+    "n_feature_rows": 2473
+  },
+  "recovery": {
+    "n_truth_controls": 92,
+    "counts": {
+      "different_formula": 4,
+      "evidence_degenerate_same_formula": 19,
+      "truth_absent_from_top10": 24,
+      "truth_at_rank_1": 44,
+      "truth_row_unscored": 1
+    },
+    "n_truth_below_rank_1": 24,
+    "n_same_formula_as_rank1": 20,
+    "n_gap_under_0p05": 7,
+    "detail": [
+      {
+        "control_id": "X-11677",
+        "reason": "evidence_degenerate_same_formula",
+        "truth_rank": 4,
+        "msi_level": "4",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C12H14N2O5",
+        "rank1_formula": "C12H14N2O5",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "backfilled",
+        "truth_mass_match": 0.999352,
+        "rank1_mass_match": 1.0,
+        "candidate_confidence_gap": 0.3101
+      },
+      {
+        "control_id": "X-12680",
+        "reason": "different_formula",
+        "truth_rank": 9,
+        "msi_level": "2",
+        "same_formula_as_rank1": false,
+        "truth_formula": "C9H16N4O3",
+        "rank1_formula": "C4H6N2O2",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.999714,
+        "rank1_mass_match": 0.981664,
+        "candidate_confidence_gap": 0.4429
+      },
+      {
+        "control_id": "X-12811",
+        "reason": "evidence_degenerate_same_formula",
+        "truth_rank": 3,
+        "msi_level": "4",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C27H30O18",
+        "rank1_formula": "C27H30O18",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.0,
+        "rank1_mass_match": 0.0,
+        "candidate_confidence_gap": 0.0008
+      },
+      {
+        "control_id": "X-15503",
+        "reason": "evidence_degenerate_same_formula",
+        "truth_rank": 2,
+        "msi_level": "2",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C9H10N2O3",
+        "rank1_formula": "C9H10N2O3",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.999316,
+        "rank1_mass_match": 0.999316,
+        "candidate_confidence_gap": 0.2505
+      },
+      {
+        "control_id": "X-16124",
+        "reason": "evidence_degenerate_same_formula",
+        "truth_rank": 2,
+        "msi_level": "2",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C7H8O5S",
+        "rank1_formula": "C7H8O5S",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 1.0,
+        "rank1_mass_match": 1.0,
+        "candidate_confidence_gap": 0.0243
+      },
+      {
+        "control_id": "X-17146",
+        "reason": "evidence_degenerate_same_formula",
+        "truth_rank": 6,
+        "msi_level": "4",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C21H28O6",
+        "rank1_formula": "C21H28O6",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.97443,
+        "rank1_mass_match": 0.97443,
+        "candidate_confidence_gap": 0.2146
+      },
+      {
+        "control_id": "X-17325",
+        "reason": "evidence_degenerate_same_formula",
+        "truth_rank": 6,
+        "msi_level": "3",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C9H15NO3",
+        "rank1_formula": "C9H15NO3",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.999867,
+        "rank1_mass_match": 0.999867,
+        "candidate_confidence_gap": 0.3678
+      },
+      {
+        "control_id": "X-17855",
+        "reason": "evidence_degenerate_same_formula",
+        "truth_rank": 2,
+        "msi_level": "3",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C14H23N3O6",
+        "rank1_formula": "C14H23N3O6",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.999896,
+        "rank1_mass_match": 0.999896,
+        "candidate_confidence_gap": 0.2361
+      },
+      {
+        "control_id": "X-17861",
+        "reason": "evidence_degenerate_same_formula",
+        "truth_rank": 3,
+        "msi_level": "3",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C14H23N3O6",
+        "rank1_formula": "C14H23N3O6",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.99993,
+        "rank1_mass_match": 0.99993,
+        "candidate_confidence_gap": 0.168
+      },
+      {
+        "control_id": "X-21766",
+        "reason": "evidence_degenerate_same_formula",
+        "truth_rank": 2,
+        "msi_level": "3",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C21H31NO8",
+        "rank1_formula": "C21H31NO8",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.999987,
+        "rank1_mass_match": 0.999987,
+        "candidate_confidence_gap": 0.0139
+      },
+      {
+        "control_id": "X-23080",
+        "reason": "truth_row_unscored",
+        "truth_rank": 2,
+        "msi_level": "4",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C7H8O3S",
+        "rank1_formula": "C7H8O3S",
+        "truth_evidence_basis": "unavailable",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.0,
+        "rank1_mass_match": 0.999811,
+        "candidate_confidence_gap": 0.0106
+      },
+      {
+        "control_id": "X-23437",
+        "reason": "evidence_degenerate_same_formula",
+        "truth_rank": 2,
+        "msi_level": "3",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C9H11NO5S",
+        "rank1_formula": "C9H11NO5S",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.988301,
+        "rank1_mass_match": 0.988301,
+        "candidate_confidence_gap": 0.0977
+      },
+      {
+        "control_id": "X-23583",
+        "reason": "evidence_degenerate_same_formula",
+        "truth_rank": 2,
+        "msi_level": "3",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C5H9NO2",
+        "rank1_formula": "C5H9NO2",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.999915,
+        "rank1_mass_match": 0.999915,
+        "candidate_confidence_gap": 0.0
+      },
+      {
+        "control_id": "X-23662",
+        "reason": "evidence_degenerate_same_formula",
+        "truth_rank": 4,
+        "msi_level": "4",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C8H18N2O",
+        "rank1_formula": "C8H18N2O",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "unavailable",
+        "truth_mass_match": 0.99973,
+        "rank1_mass_match": 0.0,
+        "candidate_confidence_gap": 0.0975
+      },
+      {
+        "control_id": "X-24470",
+        "reason": "evidence_degenerate_same_formula",
+        "truth_rank": 2,
+        "msi_level": "3",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C13H23NO7",
+        "rank1_formula": "C13H23NO7",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.999601,
+        "rank1_mass_match": 0.999601,
+        "candidate_confidence_gap": 0.0183
+      },
+      {
+        "control_id": "X-25003",
+        "reason": "evidence_degenerate_same_formula",
+        "truth_rank": 2,
+        "msi_level": "3",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C6H11NO4",
+        "rank1_formula": "C6H11NO4",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.999981,
+        "rank1_mass_match": 0.999981,
+        "candidate_confidence_gap": 0.0019
+      },
+      {
+        "control_id": "X-25323",
+        "reason": "evidence_degenerate_same_formula",
+        "truth_rank": 3,
+        "msi_level": "2",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C5H4N4O2",
+        "rank1_formula": "C5H4N4O2",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.999831,
+        "rank1_mass_match": 0.999831,
+        "candidate_confidence_gap": 0.2997
+      },
+      {
+        "control_id": "X-25495",
+        "reason": "evidence_degenerate_same_formula",
+        "truth_rank": 8,
+        "msi_level": "2",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C6H5NO3",
+        "rank1_formula": "C6H5NO3",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.934689,
+        "rank1_mass_match": 0.999673,
+        "candidate_confidence_gap": 0.3764
+      },
+      {
+        "control_id": "X-25737",
+        "reason": "evidence_degenerate_same_formula",
+        "truth_rank": 2,
+        "msi_level": "3",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C14H23N3O6",
+        "rank1_formula": "C14H23N3O6",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.999942,
+        "rank1_mass_match": 0.999942,
+        "candidate_confidence_gap": 0.1112
+      },
+      {
+        "control_id": "X-26062",
+        "reason": "different_formula",
+        "truth_rank": 5,
+        "msi_level": "4",
+        "same_formula_as_rank1": false,
+        "truth_formula": "C2H6O4S",
+        "rank1_formula": "C12H26O4S",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.999993,
+        "rank1_mass_match": 0.0,
+        "candidate_confidence_gap": 0.1901
+      },
+      {
+        "control_id": "X-26093",
+        "reason": "different_formula",
+        "truth_rank": 10,
+        "msi_level": "3",
+        "same_formula_as_rank1": false,
+        "truth_formula": "C13H17NO3",
+        "rank1_formula": "C13H17NO4",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.0,
+        "rank1_mass_match": 0.999848,
+        "candidate_confidence_gap": 0.3361
+      },
+      {
+        "control_id": "X-26094",
+        "reason": "different_formula",
+        "truth_rank": 9,
+        "msi_level": "4",
+        "same_formula_as_rank1": false,
+        "truth_formula": "C14H19NO3",
+        "rank1_formula": "C12H15NO3",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.0,
+        "rank1_mass_match": 0.999753,
+        "candidate_confidence_gap": 0.2776
+      },
+      {
+        "control_id": "X-26101",
+        "reason": "evidence_degenerate_same_formula",
+        "truth_rank": 2,
+        "msi_level": "3",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C7H15NO4S",
+        "rank1_formula": "C7H15NO4S",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.999998,
+        "rank1_mass_match": 0.999751,
+        "candidate_confidence_gap": 0.1807
+      },
+      {
+        "control_id": "X-26103",
+        "reason": "evidence_degenerate_same_formula",
+        "truth_rank": 3,
+        "msi_level": "3",
+        "same_formula_as_rank1": true,
+        "truth_formula": "C7H15NO4S",
+        "rank1_formula": "C7H15NO4S",
+        "truth_evidence_basis": "emitted",
+        "rank1_evidence_basis": "emitted",
+        "truth_mass_match": 0.999998,
+        "rank1_mass_match": 0.999751,
+        "candidate_confidence_gap": 0.2102
+      }
+    ]
+  },
+  "evidence_basis": {
+    "truth_controls": {
+      "n_rows": 845,
+      "all_rows": {
+        "backfilled": 98,
+        "emitted": 696,
+        "unavailable": 51
+      },
+      "rank_1_rows": {
+        "backfilled": 19,
+        "emitted": 69,
+        "unavailable": 4
+      }
+    },
+    "all_compounds": {
+      "n_rows": 34296,
+      "all_rows": {
+        "backfilled": 977,
+        "emitted": 31083,
+        "unavailable": 2236
+      },
+      "rank_1_rows": {
+        "backfilled": 115,
+        "emitted": 3393,
+        "unavailable": 389
+      }
+    }
+  },
+  "ties_truth_controls": {
+    "n_compounds": 92,
+    "n_rank1_tied": 3,
+    "share_rank1_tied": 0.0326,
+    "mean_tie_size": 2.33,
+    "max_tie_size": 3,
+    "n_truth_inside_tie_below_rank_1": 1,
+    "detail": [
+      {
+        "control_id": "X-23583",
+        "tie_size": 3,
+        "truth_in_tie": true,
+        "truth_rank": 2,
+        "msi_level": "3"
+      },
+      {
+        "control_id": "X-25549",
+        "tie_size": 2,
+        "truth_in_tie": true,
+        "truth_rank": 1,
+        "msi_level": "1"
+      }
+    ]
+  },
+  "ties_all_compounds": {
+    "n_compounds": 3897,
+    "n_rank1_tied": 152,
+    "share_rank1_tied": 0.039,
+    "mean_tie_size": 3.17,
+    "max_tie_size": 5,
+    "n_truth_inside_tie_below_rank_1": 1,
+    "detail": [
+      {
+        "control_id": "X-23583",
+        "tie_size": 3,
+        "truth_in_tie": true,
+        "truth_rank": 2,
+        "msi_level": "3"
+      },
+      {
+        "control_id": "X-25549",
+        "tie_size": 2,
+        "truth_in_tie": true,
+        "truth_rank": 1,
+        "msi_level": "1"
+      }
+    ]
+  },
+  "spectral_axis": {
+    "status": "ok",
+    "match_tolerance_ppm": 20.0,
+    "hydrogen_shift_da": 1.008,
+    "n_assessed": 61,
+    "n_skipped_no_spectrum": 7,
+    "n_same_axis_dead": 56,
+    "n_same_axis_dead_but_cross_axis_alive": 56,
+    "delivered_rank_1": 37,
+    "delivered_top_3": 52,
+    "sweep": [
+      {
+        "variant": "raw_count",
+        "rank_1": 18,
+        "top_3": 37,
+        "moved_up": 10,
+        "moved_down": 31,
+        "delta_rank_1": -19,
+        "delta_top_3": -15
+      },
+      {
+        "variant": "recall",
+        "rank_1": 18,
+        "top_3": 37,
+        "moved_up": 10,
+        "moved_down": 31,
+        "delta_rank_1": -19,
+        "delta_top_3": -15
+      },
+      {
+        "variant": "f1_recall_precision",
+        "rank_1": 18,
+        "top_3": 37,
+        "moved_up": 10,
+        "moved_down": 33,
+        "delta_rank_1": -19,
+        "delta_top_3": -15
+      },
+      {
+        "variant": "geometric_mean",
+        "rank_1": 15,
+        "top_3": 36,
+        "moved_up": 10,
+        "moved_down": 37,
+        "delta_rank_1": -22,
+        "delta_top_3": -16
+      },
+      {
+        "variant": "recall_over_log_npredicted",
+        "rank_1": 15,
+        "top_3": 35,
+        "moved_up": 10,
+        "moved_down": 36,
+        "delta_rank_1": -22,
+        "delta_top_3": -17
+      }
+    ]
+  }
+}

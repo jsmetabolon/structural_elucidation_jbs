@@ -53,6 +53,7 @@ jobs:
           python3 tools/audit_thresholds.py
           python3 tools/audit_rt_feasibility.py
           python3 tools/audit_identification_rules.py
+          python3 tools/audit_isomer_discrimination.py
           python3 tools/audit_sublevel_bands.py
           python3 tools/build_parameter_table.py
           python3 tools/paper_figures.py \
@@ -86,6 +87,7 @@ jobs:
             tests/test_threshold_audit.py \
             tests/test_rt_feasibility.py \
             tests/test_identification_rules.py \
+            tests/test_isomer_discrimination.py \
             tests/test_sublevel_bands.py \
             tests/test_paper_tier_guard.py \
             tests/test_calibrate_confidence.py
@@ -111,6 +113,7 @@ jobs:
             tools/analyze_selective_prediction.py \
             tools/analyze_taxonomy_harmonization.py \
             tools/audit_identification_rules.py \
+            tools/audit_isomer_discrimination.py \
             tools/audit_rt_feasibility.py \
             tools/audit_sublevel_bands.py \
             tools/audit_thresholds.py \

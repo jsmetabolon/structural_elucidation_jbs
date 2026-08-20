@@ -364,6 +364,51 @@ Context you need:
   the F2 gate's numeric-to-tier mapping in `chemistry/diagnostics.py` still hold
   once ~1,000 more rows carry a score.
 
+## 8. The right structure ranks second because every candidate fits the same mass
+- Goal: recover the controls where the truth is in the top 10 but below rank 1.
+  Planned in `plans/isomer_discrimination.plan.md`; measured by
+  `tools/audit_isomer_discrimination.py`, whose output is
+  `docs/paper/data/isomer/audit_isomer_discrimination.json`.
+- Why it is listed separately from items 2, 5 and 7: those three all improve the
+  mass, formula and evidence axes, and **for this population those axes are
+  degenerate.** 24 of the 92 truth controls have the truth below rank 1, and
+  **20 of the 24 share the rank-1 candidate's molecular formula**, frequently
+  scoring identically to six decimal places. A mass gate, a tolerance change, a
+  formula prior and an evidence backfill cannot separate two candidates that fit
+  the same measured mass equally well. Do not expect items 2 or 7 to move this
+  number.
+- Worked example, and the one that surfaced it: `X-23080` shows `matched_truth`
+  TRUE at rank 2 beside a blank `evidence_confidence`. That pair is not a
+  contradiction — the first is audited against the blinded reference, the second
+  is what the pipeline knew, and the rank-2 row came from
+  `ec2_bundle_retrieval_selfies_v1` with no mass fields. Ranks 1 to 4 are all
+  `C7H8O3S` fitting 172.019226 to 1.9e-4 Da; rank 1 leads by 0.0106 of
+  `candidate_confidence`. **X-23080 is the only control of the 92 whose truth row
+  is unscored while rank 1 is scored**, so the mechanism in item 7 is real but
+  explains one compound, not the pattern.
+- The axis that should decide these is inert. The spectra exist — all 20
+  degenerate controls have an observed MS2 spectrum, as do 85 of the 85 truth
+  controls with a local feature row — but `forward_spectrum_score` compares
+  predicted fragments only to observed ions and predicted losses only to observed
+  losses. **On 56 of the 61 controls with a local spectrum, that overlap is zero
+  for every candidate in the top 10.** A fragment of mass `m` and a loss of
+  `parent - m` are the same event, so agreement across the axes is never tested:
+  for X-23080 the truth's predicted SO3 loss lands in exactly the observed ion
+  bin (79.95729, the aryl-sulfonate diagnostic) and its predicted toluene
+  fragment in exactly the observed loss bin (92.06302). The rank-1 thiophene
+  explains neither.
+- Already tried, do not repeat: pooling the axes revives all 56, but every
+  normalization swept loses 19 to 22 rank-1 hits against the delivered ordering.
+  `candidate_fragment_bins` breaks only acyclic single bonds and is blind to
+  regiochemistry — it emits byte-identical bins for para and ortho
+  toluenesulfonate. Fixing the axis makes the signal visible without making it
+  discriminating; the plan's Tier 3 covers what would.
+- Also ruled out: retention index, at decoy AUC 0.651 overall and 0.590 for lib
+  305, where the proxy correlation is negative (r = -0.765, n = 13).
+- Verify: re-run the audit and diff the JSON. `n_same_formula_as_rank1` (20 of
+  24) should not move for any item-2 or item-7 change; if it does, check that a
+  degenerate group has not simply been reordered arbitrarily.
+
 ## Cross-cutting: from-source regeneration + render_html parity task
 Once items 1-4 land upstream, prefer regenerating reports from source
 (`python -m structural_elucidation.reports.batch` with `--observed-lookup-dir`,
