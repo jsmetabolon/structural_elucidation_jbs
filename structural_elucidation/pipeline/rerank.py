@@ -20,12 +20,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import pickle
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
+from joblib import Parallel, delayed
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegressionCV
@@ -224,16 +226,33 @@ def scope_training_pool(
 
 
 def add_labels(pool: pd.DataFrame, controls: list[Any]) -> pd.DataFrame:
-    """Attach truth Tanimoto and binary label (>= 0.7) per candidate row."""
+    """Attach truth Tanimoto and binary label (>= 0.7) per candidate row.
+
+    Candidate SMILES repeat heavily across sources within a control, so both
+    canonicalization and truth-Tanimoto are memoized on their exact inputs.
+    The memoized functions are pure, so results match the row-wise original.
+    """
     truth = {str(control.control_id): list(control.smiles) for control in controls}
     out = pool.copy()
+    predicted_values = out.get("predicted_smiles", pd.Series("", index=out.index)).tolist()
+    canonical_2d_values = out.get("canonical_2d_smiles", pd.Series("", index=out.index)).tolist()
+    control_values = out.get("control_id", pd.Series("", index=out.index)).tolist()
+    canonical_memo: dict[str, str | None] = {}
+    tanimoto_memo: dict[tuple[str, str], tuple[bool, float]] = {}
     tans: list[float] = []
     labels: list[int] = []
-    for _, row in out.iterrows():
-        canonical = canonicalize_smiles(row.get("predicted_smiles", "")) or str(
-            row.get("canonical_2d_smiles", "") or ""
-        )
-        _exact, tan = best_tanimoto_for_smiles(canonical, truth.get(str(row.get("control_id", "")), []))
+    for predicted, canonical_2d, control_id in zip(predicted_values, canonical_2d_values, control_values):
+        if isinstance(predicted, str):
+            if predicted not in canonical_memo:
+                canonical_memo[predicted] = canonicalize_smiles(predicted)
+            canonical = canonical_memo[predicted] or str(canonical_2d or "")
+        else:
+            canonical = canonicalize_smiles(predicted) or str(canonical_2d or "")
+        control_key = str(control_id)
+        pair_key = (canonical, control_key)
+        if pair_key not in tanimoto_memo:
+            tanimoto_memo[pair_key] = best_tanimoto_for_smiles(canonical, truth.get(control_key, []))
+        _exact, tan = tanimoto_memo[pair_key]
         tans.append(float(tan))
         labels.append(int(float(tan) >= 0.7))
     out["truth_tanimoto"] = tans
@@ -267,10 +286,28 @@ def _predict_proba(model: Any, frame: pd.DataFrame) -> np.ndarray:
 
 
 # ── LOOCV evaluation and model selection ─────────────────────────────
-def loocv_scores(pool: pd.DataFrame, model_factory=make_model) -> pd.Series:
-    """Leave-one-control-out predicted probabilities; heuristic fallback when no positives."""
+def _loocv_fit_predict(model_factory, train_features: pd.DataFrame, train_labels: pd.Series, test_features: pd.DataFrame):
+    """Fit one held-out-control model and predict test probabilities.
+
+    Takes pre-sliced feature frames (not the module-level FEATURE_COLUMNS)
+    so worker processes never depend on mutated module globals.
+    """
+    model = model_factory()
+    model.fit(train_features, train_labels)
+    if hasattr(model, "predict_proba"):
+        return model.predict_proba(test_features)[:, 1]
+    return np.asarray(model.predict(test_features), dtype=float)
+
+
+def loocv_scores(pool: pd.DataFrame, model_factory=make_model, n_jobs: int = 1) -> pd.Series:
+    """Leave-one-control-out predicted probabilities; heuristic fallback when no positives.
+
+    Per-control fits are independent and each estimator is seeded, so running
+    them on ``n_jobs`` processes returns bit-identical scores to the serial loop.
+    """
     scores = pd.Series(0.0, index=pool.index, dtype=float)
     controls = sorted(pool["control_id"].astype(str).unique())
+    fit_tasks: list[tuple[Any, pd.DataFrame, pd.Series, pd.DataFrame, pd.Index]] = []
     for control_id in controls:
         train = pool[~pool["control_id"].astype(str).eq(control_id)].copy()
         test = pool[pool["control_id"].astype(str).eq(control_id)].copy()
@@ -280,9 +317,23 @@ def loocv_scores(pool: pd.DataFrame, model_factory=make_model) -> pd.Series:
         if train.empty or test.empty or train["label_ge_0p7"].nunique() < 2:
             scores.loc[test.index] = heuristic_score(test)
             continue
-        model = model_factory()
-        model.fit(train[FEATURE_COLUMNS], train["label_ge_0p7"])
-        scores.loc[test.index] = _predict_proba(model, test)
+        fit_tasks.append(
+            (model_factory, train[FEATURE_COLUMNS], train["label_ge_0p7"], test[FEATURE_COLUMNS], test.index)
+        )
+    if not fit_tasks:
+        return scores
+    if int(n_jobs) <= 1 or len(fit_tasks) == 1:
+        results = [
+            _loocv_fit_predict(factory, train_features, train_labels, test_features)
+            for factory, train_features, train_labels, test_features, _index in fit_tasks
+        ]
+    else:
+        results = Parallel(n_jobs=min(int(n_jobs), len(fit_tasks)))(
+            delayed(_loocv_fit_predict)(factory, train_features, train_labels, test_features)
+            for factory, train_features, train_labels, test_features, _index in fit_tasks
+        )
+    for (_factory, _train_features, _train_labels, _test_features, test_index), values in zip(fit_tasks, results):
+        scores.loc[test_index] = values
     return scores
 
 
@@ -305,10 +356,10 @@ def top10_hits_from_scores(pool: pd.DataFrame, score_col: str) -> int:
     return int(ranked[ranked["_score_rank"].le(10)].groupby("control_id")["label_ge_0p7"].max().fillna(0).ge(1).sum())
 
 
-def evaluate_model_option(pool: pd.DataFrame, name: str, model_factory) -> dict[str, Any]:
+def evaluate_model_option(pool: pd.DataFrame, name: str, model_factory, n_jobs: int = 1) -> dict[str, Any]:
     """Fit one model variant and return OOF/full rank-1 and top-10 metrics."""
     work = pool.copy()
-    work[f"{name}_oof_score"] = loocv_scores(work, model_factory=model_factory)
+    work[f"{name}_oof_score"] = loocv_scores(work, model_factory=model_factory, n_jobs=n_jobs)
     if work["label_ge_0p7"].nunique() >= 2:
         model = model_factory()
         model.fit(work[FEATURE_COLUMNS], work["label_ge_0p7"])
@@ -330,22 +381,22 @@ def evaluate_model_option(pool: pd.DataFrame, name: str, model_factory) -> dict[
     }
 
 
-def select_regularized_model(pool: pd.DataFrame) -> dict[str, Any]:
+def select_regularized_model(pool: pd.DataFrame, n_jobs: int = 1) -> dict[str, Any]:
     """Pick the model with smallest full-vs-OOF rank-1 gap (legacy alias)."""
     options = [
-        evaluate_model_option(pool, "option_a_regularized_gbm", make_model),
-        evaluate_model_option(pool, "option_b_logistic_cv", make_model_b),
+        evaluate_model_option(pool, "option_a_regularized_gbm", make_model, n_jobs=n_jobs),
+        evaluate_model_option(pool, "option_b_logistic_cv", make_model_b, n_jobs=n_jobs),
     ]
     selected = sorted(options, key=lambda item: (item["rank1_delta"], -item["oof_rank1"], item["name"]))[0]
     selected["all_options"] = options
     return selected
 
 
-def select_model(pool: pd.DataFrame, mode: str = "auto") -> dict[str, Any]:
+def select_model(pool: pd.DataFrame, mode: str = "auto", n_jobs: int = 1) -> dict[str, Any]:
     """Select GBM, logistic, or auto-pick by LOOCV rank-1 stability."""
     options = [
-        evaluate_model_option(pool, "option_a_regularized_gbm", make_model),
-        evaluate_model_option(pool, "option_b_logistic_cv", make_model_b),
+        evaluate_model_option(pool, "option_a_regularized_gbm", make_model, n_jobs=n_jobs),
+        evaluate_model_option(pool, "option_b_logistic_cv", make_model_b, n_jobs=n_jobs),
     ]
     if str(mode) == "gbm":
         selected = options[0]
@@ -522,7 +573,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     selection_mode = str(getattr(args, "model_selection_mode", "auto"))
     if not bool(getattr(args, "v8_regularized", True)) and selection_mode == "auto":
         selection_mode = "gbm"
-    selection = select_model(pool, selection_mode)
+    loocv_jobs = max(1, int(getattr(args, "loocv_jobs", 1) or 1))
+    selection = select_model(pool, selection_mode, n_jobs=loocv_jobs)
     selected_name = str(selection["name"])
     pool["unified_oof_score"] = selection["scores"][f"{selected_name}_oof_score"].to_numpy(dtype=float)
     pool["unified_final_score"] = selection["scores"][f"{selected_name}_full_score"].to_numpy(dtype=float)
@@ -753,6 +805,12 @@ def main() -> None:
     parser.add_argument("--class-match-score-feature", action="store_true")
     parser.add_argument("--drop-novelty-score", action="store_true")
     parser.add_argument("--evidence-backfill", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument(
+        "--loocv-jobs",
+        type=int,
+        default=int(os.environ.get("SE_RERANK_JOBS", "1") or 1),
+        help="Process count for LOOCV model fits (default: SE_RERANK_JOBS env or 1; results are identical at any count).",
+    )
     args = parser.parse_args()
     with stage_timer("rerank", lib_id=int(args.lib_id), ion_mode=str(args.ion_mode)):
         run(args)
