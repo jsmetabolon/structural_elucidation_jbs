@@ -604,7 +604,12 @@ def main() -> None:
         default=None,
         help="Persistent verifier score cache CSV (default: cache/verifier_scores/lib{lib}_{ion}_scores.csv).",
     )
-    parser.add_argument("--no-score-cache", action="store_true", help="Disable the persistent score cache.")
+    parser.add_argument(
+        "--no-score-cache",
+        action="store_true",
+        default=bool(int(os.environ.get("SE_VERIFIER_NO_CACHE", "0") or 0)),
+        help="Disable the persistent score cache (also via SE_VERIFIER_NO_CACHE=1).",
+    )
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
     with stage_timer("verify", lib_id=int(args.lib_id), ion_mode=str(args.ion_mode)):
