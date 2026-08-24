@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import multiprocessing
+from functools import lru_cache
 from typing import Any
 
 import pandas as pd
@@ -19,21 +21,31 @@ from structural_elucidation.nce.evidence import (
     parse_json_list,
 )
 from structural_elucidation.nce.runtime import score_smiles_against_observed_bins
+from structural_elucidation.nce.score_cache import ScoreKey, VerifierScoreCache
 from structural_elucidation.nce.verifier_v1 import predicted_spectrum_score as fallback_predicted_spectrum_score
 from structural_elucidation.utils.domain import safe_int
 
 
+@lru_cache(maxsize=100_000)
+def _parse_json_list_cached(text: str) -> tuple[Any, ...]:
+    """Cache parsed JSON-list strings; observed-bin JSON repeats across rows."""
+    return tuple(parse_json_list(text))
+
+
 def _parse_bins(value: Any) -> list[Any]:
     """Delegate bin parsing to the shared JSON-list helper in ``evidence``."""
+    if isinstance(value, str):
+        return list(_parse_json_list_cached(value))
     return parse_json_list(value)
 
 
-def _parse_ms2_pairs(value: Any) -> list[tuple[float, float]]:
+@lru_cache(maxsize=50_000)
+def _parse_ms2_pairs_cached(text: str) -> tuple[tuple[float, float], ...]:
     """Parse ``[[mz, intensity], ...]`` JSON into finite (m/z, intensity) pairs."""
     try:
-        parsed = json.loads(str(value or "[]"))
+        parsed = json.loads(text)
     except Exception:
-        return []
+        return tuple()
     out: list[tuple[float, float]] = []
     for item in parsed if isinstance(parsed, list) else []:
         if not isinstance(item, (list, tuple)) or not item:
@@ -45,7 +57,12 @@ def _parse_ms2_pairs(value: Any) -> list[tuple[float, float]]:
             continue
         if np.isfinite(mz) and mz > 0:
             out.append((mz, intensity if np.isfinite(intensity) else 1.0))
-    return out
+    return tuple(out)
+
+
+def _parse_ms2_pairs(value: Any) -> list[tuple[float, float]]:
+    """Parse ``[[mz, intensity], ...]`` JSON into finite (m/z, intensity) pairs."""
+    return list(_parse_ms2_pairs_cached(str(value or "[]")))
 
 
 def _positive_adduct_bins_from_pairs(parent_mz: Any, ms2_pairs_json: Any) -> tuple[list[int], list[int]]:
@@ -151,14 +168,59 @@ def predicted_spectrum_score_v2(
     return float(score)
 
 
+def _score_key_worker(key: ScoreKey) -> float:
+    """Score one (smiles, ion_json, loss_json, lib_id) key; used by worker pools."""
+    smiles, ion_json, loss_json, lib_id = key
+    return predicted_spectrum_score_v2(smiles, ion_json, loss_json, lib_id=int(lib_id))
+
+
+def _score_unique_keys(keys: list[ScoreKey], workers: int = 1) -> dict[ScoreKey, float]:
+    """Score unique keys serially or on a fork pool.
+
+    The first key is always scored in the parent process so the lru-cached NCE
+    matcher is loaded before forking; children then inherit the warm matcher
+    instead of each re-loading the model pickles. Scoring is deterministic per
+    key, so worker count never changes results.
+    """
+    results: dict[ScoreKey, float] = {}
+    if not keys:
+        return results
+    if int(workers) <= 1 or len(keys) == 1:
+        for key in keys:
+            results[key] = _score_key_worker(key)
+        return results
+    head, rest = keys[0], keys[1:]
+    results[head] = _score_key_worker(head)
+    try:
+        mp_context = multiprocessing.get_context("fork")
+    except ValueError:
+        for key in rest:
+            results[key] = _score_key_worker(key)
+        return results
+    n_workers = min(int(workers), len(rest))
+    chunksize = max(1, len(rest) // (n_workers * 4))
+    with mp_context.Pool(processes=n_workers) as pool:
+        for key, score in zip(rest, pool.map(_score_key_worker, rest, chunksize=chunksize)):
+            results[key] = float(score)
+    return results
+
+
 def annotate_predicted_spectrum_scores_v2(
     candidates: pd.DataFrame,
     observed_lookup: pd.DataFrame,
     *,
     smiles_col: str = "predicted_smiles",
     output_col: str = "predicted_spectrum_score_v2",
+    workers: int = 1,
+    score_cache: VerifierScoreCache | None = None,
 ) -> pd.DataFrame:
-    """Annotate candidates with v2 spectrum scores joined from observed MS2 lookup."""
+    """Annotate candidates with v2 spectrum scores joined from observed MS2 lookup.
+
+    Args:
+        workers: Process count for scoring unique keys (1 = in-process serial).
+        score_cache: Optional persistent cache shared across calls/runs; hits
+            skip the NCE matcher entirely. Results are identical either way.
+    """
     out = candidates.copy()
     if out.empty:
         out[output_col] = []
@@ -174,37 +236,68 @@ def annotate_predicted_spectrum_scores_v2(
         if not observed_lookup.empty and "control_id" in observed_lookup.columns
         else {}
     )
-    cache: dict[tuple[str, str, str, int], float] = {}
-    scores: list[float] = []
-    sources: list[str] = []
-    raw_scores: list[float] = []
-    adduct_scores: list[float] = []
+
+    # Pass 1: resolve each row's scoring key and (cheap) rescue score.
+    row_infos: list[tuple[ScoreKey, Any, float] | None] = []
     for _, row in out.iterrows():
         control_id = str(row.get("control_id", "") or "")
         observed = lookup.get(control_id, {})
         if not observed:
-            scores.append(0.0)
-            sources.append("missing_observed_ms2")
-            raw_scores.append(0.0)
-            adduct_scores.append(0.0)
+            row_infos.append(None)
             continue
         smiles = str(row.get(smiles_col, "") or "")
         ion_json = str(observed.get("observed_ion_bins_json", "[]") or "[]")
         loss_json = str(observed.get("observed_loss_bins_json", "[]") or "[]")
         lib_id = safe_int(row.get("lib_id", observed.get("lib_id", 209)), 209)
-        key = (smiles, ion_json, loss_json, int(lib_id))
-        if key not in cache:
-            cache[key] = predicted_spectrum_score_v2(smiles, ion_json, loss_json, lib_id=int(lib_id))
-        raw_score = float(cache[key])
+        key: ScoreKey = (smiles, ion_json, loss_json, int(lib_id))
         adduct_score = positive_mode_adduct_aware_rescue_score(smiles, row, observed)
+        row_infos.append((key, observed.get("spectrum_source", ""), adduct_score))
+
+    # Dedupe keys (first-seen order), consult the persistent cache, then score
+    # only the remaining unique keys, optionally in parallel.
+    scores_by_key: dict[ScoreKey, float] = {}
+    pending: list[ScoreKey] = []
+    for info in row_infos:
+        if info is None:
+            continue
+        key = info[0]
+        if key in scores_by_key:
+            continue
+        if score_cache is not None:
+            cached = score_cache.get(key)
+            if cached is not None:
+                scores_by_key[key] = float(cached)
+                continue
+        scores_by_key[key] = float("nan")
+        pending.append(key)
+    new_scores = _score_unique_keys(pending, workers=int(workers))
+    scores_by_key.update(new_scores)
+    if score_cache is not None:
+        for key, score in new_scores.items():
+            score_cache.put(key, score)
+
+    # Pass 2: assemble per-row outputs exactly as the serial implementation did.
+    scores: list[float] = []
+    sources: list[str] = []
+    raw_scores: list[float] = []
+    adduct_scores: list[float] = []
+    for info in row_infos:
+        if info is None:
+            scores.append(0.0)
+            sources.append("missing_observed_ms2")
+            raw_scores.append(0.0)
+            adduct_scores.append(0.0)
+            continue
+        key, spectrum_source, adduct_score = info
+        raw_score = float(scores_by_key[key])
         final_score = max(raw_score, adduct_score)
         raw_scores.append(raw_score)
         adduct_scores.append(adduct_score)
         scores.append(final_score)
         if adduct_score > raw_score:
-            sources.append(f"{observed.get('spectrum_source', '')}|v19_positive_adduct_mass_fragment_rescue")
+            sources.append(f"{spectrum_source}|v19_positive_adduct_mass_fragment_rescue")
         else:
-            sources.append(str(observed.get("spectrum_source", "")))
+            sources.append(str(spectrum_source))
     out[output_col] = scores
     out[f"{output_col}_raw_nce_or_portable"] = raw_scores
     out[f"{output_col}_v19_positive_adduct_aware"] = adduct_scores

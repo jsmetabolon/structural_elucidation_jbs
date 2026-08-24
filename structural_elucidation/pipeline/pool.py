@@ -29,6 +29,7 @@ import structural_elucidation.pipeline.pool_v1 as base
 from structural_elucidation.utils.denovo import canonicalize_smiles
 from structural_elucidation.paths import REPO_ROOT, resolve
 from structural_elucidation.utils.domain import write_csv, write_json
+from structural_elucidation.utils.timing import stage_timer
 
 # ── NCE feature columns overlaid onto the unified pool ───────────────
 NCE_COLS: list[str] = ["nce_draw_count", "nce_max_log_prob", "nce_mean_log_prob"]
@@ -307,7 +308,9 @@ def main() -> None:
     parser.add_argument("--isotope-filter-impossible", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--lib-id", type=int, required=True)
     parser.add_argument("--ion-mode", choices=["negative", "positive"], required=True)
-    payload = run(parser.parse_args())
+    args = parser.parse_args()
+    with stage_timer("pool", lib_id=int(args.lib_id), ion_mode=str(args.ion_mode)):
+        run(args)
     raise SystemExit(0)
 
 

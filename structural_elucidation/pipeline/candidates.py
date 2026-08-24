@@ -21,6 +21,8 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import multiprocessing
+import os
 from pathlib import Path
 from typing import Any
 
@@ -46,6 +48,7 @@ from structural_elucidation.utils.domain import (
     write_json,
     xid_from_feature_key,
 )
+from structural_elucidation.utils.timing import stage_timer
 
 # ── Default library paths and run label ──────────────────────────────
 DEFAULT_HMDB: Path = REPO_ROOT / "vendor/nce/elucidation/table_builders/hmdb_minimal.csv"
@@ -54,6 +57,108 @@ DEFAULT_HMDB_EXTENDED: Path = (
 )
 DEFAULT_NCE_FULL: Path = REPO_ROOT / "data/nce_full_smiles_candidates.csv"
 RUN_NAME: str = "library_anchored_v1"  # output subdirectory under runs/
+
+
+# ── Memoized RDKit helpers ────────────────────────────────────────────
+# The same library SMILES is re-processed for every (target x hit) pair, and
+# conjugate products collide across controls. These helpers are pure, so the
+# memoization is output-identical to calling the underlying functions per row.
+_CANONICAL_MEMO: dict[str, str | None] = {}
+_EXACT_MASS_MEMO: dict[str, float] = {}
+_FORMULA_MEMO: dict[str, str] = {}
+_FORMULA_PRIOR_MEMO: dict[tuple[str, str, float], float] = {}
+
+
+def cached_canonical_smiles(value: Any) -> str | None:
+    """Memoized :func:`canonicalize_smiles` for hashable string inputs."""
+    if isinstance(value, str):
+        if value not in _CANONICAL_MEMO:
+            _CANONICAL_MEMO[value] = canonicalize_smiles(value)
+        return _CANONICAL_MEMO[value]
+    return canonicalize_smiles(value)
+
+
+def cached_exact_mass(smiles: str) -> float:
+    """Memoized :func:`exact_mass_from_smiles` keyed by canonical SMILES."""
+    if smiles not in _EXACT_MASS_MEMO:
+        _EXACT_MASS_MEMO[smiles] = exact_mass_from_smiles(smiles)
+    return _EXACT_MASS_MEMO[smiles]
+
+
+def cached_formula(smiles: str) -> str:
+    """Memoized :func:`formula_from_smiles` keyed by canonical SMILES."""
+    if smiles not in _FORMULA_MEMO:
+        _FORMULA_MEMO[smiles] = formula_from_smiles(smiles)
+    return _FORMULA_MEMO[smiles]
+
+
+def cached_formula_prior(formula: str, target_mass: float, tolerance_da: float) -> float:
+    """Memoized :func:`formula_prior_score`; nan masses key as ``'nan'``."""
+    key = (str(formula), repr(float(target_mass)), float(tolerance_da))
+    if key not in _FORMULA_PRIOR_MEMO:
+        _FORMULA_PRIOR_MEMO[key] = formula_prior_score(formula, target_mass, tolerance_da=tolerance_da)
+    return _FORMULA_PRIOR_MEMO[key]
+
+
+def _canonical_or_empty(text: str) -> str:
+    """Canonicalize one SMILES to a string (worker function for pools)."""
+    return canonicalize_smiles(text) or ""
+
+
+def _candidates_workers() -> int:
+    """Worker count for library canonicalization (SE_CANDIDATES_WORKERS env)."""
+    try:
+        return max(1, int(os.environ.get("SE_CANDIDATES_WORKERS", "1") or 1))
+    except ValueError:
+        return 1
+
+
+def _canonicalize_many(values: list[str], workers: int) -> list[str]:
+    """Canonicalize a SMILES list, optionally on a fork pool (order-preserving)."""
+    if workers <= 1 or len(values) < 2048:
+        return [_canonical_or_empty(value) for value in values]
+    try:
+        mp_context = multiprocessing.get_context("fork")
+    except ValueError:
+        return [_canonical_or_empty(value) for value in values]
+    n_workers = min(int(workers), max(1, len(values) // 512))
+    chunksize = max(64, len(values) // (n_workers * 8))
+    with mp_context.Pool(processes=n_workers) as worker_pool:
+        return list(worker_pool.map(_canonical_or_empty, values, chunksize=chunksize))
+
+
+# ── Sorted mass index for ppm matching ────────────────────────────────
+def build_mass_index(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Precompute (values, finite-order, sorted-values) for ppm window lookups."""
+    values = pd.to_numeric(df["library_exact_mass"], errors="coerce").to_numpy(dtype=float)
+    finite_positions = np.flatnonzero(np.isfinite(values))
+    order = finite_positions[np.argsort(values[finite_positions], kind="mergesort")]
+    return values, order, values[order]
+
+
+def ppm_match_positions(
+    mass_index: tuple[np.ndarray, np.ndarray, np.ndarray], target: float, ppm: float, limit: int
+) -> np.ndarray:
+    """Positional indices matching :func:`ppm_hit_mask` + ``head(limit)`` exactly.
+
+    A searchsorted window (widened one ULP per side against subtraction
+    rounding) provides a superset; the original ``|mass - target| <= tol``
+    mask then filters it, so the selected rows and their order are identical
+    to the full-column scan.
+    """
+    values, order, sorted_values = mass_index
+    target = float(target)
+    tol = abs(target) * float(ppm) / 1_000_000.0
+    lo = np.searchsorted(sorted_values, np.nextafter(target - tol, -np.inf), side="left")
+    hi = np.searchsorted(sorted_values, np.nextafter(target + tol, np.inf), side="right")
+    if lo >= hi:
+        return np.empty(0, dtype=np.int64)
+    candidate_positions = np.sort(order[lo:hi])
+    deltas = np.abs(values[candidate_positions] - target)
+    matched = candidate_positions[deltas <= tol]
+    if limit and int(limit) > 0:
+        return matched[: int(limit)]
+    return matched
 
 
 # ── Column coercion helpers ──────────────────────────────────────────
@@ -221,7 +326,7 @@ def prepare_external_libraries(args: argparse.Namespace) -> pd.DataFrame:
         return pd.DataFrame()
     out = pd.concat(frames, ignore_index=True, sort=False)
     out["library_smiles"] = out["library_smiles"].astype(str)
-    out["_canonical_library_smiles"] = out["library_smiles"].map(lambda value: canonicalize_smiles(value) or "")
+    out["_canonical_library_smiles"] = _canonicalize_many(out["library_smiles"].tolist(), _candidates_workers())
     out = out[out["_canonical_library_smiles"].astype(bool)].copy()
     # Dedup per source so the same structure from HMDB and ChEBI stays distinct.
     out = out.drop_duplicates(["library_source", "_canonical_library_smiles"], keep="first")
@@ -343,10 +448,10 @@ def append_candidate(
     args: argparse.Namespace,
 ) -> None:
     """Append one scored candidate row if SMILES canonicalizes and mass is finite."""
-    canonical = canonicalize_smiles(predicted_smiles)
+    canonical = cached_canonical_smiles(predicted_smiles)
     if not canonical:
         return
-    exact_mass = exact_mass_from_smiles(canonical)
+    exact_mass = cached_exact_mass(canonical)
     if not np.isfinite(exact_mass):
         exact_mass = safe_float(hit.get("library_exact_mass"), math.nan)
     target_mass = safe_float(target.get("target_neutral_mass"), math.nan)
@@ -355,8 +460,8 @@ def append_candidate(
         if np.isfinite(exact_mass) and np.isfinite(target_mass)
         else math.nan
     )
-    formula = formula_from_smiles(canonical) or str(hit.get("library_formula", ""))
-    formula_prior = formula_prior_score(formula, target_mass, tolerance_da=float(args.formula_tolerance_da))
+    formula = cached_formula(canonical) or str(hit.get("library_formula", ""))
+    formula_prior = cached_formula_prior(formula, target_mass, float(args.formula_tolerance_da))
     mass_score = linear_mass_match_score(abs_error, float(args.mass_score_tolerance_da))
     nce_forward = safe_float(hit.get("forward_spectrum_score"), 0.0)
     nce_ms2 = safe_float(hit.get("ms2_match_score"), 0.0)
@@ -427,6 +532,8 @@ def build_candidates(
     """Mass-match library hits per control and expand conjugates from diagnosis hints."""
     rows: list[dict[str, Any]] = []
     hint_map = diagnosis.set_index("control_id").get("conjugate_hints", pd.Series(dtype=str)).astype(str).to_dict()
+    hmdb_mass_index = build_mass_index(hmdb) if not hmdb.empty else None
+    nce_mass_index = build_mass_index(nce) if not nce.empty else None
     for control_id in controls:
         scoped_targets = targets[targets["control_id"].astype(str).eq(str(control_id))].copy()
         direct_nce = nce[nce.get("control_id", pd.Series(dtype=str)).astype(str).eq(str(control_id))].head(
@@ -455,19 +562,17 @@ def build_candidates(
             target_mass = safe_float(target.get("target_neutral_mass"), math.nan)
             if not np.isfinite(target_mass):
                 continue
-            if not hmdb.empty:
-                for _, hit in (
-                    hmdb[ppm_hit_mask(hmdb["library_exact_mass"], target_mass, float(args.ppm_tolerance))]
-                    .head(int(args.max_hits_per_control))
-                    .iterrows()
-                ):
+            if hmdb_mass_index is not None:
+                positions = ppm_match_positions(
+                    hmdb_mass_index, target_mass, float(args.ppm_tolerance), int(args.max_hits_per_control)
+                )
+                for _, hit in hmdb.iloc[positions].iterrows():
                     library_hits.append((hit, "hmdb_mass_match"))
-            if not nce.empty:
-                for _, hit in (
-                    nce[ppm_hit_mask(nce["library_exact_mass"], target_mass, float(args.ppm_tolerance))]
-                    .head(int(args.max_hits_per_control))
-                    .iterrows()
-                ):
+            if nce_mass_index is not None:
+                positions = ppm_match_positions(
+                    nce_mass_index, target_mass, float(args.ppm_tolerance), int(args.max_hits_per_control)
+                )
+                for _, hit in nce.iloc[positions].iterrows():
                     library_hits.append((hit, "nce_snapshot_mass_match"))
         for _, hit in direct_nce.iterrows():
             library_hits.append((hit, "nce_snapshot_control_match"))
@@ -475,7 +580,11 @@ def build_candidates(
         for _, target in scoped_targets.iterrows():
             for hit, match_type in library_hits:
                 base_smiles = str(hit.get("library_smiles", "") or "")
-                key = (str(target.get("feature_key", "")), canonicalize_smiles(base_smiles) or base_smiles, match_type)
+                key = (
+                    str(target.get("feature_key", "")),
+                    cached_canonical_smiles(base_smiles) or base_smiles,
+                    match_type,
+                )
                 if key in seen_hits:
                     continue
                 seen_hits.add(key)
@@ -657,7 +766,9 @@ def main() -> None:
     parser.add_argument("--max-products-per-reaction", type=int, default=3)
     parser.add_argument("--max-candidates-per-feature", type=int, default=250)
     parser.add_argument("--top-k", type=int, default=10)
-    run(parser.parse_args())
+    args = parser.parse_args()
+    with stage_timer("candidates", lib_id=int(args.lib_id), ion_mode=str(args.ion_mode)):
+        run(args)
 
 
 if __name__ == "__main__":

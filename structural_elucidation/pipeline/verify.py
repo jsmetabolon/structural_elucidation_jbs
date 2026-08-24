@@ -20,15 +20,18 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
 from structural_elucidation.utils.denovo import canonicalize_smiles
+from structural_elucidation.nce.score_cache import VerifierScoreCache
 from structural_elucidation.nce.verifier_v2 import annotate_predicted_spectrum_scores_v2
 from structural_elucidation.paths import REPO_ROOT, resolve
 from structural_elucidation.utils.domain import dataframe_to_markdown, write_csv, write_json
+from structural_elucidation.utils.timing import stage_timer
 
 # ── Default verifier input paths (lib 209 negative) ──────────────────
 DEFAULT_INPUTS: tuple[str, ...] = (
@@ -369,6 +372,14 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 )
             )
     observed, observed_stats = prepare_observed_lookup_for_scope(observed, int(args.lib_id), str(args.ion_mode))
+    workers = max(1, int(getattr(args, "workers", 1) or 1))
+    score_cache: VerifierScoreCache | None = None
+    if not bool(getattr(args, "no_score_cache", False)):
+        cache_path = getattr(args, "score_cache", None)
+        if cache_path is None:
+            cache_path = Path("cache/verifier_scores") / f"lib{int(args.lib_id)}_{args.ion_mode}_scores.csv"
+        score_cache = VerifierScoreCache(resolve(Path(cache_path), repo_root))
+    n_scores_preloaded = len(score_cache) if score_cache is not None else 0
     manifest_rows: list[dict[str, Any]] = []
     scored_frames: list[pd.DataFrame] = []
     for rel in parse_inputs(args.input_candidate_metrics, args.lib_id, args.ion_mode):
@@ -419,7 +430,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 }
             )
             continue
-        scored = annotate_predicted_spectrum_scores_v2(work, observed)
+        scored = annotate_predicted_spectrum_scores_v2(work, observed, workers=workers, score_cache=score_cache)
+        if score_cache is not None:
+            score_cache.save()  # persist incrementally so interrupted runs keep progress
         if scored.empty or "predicted_smiles" not in scored.columns:
             manifest_rows.append(
                 {
@@ -521,6 +534,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "n_inputs": int(manifest.shape[0]),
         "n_scored_inputs": int(manifest["status"].eq("scored").sum()) if not manifest.empty else 0,
         "n_rows_scored": int(sum(row.get("n_rows_scored", 0) for row in manifest_rows)),
+        "verifier_workers": int(workers),
+        "score_cache_path": str(score_cache.path) if score_cache is not None else "",
+        "n_score_cache_preloaded": int(n_scores_preloaded),
+        "n_score_cache_entries": int(len(score_cache)) if score_cache is not None else 0,
         "include_all_x": bool(args.include_all_x),
         "n_observed_controls": int(observed["control_id"].nunique()) if "control_id" in observed.columns else 0,
         "n_all_x_observed_added": int(n_all_x_observed_added),
@@ -575,8 +592,28 @@ def main() -> None:
     parser.add_argument(
         "--all-x-observed-lookup", type=Path, default=Path("models/observed_ms2_lookup_v8/per_control_all_x.csv")
     )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=int(os.environ.get("SE_VERIFIER_WORKERS", "1") or 1),
+        help="Process count for NCE spectrum scoring (default: SE_VERIFIER_WORKERS env or 1; results are identical at any count).",
+    )
+    parser.add_argument(
+        "--score-cache",
+        type=Path,
+        default=None,
+        help="Persistent verifier score cache CSV (default: cache/verifier_scores/lib{lib}_{ion}_scores.csv).",
+    )
+    parser.add_argument(
+        "--no-score-cache",
+        action="store_true",
+        default=bool(int(os.environ.get("SE_VERIFIER_NO_CACHE", "0") or 0)),
+        help="Disable the persistent score cache (also via SE_VERIFIER_NO_CACHE=1).",
+    )
     parser.add_argument("--verbose", action="store_true")
-    payload = run(parser.parse_args())
+    args = parser.parse_args()
+    with stage_timer("verify", lib_id=int(args.lib_id), ion_mode=str(args.ion_mode)):
+        payload = run(args)
     raise SystemExit(0 if payload["acceptance_pass"] else 2)
 
 
