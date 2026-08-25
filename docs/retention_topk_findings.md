@@ -1,7 +1,8 @@
 # Retention screen for reported top-10 candidates
 
-Status: implemented demote-only; the measurement that decides whether it stays
-is pending pipeline outputs (see "Running the audit" below).
+Status: implemented demote-only. A preliminary measurement on committed data
+reads GO (below); the deciding top-10 audit is pending pipeline outputs (see
+"Running the audit").
 
 ## What exists now
 
@@ -51,6 +52,29 @@ starts rejecting correct answers.
 
 `tests/test_topk_retention.py` guards the committed audit's internal
 consistency once it exists (it skips until then).
+
+## Preliminary measurement on committed data
+
+`tools/audit_integrated_best_retention.py` runs the same screen on what a
+plain checkout does carry: the delivered rank-1 and best-in-top-10 candidates
+per truth-verified control (`data/integrated_best/`), joined to observed
+retention indices from `data/feature_rows/`. Committed result
+(`docs/paper/data/retention/audit_integrated_best_retention.json`):
+
+- **Library 209** (51 scoreable controls): 4 rank-1 candidates flag (7.8%),
+  and all four are wrong against the known structure (Tanimoto 0.0-0.14:
+  X-15136 z=3.7, X-26094 z=3.5, X-26218 z=8.0, X-26517 z=7.2). No correct
+  candidate flags anywhere. One full improvement case: X-26094's wrong rank-1
+  is demoted while the correct candidate sitting at rank 7 (Tanimoto 0.71,
+  z=1.9) passes the screen, so the internal list surfaces it.
+- **Library 400** (30 scoreable controls): the screen never fires
+  (max |z| = 2.5), consistent with that library's tighter calibration
+  headroom.
+
+Reading: preliminary **GO** - already past the 5% bar on library 209 with zero
+false kills while scoring only two candidates per control, so the full-list
+audit can only raise the fire rate. It remains a lower bound on the
+truth-verified cohort, not the deciding measurement.
 
 ## Running the audit
 

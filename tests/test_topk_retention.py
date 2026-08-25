@@ -208,3 +208,41 @@ def test_committed_topk_audit_is_consistent_with_its_own_gate():
         pytest.skip("committed audit records a not-evaluated run")
     assert committed["gate"] == TK.gate_verdict(committed["libraries"])
     assert committed["screen"]["implausible_abs_z"] == C.RETENTION_IMPLAUSIBLE_Z
+
+
+def test_committed_integrated_best_audit_reflects_the_committed_inputs():
+    pytest.importorskip("rdkit", reason="the retention proxy needs rdkit")
+    from structural_elucidation.nce.evidence import ri_proxy_from_smiles
+
+    IB = load_tool("audit_integrated_best_retention")
+    committed = json.loads(
+        (ROOT / "docs/paper/data/retention/audit_integrated_best_retention.json").read_text()
+    )
+    recomputed = IB.run_audit(
+        feature_rows_dir=ROOT / "data/feature_rows",
+        integrated_dir=ROOT / "data/integrated_best",
+        calibration=C.load_retention_calibration(
+            ROOT / "docs/paper/data/retention/ri_calibration.json"
+        ),
+        proxy_fn=ri_proxy_from_smiles,
+    )
+    assert recomputed["libraries"] == committed["libraries"]
+    assert recomputed["preliminary_reading"] == committed["preliminary_reading"]
+
+
+def test_the_preliminary_screen_never_fires_on_a_correct_candidate():
+    """The property the deciding audit must also hold: flags hit only wrong candidates."""
+    committed = json.loads(
+        (ROOT / "docs/paper/data/retention/audit_integrated_best_retention.json").read_text()
+    )
+    evaluated = [
+        block
+        for block in committed["libraries"].values()
+        if block.get("status") == "evaluated"
+    ]
+    assert evaluated, "the committed preliminary audit should cover the calibrated libraries"
+    for block in evaluated:
+        assert block["rank1_flagged_correct"] == []
+        assert block["correct_best_in_top10_flagged"] == []
+        for hit in block["rank1_flagged_wrong"]:
+            assert hit["rank1_tanimoto"] < 0.7
