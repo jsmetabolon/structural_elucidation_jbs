@@ -161,14 +161,17 @@ def load_known_structures(path: Path = KNOWN_STRUCTURES) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 
 def _mummichog_imports():
-    from mummichog.JSON_metabolicModels import metabolicModels
-    from mummichog.ions import compute_isotopes_adducts
     from mummichog.config import MASS_RANGE, primary_ions, wanted_adduct_list
+    from mummichog.ions import compute_isotopes_adducts
+    from mummichog.JSON_metabolicModels import metabolicModels
 
     return metabolicModels, compute_isotopes_adducts, MASS_RANGE, primary_ions, wanted_adduct_list
 
 
-def build_ion_index(mode: str, restrict_primary: bool) -> tuple[list[list[tuple[str, str, float]]], dict[str, list[str]], dict[str, float]]:
+IonIndex = list[list[tuple[str, str, float]]]
+
+
+def build_ion_index(mode: str, restrict_primary: bool) -> tuple[IonIndex, dict[str, list[str]], dict[str, float]]:
     """Integer-mass-binned (compound, ion, theoretical m/z) index for one mode.
 
     Mirrors mummichog's ``IndexedTable.__build_cpdindex__``: adducts computed
@@ -182,7 +185,7 @@ def build_ion_index(mode: str, restrict_primary: bool) -> tuple[list[list[tuple[
     wanted = set(wanted_adduct_list[mode])
     if restrict_primary:
         wanted &= set(primary_ions)
-    index: list[list[tuple[str, str, float]]] = [[] for _ in range(MASS_RANGE[1] + 2)]
+    index: IonIndex = [[] for _ in range(MASS_RANGE[1] + 2)]
     cpd_mw: dict[str, float] = {}
     for cpd_id, cpd in model["Compounds"].items():
         if not cpd.get("mw"):
@@ -195,7 +198,7 @@ def build_ion_index(mode: str, restrict_primary: bool) -> tuple[list[list[tuple[
     return index, model["cpd2pathways"], cpd_mw
 
 
-def match_mz(mz: float, index: list[list[tuple[str, str, float]]], ppm: float = PPM_DEFAULT) -> list[tuple[str, str, float]]:
+def match_mz(mz: float, index: IonIndex, ppm: float = PPM_DEFAULT) -> list[tuple[str, str, float]]:
     """Candidate (compound, ion, theoretical m/z) tuples within ppm of mz.
 
     Mirrors mummichog's ``__match_mz_ion__`` (integer bins floor-1..floor+1,
@@ -475,9 +478,11 @@ def score_variant(pred: pd.DataFrame, truth: pd.DataFrame, baseline: pd.DataFram
     result["confusion_top_true_super"] = {
         t: dict(sorted(confusion[t].items(), key=lambda kv: kv[1], reverse=True)[:5]) for t in top_true if t
     }
+    predicted_counts = Counter(called["predicted_super"].map(clean)).most_common()
+    truth_counts = Counter(called["true_super"].map(clean)).most_common()
     result["bias"] = {
-        "predicted_super_distribution": {k: int(v) for k, v in Counter(called["predicted_super"].map(clean)).most_common()},
-        "truth_super_distribution": {k: int(v) for k, v in Counter(called["true_super"].map(clean)).most_common()},
+        "predicted_super_distribution": {k: int(v) for k, v in predicted_counts},
+        "truth_super_distribution": {k: int(v) for k, v in truth_counts},
     }
 
     # Accuracy/coverage trade-off across vote-share thresholds.
@@ -499,7 +504,11 @@ def score_variant(pred: pd.DataFrame, truth: pd.DataFrame, baseline: pd.DataFram
     # Head-to-head vs the structure-based baseline on the joint called set.
     base = baseline[["control_id", "predicted_pathway", "true_super", "correct_super", "tier"]].copy()
     base = base.rename(
-        columns={"predicted_pathway": "baseline_super", "correct_super": "baseline_correct", "true_super": "baseline_truth"}
+        columns={
+            "predicted_pathway": "baseline_super",
+            "correct_super": "baseline_correct",
+            "true_super": "baseline_truth",
+        }
     )
     joint = called.merge(base, on="control_id", how="inner")
     if len(joint):
@@ -667,9 +676,9 @@ def render_markdown(summary: dict[str, Any]) -> str:
         if curve:
             lines += ["| vote share >= | n | coverage | accuracy |", "|---|---|---|---|"]
             for row in curve:
-                lines.append(
-                    f"| {row['vote_share_min']} | {row['n']} | {row['coverage_of_evaluable']:.1%} | {row['accuracy']:.1%} |"
-                )
+                coverage = f"{row['coverage_of_evaluable']:.1%}"
+                accuracy = f"{row['accuracy']:.1%}"
+                lines.append(f"| {row['vote_share_min']} | {row['n']} | {coverage} | {accuracy} |")
             lines += [""]
     arm3 = summary.get("arm3_mass_only_reference_db", {})
     lines += ["## Arm 3 (mass-only vote vs Metabolon reference DB)", ""]
