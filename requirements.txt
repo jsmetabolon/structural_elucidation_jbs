@@ -20,5 +20,9 @@ psutil
 python-docx
 cairosvg
 
+# Pathway benchmarking: tools/mummichog_pathway_benchmark.py compares the
+# structure-based pathway predictor against mummichog's m/z-network approach.
+mummichog==2.7.0
+
 # Optional extras for second-stage IUPAC naming (heavy: pulls TensorFlow):
 # pip install STOUT-pypi>=2.0.5
