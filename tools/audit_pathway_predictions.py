@@ -38,6 +38,9 @@ NULLS = {"", "nan", "none", "null", "<na>"}
 # known_X data-entry sentinels that are not real pathways (exclude from accuracy).
 EXCLUDE_TRUTH = {"unknown", "ask dts", "can add this", "do not include"}
 SIM_BINS = [(0.0, 0.3), (0.3, 0.5), (0.5, 0.7), (0.7, 1.0001)]
+# Structural continuum merged for harmonized scoring; mirrors SUPER_EQUIVALENCE in
+# tools/analyze_taxonomy_harmonization.py (measured in taxonomy_harmonization.json).
+SUPER_EQUIVALENCE = (frozenset({"amino acid", "peptide"}),)
 
 
 def norm(value: Any) -> str:
@@ -52,6 +55,16 @@ def clean(value: Any) -> str:
 
     text = str("" if value is None else value).strip()
     return "" if text.lower() in NULLS else text
+
+
+def harmonize(value: Any) -> str:
+    """Normalized super-pathway label collapsed to its equivalence class."""
+
+    text = norm(value)
+    for group in SUPER_EQUIVALENCE:
+        if text in group:
+            return "|".join(sorted(group))
+    return text
 
 
 def wilson(correct: int, n: int, z: float = 1.959963984540054) -> dict[str, Any]:
@@ -344,6 +357,9 @@ def build_summary(
     true_norm = ev["true_super"].map(norm)
     ev = ev[true_norm.ne("") & ~true_norm.isin(EXCLUDE_TRUTH)].copy()
     ev["correct_super"] = ev.apply(lambda r: norm(r["predicted_pathway"]) == norm(r["true_super"]), axis=1)
+    ev["correct_super_harmonized"] = ev.apply(
+        lambda r: harmonize(r["predicted_pathway"]) == harmonize(r["true_super"]), axis=1
+    )
     ev["correct_sub"] = ev.apply(
         lambda r: norm(r["predicted_subpathway"]) == norm(r["true_sub"]) and norm(r["true_sub"]) != "",
         axis=1,
@@ -362,6 +378,11 @@ def build_summary(
     accuracy = {
         "n_evaluable_super": int(n_ev),
         "super_accuracy": round(float(ev["correct_super"].mean()), 4) if n_ev else 0.0,
+        # Amino Acid / Peptide merged; the vocabulary correction adopted by
+        # tools/analyze_taxonomy_harmonization.py.
+        "super_accuracy_harmonized": round(float(ev["correct_super_harmonized"].mean()), 4) if n_ev else 0.0,
+        "harmonized_overall_super": accuracy_metrics(ev, "correct_super_harmonized") if n_ev else {"n": 0},
+        "harmonized_super_by_tier": accuracy_by(ev, "tier", "correct_super_harmonized") if n_ev else {},
         "n_evaluable_sub": int(len(sub_evaluable)),
         "sub_accuracy": round(float(sub_evaluable["correct_sub"].mean()), 4) if len(sub_evaluable) else 0.0,
         "sub_accuracy_given_correct_super": (
@@ -565,6 +586,8 @@ def write_markdown(summary: dict[str, Any], out_path: Path) -> None:
         f"- Evaluable (super): **{acc['n_evaluable_super']}** controls",
         f"- Super-pathway agreement with known_X: {acc['super_accuracy']:.1%} "
         "(understated: known_X uses a different Metabolon annotation than the reference DB the predictor targets)",
+        f"- Harmonized super agreement (Amino Acid+Peptide merged): {acc['super_accuracy_harmonized']:.1%} "
+        "(vocabulary correction measured in taxonomy_harmonization.json)",
         f"- Sub-pathway agreement: {acc['sub_accuracy']:.1%} "
         f"(given correct super: {acc['sub_accuracy_given_correct_super']:.1%}; n={acc['n_evaluable_sub']})",
         "",
