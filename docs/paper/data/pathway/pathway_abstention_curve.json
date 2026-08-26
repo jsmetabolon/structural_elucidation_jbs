@@ -1,0 +1,153 @@
+{
+  "source": "docs/paper/data/pathway/audit_pathway_accuracy.csv",
+  "n_cohort": 909,
+  "min_harmonized_accuracy_bar": 0.7,
+  "points": [
+    {
+      "policy": "all_assignments",
+      "description": "no abstention (delivered behavior)",
+      "n_called": 909,
+      "coverage": 1.0,
+      "super_accuracy_raw": {
+        "n": 909,
+        "correct": 503,
+        "accuracy": 0.5534,
+        "ci95": [
+          0.5209,
+          0.5854
+        ]
+      },
+      "super_accuracy_harmonized": {
+        "n": 909,
+        "correct": 574,
+        "accuracy": 0.6315,
+        "ci95": [
+          0.5996,
+          0.6622
+        ]
+      }
+    },
+    {
+      "policy": "drop_low_tier",
+      "description": "abstain on low-confidence tier",
+      "n_called": 546,
+      "coverage": 0.6007,
+      "super_accuracy_raw": {
+        "n": 546,
+        "correct": 369,
+        "accuracy": 0.6758,
+        "ci95": [
+          0.6355,
+          0.7137
+        ]
+      },
+      "super_accuracy_harmonized": {
+        "n": 546,
+        "correct": 404,
+        "accuracy": 0.7399,
+        "ci95": [
+          0.7015,
+          0.775
+        ]
+      }
+    },
+    {
+      "policy": "high_tier_only",
+      "description": "abstain unless high tier",
+      "n_called": 380,
+      "coverage": 0.418,
+      "super_accuracy_raw": {
+        "n": 380,
+        "correct": 267,
+        "accuracy": 0.7026,
+        "ci95": [
+          0.6548,
+          0.7464
+        ]
+      },
+      "super_accuracy_harmonized": {
+        "n": 380,
+        "correct": 293,
+        "accuracy": 0.7711,
+        "ci95": [
+          0.7262,
+          0.8105
+        ]
+      }
+    },
+    {
+      "policy": "exact_status_only",
+      "description": "abstain unless exact reference match",
+      "n_called": 265,
+      "coverage": 0.2915,
+      "super_accuracy_raw": {
+        "n": 265,
+        "correct": 167,
+        "accuracy": 0.6302,
+        "ci95": [
+          0.5706,
+          0.6861
+        ]
+      },
+      "super_accuracy_harmonized": {
+        "n": 265,
+        "correct": 191,
+        "accuracy": 0.7208,
+        "ci95": [
+          0.6639,
+          0.7713
+        ]
+      }
+    },
+    {
+      "policy": "similarity_ge_0.5",
+      "description": "abstain when best reference similarity < 0.5",
+      "n_called": 754,
+      "coverage": 0.8295,
+      "super_accuracy_raw": {
+        "n": 754,
+        "correct": 456,
+        "accuracy": 0.6048,
+        "ci95": [
+          0.5694,
+          0.6391
+        ]
+      },
+      "super_accuracy_harmonized": {
+        "n": 754,
+        "correct": 517,
+        "accuracy": 0.6857,
+        "ci95": [
+          0.6517,
+          0.7178
+        ]
+      }
+    },
+    {
+      "policy": "similarity_ge_0.7",
+      "description": "abstain when best reference similarity < 0.7",
+      "n_called": 449,
+      "coverage": 0.4939,
+      "super_accuracy_raw": {
+        "n": 449,
+        "correct": 305,
+        "accuracy": 0.6793,
+        "ci95": [
+          0.6348,
+          0.7208
+        ]
+      },
+      "super_accuracy_harmonized": {
+        "n": 449,
+        "correct": 344,
+        "accuracy": 0.7661,
+        "ci95": [
+          0.7248,
+          0.8029
+        ]
+      }
+    }
+  ],
+  "recommended_policy": "drop_low_tier",
+  "note": "Coverage is the share of the evaluable cohort still given a pathway; abstained compounds would be reported as insufficient evidence instead of carrying a low-tier label that is wrong most of the time."
+}
