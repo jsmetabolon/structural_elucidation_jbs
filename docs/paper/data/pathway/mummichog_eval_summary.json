@@ -1,0 +1,546 @@
+{
+  "inventory": {
+    "n_controls_with_feature_mz": 2473,
+    "ion_mode_counts": {
+      "negative": 1801,
+      "positive": 672
+    },
+    "n_truth_controls": 4128,
+    "n_evaluable_super_truth": 919,
+    "n_evaluable_with_mz": 881,
+    "n_baseline_audit_controls": 909,
+    "n_baseline_with_mz": 881,
+    "n_joint_baseline_evaluable_mz": 881
+  },
+  "baseline_reference": {
+    "source": "docs/paper/data/pathway/audit_pathway_accuracy.csv",
+    "note": "structure-based predictor audit (Arm 1); see audit_pathway_summary.json"
+  },
+  "arm2_mummichog": {
+    "primary": {
+      "n_controls_with_mz": 2473,
+      "n_evaluable_with_mz": 881,
+      "n_with_any_candidate": 114,
+      "n_called": 109,
+      "coverage_called_of_evaluable": 0.1237,
+      "super_accuracy_on_called": {
+        "n": 109,
+        "correct": 58,
+        "accuracy": 0.5321,
+        "ci95": [
+          0.4389,
+          0.6231
+        ]
+      },
+      "accuracy_by_true_super": {
+        "Amino Acid": {
+          "n": 37,
+          "correct": 27,
+          "accuracy": 0.7297,
+          "ci95": [
+            0.5702,
+            0.846
+          ]
+        },
+        "Carbohydrate": {
+          "n": 5,
+          "correct": 4,
+          "accuracy": 0.8,
+          "ci95": [
+            0.3755,
+            0.9638
+          ]
+        },
+        "Lipid": {
+          "n": 28,
+          "correct": 22,
+          "accuracy": 0.7857,
+          "ci95": [
+            0.6046,
+            0.8979
+          ]
+        },
+        "Nucleotide": {
+          "n": 6,
+          "correct": 4,
+          "accuracy": 0.6667,
+          "ci95": [
+            0.3,
+            0.9032
+          ]
+        },
+        "Xenobiotics": {
+          "n": 26,
+          "correct": 1,
+          "accuracy": 0.0385,
+          "ci95": [
+            0.0068,
+            0.1889
+          ]
+        }
+      },
+      "candidate_count_pctiles": {
+        "p10": 0.0,
+        "p50": 0.0,
+        "p90": 1.0
+      },
+      "confusion_top_true_super": {
+        "Amino Acid": {
+          "Amino Acid": 27,
+          "Lipid": 5,
+          "Xenobiotics": 3,
+          "Nucleotide": 2
+        },
+        "Lipid": {
+          "Lipid": 22,
+          "Cofactors and Vitamins": 3,
+          "Carbohydrate": 3
+        },
+        "Xenobiotics": {
+          "Amino Acid": 14,
+          "Lipid": 5,
+          "Nucleotide": 3,
+          "Carbohydrate": 2,
+          "Cofactors and Vitamins": 1
+        },
+        "Nucleotide": {
+          "Nucleotide": 4,
+          "Cofactors and Vitamins": 1,
+          "Amino Acid": 1
+        },
+        "Carbohydrate": {
+          "Carbohydrate": 4,
+          "Amino Acid": 1
+        },
+        "Cofactors and Vitamins": {
+          "Amino Acid": 2,
+          "Lipid": 1
+        },
+        "Peptide": {
+          "Amino Acid": 2,
+          "Lipid": 1
+        },
+        "Energy": {
+          "Amino Acid": 1
+        }
+      },
+      "bias": {
+        "predicted_super_distribution": {
+          "Amino Acid": 48,
+          "Lipid": 34,
+          "Nucleotide": 9,
+          "Carbohydrate": 9,
+          "Cofactors and Vitamins": 5,
+          "Xenobiotics": 4
+        },
+        "truth_super_distribution": {
+          "Amino Acid": 37,
+          "Lipid": 28,
+          "Xenobiotics": 26,
+          "Nucleotide": 6,
+          "Carbohydrate": 5,
+          "Cofactors and Vitamins": 3,
+          "Peptide": 3,
+          "Energy": 1
+        }
+      },
+      "vote_share_curve": [
+        {
+          "vote_share_min": 0.0,
+          "n": 109,
+          "coverage_of_evaluable": 0.1237,
+          "accuracy": 0.5321
+        },
+        {
+          "vote_share_min": 0.2,
+          "n": 109,
+          "coverage_of_evaluable": 0.1237,
+          "accuracy": 0.5321
+        },
+        {
+          "vote_share_min": 0.4,
+          "n": 104,
+          "coverage_of_evaluable": 0.118,
+          "accuracy": 0.5481
+        },
+        {
+          "vote_share_min": 0.5,
+          "n": 104,
+          "coverage_of_evaluable": 0.118,
+          "accuracy": 0.5481
+        },
+        {
+          "vote_share_min": 0.6,
+          "n": 95,
+          "coverage_of_evaluable": 0.1078,
+          "accuracy": 0.5684
+        },
+        {
+          "vote_share_min": 0.8,
+          "n": 86,
+          "coverage_of_evaluable": 0.0976,
+          "accuracy": 0.593
+        },
+        {
+          "vote_share_min": 0.9,
+          "n": 85,
+          "coverage_of_evaluable": 0.0965,
+          "accuracy": 0.5882
+        }
+      ],
+      "head_to_head_vs_baseline": {
+        "n_joint": 109,
+        "mummichog_accuracy": 0.5321,
+        "baseline_accuracy": 0.633,
+        "both_correct": 41,
+        "mummichog_only_correct": 17,
+        "baseline_only_correct": 28,
+        "neither_correct": 23,
+        "mcnemar_p_two_sided": 0.135,
+        "baseline_accuracy_by_tier_on_joint": {
+          "high": {
+            "n": 59,
+            "correct": 40,
+            "accuracy": 0.678,
+            "ci95": [
+              0.5511,
+              0.7831
+            ]
+          },
+          "low": {
+            "n": 35,
+            "correct": 19,
+            "accuracy": 0.5429,
+            "ci95": [
+              0.3819,
+              0.6953
+            ]
+          },
+          "medium": {
+            "n": 15,
+            "correct": 10,
+            "accuracy": 0.6667,
+            "ci95": [
+              0.4171,
+              0.8482
+            ]
+          }
+        },
+        "mummichog_accuracy_by_baseline_tier_on_joint": {
+          "high": {
+            "n": 59,
+            "correct": 35,
+            "accuracy": 0.5932,
+            "ci95": [
+              0.4659,
+              0.7091
+            ]
+          },
+          "low": {
+            "n": 35,
+            "correct": 17,
+            "accuracy": 0.4857,
+            "ci95": [
+              0.3299,
+              0.6443
+            ]
+          },
+          "medium": {
+            "n": 15,
+            "correct": 6,
+            "accuracy": 0.4,
+            "ci95": [
+              0.1982,
+              0.6425
+            ]
+          }
+        }
+      },
+      "known_structure_diagnostics": {
+        "n_known_structures_evaluated": 78,
+        "true_mass_in_model": 9,
+        "true_mass_in_model_frac": 0.1154,
+        "true_mass_among_candidates_when_in_model": 0.8889
+      }
+    },
+    "all": {
+      "n_controls_with_mz": 2473,
+      "n_evaluable_with_mz": 881,
+      "n_with_any_candidate": 356,
+      "n_called": 335,
+      "coverage_called_of_evaluable": 0.3802,
+      "super_accuracy_on_called": {
+        "n": 335,
+        "correct": 127,
+        "accuracy": 0.3791,
+        "ci95": [
+          0.3288,
+          0.4322
+        ]
+      },
+      "accuracy_by_true_super": {
+        "Amino Acid": {
+          "n": 74,
+          "correct": 53,
+          "accuracy": 0.7162,
+          "ci95": [
+            0.6048,
+            0.8063
+          ]
+        },
+        "Carbohydrate": {
+          "n": 8,
+          "correct": 4,
+          "accuracy": 0.5,
+          "ci95": [
+            0.2152,
+            0.7848
+          ]
+        },
+        "Cofactors and Vitamins": {
+          "n": 11,
+          "correct": 1,
+          "accuracy": 0.0909,
+          "ci95": [
+            0.0162,
+            0.3774
+          ]
+        },
+        "Lipid": {
+          "n": 78,
+          "correct": 61,
+          "accuracy": 0.7821,
+          "ci95": [
+            0.6784,
+            0.8592
+          ]
+        },
+        "Nucleotide": {
+          "n": 11,
+          "correct": 2,
+          "accuracy": 0.1818,
+          "ci95": [
+            0.0514,
+            0.477
+          ]
+        },
+        "Peptide": {
+          "n": 66,
+          "correct": 0,
+          "accuracy": 0.0,
+          "ci95": [
+            0.0,
+            0.055
+          ]
+        },
+        "Xenobiotics": {
+          "n": 86,
+          "correct": 5,
+          "accuracy": 0.0581,
+          "ci95": [
+            0.0251,
+            0.129
+          ]
+        }
+      },
+      "candidate_count_pctiles": {
+        "p10": 0.0,
+        "p50": 0.0,
+        "p90": 3.0
+      },
+      "confusion_top_true_super": {
+        "Xenobiotics": {
+          "Amino Acid": 40,
+          "Lipid": 19,
+          "Carbohydrate": 11,
+          "Nucleotide": 6,
+          "Cofactors and Vitamins": 5
+        },
+        "Lipid": {
+          "Lipid": 61,
+          "Amino Acid": 7,
+          "Cofactors and Vitamins": 6,
+          "Carbohydrate": 3,
+          "Xenobiotics": 1
+        },
+        "Amino Acid": {
+          "Amino Acid": 53,
+          "Lipid": 8,
+          "Cofactors and Vitamins": 5,
+          "Xenobiotics": 4,
+          "Nucleotide": 3
+        },
+        "Peptide": {
+          "Lipid": 52,
+          "Amino Acid": 9,
+          "Nucleotide": 3,
+          "Cofactors and Vitamins": 2
+        },
+        "Nucleotide": {
+          "Amino Acid": 5,
+          "Nucleotide": 2,
+          "Xenobiotics": 2,
+          "Cofactors and Vitamins": 1,
+          "Carbohydrate": 1
+        },
+        "Cofactors and Vitamins": {
+          "Amino Acid": 8,
+          "Cofactors and Vitamins": 1,
+          "Lipid": 1,
+          "Xenobiotics": 1
+        },
+        "Carbohydrate": {
+          "Carbohydrate": 4,
+          "Lipid": 3,
+          "Amino Acid": 1
+        },
+        "Energy": {
+          "Energy": 1
+        }
+      },
+      "bias": {
+        "predicted_super_distribution": {
+          "Lipid": 144,
+          "Amino Acid": 123,
+          "Cofactors and Vitamins": 20,
+          "Carbohydrate": 20,
+          "Nucleotide": 14,
+          "Xenobiotics": 13,
+          "Energy": 1
+        },
+        "truth_super_distribution": {
+          "Xenobiotics": 86,
+          "Lipid": 78,
+          "Amino Acid": 74,
+          "Peptide": 66,
+          "Nucleotide": 11,
+          "Cofactors and Vitamins": 11,
+          "Carbohydrate": 8,
+          "Energy": 1
+        }
+      },
+      "vote_share_curve": [
+        {
+          "vote_share_min": 0.0,
+          "n": 335,
+          "coverage_of_evaluable": 0.3802,
+          "accuracy": 0.3791
+        },
+        {
+          "vote_share_min": 0.2,
+          "n": 335,
+          "coverage_of_evaluable": 0.3802,
+          "accuracy": 0.3791
+        },
+        {
+          "vote_share_min": 0.4,
+          "n": 324,
+          "coverage_of_evaluable": 0.3678,
+          "accuracy": 0.3858
+        },
+        {
+          "vote_share_min": 0.5,
+          "n": 318,
+          "coverage_of_evaluable": 0.361,
+          "accuracy": 0.3805
+        },
+        {
+          "vote_share_min": 0.6,
+          "n": 295,
+          "coverage_of_evaluable": 0.3348,
+          "accuracy": 0.3898
+        },
+        {
+          "vote_share_min": 0.8,
+          "n": 253,
+          "coverage_of_evaluable": 0.2872,
+          "accuracy": 0.3676
+        },
+        {
+          "vote_share_min": 0.9,
+          "n": 241,
+          "coverage_of_evaluable": 0.2736,
+          "accuracy": 0.3817
+        }
+      ],
+      "head_to_head_vs_baseline": {
+        "n_joint": 335,
+        "mummichog_accuracy": 0.3791,
+        "baseline_accuracy": 0.5821,
+        "both_correct": 89,
+        "mummichog_only_correct": 38,
+        "baseline_only_correct": 106,
+        "neither_correct": 102,
+        "mcnemar_p_two_sided": 1.27e-08,
+        "baseline_accuracy_by_tier_on_joint": {
+          "high": {
+            "n": 148,
+            "correct": 101,
+            "accuracy": 0.6824,
+            "ci95": [
+              0.6036,
+              0.752
+            ]
+          },
+          "low": {
+            "n": 133,
+            "correct": 64,
+            "accuracy": 0.4812,
+            "ci95": [
+              0.398,
+              0.5654
+            ]
+          },
+          "medium": {
+            "n": 54,
+            "correct": 30,
+            "accuracy": 0.5556,
+            "ci95": [
+              0.4238,
+              0.68
+            ]
+          }
+        },
+        "mummichog_accuracy_by_baseline_tier_on_joint": {
+          "high": {
+            "n": 148,
+            "correct": 65,
+            "accuracy": 0.4392,
+            "ci95": [
+              0.3618,
+              0.5197
+            ]
+          },
+          "low": {
+            "n": 133,
+            "correct": 45,
+            "accuracy": 0.3383,
+            "ci95": [
+              0.2635,
+              0.4223
+            ]
+          },
+          "medium": {
+            "n": 54,
+            "correct": 17,
+            "accuracy": 0.3148,
+            "ci95": [
+              0.2068,
+              0.4474
+            ]
+          }
+        }
+      },
+      "known_structure_diagnostics": {
+        "n_known_structures_evaluated": 78,
+        "true_mass_in_model": 9,
+        "true_mass_in_model_frac": 0.1154,
+        "true_mass_among_candidates_when_in_model": 0.8889
+      }
+    }
+  },
+  "arm3_mass_only_reference_db": {
+    "skipped": true,
+    "reason": "metabolite synonym SQLite asset not available in this checkout"
+  }
+}

@@ -1,0 +1,120 @@
+mfn_pathway,metabolon_super,ambiguous,notes
+1- and 2-Methylnaphthalene degradation,Xenobiotics,,
+3-Chloroacrylic acid degradation,Xenobiotics,,
+3-oxo-10R-octadecatrienoate beta-oxidation,Lipid,,
+Alanine and Aspartate Metabolism,Amino Acid,,
+Alkaloid biosynthesis II,Xenobiotics,,plant alkaloids; Metabolon files these under Food Component/Plant (Xenobiotics)
+Aminosugars metabolism,Carbohydrate,,Metabolon Aminosugar Metabolism
+Androgen and estrogen biosynthesis and metabolism,Lipid,,Metabolon steroid subpathways sit under Lipid
+Arachidonic acid metabolism,Lipid,,
+Arginine and Proline Metabolism,Amino Acid,,
+Ascorbate (Vitamin C) and Aldarate Metabolism,Cofactors and Vitamins,,Metabolon Ascorbate and Aldarate Metabolism
+Aspartate and asparagine metabolism,Amino Acid,,
+Atrazine degradation,Xenobiotics,,
+Benzoate degradation via CoA ligation,Xenobiotics,,Metabolon Benzoate Metabolism sits under Xenobiotics
+Beta-Alanine metabolism,Amino Acid,yes,members overlap pantothenate/CoA (Cofactors and Vitamins)
+Bile acid biosynthesis,Lipid,,Metabolon Primary/Secondary Bile Acid Metabolism
+Biopterin metabolism,Cofactors and Vitamins,,Metabolon Tetrahydrobiopterin Metabolism
+Blood Group Biosynthesis,Carbohydrate,yes,glycan pathway; no direct Metabolon super
+Butanoate metabolism,Lipid,yes,short-chain fatty acids/ketone bodies are Lipid; some members Amino Acid or Energy
+C21-steroid hormone biosynthesis and metabolism,Lipid,,Metabolon Pregnenolone/Corticosteroids under Lipid
+C5-Branched dibasic acid metabolism,Energy,yes,itaconate/mesaconate are TCA-adjacent (Energy); could be argued Lipid dicarboxylate
+Caffeine metabolism,Xenobiotics,,Metabolon Xanthine Metabolism under Xenobiotics
+Carbon fixation,Carbohydrate,yes,non-human legacy KEGG pathway; members are sugar phosphates
+Carnitine shuttle,Lipid,,Metabolon Fatty Acid Metabolism (Acyl Carnitine)
+Chondroitin sulfate degradation,Carbohydrate,yes,glycan pathway; no direct Metabolon super
+CoA Catabolism,Cofactors and Vitamins,,Metabolon Pantothenate and CoA Metabolism
+D4&E4-neuroprostanes formation,Lipid,,eicosanoid-like oxidized lipids
+De novo fatty acid biosynthesis,Lipid,,
+Di-unsaturated fatty acid beta-oxidation,Lipid,,
+Dimethyl-branched-chain fatty acid mitochondrial beta-oxidation,Lipid,,
+Drug metabolism - cytochrome P450,Xenobiotics,,
+Drug metabolism - other enzymes,Xenobiotics,,
+Dynorphin metabolism,Peptide,,opioid peptides
+Electron transport chain,Energy,,Metabolon Oxidative Phosphorylation
+Fatty Acid Metabolism,Lipid,,
+Fatty acid activation,Lipid,,
+Fatty acid oxidation,Lipid,,
+"Fatty acid oxidation, peroxisome",Lipid,,
+Fructose and mannose metabolism,Carbohydrate,,"Metabolon Fructose, Mannose and Galactose Metabolism"
+Galactose metabolism,Carbohydrate,,
+Geraniol degradation,Xenobiotics,,terpenoid degradation; Food Component/Plant
+Glutamate metabolism,Amino Acid,,
+Glutathione Metabolism,Amino Acid,,Metabolon files Glutathione Metabolism under Amino Acid
+Glycerolipid metabolism,Lipid,,
+Glycerophospholipid metabolism,Lipid,,
+"Glycine, serine, alanine and threonine metabolism",Amino Acid,,
+Glycolysis and Gluconeogenesis,Carbohydrate,,"Metabolon Glycolysis, Gluconeogenesis, and Pyruvate Metabolism"
+Glycosaminoglycan degradation,Carbohydrate,yes,glycan pathway; no direct Metabolon super
+Glycosphingolipid biosynthesis - ganglioseries,Lipid,,sphingolipid family
+Glycosphingolipid biosynthesis - globoseries,Lipid,,sphingolipid family
+Glycosphingolipid biosynthesis - lactoseries,Lipid,,sphingolipid family
+Glycosphingolipid biosynthesis - neolactoseries,Lipid,,sphingolipid family
+Glycosphingolipid metabolism,Lipid,,sphingolipid family
+Glycosylphosphatidylinositol(GPI)-anchor biosynthesis,Lipid,,
+Glyoxylate and Dicarboxylate Metabolism,Energy,yes,TCA-adjacent acids; alternatives: Lipid (Fatty Acid Dicarboxylate) or Amino Acid (glycine/glyoxylate)
+Heparan sulfate biosynthesis,Carbohydrate,yes,glycan pathway; no direct Metabolon super
+Heparan sulfate degradation,Carbohydrate,yes,glycan pathway; no direct Metabolon super
+Hexose phosphorylation,Carbohydrate,,
+Histidine metabolism,Amino Acid,,
+Hyaluronan Metabolism,Carbohydrate,yes,glycan pathway; no direct Metabolon super
+Keratan sulfate biosynthesis,Carbohydrate,yes,glycan pathway; no direct Metabolon super
+Keratan sulfate degradation,Carbohydrate,yes,glycan pathway; no direct Metabolon super
+Leukotriene metabolism,Lipid,,Metabolon Eicosanoid subpathways under Lipid
+Limonene and pinene degradation,Xenobiotics,,
+Linoleate metabolism,Lipid,,
+Lipoate metabolism,Cofactors and Vitamins,yes,lipoate is an enzyme cofactor; no direct Metabolon subpathway
+Lysine metabolism,Amino Acid,,
+Methionine and cysteine metabolism,Amino Acid,,"Metabolon Methionine, Cysteine, SAM and Taurine Metabolism"
+Mono-unsaturated fatty acid beta-oxidation,Lipid,,
+N-Glycan Degradation,Carbohydrate,yes,glycan pathway; no direct Metabolon super
+N-Glycan biosynthesis,Carbohydrate,yes,glycan pathway; no direct Metabolon super
+Nitrogen metabolism,Amino Acid,yes,glutamine/glutamate/ammonia chemistry; no direct Metabolon super
+Nucleotide Sugar Metabolism,Carbohydrate,,Metabolon Nucleotide Sugar under Carbohydrate
+O-Glycan biosynthesis,Carbohydrate,yes,glycan pathway; no direct Metabolon super
+Omega-3 fatty acid metabolism,Lipid,,
+Omega-6 fatty acid metabolism,Lipid,,
+Parathio degradation,Xenobiotics,,parathion pesticide degradation
+Pentose and Glucuronate Interconversions,Carbohydrate,,
+Pentose phosphate pathway,Carbohydrate,,Metabolon Pentose Metabolism
+Phosphatidylinositol phosphate metabolism,Lipid,,
+Phytanic acid peroxisomal oxidation,Lipid,,
+Polyunsaturated fatty acid biosynthesis,Lipid,,
+Porphyrin metabolism,Cofactors and Vitamins,,Metabolon Hemoglobin and Porphyrin Metabolism
+Propanoate metabolism,Lipid,yes,propionate/methylmalonate chemistry; alternatives Amino Acid (BCAA catabolism) or Energy
+Prostaglandin formation from arachidonate,Lipid,,
+Prostaglandin formation from dihomo gama-linoleic acid,Lipid,,
+Proteoglycan biosynthesis,Carbohydrate,yes,glycan pathway; no direct Metabolon super
+Purine metabolism,Nucleotide,,
+Putative anti-Inflammatory metabolites formation from EPA,Lipid,,
+Pyrimidine metabolism,Nucleotide,,
+Pyruvate Metabolism,Carbohydrate,,"Metabolon Glycolysis, Gluconeogenesis, and Pyruvate Metabolism"
+R Group Synthesis,Amino Acid,yes,generic amino-acid R-group synthesis; model-internal construct
+ROS Detoxification,Amino Acid,yes,glutathione-centric; Metabolon Glutathione Metabolism under Amino Acid
+Saturated fatty acids beta-oxidation,Lipid,,
+Selenoamino acid metabolism,Amino Acid,,
+Sialic acid metabolism,Carbohydrate,yes,glycan-adjacent; no direct Metabolon super
+Sphingolipid metabolism,Lipid,,
+Squalene and cholesterol biosynthesis,Lipid,,Metabolon Sterol subpathway
+Starch and Sucrose Metabolism,Carbohydrate,,
+TCA cycle,Energy,,Metabolon TCA Cycle under Energy
+Trihydroxycoprostanoyl-CoA beta-oxidation,Lipid,,bile-acid precursor oxidation
+Tryptophan metabolism,Amino Acid,,
+Tyrosine metabolism,Amino Acid,,
+Ubiquinone Biosynthesis,Cofactors and Vitamins,,
+Urea cycle/amino group metabolism,Amino Acid,,Metabolon Urea cycle; Arginine and Proline Metabolism
+"Valine, leucine and isoleucine degradation",Amino Acid,,
+Vitamin A (retinol) metabolism,Cofactors and Vitamins,,
+Vitamin B1 (thiamin) metabolism,Cofactors and Vitamins,,
+Vitamin B12 (cyanocobalamin) metabolism,Cofactors and Vitamins,,
+Vitamin B2 (riboflavin) metabolism,Cofactors and Vitamins,,
+Vitamin B3 (nicotinate and nicotinamide) metabolism,Cofactors and Vitamins,,Metabolon Nicotinate and Nicotinamide Metabolism
+Vitamin B5 - CoA biosynthesis from pantothenate,Cofactors and Vitamins,,Metabolon Pantothenate and CoA Metabolism
+Vitamin B6 (pyridoxine) metabolism,Cofactors and Vitamins,,
+Vitamin B9 (folate) metabolism,Cofactors and Vitamins,,
+Vitamin D,Cofactors and Vitamins,yes,secosteroids; could be argued Lipid (Sterol)
+Vitamin D3 (cholecalciferol) metabolism,Cofactors and Vitamins,yes,secosteroids; could be argued Lipid (Sterol)
+Vitamin E metabolism,Cofactors and Vitamins,,Metabolon Tocopherol Metabolism
+Vitamin H (biotin) metabolism,Cofactors and Vitamins,,
+Vitamin K metabolism,Cofactors and Vitamins,,
+Xenobiotics metabolism,Xenobiotics,,
