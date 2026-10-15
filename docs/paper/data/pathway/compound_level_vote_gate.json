@@ -1,0 +1,260 @@
+{
+  "label": "compound_level_vote",
+  "n_cohort": 909,
+  "n_called": 800,
+  "coverage": 0.8801,
+  "n_predictions_outside_cohort": 0,
+  "super_accuracy_on_called": {
+    "raw": {
+      "n": 800,
+      "correct": 481,
+      "accuracy": 0.6012,
+      "ci95": [
+        0.5669,
+        0.6346
+      ]
+    },
+    "harmonized": {
+      "n": 800,
+      "correct": 544,
+      "accuracy": 0.68,
+      "ci95": [
+        0.6469,
+        0.7114
+      ]
+    }
+  },
+  "sub_accuracy_on_called": {
+    "n": 800,
+    "correct": 185,
+    "accuracy": 0.2313,
+    "ci95": [
+      0.2034,
+      0.2617
+    ]
+  },
+  "accuracy_by_true_super": {
+    "Amino Acid": {
+      "raw": {
+        "n": 133,
+        "correct": 51,
+        "accuracy": 0.3835,
+        "ci95": [
+          0.3052,
+          0.4683
+        ]
+      },
+      "harmonized": {
+        "n": 133,
+        "correct": 83,
+        "accuracy": 0.6241,
+        "ci95": [
+          0.5393,
+          0.7018
+        ]
+      }
+    },
+    "Carbohydrate": {
+      "raw": {
+        "n": 16,
+        "correct": 7,
+        "accuracy": 0.4375,
+        "ci95": [
+          0.231,
+          0.6682
+        ]
+      },
+      "harmonized": {
+        "n": 16,
+        "correct": 7,
+        "accuracy": 0.4375,
+        "ci95": [
+          0.231,
+          0.6682
+        ]
+      }
+    },
+    "Cofactors and Vitamins": {
+      "raw": {
+        "n": 13,
+        "correct": 1,
+        "accuracy": 0.0769,
+        "ci95": [
+          0.0137,
+          0.3331
+        ]
+      },
+      "harmonized": {
+        "n": 13,
+        "correct": 1,
+        "accuracy": 0.0769,
+        "ci95": [
+          0.0137,
+          0.3331
+        ]
+      }
+    },
+    "Lipid": {
+      "raw": {
+        "n": 207,
+        "correct": 157,
+        "accuracy": 0.7585,
+        "ci95": [
+          0.6958,
+          0.8117
+        ]
+      },
+      "harmonized": {
+        "n": 207,
+        "correct": 157,
+        "accuracy": 0.7585,
+        "ci95": [
+          0.6958,
+          0.8117
+        ]
+      }
+    },
+    "Nucleotide": {
+      "raw": {
+        "n": 16,
+        "correct": 8,
+        "accuracy": 0.5,
+        "ci95": [
+          0.28,
+          0.72
+        ]
+      },
+      "harmonized": {
+        "n": 16,
+        "correct": 8,
+        "accuracy": 0.5,
+        "ci95": [
+          0.28,
+          0.72
+        ]
+      }
+    },
+    "Peptide": {
+      "raw": {
+        "n": 254,
+        "correct": 147,
+        "accuracy": 0.5787,
+        "ci95": [
+          0.5173,
+          0.6378
+        ]
+      },
+      "harmonized": {
+        "n": 254,
+        "correct": 178,
+        "accuracy": 0.7008,
+        "ci95": [
+          0.6418,
+          0.7538
+        ]
+      }
+    },
+    "Xenobiotics": {
+      "raw": {
+        "n": 160,
+        "correct": 109,
+        "accuracy": 0.6813,
+        "ci95": [
+          0.6055,
+          0.7485
+        ]
+      },
+      "harmonized": {
+        "n": 160,
+        "correct": 109,
+        "accuracy": 0.6813,
+        "ci95": [
+          0.6055,
+          0.7485
+        ]
+      }
+    }
+  },
+  "head_to_head_raw": {
+    "n_joint": 800,
+    "variant_accuracy": 0.6012,
+    "baseline_accuracy": 0.59,
+    "variant_only_correct": 61,
+    "baseline_only_correct": 52,
+    "both_correct": 420,
+    "neither_correct": 267,
+    "mcnemar_p_two_sided": 0.452
+  },
+  "head_to_head_harmonized": {
+    "n_joint": 800,
+    "variant_accuracy": 0.68,
+    "baseline_accuracy": 0.6775,
+    "variant_only_correct": 42,
+    "baseline_only_correct": 40,
+    "both_correct": 502,
+    "neither_correct": 216,
+    "mcnemar_p_two_sided": 0.912
+  },
+  "by_baseline_tier": {
+    "high": {
+      "variant_raw": {
+        "n": 359,
+        "correct": 258,
+        "accuracy": 0.7187,
+        "ci95": [
+          0.67,
+          0.7627
+        ]
+      },
+      "baseline_raw": {
+        "n": 359,
+        "correct": 256,
+        "accuracy": 0.7131,
+        "ci95": [
+          0.6642,
+          0.7574
+        ]
+      }
+    },
+    "low": {
+      "variant_raw": {
+        "n": 287,
+        "correct": 125,
+        "accuracy": 0.4355,
+        "ci95": [
+          0.3794,
+          0.4934
+        ]
+      },
+      "baseline_raw": {
+        "n": 287,
+        "correct": 117,
+        "accuracy": 0.4077,
+        "ci95": [
+          0.3524,
+          0.4654
+        ]
+      }
+    },
+    "medium": {
+      "variant_raw": {
+        "n": 154,
+        "correct": 98,
+        "accuracy": 0.6364,
+        "ci95": [
+          0.5579,
+          0.7082
+        ]
+      },
+      "baseline_raw": {
+        "n": 154,
+        "correct": 99,
+        "accuracy": 0.6429,
+        "ci95": [
+          0.5645,
+          0.7142
+        ]
+      }
+    }
+  }
+}
