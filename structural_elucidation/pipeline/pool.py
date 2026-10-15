@@ -50,9 +50,12 @@ def default_base_pool_for_scope(lib_id: int, ion_mode: str) -> Path | None:
 def nce_feature_table(path: Path, repo_root: Path) -> pd.DataFrame:
     """Extract per-(control, SMILES) NCE draw statistics from scored candidates."""
     resolved = resolve(path, repo_root)
-    if not resolved.exists():
+    if not resolved.exists() or resolved.stat().st_size == 0:
         return pd.DataFrame(columns=["control_id", "canonical_2d_smiles", *NCE_COLS])
-    raw = pd.read_csv(resolved, low_memory=False)
+    try:
+        raw = pd.read_csv(resolved, low_memory=False)
+    except pd.errors.EmptyDataError:
+        return pd.DataFrame(columns=["control_id", "canonical_2d_smiles", *NCE_COLS])
     if raw.empty:
         return pd.DataFrame(columns=["control_id", "canonical_2d_smiles", *NCE_COLS])
     out = raw.copy()
@@ -166,7 +169,15 @@ def run_from_base_pool(
         current = current[current["ion_mode"].astype(str).eq(str(args.ion_mode))].copy()
     allowed_controls = set(current["control_id"].astype(str)) if "control_id" in current.columns else set()
     if bool(args.include_all_x):
-        allowed_controls |= base.all_x_controls_for_scope(resolve(args.all_x_catalog, repo_root), int(args.lib_id))
+        catalog_path = resolve(args.all_x_catalog, repo_root)
+        all_x = base.all_x_controls_for_scope(catalog_path, int(args.lib_id))
+        if not all_x:
+            # Without the catalog the pool silently collapses to the
+            # integrated-best controls, which is not what --include-all-x asks for.
+            raise SystemExit(
+                f"--include-all-x given but no X controls for lib {args.lib_id} in {catalog_path}"
+            )
+        allowed_controls |= all_x
     base_pool = normalize_existing_pool(safe_read_csv(resolve(base_pool_path, repo_root)))
     scored = base.normalize(safe_read_csv(resolve(args.scored_candidates, repo_root)))
     extra_text = str(args.extra_inputs or "")

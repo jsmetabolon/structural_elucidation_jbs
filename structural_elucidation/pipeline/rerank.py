@@ -393,7 +393,30 @@ def select_regularized_model(pool: pd.DataFrame, n_jobs: int = 1) -> dict[str, A
 
 
 def select_model(pool: pd.DataFrame, mode: str = "auto", n_jobs: int = 1) -> dict[str, Any]:
-    """Select GBM, logistic, or auto-pick by LOOCV rank-1 stability."""
+    """Select GBM, logistic, or auto-pick by LOOCV rank-1 stability.
+
+    A training pool smaller than the logistic CV folds cannot be split. Score
+    it with the heuristic instead of fitting.
+    """
+
+    work = pool.copy()
+    if "label_ge_0p7" not in work.columns:
+        work["label_ge_0p7"] = 0
+    labels = pd.to_numeric(work["label_ge_0p7"], errors="coerce").fillna(0)
+    if len(work) < 5 or labels.nunique() < 2:
+        scores = heuristic_score(work)
+        scored = work.assign(heuristic_full_score=scores, heuristic_oof_score=scores)
+        return {
+            "name": "heuristic",
+            "model": None,
+            "scores": scored[["heuristic_oof_score", "heuristic_full_score"]],
+            "full_rank1": int(rank1_hits_from_scores(scored, "heuristic_full_score")),
+            "oof_rank1": int(rank1_hits_from_scores(scored, "heuristic_oof_score")),
+            "rank1_delta": 0,
+            "full_top10": 0,
+            "oof_top10": 0,
+            "all_options": [],
+        }
     options = [
         evaluate_model_option(pool, "option_a_regularized_gbm", make_model, n_jobs=n_jobs),
         evaluate_model_option(pool, "option_b_logistic_cv", make_model_b, n_jobs=n_jobs),

@@ -587,6 +587,11 @@ def main() -> None:
     parser.add_argument("--max-acceptance-median-rank", type=float, default=5.0)
     parser.add_argument("--include-all-x", action="store_true")
     parser.add_argument(
+        "--ignore-acceptance",
+        action="store_true",
+        help="Exit 0 even if current-winner median rank gate fails (overlay / derive jobs).",
+    )
+    parser.add_argument(
         "--all-x-catalog", type=Path, default=Path("models/x_known_curation_v1/known_x_evidence_catalog.csv")
     )
     parser.add_argument(
@@ -614,7 +619,9 @@ def main() -> None:
     args = parser.parse_args()
     with stage_timer("verify", lib_id=int(args.lib_id), ion_mode=str(args.ion_mode)):
         payload = run(args)
-    raise SystemExit(0 if payload["acceptance_pass"] else 2)
+    raise SystemExit(
+        0 if payload["acceptance_pass"] or bool(getattr(args, "ignore_acceptance", False)) else 2
+    )
 
 
 if __name__ == "__main__":
