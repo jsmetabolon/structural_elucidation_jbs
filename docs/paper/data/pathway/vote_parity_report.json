@@ -1,0 +1,35 @@
+{
+  "n_unique_smiles": 13119,
+  "super_agreement": 1.0,
+  "sub_agreement": 1.0,
+  "status_agreement": 1.0,
+  "tier_agreement": 1.0,
+  "by_delivered_status": {
+    "exact_reference_match": {
+      "n": 1445,
+      "super_agreement": 1.0,
+      "sub_agreement": 1.0
+    },
+    "no_reference_match": {
+      "n": 802,
+      "super_agreement": 1.0,
+      "sub_agreement": 1.0
+    },
+    "strong_similarity_vote": {
+      "n": 8246,
+      "super_agreement": 1.0,
+      "sub_agreement": 1.0
+    },
+    "weak_similarity_backfill": {
+      "n": 2626,
+      "super_agreement": 1.0,
+      "sub_agreement": 1.0
+    }
+  },
+  "delivered_status_counts": {
+    "strong_similarity_vote": 8246,
+    "weak_similarity_backfill": 2626,
+    "exact_reference_match": 1445,
+    "no_reference_match": 802
+  }
+}

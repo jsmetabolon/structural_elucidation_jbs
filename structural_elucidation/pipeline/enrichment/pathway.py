@@ -38,6 +38,9 @@ PATHWAY_COLUMNS: list[str] = [
     "pathway_vote_share",
     "pathway_best_reference_similarity",
 ]
+# Kept in the assignment-map cache for report explainability, but never joined
+# onto rerank rows (it would bloat every top-10 row with voter JSON).
+PROVENANCE_COLUMNS: list[str] = ["pathway_vote_voters_json"]
 
 
 # ── CLI and parsing helpers ──────────────────────────────────────────
@@ -121,15 +124,7 @@ def load_assignment_cache(path: Path | None) -> pd.DataFrame:
 
 def normalize_assignment_map(assignments: pd.DataFrame | None) -> pd.DataFrame:
     """Normalize assignment-map columns to the pathway enrichment schema."""
-    columns = [
-        "canonical_smiles",
-        "predicted_pathway",
-        "predicted_subpathway",
-        "pathway_confidence_tier",
-        "pathway_assignment_status",
-        "pathway_vote_share",
-        "pathway_best_reference_similarity",
-    ]
+    columns = ["canonical_smiles", *PATHWAY_COLUMNS, *PROVENANCE_COLUMNS]
     if assignments is None or assignments.empty:
         return pd.DataFrame(columns=columns)
     out = assignments.copy()
@@ -216,14 +211,30 @@ def generate_exact_reference_assignment_map(canonical_smiles: list[str], referen
 
 
 def generate_pathway_assignment_map(canonical_smiles: list[str], reference_db: Path) -> pd.DataFrame:
-    """Generate assignments via neighbor search when legacy builder is importable."""
-    try:
-        from build_v14_all_library_prediction_review_v1 import (  # type: ignore[import-not-found]
-            generate_pathway_assignment_map as generate_with_neighbors,
-        )
-    except ImportError:
-        return generate_exact_reference_assignment_map(canonical_smiles, reference_db)
-    return normalize_assignment_map(generate_with_neighbors(canonical_smiles, reference_db))
+    """Assign pathways: exact reference match first, neighbor vote for the rest.
+
+    The neighbor vote is the in-repo implementation of the documented
+    mechanism (``pipeline.enrichment.neighbor_vote``); it replaces the legacy
+    EC2-side builder this stage used to import, whose absence silently
+    degraded enrichment to exact matches only.
+    """
+    from structural_elucidation.pipeline.enrichment.neighbor_vote import (
+        load_reference_rows,
+        vote_assignment_map,
+    )
+
+    exact = generate_exact_reference_assignment_map(canonical_smiles, reference_db)
+    if exact.empty:
+        return exact
+    unresolved = exact.loc[
+        exact["pathway_assignment_status"].map(clean_text).eq("no_reference_match"), "canonical_smiles"
+    ]
+    if unresolved.empty:
+        return exact
+    reference = load_reference_rows(reference_db)
+    voted = normalize_assignment_map(vote_assignment_map(list(unresolved), reference))
+    resolved_exact = exact.loc[~exact["canonical_smiles"].isin(set(unresolved))]
+    return normalize_assignment_map(pd.concat([resolved_exact, voted], ignore_index=True, sort=False))
 
 
 def enrich_pathway_annotations(df: pd.DataFrame, assignment_map: pd.DataFrame | None) -> pd.DataFrame:
@@ -245,7 +256,7 @@ def enrich_pathway_annotations(df: pd.DataFrame, assignment_map: pd.DataFrame | 
         return out.drop(columns=["_canonical_pathway_join_smiles"], errors="ignore")
 
     annotated = out.merge(
-        assignment_map,
+        assignment_map.loc[:, ["canonical_smiles", *PATHWAY_COLUMNS]],
         left_on="_canonical_pathway_join_smiles",
         right_on="canonical_smiles",
         how="left",
@@ -268,16 +279,12 @@ def enrich_pathway_annotations(df: pd.DataFrame, assignment_map: pd.DataFrame | 
 
 
 def apply_amino_acid_pathway_overrides(df: pd.DataFrame) -> pd.DataFrame:
-    """Apply legacy amino-acid pathway overrides when the builder module exists."""
-    try:
-        from build_v19b_updated_summary_v1 import (  # type: ignore[import-not-found]
-            apply_amino_acid_pathway_overrides as apply_legacy_overrides,
-        )
-    except ImportError:
-        apply_legacy_overrides = None
-    if apply_legacy_overrides is not None:
-        return apply_legacy_overrides(df)
+    """Recompute pathway/subpathway match flags against truth columns.
 
+    Formerly deferred to a legacy builder (``build_v19b_updated_summary_v1``)
+    whose undocumented amino-acid overrides are deliberately not reproduced;
+    only the documented match-flag behavior remains.
+    """
     out = df.copy()
     true_path = out.get("true_pathway", pd.Series([""] * len(out), index=out.index)).map(clean_text)
     true_sub = out.get("true_subpathway", pd.Series([""] * len(out), index=out.index)).map(clean_text)
