@@ -128,7 +128,7 @@ def patch_html(
     escaped_full = html.escape(new_title)
     report_title = (
         display_title
-        if descriptor or (new_title and new_title != "De novo structure")
+        if descriptor or (new_title and new_title != TN.UNNAMED_STRUCTURE_LABEL and new_title != TN.LEGACY_UNNAMED_PREFIX)
         else control_id
     )
     escaped_report_title = html.escape(report_title)
@@ -174,6 +174,158 @@ def _is_report_html(path: Path, text: str) -> bool:
     )
 
 
+def _is_library_named_fields(fields: dict[str, Any]) -> bool:
+    """Whether a report name was resolved out of the named-metabolite library."""
+
+    source = str(fields.get("source") or "").strip().lower()
+    return fields.get("name_resolved") is True or source == "exact"
+
+
+def _is_known_x_named(report_dir: Path, fields: dict[str, Any]) -> bool:
+    """Whether the displayed name came from the compound's own known_X row."""
+
+    source = str(fields.get("descriptor_source") or "").strip().lower()
+    return source == "known_x_row" or bool(TN.read_known_x_name(report_dir))
+
+
+def _in_isomer_scope(report_dir: Path, fields: dict[str, Any]) -> bool:
+    """Reports the ``Isomer of`` policy decides the name for, either way.
+
+    A report already carrying the prefix stays in scope so that a name later
+    found to be the compound's own known_X identity loses it again.
+    """
+
+    display_name = str(fields.get("display_name") or "").strip()
+    return _is_library_named_fields(fields) or display_name.lower().startswith(
+        TN.ISOMER_PREFIX.lower()
+    )
+
+
+def _patch_titles(text: str, report_title: str, caption: str) -> str:
+    """Set the page title, heading, and caption without touching anything else."""
+
+    escaped_title = html.escape(report_title)
+
+    def title_replacement(match: re.Match[str]) -> str:
+        content = html.unescape(match.group(1)).strip()
+        suffix_match = REPORT_TITLE_SUFFIX_RE.search(content)
+        suffix = suffix_match.group(1) if suffix_match else ""
+        return f"<title>{escaped_title}{html.escape(suffix)}</title>"
+
+    patched = TITLE_RE.sub(title_replacement, text, count=1)
+    patched = H1_RE.sub(lambda _match: f"<h1>{escaped_title}</h1>", patched, count=1)
+    return CAPTION_RE.sub(
+        lambda _match: f"<p><strong>{html.escape(caption)}</strong></p>",
+        patched,
+        count=1,
+    )
+
+
+def _patch_named_report(
+    report_dir: Path,
+    fields: dict[str, Any],
+    *,
+    apply: bool,
+) -> dict[str, Any]:
+    """Apply the ``Isomer of`` policy to a report that already carries a name.
+
+    The name is rebuilt from ``resolved_name`` the way the report build does it,
+    so a compound whose name belongs to its own known_X row is asserted plainly
+    while a name borrowed from the metabolite library is qualified.
+    """
+
+    data_dir = report_dir / "data"
+    slug = report_dir.name.lower()
+    confidence_path = data_dir / f"{slug}_confidence_inputs.json"
+    evidence_path = data_dir / f"{slug}_evidence_summary.json"
+    manifest_path = report_dir / "manifest.json"
+    evidence = _read_json(evidence_path)
+    target = evidence.get("target") if isinstance(evidence.get("target"), dict) else {}
+    old_title = str(
+        fields.get("display_name") or target.get("name") or report_dir.name
+    ).strip()
+    resolved_name = TN.bare_library_name(
+        str(fields.get("resolved_name") or old_title).strip()
+    )
+    # ``sheet_feature_name`` carries the guards that keep the qualifier off
+    # synthesized descriptors, so the report and the summary sheet agree.
+    label = (
+        resolved_name
+        if _is_known_x_named(report_dir, fields)
+        else TN.sheet_feature_name(
+            resolved_name,
+            name_resolved=bool(fields.get("name_resolved")),
+            source=str(fields.get("source") or ""),
+            descriptor_kind=str(fields.get("descriptor_kind") or ""),
+        )
+    )
+    level = TN.msi_int(fields.get("msi_level"))
+    new_title = TN.display_name_for_level(
+        label,
+        msi_level=fields.get("msi_level"),
+        formula=str(target.get("formula") or "").strip(),
+        observed_mz=fields.get("observed_mz"),
+        name_is_reference=False,
+    )
+    # Matches the report renderer: levels 4-5 withhold the structure, and a
+    # compound with no descriptor has no name to head the page with either.
+    withholding = level is not None and level >= 4
+    report_title = (
+        label
+        if not withholding and fields.get("descriptor_kind")
+        else report_dir.name
+    )
+    summary = {
+        "control_id": report_dir.name,
+        "descriptor_kind": "library_isomer",
+        "old_title": old_title,
+        "new_title": new_title,
+        "parent_name": resolved_name,
+        "parent_formula": "",
+        "conjugate_count": 0,
+        "confidence": "",
+    }
+
+    updated_fields = dict(fields)
+    updated_fields["display_name"] = new_title
+    changed = _write_json_if_changed(confidence_path, updated_fields, apply=apply)
+    if evidence_path.exists():
+        updated_evidence = dict(evidence)
+        updated_target = dict(target)
+        updated_target["name"] = new_title
+        updated_evidence["target"] = updated_target
+        changed = _write_json_if_changed(evidence_path, updated_evidence, apply=apply) or changed
+    if manifest_path.exists():
+        manifest = _read_json(manifest_path)
+        manifest_target = manifest.get("target") if isinstance(manifest.get("target"), dict) else {}
+        updated_manifest = dict(manifest)
+        updated_manifest_target = dict(manifest_target)
+        updated_manifest_target["name"] = new_title
+        updated_manifest["target"] = updated_manifest_target
+        changed = _write_json_if_changed(manifest_path, updated_manifest, apply=apply) or changed
+
+    html_changed = False
+    for path in sorted(report_dir.glob("*.html")):
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if not _is_report_html(path, text):
+            continue
+        patched = _patch_titles(text, report_title, new_title)
+        if patched != text:
+            html_changed = True
+            if apply:
+                path.write_text(patched, encoding="utf-8")
+    changed = changed or html_changed
+    return {
+        "status": "library_isomer",
+        "changed": changed,
+        "title_changed": old_title != new_title or html_changed,
+        "summary": summary,
+    }
+
+
 def patch_report(
     report_dir: Path,
     db_names: dict[str, Any],
@@ -192,7 +344,9 @@ def patch_report(
         return {"status": "no_fields", "changed": False, "summary": None}
 
     fields = _read_json(confidence_path)
-    # Scope is deliberately strict: missing/null/truthy is not an unnamed report.
+    if _in_isomer_scope(report_dir, fields):
+        return _patch_named_report(report_dir, fields, apply=apply)
+    # Scope is deliberately strict: missing/null is not an unnamed report.
     if fields.get("name_resolved") is not False:
         return {"status": "named_or_unscoped", "changed": False, "summary": None}
 
@@ -212,7 +366,7 @@ def patch_report(
     old_title = str(
         fields.get("display_name")
         or target.get("name")
-        or (f"De novo structure ({formula})" if formula else report_dir.name)
+        or (f"{TN.UNNAMED_STRUCTURE_LABEL} ({formula})" if formula else report_dir.name)
     ).strip()
     inchikey = str(target.get("inchikey") or fields.get("inchikey") or "").strip()
     msi_level = str(fields.get("msi_level") or "").strip()
@@ -240,7 +394,7 @@ def patch_report(
     elif current_name != raw_current:
         new_title = current_name
     else:
-        new_title = "De novo structure"
+        new_title = TN.UNNAMED_STRUCTURE_LABEL
 
     current_rank = TN.specificity_rank(str(fields.get("descriptor_kind") or ""), current_name)
     proposed_rank = TN.specificity_rank(tentative.kind if tentative else "", new_title)
@@ -401,6 +555,11 @@ def build_parser() -> argparse.ArgumentParser:
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--apply", action="store_true", help="Write sidecar and HTML changes")
     mode.add_argument("--dry-run", action="store_true", help="Preview only (default)")
+    parser.add_argument(
+        "--named-library-only",
+        action="store_true",
+        help="Patch only reports the Isomer-of naming policy decides the name for",
+    )
     parser.add_argument("--db", type=Path, help="Metabolite synonym SQLite database")
     parser.add_argument("--external-db", type=Path, help="Merged external name index SQLite")
     parser.add_argument("--classyfire-db", type=Path, help="ClassyFire HMDB SQLite index")
@@ -418,8 +577,12 @@ def main() -> None:
     if not reports_root.is_dir():
         raise SystemExit(f"missing reports root: {reports_root}")
     db_path = args.db.resolve() if args.db else _discover_db(reports_root)
-    db_names = TN.load_db_names(db_path)
-    extended_ctx = _build_extended_context(args, reports_root)
+    db_names = {} if args.named_library_only else TN.load_db_names(db_path)
+    extended_ctx = (
+        None
+        if args.named_library_only
+        else _build_extended_context(args, reports_root)
+    )
     summary_path = args.summary or (reports_root / "tentative_naming_report.csv")
 
     counts: dict[str, int] = {}
@@ -427,6 +590,13 @@ def main() -> None:
     changed = 0
     title_changes = 0
     for report_dir in sorted(path for path in reports_root.iterdir() if path.is_dir()):
+        if args.named_library_only:
+            slug = report_dir.name.lower()
+            fields = _read_json(
+                report_dir / "data" / f"{slug}_confidence_inputs.json"
+            )
+            if not _in_isomer_scope(report_dir, fields):
+                continue
         outcome = patch_report(
             report_dir,
             db_names,

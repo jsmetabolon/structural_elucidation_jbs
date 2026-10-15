@@ -270,6 +270,9 @@ HEDGE_SUFFIX = "(proposed structure)"
 FORMULA_ONLY_NOTE = "structure unresolved"
 FORMULA_ONLY_LABEL = "Molecular formula only; structure unresolved"
 MASS_ONLY_LABEL = "Exact mass of interest; unidentified"
+UNNAMED_STRUCTURE_LABEL = "Tentative Structure"
+LEGACY_UNNAMED_PREFIX = "De novo structure"
+ISOMER_PREFIX = "Isomer of "
 
 
 def msi_int(value: Any) -> int | None:
@@ -291,6 +294,97 @@ def hedged_label(label: str) -> str:
     return f"{text} {HEDGE_SUFFIX}"
 
 
+def _is_unnamed_structure_label(name: str) -> bool:
+    text = _format_label(name)
+    lower = text.lower()
+    return lower.startswith(LEGACY_UNNAMED_PREFIX.lower()) or lower.startswith(
+        UNNAMED_STRUCTURE_LABEL.lower()
+    )
+
+
+def _is_withheld_structure_label(name: str) -> bool:
+    """Whether a label is a Level 4-5 stand-in rather than a structure name."""
+
+    text = _format_label(name)
+    lower = text.lower()
+    return (
+        FORMULA_ONLY_NOTE in lower
+        or lower == MASS_ONLY_LABEL.lower()
+        or lower.startswith("exact mass ")
+    )
+
+
+def bare_library_name(name: str) -> str:
+    text = _format_label(name)
+    if HEDGE_SUFFIX in text:
+        text = text.replace(HEDGE_SUFFIX, " ").strip()
+    text = re.sub(r"\s*[—-]\s*tentative\s*$", "", text, flags=re.I).strip()
+    if text.lower().startswith(ISOMER_PREFIX.lower()):
+        return text[len(ISOMER_PREFIX) :].strip()
+    return text
+
+
+def isomer_of_label(name: str) -> str:
+    """Prefix a library metabolite name so it is not read as an identity claim."""
+
+    bare = bare_library_name(name)
+    if not bare:
+        return UNNAMED_STRUCTURE_LABEL
+    return f"{ISOMER_PREFIX}{bare}"
+
+
+# Descriptor kinds whose label is a catalogued metabolite's own name. Every
+# other kind is a descriptor the pipeline synthesized from the structure, and
+# "Isomer of Sulfonated compound" claims a relationship to nothing.
+NAME_BEARING_DESCRIPTOR_KINDS = frozenset({"candidate_name", "external_db_exact"})
+
+
+def sheet_feature_name(
+    name: str,
+    *,
+    name_resolved: bool = False,
+    source: str = "",
+    msi_level: Any = None,
+    identity_status: str = "",
+    truth_match: bool = False,
+    descriptor_kind: str = "",
+    from_known_x: bool = False,
+) -> str:
+    """Display name for the executive-summary sheet.
+
+    A name resolved out of the named-metabolite library is written
+    ``Isomer of *``, because the X-compound is a distinct feature from the
+    catalogued metabolite whose name it borrows. A name that came from the
+    compound's own ``known_X`` annotation is that compound's curated identity,
+    so it is left alone; the report has already applied that rule, and the
+    labels it produced arrive here unchanged. Unnamed de novo placeholders
+    become ``Tentative Structure``. Synthesized descriptors (conjugates,
+    analogs, class labels) are left unchanged.
+    """
+
+    text = _format_label(name)
+    # Retained in the public signature for compatibility with existing callers.
+    _ = (msi_level, identity_status, truth_match)
+    if not text or _is_unnamed_structure_label(text):
+        return UNNAMED_STRUCTURE_LABEL
+    if from_known_x or _is_withheld_structure_label(text):
+        return text
+    kind = _clean(descriptor_kind)
+    if kind and kind not in NAME_BEARING_DESCRIPTOR_KINDS:
+        return text
+    library_match = bool(name_resolved) or str(source).strip().lower() == "exact"
+    if not library_match:
+        return text
+    if (
+        not _looks_like_chemical_name(text)
+        or _is_descriptive_phrase(text)
+        or "conjugate" in text.lower()
+        or " analog of " in text.lower()
+    ):
+        return text
+    return isomer_of_label(text)
+
+
 def display_name_for_level(
     name: str,
     *,
@@ -301,10 +395,13 @@ def display_name_for_level(
 ) -> str:
     """Return the name a report of this MSI level is entitled to display.
 
-    ``name_is_reference`` distinguishes a name copied from the reference database
-    from a descriptor the pipeline synthesized. Only the former needs hedging at
-    Level 3: a synthesized descriptor such as "Steroid glucuronide" already
-    states its own uncertainty, and appending a hedge to it would be noise.
+    ``name_is_reference`` distinguishes a name resolved out of the
+    named-metabolite library from a descriptor the pipeline synthesized. A
+    borrowed library name is presented as ``Isomer of *`` rather than as an
+    identity claim, which is qualification enough that Level 3 does not add a
+    second hedge. Names taken from the compound's own ``known_X`` annotation
+    arrive here already labelled by the resolver and are not reference names in
+    this sense.
 
     Levels 4 and 5 withhold the structure entirely, so they discard the name
     rather than qualify it. A name that survives to the reader implies a
@@ -313,10 +410,10 @@ def display_name_for_level(
 
     text = _format_label(name)
     level = msi_int(msi_level)
-    if level is None or level <= 2:
+    if name_is_reference:
+        text = isomer_of_label(text)
+    if level is None or level <= 3:
         return text
-    if level == 3:
-        return hedged_label(text) if name_is_reference else text
     if level == 4:
         formula_text = _format_label(formula)
         return f"{formula_text}; {FORMULA_ONLY_NOTE}" if formula_text else FORMULA_ONLY_LABEL
@@ -439,7 +536,7 @@ def _looks_like_chemical_name(name: str, *, control_id: str = "") -> bool:
         return False
     if control_id and text.upper() == control_id.upper():
         return False
-    if text.startswith("De novo structure"):
+    if _is_unnamed_structure_label(text):
         return False
     if text.lower() in _GENERIC_LOWER:
         return False
@@ -484,7 +581,7 @@ def specificity_rank(descriptor_kind: str | None, label: str) -> int:
         return 50
     if kind == "conjugate_unresolved" and " of " in lower:
         return 50
-    if text in GENERIC_CLASS_LABELS or lower.startswith("de novo structure"):
+    if text in GENERIC_CLASS_LABELS or _is_unnamed_structure_label(text):
         return 10
     if kind == "peptide":
         return 40
@@ -534,7 +631,7 @@ def _read_known_x_row(bundle_dir: Path | str | None) -> dict[str, Any]:
     return dict(rows[0])
 
 
-def _read_known_x_name(bundle_dir: Path | str | None) -> str:
+def read_known_x_name(bundle_dir: Path | str | None) -> str:
     row = _read_known_x_row(bundle_dir)
     if not row:
         return ""
@@ -666,20 +763,23 @@ def _try_known_x_conjugate(
     )
 
 
-def _format_candidate_label(name: str, *, msi_level: str, truth_match: bool) -> str:
-    """Hedge a borrowed reference name the evidence does not support asserting.
+def _format_candidate_label(
+    name: str,
+    *,
+    msi_level: str,
+    truth_match: bool,
+    from_known_x: bool = False,
+) -> str:
+    """Qualify a borrowed named-metabolite label for an X-compound.
 
-    A rank-1 ``candidate_name`` or a known_X row supplies a real compound name,
-    which reads as an assertion. At Level 3 the structure is a hypothesis, so the
-    name has to say so; a control whose top candidate matches its confirmed
-    structure is exempt, because there the name is not a hypothesis.
+    A name the compound's own ``known_X`` annotation supplies is its curated
+    identity, so it is asserted as-is. Any other adopted name belongs to a
+    catalogued metabolite that this feature is not, and reads as ``Isomer of``.
     """
 
-    label = _format_label(name)
-    if truth_match:
-        return label
-    level = msi_int(msi_level)
-    return hedged_label(label) if level is not None and level >= 3 else label
+    # Retained for compatibility with existing report-generation call sites.
+    _ = (msi_level, truth_match)
+    return _format_label(name) if from_known_x else isomer_of_label(name)
 
 
 def _try_candidate_name(
@@ -696,7 +796,7 @@ def _try_candidate_name(
     rank1_name = _clean_candidate_display_name(_clean(row.get("candidate_name")))
     if rank1_name:
         raw_candidates.append(("rank1_candidate_name", rank1_name))
-    known_x_name = _read_known_x_name(bundle_dir)
+    known_x_name = read_known_x_name(bundle_dir)
     if known_x_name:
         raw_candidates.append(("known_x_row", known_x_name))
     alt_name = _clean_candidate_display_name(html_alt_name)
@@ -714,7 +814,12 @@ def _try_candidate_name(
         ranked,
         key=lambda item: (item[2], -_SOURCE_PRIORITY[item[0]]),
     )
-    label = _format_candidate_label(name, msi_level=msi_level, truth_match=truth_match)
+    label = _format_candidate_label(
+        name,
+        msi_level=msi_level,
+        truth_match=truth_match,
+        from_known_x=source == "known_x_row" or bool(known_x_name),
+    )
     return TentativeName(
         kind="candidate_name",
         label=label,
@@ -880,7 +985,7 @@ def _try_lipid(smiles: str, formula: str, row: dict[str, Any]) -> TentativeName 
             )
 
             annotation = annotate_from_smiles(smiles)
-            if not annotation.is_empty:
+            if not annotation.is_empty and not lipid_class:
                 lipid_class = _clean(annotation.lipid_class)
                 shorthand = _clean(annotation.lipid_shorthand)
                 source = "smiles_rdkit"
@@ -1373,7 +1478,7 @@ def resolve(
     """Resolve the first matching tentative descriptor branch.
 
     Named compounds are an explicit no-op.  ``None`` for an unnamed compound
-    means the caller should retain its existing ``De novo structure`` fallback.
+    means the caller should retain its existing ``Tentative Structure`` fallback.
     Layer 0 prefers rank-1 ``candidate_name``, known_X Level-1 KNOWN rows, and
     HTML structure alt text before peptide/lipid/conjugate/motif branches.
     """
@@ -1411,13 +1516,22 @@ def resolve(
             motifs,
             formula_text,
         )
+        if known_x_conj is not None:
+            return known_x_conj
+        known_x_row = _read_known_x_row(bundle_dir)
+        if known_x_row and _text_conjugate_term(
+            _clean(known_x_row.get("External Information (Class or modification)")),
+            _clean(known_x_row.get("Cleaned External Info")),
+            _clean(known_x_row.get("Tentative information")),
+        ):
+            # An explicit X annotation disagrees with the inferred conjugate;
+            # preserve the safer family label until that conflict is reviewed.
+            return lipid
         contenders = [lipid]
         if _conjugate_is_decorating(conjugate):
             contenders.append(conjugate)
         if hint is not None:
             contenders.append(hint)
-        if known_x_conj is not None:
-            contenders.append(known_x_conj)
         upgrades = [item for item in contenders if item.kind != "lipid"]
         if upgrades:
             return max(upgrades, key=lambda item: specificity_rank(item.kind, item.label))

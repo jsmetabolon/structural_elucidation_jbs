@@ -34,6 +34,17 @@ class IndexRow:
     descriptor_confidence: str = ""
     descriptor_parent_formula: str = ""
     descriptor_conjugate_count: str = ""
+    naming_policy_version: str = ""
+    name_source: str = ""
+    identity_candidate_rank: str = ""
+    library_collision: str = ""
+    identity_eligible: str = ""
+    identity_exclusion_reason: str = ""
+    exception_basis: str = ""
+    review_verdict: str = ""
+    excluded_library_matches: str = ""
+    raw_rank1_candidate: str = ""
+    identity_candidate: str = ""
 
 
 def _read_confidence_extra(report_dir: Path) -> dict:
@@ -62,6 +73,17 @@ def _read_confidence_extra(report_dir: Path) -> dict:
         "descriptor_confidence": d.get("descriptor_confidence", "") or "",
         "descriptor_parent_formula": d.get("descriptor_parent_formula", "") or "",
         "descriptor_conjugate_count": d.get("descriptor_conjugate_count", "") or "",
+        "naming_policy_version": d.get("naming_policy_version", "") or "",
+        "name_source": d.get("name_source", "") or "",
+        "identity_candidate_rank": d.get("identity_candidate_rank", "") or "",
+        "library_collision": d.get("library_collision", ""),
+        "identity_eligible": d.get("identity_eligible", ""),
+        "identity_exclusion_reason": d.get("identity_exclusion_reason", "") or "",
+        "exception_basis": d.get("exception_basis", "") or "",
+        "review_verdict": d.get("review_verdict", "") or "",
+        "excluded_library_matches": json.dumps(d.get("excluded_library_matches") or [], sort_keys=True),
+        "raw_rank1_candidate": json.dumps(d.get("raw_rank1_candidate") or {}, sort_keys=True),
+        "identity_candidate": json.dumps(d.get("identity_candidate") or {}, sort_keys=True),
     }
 
 
@@ -122,6 +144,7 @@ def render_master_index(rows: list[IndexRow], generated_at: str) -> str:
             f"<td class='num'>{idx}</td>"
             f"<td><a href='{esc(r.report)}'>{esc(r.control_id)}</a></td>"
             f"<td>{esc(r.name)}</td>"
+            f"<td title='{esc(r.identity_exclusion_reason)}'>{esc(r.name_source)}</td>"
             f"<td class='num' data-sort='{esc(r.msi_level)}' title='{esc(r.msi_label)}'>"
             f"{('L' + esc(r.msi_level)) if r.msi_level else ''}</td>"
             f"<td data-sort='{esc(identity_sort)}' title='Library identity (authentic-standard pending)'>"
@@ -184,7 +207,7 @@ def render_master_index(rows: list[IndexRow], generated_at: str) -> str:
   <input id='q' type='search' placeholder='Filter by id, name, formula, lib&hellip;' autocomplete='off'>
   <table id='t'>
     <thead><tr>
-      <th data-k='n'>#</th><th>Control ID</th><th>Name</th>
+      <th data-k='n'>#</th><th>Control ID</th><th>Name</th><th>Name source</th>
       <th title='MSI identification level (1-5)'>MSI</th>
       <th title='Library identity status (authentic-standard pending)'>Identity</th>
       <th title='Tentative structural descriptor type and heuristic confidence'>Descriptor</th>

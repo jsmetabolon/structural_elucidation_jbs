@@ -186,6 +186,7 @@ def passthrough_args(args: argparse.Namespace, lib: str) -> list[str]:
         "--extended-target-edge-min": args.extended_target_edge_min,
         "--extended-pair-edge-min": args.extended_pair_edge_min,
         "--extended-max-edges-per-node": args.extended_max_edges_per_node,
+        "--naming-policy-version": args.naming_policy_version,
     }
     for flag, value in simple.items():
         if value is not None:
@@ -291,6 +292,17 @@ def collect_index_rows(out_root: Path, results: list[BuildResult]) -> list[Index
                 descriptor_confidence=str(extra.get("descriptor_confidence") or ""),
                 descriptor_parent_formula=str(extra.get("descriptor_parent_formula") or ""),
                 descriptor_conjugate_count=str(extra.get("descriptor_conjugate_count") or ""),
+                naming_policy_version=str(extra.get("naming_policy_version") or ""),
+                name_source=str(extra.get("name_source") or ""),
+                identity_candidate_rank=str(extra.get("identity_candidate_rank") or ""),
+                library_collision=str(extra["library_collision"]) if extra.get("library_collision") is not None else "",
+                identity_eligible=str(extra["identity_eligible"]) if extra.get("identity_eligible") is not None else "",
+                identity_exclusion_reason=str(extra.get("identity_exclusion_reason") or ""),
+                exception_basis=str(extra.get("exception_basis") or ""),
+                review_verdict=str(extra.get("review_verdict") or ""),
+                excluded_library_matches=str(extra.get("excluded_library_matches") or ""),
+                raw_rank1_candidate=str(extra.get("raw_rank1_candidate") or ""),
+                identity_candidate=str(extra.get("identity_candidate") or ""),
             )
         )
     rows.sort(key=lambda r: (r.lib, r.control_id))
@@ -316,6 +328,17 @@ def write_reports_index_csv(out_root: Path, rows: list[IndexRow]) -> Path:
                 "descriptor_confidence": r.descriptor_confidence,
                 "descriptor_parent_formula": r.descriptor_parent_formula,
                 "descriptor_conjugate_count": r.descriptor_conjugate_count,
+                "naming_policy_version": r.naming_policy_version,
+                "name_source": r.name_source,
+                "identity_candidate_rank": r.identity_candidate_rank,
+                "library_collision": r.library_collision,
+                "identity_eligible": r.identity_eligible,
+                "identity_exclusion_reason": r.identity_exclusion_reason,
+                "exception_basis": r.exception_basis,
+                "review_verdict": r.review_verdict,
+                "excluded_library_matches": r.excluded_library_matches,
+                "raw_rank1_candidate": r.raw_rank1_candidate,
+                "identity_candidate": r.identity_candidate,
                 "status": r.status,
                 "report": r.report,
             }
@@ -492,6 +515,7 @@ def build_parser() -> argparse.ArgumentParser:
     # Optional passthrough to the single-compound builder (forwarded only when set).
     fwd = parser.add_argument_group("forwarded to reports.compound (optional)")
     fwd.add_argument("--db", default=None)
+    fwd.add_argument("--naming-policy-version", choices=("v1", "v2"), default="v2")
     fwd.add_argument("--known-x", default=None)
     fwd.add_argument("--known-x-all", default=None)
     fwd.add_argument("--peak-csv", default=None, help="Single peak CSV applied to every compound")

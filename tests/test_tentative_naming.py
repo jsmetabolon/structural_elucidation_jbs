@@ -438,26 +438,59 @@ def test_patcher_cleans_fallback_without_badge(tmp_path: Path) -> None:
     outcome = patcher.patch_report(report, {}, apply=True)
     assert outcome["changed"] is True
     fields = json.loads((report / "data/x-test_confidence_inputs.json").read_text())
-    assert fields["display_name"] == "De novo structure"
+    assert fields["display_name"] == "Tentative Structure"
     assert fields["descriptor_kind"] is None
     page = (report / "index.html").read_text()
     assert "<title>X-TEST Structure Resolution (Public)</title>" in page
     assert "<h1>X-TEST</h1>" in page
-    assert "<p><strong>De novo structure</strong></p>" in page
+    assert "<p><strong>Tentative Structure</strong></p>" in page
     assert "Tentative descriptor" not in page
 
 
-def test_patcher_leaves_named_bundle_untouched(tmp_path: Path) -> None:
+def test_patcher_qualifies_named_bundle_as_an_isomer(tmp_path: Path) -> None:
     report = _make_bundle(tmp_path, name_resolved=True)
-    before = {
-        path: path.read_bytes()
-        for path in report.rglob("*")
-        if path.is_file()
-    }
+    data = report / "data"
+    confidence_path = data / "x-test_confidence_inputs.json"
+    fields = json.loads(confidence_path.read_text())
+    fields.update(
+        {
+            "msi_level": 2,
+            "display_name": "ethanol",
+            "resolved_name": "ethanol",
+        }
+    )
+    confidence_path.write_text(json.dumps(fields, indent=2))
+    for filename in ("x-test_evidence_summary.json",):
+        path = data / filename
+        payload = json.loads(path.read_text())
+        payload["target"]["name"] = "ethanol"
+        path.write_text(json.dumps(payload, indent=2))
+    manifest_path = report / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["target"]["name"] = "ethanol"
+    manifest_path.write_text(json.dumps(manifest, indent=2))
+    for path in report.glob("*.html"):
+        if path.name != "guides.html":
+            path.write_text(
+                path.read_text()
+                .replace("X-TEST Structure Resolution", "ethanol Structure Resolution")
+                .replace("<h1>X-TEST</h1>", "<h1>ethanol</h1>")
+                .replace("De novo structure (C8H15N3O4)", "ethanol")
+            )
+
     outcome = patcher.patch_report(report, {}, apply=True)
-    assert outcome["status"] == "named_or_unscoped"
-    assert outcome["changed"] is False
-    assert all(path.read_bytes() == content for path, content in before.items())
+    assert outcome["status"] == "library_isomer"
+    assert outcome["changed"] is True
+    assert json.loads(confidence_path.read_text())["display_name"] == "Isomer of ethanol"
+    assert json.loads(manifest_path.read_text())["target"]["name"] == "Isomer of ethanol"
+    # A named bundle carries no synthesized descriptor, so the page still heads
+    # with the compound id and the qualified name appears as the caption.
+    page = (report / "public.html").read_text()
+    assert "<h1>X-TEST</h1>" in page
+    assert "<p><strong>Isomer of ethanol</strong></p>" in page
+
+    second = patcher.patch_report(report, {}, apply=True)
+    assert second["changed"] is False
 
 
 def test_index_humanizes_descriptor_kind() -> None:
@@ -488,7 +521,7 @@ def test_candidate_name_from_rank1() -> None:
     )
     assert result is not None
     assert result.kind == "candidate_name"
-    assert result.label == "5-androstenetriol 3,17-disulfate"
+    assert result.label == "Isomer of 5-androstenetriol 3,17-disulfate"
     assert result.source == "rank1_candidate_name"
     fields = TN.descriptor_fields(result)
     assert fields["descriptor_source_row"] == "rank1"
@@ -506,7 +539,7 @@ def test_candidate_name_msi1_truth_match_has_no_tentative_suffix() -> None:
         truth_match=True,
     )
     assert result is not None
-    assert result.label == "5-androstenetriol 3,17-disulfate"
+    assert result.label == "Isomer of 5-androstenetriol 3,17-disulfate"
     assert "tentative" not in result.label.lower()
 
 
@@ -637,7 +670,7 @@ def test_candidate_name_strips_released_tag() -> None:
         truth_match=True,
     )
     assert result is not None
-    assert result.label == "Pyr-leu-gln"
+    assert result.label == "Isomer of Pyr-leu-gln"
     assert result.parent_name == "Pyr-leu-gln"
 
 
@@ -654,7 +687,7 @@ def test_candidate_name_strips_released_structure_suffix() -> None:
         html_alt_name="lactoyl-isoleucine released structure",
     )
     assert result is not None
-    assert result.label == "lactoyl-isoleucine"
+    assert result.label == "Isomer of lactoyl-isoleucine"
     assert result.source == "html_alt"
 
 
@@ -715,7 +748,7 @@ def test_candidate_name_retains_chemical_parenthetical() -> None:
         html_alt_name="acetylcarnitine (C2)",
     )
     assert result is not None
-    assert result.label == "acetylcarnitine (C2)"
+    assert result.label == "Isomer of acetylcarnitine (C2)"
     assert result.source == "html_alt"
 
 
@@ -760,7 +793,7 @@ def test_qualified_lipid_class_is_adopted() -> None:
     )
     assert result is not None
     assert result.kind == "candidate_name"
-    assert result.label == "phosphatidylcholine (18:0/20:5, 16:0/22:5n6)"
+    assert result.label == "Isomer of phosphatidylcholine (18:0/20:5, 16:0/22:5n6)"
 
 
 def test_descriptive_known_x_phrase_skipped(tmp_path: Path) -> None:
@@ -1211,21 +1244,21 @@ def test_patcher_strips_legacy_tentative_suffix_idempotent(tmp_path: Path) -> No
 # --- MSI-consistent naming: what each level lets a report call the compound ---
 
 
-def test_levels_one_and_two_assert_the_name():
+def test_levels_one_and_two_qualify_a_library_name_as_an_isomer():
     for level in (1, 2):
         assert (
             TN.display_name_for_level(
                 "Glycodeoxycholate", msi_level=level, name_is_reference=True
             )
-            == "Glycodeoxycholate"
+            == "Isomer of Glycodeoxycholate"
         )
 
 
-def test_level_three_hedges_a_borrowed_reference_name():
+def test_level_three_qualifies_a_library_name_without_a_second_hedge():
     hedged = TN.display_name_for_level(
         "Glycodeoxycholate", msi_level=3, name_is_reference=True
     )
-    assert hedged == f"Glycodeoxycholate {TN.HEDGE_SUFFIX}"
+    assert hedged == "Isomer of Glycodeoxycholate"
 
 
 def test_level_three_leaves_a_synthesized_descriptor_alone():
@@ -1269,8 +1302,14 @@ def test_level_five_reports_only_the_mass():
 
 
 def test_an_unknown_level_leaves_the_name_untouched():
-    assert TN.display_name_for_level("Taurine", msi_level="", name_is_reference=True) == "Taurine"
-    assert TN.display_name_for_level("Taurine", msi_level=9, name_is_reference=True) == "Taurine"
+    assert (
+        TN.display_name_for_level("Taurine", msi_level="", name_is_reference=True)
+        == "Isomer of Taurine"
+    )
+    assert (
+        TN.display_name_for_level("Taurine", msi_level=9, name_is_reference=True)
+        == "Isomer of Taurine"
+    )
 
 
 def test_hedging_is_idempotent():
@@ -1278,15 +1317,135 @@ def test_hedging_is_idempotent():
     assert TN.hedged_label(once) == once
 
 
-def test_candidate_label_hedges_at_level_three_but_not_for_a_confirmed_match():
-    assert TN._format_candidate_label("Taurine", msi_level="3", truth_match=False) == (
-        f"Taurine {TN.HEDGE_SUFFIX}"
+def test_sheet_renames_library_matches_as_isomer_of():
+    assert (
+        TN.sheet_feature_name(
+            "valylhistidine",
+            name_resolved=True,
+            source="exact",
+            msi_level=3,
+        )
+        == "Isomer of valylhistidine"
     )
-    # A control whose top candidate matches its confirmed structure is not a hypothesis.
-    assert TN._format_candidate_label("Taurine", msi_level="3", truth_match=True) == "Taurine"
-    assert TN._format_candidate_label("Taurine", msi_level="2", truth_match=False) == "Taurine"
-    # No level supplied means no basis to hedge on.
-    assert TN._format_candidate_label("Taurine", msi_level="", truth_match=False) == "Taurine"
+
+
+def test_sheet_leaves_a_synthesized_descriptor_unqualified():
+    """"Isomer of Tripeptide (Ala-Gly-Ser)" claims kinship with nothing."""
+
+    for kind, label in (
+        ("peptide", "Tripeptide (Ala-Gly-Ser)"),
+        ("lipid", "Phosphatidylcholine (34:1)"),
+        ("motif_only", "Sulfonated compound"),
+    ):
+        assert (
+            TN.sheet_feature_name(
+                label, name_resolved=True, source="exact", descriptor_kind=kind
+            )
+            == label
+        )
+
+
+def test_sheet_leaves_a_known_x_name_as_the_report_wrote_it():
+    """A compound's own known_X identity is not an isomer of itself."""
+
+    assert (
+        TN.sheet_feature_name(
+            "N-(4-aminobenzoyl)-L-glutamic acid",
+            source="exact",
+            descriptor_kind="candidate_name",
+            msi_level=1,
+            from_known_x=True,
+        )
+        == "N-(4-aminobenzoyl)-L-glutamic acid"
+    )
+
+
+def test_sheet_does_not_qualify_a_withheld_structure_label():
+    """Levels 4-5 name no structure, so there is nothing to be an isomer of."""
+
+    for label in (
+        f"C4H7N3O; {TN.FORMULA_ONLY_NOTE}",
+        TN.FORMULA_ONLY_LABEL,
+        TN.MASS_ONLY_LABEL,
+        "Exact mass 464.3007; unidentified",
+    ):
+        assert (
+            TN.sheet_feature_name(
+                label, name_resolved=True, source="exact", msi_level=4
+            )
+            == label
+        )
+
+
+def test_sheet_qualifies_confirmed_library_names_too():
+    assert (
+        TN.sheet_feature_name(
+            "valylhistidine",
+            name_resolved=True,
+            source="exact",
+            msi_level=1,
+        )
+        == "Isomer of valylhistidine"
+    )
+    assert (
+        TN.sheet_feature_name(
+            "valylhistidine",
+            name_resolved=True,
+            source="exact",
+            msi_level=3,
+            identity_status="known_pending",
+        )
+        == "Isomer of valylhistidine"
+    )
+
+
+def test_sheet_replaces_de_novo_with_tentative_structure():
+    assert TN.sheet_feature_name("De novo structure", name_resolved=False, source="predicted") == (
+        "Tentative Structure"
+    )
+    assert TN.sheet_feature_name("De novo structure (C6H12O6)", source="predicted") == (
+        "Tentative Structure"
+    )
+    assert TN.sheet_feature_name("Tentative Structure (C6H12O6)", source="predicted") == (
+        "Tentative Structure"
+    )
+
+
+def test_sheet_leaves_synthesized_descriptors_alone():
+    assert (
+        TN.sheet_feature_name(
+            "Glucuronide conjugate of C17H21NO3",
+            name_resolved=False,
+            source="predicted",
+            msi_level=4,
+        )
+        == "Glucuronide conjugate of C17H21NO3"
+    )
+
+
+def test_sheet_isomer_prefix_is_idempotent():
+    once = TN.sheet_feature_name("isoleucine", name_resolved=True, source="exact", msi_level=3)
+    assert once == "Isomer of isoleucine"
+    assert TN.sheet_feature_name(once, name_resolved=True, source="exact", msi_level=3) == once
+
+
+def test_a_borrowed_library_label_is_qualified_as_an_isomer():
+    for level, truth_match in (("3", False), ("3", True), ("2", False), ("", False)):
+        assert (
+            TN._format_candidate_label(
+                "Taurine", msi_level=level, truth_match=truth_match
+            )
+            == "Isomer of Taurine"
+        )
+
+
+def test_a_known_x_label_is_asserted_rather_than_qualified():
+    assert (
+        TN._format_candidate_label(
+            "Taurine", msi_level="3", truth_match=False, from_known_x=True
+        )
+        == "Taurine"
+    )
 
 
 def test_msi_int_accepts_the_shapes_the_sidecars_use():
