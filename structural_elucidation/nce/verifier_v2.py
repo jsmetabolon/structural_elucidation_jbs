@@ -150,14 +150,19 @@ def predicted_spectrum_score_v2(
     *,
     lib_id: int = 209,
     fallback_on_error: bool = True,
+    reference_dir: str | None = None,
 ) -> float:
     """Score a candidate with the real NCE matcher, falling back to portable v1."""
+    matcher_kwargs: dict[str, str] = {}
+    if reference_dir:
+        matcher_kwargs["reference_dir"] = str(reference_dir)
     try:
         score = score_smiles_against_observed_bins(
             smiles,
             _parse_bins(observed_ion_bins),
             _parse_bins(observed_loss_bins),
             lib_id=int(lib_id),
+            **matcher_kwargs,
         )
     except Exception:
         score = 0.0
