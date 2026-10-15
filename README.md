@@ -73,6 +73,21 @@ Environment variables:
 | `OUT_ROOT` | `output/pipeline_equalization` | Output directory |
 | `RUN_LIBS` | `209,305,400,402` | Comma-separated libs |
 | `START_AT` | `verifier` | `full`, `candidates`, or `verifier` |
+| `CANDIDATES_EXTRA_ARGS` | (empty) | Extra flags for `pipeline.candidates`, e.g. `--derive-neutral-mass-from-adduct` |
+| `VERIFY_EXTRA_ARGS` | (empty) | Extra flags for `pipeline.verify`, e.g. `--ignore-acceptance` for derive overlay |
+
+The Excel adduct table (`data/adducts/adduct_ladder.csv`) is **not** on this path.
+Do not rerun `run_inference.sh` to identify Na/Cl/formate adducts. Analog-only:
+
+```bash
+python -m structural_elucidation.evaluation.analog
+```
+
+Candidate-target derivation (default off; then full candidates-to-rerank):
+
+```bash
+python -m structural_elucidation.pipeline.candidates --derive-neutral-mass-from-adduct ...
+```
 
 ## Dual-lane inference (optional)
 

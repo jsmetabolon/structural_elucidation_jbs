@@ -1,0 +1,42 @@
+ion_mode,adduct_label,chro_lib_alias,charge,n_molecules,formula_kind,mz_minus_M,is_default,source,platform_hint,c13_shifts_tried,neutral_mass_from_mz,notes
+positive,[M+H]+,,1,1,offset,1.007276466583,TRUE,excel_adducts,pos,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 1.007276466583,Excel m + H; default
+positive,[M+Na]+,,1,1,offset,22.9892,FALSE,excel_adducts,pos,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 22.9892,Excel m + Na+
+positive,[M+NH4]+,m+H+NH3,1,1,offset,18.03383,FALSE,excel_adducts,pos,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 18.03383,Excel m + NH4 (actually m + NH3 + H+)
+positive,[M+ACN+H]+,,1,1,offset,42.033823,FALSE,excel_adducts,pos,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 42.033823,Excel m + ACN + H
+positive,[M+ACN+Na]+,,1,1,offset,64.01577,FALSE,excel_adducts,pos,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 64.01577,Excel m + ACN + Na
+positive,[M+CH3OH+H]+,m+H+CH3OH,1,1,offset,33.033489,FALSE,excel_adducts,pos,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 33.033489,Excel m+CH3OH+H
+positive,[M+K]+,,1,1,offset,38.963158,FALSE,excel_adducts,pos,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 38.963158,Excel m + K
+positive,[M+ACN+K]+,,1,1,offset,79.98971,FALSE,excel_adducts,pos,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 79.98971,Excel m + ACN + K
+positive,[M+NH3+Na]+,,1,1,offset,40.01575,FALSE,excel_adducts,pos,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 40.01575,Excel m + NH3 + Na
+positive,[M+NH3+K]+,,1,1,offset,55.98971,FALSE,excel_adducts,pos,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 55.98971,Excel m + NH3 + K
+positive,[M+60.08065]+,,1,1,offset,60.08065,FALSE,excel_adducts,pos,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 60.08065,Excel numeric; seen in LIB 402
+positive,[M+74.0601]+,,1,1,offset,74.0601,FALSE,excel_adducts,pos,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 74.0601,Excel numeric; seen in LIB 402
+positive,[M]+,m-e,1,1,offset,-0.0005489,FALSE,excel_adducts,pos,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - -0.0005489,Excel m - e; radical cation
+positive,[M+urea+H]+,,1,1,offset,61.03963876,FALSE,excel_adducts,pos,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 61.03963876,Excel m + urea + H; lib 400 high urea
+positive,[M+H-H2O]+,,1,1,offset,-17.003288216416998,FALSE,excel_adducts,pos,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - -17.003288216416998,Excel m + H - H2O
+positive,[M+H-2H2O]+,,1,1,offset,-35.013852899416996,FALSE,excel_adducts,pos,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - -35.013852899416996,Excel m + H - 2H2O
+negative,[M-H]-,,1,1,offset,-1.007276466583,TRUE,excel_adducts,neg,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - -1.007276466583,Excel m - H; default. Unsigned col1 signed negative.
+negative,[M+Na-2H]-,,1,1,offset,20.97465,FALSE,excel_adducts,neg,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 20.97465,Excel m + Na - 2H
+negative,[M+K-2H]-,,1,1,offset,36.94861,FALSE,excel_adducts,neg,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 36.94861,Excel m + K - 2H
+negative,[M+C2H4O3-H]-,,1,1,offset,75.00876,FALSE,excel_adducts,neg,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 75.00876,Excel; seen on NEG for carnitines/LPCs
+negative,[M+CH2O3-H]-,,1,1,offset,60.99312,FALSE,excel_adducts,neg,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 60.99312,Excel; seen on NEG for carnitines/LPCs
+negative,[M+C2H4O3+Na-2H]-,,1,1,offset,96.99069,FALSE,excel_adducts,neg,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 96.99069,Excel NEG
+negative,[M+CH2O3+Na-2H]-,,1,1,offset,82.97505,FALSE,excel_adducts,neg,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 82.97505,Excel NEG
+negative,[M+C2H4O3+K-2H]-,,1,1,offset,112.9646,FALSE,excel_adducts,neg,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 112.9646,Excel NEG
+negative,[M+CH2O3+K-2H]-,,1,1,offset,98.94901,FALSE,excel_adducts,neg,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 98.94901,Excel NEG
+negative,[M+CH3OH-H]-,,1,1,offset,31.018938533,FALSE,excel_adducts,neg,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 31.018938533,Excel m + CH3OH - H (methanol)
+negative,[M+HCOO]-,m+CHOOH-H,1,1,offset,44.99822,FALSE,excel_adducts,polar,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 44.99822,Excel m + CHOOH - H; common on POLAR
+negative,[M+HCOO+Na-2H]-,,1,1,offset,66.98015,FALSE,excel_adducts,polar,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 66.98015,Excel POLAR
+negative,[M+HCOO+K-2H]-,,1,1,offset,82.95411,FALSE,excel_adducts,polar,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 82.95411,Excel POLAR
+negative,[M+Cl]-,,1,1,offset,34.9689,FALSE,excel_adducts,polar,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 34.9689,"Excel m + CL35; common POLAR, occasional NEG"
+negative,[M+37Cl]-,,1,1,offset,36.9659,FALSE,excel_adducts,polar,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 36.9659,"Excel m + CL37; named Cl isotope adduct, not a C13 overlay"
+negative,[M+Cl+Na-H]-,,1,1,offset,56.95082,FALSE,excel_adducts,polar,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 56.95082,Excel m + CL35 + Na - H; POLAR
+negative,[M+Cl+HCOO]-,,1,1,offset,80.9744,FALSE,excel_adducts,polar,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 80.9744,Excel m + CL35 + CHOOH; POLAR
+negative,[M+61.9884]-,,1,1,offset,61.9884,FALSE,excel_adducts,polar,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 61.9884,Excel numeric; POLAR
+negative,[M+61.9884+HCOO]-,,1,1,offset,107.9939,FALSE,excel_adducts,polar,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 107.9939,Excel POLAR
+negative,[M+61.9884+HCOO+Na-H]-,,1,1,offset,129.9758,FALSE,excel_adducts,polar,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 129.9758,Excel POLAR
+negative,[M+61.9884+K-H]-,,1,1,offset,99.94428,FALSE,excel_adducts,polar,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",mz - 99.94428,Excel POLAR
+positive,[M+2H]2+,,2,1,multiply_charged,2.014552,FALSE,legacy_phase0,,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",2*mz - (2.014552),phase0 PROTON_MASS=1.007276; M = 2*mz - mz_minus_M
+positive,[2M+H]+,,1,2,dimer,1.007276,FALSE,legacy_phase0,,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",(mz - (1.007276))/2,phase0 PROTON_MASS=1.007276; M = (mz - mz_minus_M)/2
+negative,[M-2H]2-,,2,1,multiply_charged,-2.014552,FALSE,legacy_phase0,,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",2*mz - (-2.014552),phase0 PROTON_MASS=1.007276; M = 2*mz - mz_minus_M
+negative,[2M-H]-,,1,2,dimer,-1.007276,FALSE,legacy_phase0,,"0;1;2 applied in best_adduct_neutral_mass_match, not extra CSV rows",(mz - (-1.007276))/2,phase0 PROTON_MASS=1.007276; M = (mz - mz_minus_M)/2

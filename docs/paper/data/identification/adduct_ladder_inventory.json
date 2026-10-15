@@ -1,0 +1,12 @@
+{
+  "date": "2026-09-02",
+  "rows_read": 10568,
+  "files": 4,
+  "mapped_to_ladder": 2217,
+  "derived_non_default": 378,
+  "would_move_gt_0.005_Da": 378,
+  "derive_gate": "PASS",
+  "analog_on_run_inference": false,
+  "analog_gate": "SKIP",
+  "note": "Proceed to EC2 candidates-to-rerank with --derive-neutral-mass-from-adduct. Do not regen analog unless evaluation.assembly is rerun. Do not change closest_neutral_mass until McNemar."
+}

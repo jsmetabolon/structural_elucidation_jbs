@@ -3,6 +3,10 @@
 
 from __future__ import annotations
 
+from structural_elucidation.chemistry.adduct_ladder import (
+    hypotheses as adduct_ladder_hypotheses,
+    include_polar_for_lib,
+)
 from structural_elucidation.paths import REPO_ROOT
 
 import argparse
@@ -34,21 +38,6 @@ if HAS_RDKIT:
     from rdkit.Chem import AllChem
 
 
-PROTON_MASS = 1.007276466621
-NEG_ADDUCTS = {
-    "[M-H]-": lambda mz: mz + PROTON_MASS,
-    "[M+FA-H]-": lambda mz: mz - 44.998201,
-    "[M+CH3COO]-": lambda mz: mz - 59.013851,
-    "[M+Cl]-": lambda mz: mz - 34.969402,
-    "[M-2H]2-": lambda mz: 2.0 * mz + 2.0 * PROTON_MASS,
-}
-POS_ADDUCTS = {
-    "[M+H]+": lambda mz: mz - PROTON_MASS,
-    "[M+Na]+": lambda mz: mz - 22.989218,
-    "[M+K]+": lambda mz: mz - 38.963158,
-    "[M+NH4]+": lambda mz: mz - 18.033823,
-    "[M+H-H2O]+": lambda mz: mz + 18.010565 - PROTON_MASS,
-}
 PROFILE_TOLERANCE = {"strict_1da": 1.0, "balanced": 5.0}
 
 
@@ -73,17 +62,23 @@ def max_tanimoto(fp, anchor_fps: list[Any]) -> float:
     return max(values) if values else 0.0
 
 
-def mass_match(pred_mass: float, parent_mz: float, ion_mode: str) -> dict[str, Any]:
+def mass_match(
+    pred_mass: float,
+    parent_mz: float,
+    ion_mode: str,
+    *,
+    include_polar: bool = True,
+) -> dict[str, Any]:
     """Evaluate precursor mass agreement for a predicted neutral mass."""
-    adducts = NEG_ADDUCTS if str(ion_mode) == "negative" else POS_ADDUCTS
     rows = []
-    for adduct, fn in adducts.items():
-        neutral = float(fn(float(parent_mz)))
+    for adduct, neutral in adduct_ladder_hypotheses(
+        float(parent_mz), ion_mode, include_polar=include_polar
+    ):
         rows.append(
             {
                 "adduct": adduct,
-                "neutral_mass": neutral,
-                "abs_mass_error_da": abs(float(pred_mass) - neutral),
+                "neutral_mass": float(neutral),
+                "abs_mass_error_da": abs(float(pred_mass) - float(neutral)),
                 "hypothesis": adduct,
                 "isotope_shift_count": 0,
             }
@@ -263,6 +258,7 @@ def score_feature_candidates(
     anchors: list[dict[str, Any]],
     tolerance_da: float,
     max_candidates_per_feature: int,
+    include_polar: bool = True,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Score and rank analog candidates for one target feature."""
     lib_id = int(target.get("lib_id"))
@@ -298,8 +294,15 @@ def score_feature_candidates(
 
     prefilter_size = max(int(max_candidates_per_feature) * 8, 200)
     exact_masses = pd.to_numeric(scoped["exact_mass"], errors="coerce").to_numpy(dtype=float)
-    adducts = NEG_ADDUCTS if ion_mode == "negative" else POS_ADDUCTS
-    neutral_masses = np.asarray([float(fn(parent_mz)) for fn in adducts.values()], dtype=float)
+    neutral_masses = np.asarray(
+        [
+            float(neutral)
+            for _, neutral in adduct_ladder_hypotheses(
+                parent_mz, ion_mode, include_polar=include_polar
+            )
+        ],
+        dtype=float,
+    )
     rough_mass_errors = np.min(np.abs(exact_masses.reshape(-1, 1) - neutral_masses.reshape(1, -1)), axis=1)
     anchor_order = np.argsort(-anchor_tanimotos)[:prefilter_size]
     mass_order = np.argsort(rough_mass_errors)[:prefilter_size]
@@ -310,7 +313,7 @@ def score_feature_candidates(
         pred_mass = safe_float(cand.get("exact_mass"), math.nan)
         if not np.isfinite(pred_mass):
             continue
-        match = mass_match(pred_mass, parent_mz, ion_mode)
+        match = mass_match(pred_mass, parent_mz, ion_mode, include_polar=include_polar)
         abs_err = safe_float(match.get("abs_mass_error_da"), math.inf)
         strict_pass = abs_err <= 1.0
         anchor_tan = float(anchor_tanimotos[pos])
@@ -465,6 +468,7 @@ def run_analog_generation(
     anchor_top_n: int,
     max_candidates_per_feature: int,
     top_k: int,
+    drop_polar_adducts: bool = False,
 ) -> dict[str, Any]:
     """Run retrieval-anchored analog generation across targets."""
     if not HAS_RDKIT:
@@ -492,6 +496,7 @@ def run_analog_generation(
         for scope, targets in scoped_targets:
             if targets.empty:
                 continue
+            include_polar = include_polar_for_lib(int(lib_id)) if drop_polar_adducts else True
             for profile in profiles:
                 output_profile = profile if scope == "x_control" else f"non_x_holdout_{profile}"
                 profile_dir = run_root / f"lib_{int(lib_id)}_{mode}" / "selfies_profiles" / output_profile
@@ -511,6 +516,7 @@ def run_analog_generation(
                         anchors=anchors,
                         tolerance_da=PROFILE_TOLERANCE.get(profile, 5.0),
                         max_candidates_per_feature=max_candidates_per_feature,
+                        include_polar=include_polar,
                     )
                     for row in rows:
                         row["holdout_scope"] = str(target["holdout_scope"])
@@ -569,6 +575,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--anchor-top-n", type=int, default=5)
     parser.add_argument("--max-candidates-per-feature", type=int, default=50)
     parser.add_argument("--top-k", type=int, default=10)
+    parser.add_argument(
+        "--drop-polar-adducts",
+        action="store_true",
+        help="On NEG-only libs 209/305, omit platform_hint=polar ladder rows (Cl/formate).",
+    )
     return parser.parse_args()
 
 
@@ -596,6 +607,7 @@ def main() -> None:
         anchor_top_n=int(args.anchor_top_n),
         max_candidates_per_feature=int(args.max_candidates_per_feature),
         top_k=int(args.top_k),
+        drop_polar_adducts=bool(args.drop_polar_adducts),
     )
     print(json.dumps({"run_root": payload["run_root"], "outputs": len(payload["outputs"])}, indent=2))
 

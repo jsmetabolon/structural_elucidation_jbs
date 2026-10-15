@@ -12,7 +12,11 @@ decision, but it now has a cheaper option that did not exist when this was writt
 
 Background and the full measurement are in the decision record at the end of
 [docs/paper/REVISION_LOG.md](paper/REVISION_LOG.md) and in
-`docs/paper/data/thresholds/audit_mass_policy.json`.
+`docs/paper/data/thresholds/audit_mass_policy.json`. A QC-framed cut of the same
+delivered tables — typical QC of <5 ppm versus a 10 ppm reporting ceiling — is
+[docs/paper/data/thresholds/audit_ppm_qc.md](paper/data/thresholds/audit_ppm_qc.md).
+Typical rank-1 and truth-matched errors sit inside that QC bar; a 10 ppm ceiling
+was not applied to the reports.
 
 ## What was found
 
