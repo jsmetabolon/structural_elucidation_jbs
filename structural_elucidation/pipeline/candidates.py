@@ -29,6 +29,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from structural_elucidation.chemistry.adduct_ladder import derive_target_neutral_mass, keeps_search_mass
 from structural_elucidation.chemistry.conjugates import (
     CONJUGATE_REACTIONS,
     apply_reaction,
@@ -382,8 +383,18 @@ def parse_controls(text: Any) -> list[str]:
     return sorted(dict.fromkeys(controls))
 
 
-def mass_hypotheses(features: pd.DataFrame, adducts: pd.DataFrame) -> pd.DataFrame:
-    """Union neutral-mass targets from feature fallbacks and adduct hypotheses."""
+def mass_hypotheses(
+    features: pd.DataFrame,
+    adducts: pd.DataFrame,
+    *,
+    derive_from_adduct: bool = False,
+) -> pd.DataFrame:
+    """Union neutral-mass targets from feature fallbacks and adduct hypotheses.
+
+    When ``derive_from_adduct`` is True, mapped non-default ladder labels invert
+    ``parent_mz``; protonated ``[M±H]`` and unmapped labels keep stored masses.
+    Default is False so ``run_inference.sh`` ranking is unchanged.
+    """
     feature_map = features.copy()
     if "control_id" not in feature_map.columns:
         feature_map["control_id"] = feature_map.get("feature_key", pd.Series("", index=feature_map.index)).map(
@@ -411,20 +422,43 @@ def mass_hypotheses(features: pd.DataFrame, adducts: pd.DataFrame) -> pd.DataFra
             }
         )
     for _, row in adduct_work.iterrows():
-        rows.append(
-            {
-                "control_id": str(row.get("control_id", "")),
-                "feature_key": row.get("feature_key", ""),
-                "comp_id": row.get("comp_id", ""),
-                "lib_id": row.get("lib_id", 209),
-                "ion_mode": row.get("ion_mode", "negative"),
-                "parent_mz": row.get("parent_mz", ""),
-                "target_neutral_mass": row.get("neutral_mass", ""),
-                "adduct_label": row.get("adduct_label", ""),
-                "formula_prior_score": row.get("formula_prior_score", 0.0),
-                "ms1_buddy_supported": row.get("ms1_buddy_supported", False),
-            }
-        )
+        stored = row.get("neutral_mass", "")
+        label = row.get("adduct_label", "")
+        ion_mode = row.get("ion_mode", "negative")
+        parent_mz = row.get("parent_mz", "")
+        if not keeps_search_mass(str(label), str(ion_mode)):
+            continue
+        target_mass = stored
+        source = "stored"
+        stored_mass = safe_float(stored, math.nan)
+        shift = 0.0
+        if derive_from_adduct:
+            mz = safe_float(parent_mz, math.nan)
+            if np.isfinite(mz):
+                stored_opt = float(stored_mass) if np.isfinite(stored_mass) else None
+                derived, source, shift_val = derive_target_neutral_mass(
+                    mz, str(ion_mode), str(label), stored_opt
+                )
+                if derived is not None:
+                    target_mass = derived
+                shift = float(shift_val) if shift_val is not None else math.nan
+        payload = {
+            "control_id": str(row.get("control_id", "")),
+            "feature_key": row.get("feature_key", ""),
+            "comp_id": row.get("comp_id", ""),
+            "lib_id": row.get("lib_id", 209),
+            "ion_mode": ion_mode,
+            "parent_mz": parent_mz,
+            "target_neutral_mass": target_mass,
+            "adduct_label": label,
+            "formula_prior_score": row.get("formula_prior_score", 0.0),
+            "ms1_buddy_supported": row.get("ms1_buddy_supported", False),
+        }
+        if derive_from_adduct:
+            payload["neutral_mass_source"] = source
+            payload["neutral_mass_stored"] = stored
+            payload["neutral_mass_shift_da"] = shift
+        rows.append(payload)
     out = pd.DataFrame(rows)
     if out.empty:
         return out
@@ -643,7 +677,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     controls = parse_controls(getattr(args, "controls", "")) or target_controls(diagnosis)
     hmdb = prepare_external_libraries(args)
     nce = prepare_nce_snapshot(Path(str(args.nce_full_smiles)).expanduser(), int(args.lib_id))
-    targets = mass_hypotheses(features, adducts)
+    targets = mass_hypotheses(
+        features, adducts, derive_from_adduct=bool(getattr(args, "derive_neutral_mass_from_adduct", False))
+    )
     candidates = build_candidates(controls, targets, hmdb, nce, diagnosis, args)
     out_dir = (
         output_root
@@ -766,6 +802,15 @@ def main() -> None:
     parser.add_argument("--max-products-per-reaction", type=int, default=3)
     parser.add_argument("--max-candidates-per-feature", type=int, default=250)
     parser.add_argument("--top-k", type=int, default=10)
+    parser.add_argument(
+        "--derive-neutral-mass-from-adduct",
+        action="store_true",
+        help=(
+            "Invert parent m/z from mapped ladder labels (non-default adducts). "
+            "Default off: stored CHRO_LIB masses and [M±H] scoring are unchanged. "
+            "Requires a candidates-to-rerank rerun and paired control eval before shipping."
+        ),
+    )
     args = parser.parse_args()
     with stage_timer("candidates", lib_id=int(args.lib_id), ion_mode=str(args.ion_mode)):
         run(args)

@@ -99,3 +99,42 @@ def test_canonicalize_many_serial_and_parallel_match():
     parallel = cand._canonicalize_many(values, workers=2)
     assert serial == parallel
     assert serial[0] == (canonicalize_smiles("CCO") or "")
+
+
+def test_mass_hypotheses_derive_flag_default_keeps_stored():
+    features = pd.DataFrame(
+        [
+            {
+                "control_id": "X-1",
+                "feature_key": "fk",
+                "comp_id": 1,
+                "lib_id": 400,
+                "ion_mode": "positive",
+                "parent_mz": 200.0,
+                "neutral_mass_fallback": 198.992724,
+            }
+        ]
+    )
+    adducts = pd.DataFrame(
+        [
+            {
+                "feature_key": "fk",
+                "comp_id": 1,
+                "lib_id": 400,
+                "ion_mode": "positive",
+                "parent_mz": 200.0,
+                "neutral_mass": 198.992724,
+                "adduct_label": "m+Na",
+                "formula_prior_score": 0.0,
+                "ms1_buddy_supported": False,
+            }
+        ]
+    )
+    off = cand.mass_hypotheses(features, adducts)
+    on = cand.mass_hypotheses(features, adducts, derive_from_adduct=True)
+    assert off["adduct_label"].tolist() == ["neutral_mass_fallback"]
+    assert on["adduct_label"].tolist() == ["neutral_mass_fallback"]
+    assert float(off.iloc[0]["target_neutral_mass"]) == pytest.approx(198.992724)
+    assert float(on.iloc[0]["target_neutral_mass"]) == pytest.approx(198.992724)
+    assert "neutral_mass_source" not in off.columns
+

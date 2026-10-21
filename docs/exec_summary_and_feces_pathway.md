@@ -62,6 +62,28 @@ the manuscript does:
   formula agrees with the annotation
 - 3,642 compounds not assessable on either basis
 
+### Feature names and the workbook
+
+`feature_name` is the name the report's naming policy allows. For Naming v2
+bundles (`output/reports_ppm10_full_naming_v2`) that is: a bare name at Level 1
+(authentic standard), `Probable <name>` at Level 2, `Possible <name>` at Level 3
+(curated `known_X` hypothesis), `<formula>; structure unresolved` at Level 4 and
+`Exact mass <m>; unidentified` at Level 5. One sheet-level rule sits on top: a
+compound whose rank-1 structure is already a catalogued global-library
+metabolite, and which the report therefore left at a formula or exact-mass
+placeholder, is written `Isomer of <library metabolite>` (an X-compound cannot
+*be* a metabolite the library already names, so the relationship is the
+informative label). The report's own label is kept in `report_display_name`,
+and every excluded library metabolite is listed in `excluded_library_reference`.
+Names from a compound's own `known_X` row and authentic-standard identities are
+never re-qualified.
+
+`tools/build_exec_summary_workbook.py --exec-dir <out-dir>` turns the CSVs into
+`executive_summary_top10.xlsx` (top-10 sheet, by-compound sheet, a
+`naming_conventions` legend and a `summary` sheet). `scripts/generate_ppm10_full_reports.sh`
+runs it after the CSV export. The reviewed copy lives at
+`docs/paper/data/exec_summary/executive_summary_top10.xlsx`.
+
 ## 2. Updated feces pathway composition
 
 `tools/build_feces_pathway_update.py` recomputes the chemical-pathway breakdown

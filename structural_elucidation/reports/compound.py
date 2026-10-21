@@ -47,11 +47,14 @@ import structural_elucidation.utils.wgcna as wgcna
 from structural_elucidation.nce.evidence import ri_proxy_from_smiles
 from structural_elucidation.paths import REPO_ROOT, resolve
 from structural_elucidation.reports import confidence as confmod
+from structural_elucidation.reports import novel_scoring
+from structural_elucidation.reports import naming_v2
 from structural_elucidation.reports import pathway_explain as pathmod
 from structural_elucidation.reports import tentative_naming as tnmod
 from structural_elucidation.reports.tentative_naming_ext import default_extended_context
 from structural_elucidation.utils.denovo import exact_mass_from_smiles, formula_from_smiles, inchikey_from_smiles
 from structural_elucidation.utils.domain import ri_from_feature_key
+from structural_elucidation.utils.phase0 import best_adduct_neutral_mass_match
 
 try:
     from rdkit import Chem
@@ -638,12 +641,68 @@ def compact_candidate_scores(candidates: pd.DataFrame) -> pd.DataFrame:
         "fusion_source_label",
         "rerank_policy",
         "source_comp_id",
+        "hypothesized_adduct",
+        "adduct_mass_error_da",
+        "adduct_isotope_shift_count",
     ]
     present = [col for col in columns if col in candidates.columns]
     out = candidates[present].copy()
     for col in out.columns:
         if pd.api.types.is_numeric_dtype(out[col]):
             out[col] = pd.to_numeric(out[col], errors="coerce").round(6)
+    return out
+
+
+def _ion_mode_from_row(row: Any) -> str:
+    """Prefer an explicit ion_mode column; else infer from library id."""
+    if isinstance(row, pd.Series):
+        mode = str(row.get("ion_mode") or "").strip().lower()
+        lib = row.get("lib_id")
+    elif isinstance(row, dict):
+        mode = str(row.get("ion_mode") or "").strip().lower()
+        lib = row.get("lib_id")
+    else:
+        return "negative"
+    if mode in {"positive", "negative"}:
+        return mode
+    try:
+        return "negative" if int(lib) in {209, 305} else "positive"
+    except (TypeError, ValueError):
+        return "negative"
+
+
+def annotate_adduct_hypotheses(
+    candidates: pd.DataFrame,
+    parent_mz: float,
+    ion_mode: str,
+) -> pd.DataFrame:
+    """Add closest-ladder adduct labels without changing mass_match_score."""
+    out = candidates.copy()
+    if out.empty or not parent_mz:
+        out["hypothesized_adduct"] = ""
+        out["adduct_mass_error_da"] = ""
+        out["adduct_isotope_shift_count"] = ""
+        return out
+    adducts: list[str] = []
+    errors: list[Any] = []
+    shifts: list[Any] = []
+    for _, row in out.iterrows():
+        smiles = str(row.get("predicted_smiles", "") or "")
+        mass = exact_mass_from_smiles(smiles) if smiles else None
+        if mass is None or not math.isfinite(float(mass)):
+            adducts.append("")
+            errors.append("")
+            shifts.append("")
+            continue
+        match = best_adduct_neutral_mass_match(
+            float(mass), float(parent_mz), ion_mode=ion_mode
+        )
+        adducts.append(str(match.get("adduct") or ""))
+        errors.append(float(match.get("abs_mass_error_da") or 0.0))
+        shifts.append(int(match.get("isotope_shift_count") or 0))
+    out["hypothesized_adduct"] = adducts
+    out["adduct_mass_error_da"] = errors
+    out["adduct_isotope_shift_count"] = shifts
     return out
 
 
@@ -820,6 +879,8 @@ def build_candidate_consensus_maps(
             "abs_mass_error_da": row.get("abs_mass_error_da", ""),
             "evidence_confidence": row.get("evidence_confidence", ""),
             "mass_match_score": row.get("mass_match_score", ""),
+            "hypothesized_adduct": row.get("hypothesized_adduct", ""),
+            "adduct_mass_error_da": row.get("adduct_mass_error_da", ""),
         }
     default_rank = 1 if 1 in maps else (min(maps) if maps else 0)
     return maps, summaries, default_rank
@@ -857,12 +918,19 @@ def _candidate_score_line_html(row: dict[str, Any]) -> str:
     parts = []
     ev = fnum(row.get("evidence_confidence"), 3)
     mm = fnum(row.get("mass_match_score"), 3)
+    hyp = str(row.get("hypothesized_adduct") or "").strip()
+    hyp_err = fnum(row.get("adduct_mass_error_da"), 6)
     rs = fnum(row.get("candidate_report_score"), 4)
     me = fnum(row.get("abs_mass_error_da"), 6)
     if ev is not None:
         parts.append(f"Evidence confidence: <strong>{ev}</strong>")
     if mm is not None:
         parts.append(f"Mass match: <strong>{mm}</strong>")
+    if hyp:
+        hyp_txt = html.escape(hyp)
+        if hyp_err is not None:
+            hyp_txt += f" ({hyp_err} Da)"
+        parts.append(f"Closest adduct (annotation): <strong>{hyp_txt}</strong>")
     if rs is not None:
         parts.append(f"Rank score (relative): <strong>{rs}</strong>")
     if me is not None:
@@ -2163,12 +2231,10 @@ def resolve_pathway_display(
 ) -> dict[str, Any]:
     """Resolve super/sub pathway for the report.
 
-    Prefers an exact metabolite-DB record; otherwise falls back to the neighbor
-    consensus prediction carried on the rank-1 rerank row (``predicted_pathway`` /
-    ``predicted_subpathway`` + ``pathway_confidence_tier`` /
-    ``pathway_best_reference_similarity``, produced by the pathway enrichment).
-    Returns super/sub plus the provenance so the report can label predicted vs
-    exact honestly.
+    Prefers an exact metabolite-DB record; otherwise the compound-level
+    weighted assignment (``compound_predicted_pathway``) when present; otherwise
+    the rank-1 structure's neighbor-consensus prediction. Returns super/sub plus
+    the provenance so the report can label predicted vs exact honestly.
 
     ``chemical_id_basis`` records how the catalogue record was found. Three
     routes reach the same "exact reference match" - a structure match, a name
@@ -2192,6 +2258,33 @@ def resolve_pathway_display(
             "status": "exact_reference_match",
             "basis": chemical_id_basis or pathmod.BASIS_NONE,
             "note": "From reference DB record",
+        }
+
+    compound_super = clean(rank1.get("compound_predicted_pathway"))
+    compound_sub = clean(rank1.get("compound_predicted_subpathway"))
+    if compound_super or compound_sub:
+        status = clean(rank1.get("compound_pathway_status")) or "weighted_candidate_consensus"
+        source_kind = clean(rank1.get("compound_pathway_source")) or status
+        vote_share = 0.0
+        vote_raw = rank1.get("compound_pathway_vote_share")
+        if vote_raw is not None and not pd.isna(vote_raw):
+            try:
+                vote_share = float(vote_raw)
+            except (TypeError, ValueError):
+                vote_share = 0.0
+        n_voters = clean(rank1.get("compound_pathway_n_voters")) or "0"
+        return {
+            "super": compound_super,
+            "sub": compound_sub,
+            "source": "predicted",
+            "tier": clean(rank1.get("pathway_confidence_tier")) or "low",
+            "similarity": vote_share,
+            "status": status,
+            "basis": pathmod.BASIS_NEIGHBOR_VOTE,
+            "note": (
+                f"Compound-level assignment ({source_kind}, "
+                f"{n_voters} voters, vote share {vote_share:.2f})"
+            ),
         }
 
     pred_super = clean(rank1.get("predicted_pathway"))
@@ -2310,6 +2403,19 @@ def render_html(
         top_similarity_badge = f"Nearest-ref Tanimoto {top_similarity:.2f}"
     else:
         top_similarity_badge = "No reference match"
+    excluded_reference_rows = []
+    for item in conf_fields.get("excluded_library_matches") or []:
+        for match in item.get("matches") or []:
+            excluded_reference_rows.append(
+                f"<li>Excluded named-library reference: {html.escape(str(match.get('name') or ''))} "
+                f"({html.escape(str(match.get('chemical_id') or ''))}); model rank "
+                f"{html.escape(str(item.get('model_rank') or ''))}</li>"
+            )
+    excluded_reference_html = (
+        "<section class='section'><h2>Excluded named-library references</h2><ul>"
+        + "".join(excluded_reference_rows) + "</ul></section>"
+        if excluded_reference_rows else ""
+    )
     pubchem_link = f"https://pubchem.ncbi.nlm.nih.gov/#query={quote(str(target['name']))}"
     top_candidate = candidate_scores[0] if candidate_scores else {}
     synonym_lines = [
@@ -2497,7 +2603,8 @@ def render_html(
         <div class="metric-card"><div class="metric-label">Top candidate</div><div class="metric-value">{html.escape(target['name'])}</div><div class="metric-note">Rank-1 displayed candidate</div></div>
         <div class="metric-card"><div class="metric-label">Candidate rows</div><div class="metric-value">{len(candidate_scores)}</div><div class="metric-note">Displayed SMILES candidates</div></div>
         <div class="metric-card"><div class="metric-label">Known neighbors</div><div class="metric-value">{len(neighbors)}</div><div class="metric-note">Structured DB neighborhood</div></div>
-        <div class="metric-card"><div class="metric-label">Mass error</div><div class="metric-value">{evidence['mass_error_da']:.6f}</div><div class="metric-note">Neutral mass Da</div></div>"""
+        <div class="metric-card"><div class="metric-label">Mass error</div><div class="metric-value">{evidence['mass_error_da']:.6f}</div><div class="metric-note">Neutral mass Da vs [M±H]</div></div>
+        <div class="metric-card"><div class="metric-label">Closest adduct (annotation)</div><div class="metric-value">{html.escape(str(evidence.get('hypothesized_adduct') or 'n/a'))}</div><div class="metric-note">Ladder match; does not change mass_match_score</div></div>"""
     # Levels 4-5 report a formula or a mass, not a structure. The published
     # description of the workflow has always said so, but the renderer drew the
     # structure panel unconditionally, so nothing was actually withheld. A
@@ -2825,6 +2932,7 @@ def render_html(
     </div>
   </header>
   <main>
+    {excluded_reference_html}
     <section class="section">
       {heading_with_info("h2", "Top Candidate Compound")}
       <p class="note">
@@ -2835,6 +2943,7 @@ def render_html(
         {confmod.confidence_metric_card_html(confidence)}
         {confmod.msi_metric_card_html(confidence)}
         {confmod.identity_metric_card_html(confidence)}
+        {novel_scoring.publication_cards_html(conf_fields)}
       </div>
       <div class="structure-card" style="margin-top:18px;">
         {heading_with_info("h3", "Identification Evidence", include_info=False)}
@@ -2982,6 +3091,12 @@ def render_html(
         const me = fmt(summary.abs_mass_error_da, 6);
         if (ev !== null) seg.push('Evidence confidence: <strong>' + ev + '</strong>');
         if (mm !== null) seg.push('Mass match: <strong>' + mm + '</strong>');
+        if (summary.hypothesized_adduct) {{
+          let hyp = String(summary.hypothesized_adduct);
+          const he = fmt(summary.adduct_mass_error_da, 6);
+          if (he !== null) hyp += ' (' + he + ' Da)';
+          seg.push('Closest adduct (annotation): <strong>' + hyp + '</strong>');
+        }}
         if (rs !== null) seg.push('Rank score (relative): <strong>' + rs + '</strong>');
         if (me !== null) seg.push('Mass error (Da): <strong>' + me + '</strong>');
         if (seg.length) bits.push('<p>' + seg.join(' · ') + '</p>');
@@ -3324,6 +3439,173 @@ def render_guides_html(control_id: str, guide_targets: list[tuple[str, str]]) ->
 </html>"""
 
 
+def build_v2_unresolved_report(
+    args: argparse.Namespace,
+    control_id: str,
+    out_dir: Path,
+    data_dir: Path,
+    known_x_row: dict[str, Any],
+    decision: dict[str, Any],
+    raw_top: pd.DataFrame,
+) -> dict[str, Any]:
+    """Report an X hypothesis without depicting an excluded library structure."""
+    slug = control_slug(control_id)
+    raw = raw_top.iloc[0] if not raw_top.empty else {}
+    formula = str(known_x_row.get("Formula") or raw.get("target_formula") or "").strip()
+    if formula.lower() in {"nan", "none"}:
+        formula = ""
+    observed_mz = pd.to_numeric(raw.get("parent_mz"), errors="coerce")
+    if pd.isna(observed_mz):
+        mz_match = re.search(r"_mz([0-9]+(?:\.[0-9]+)?)_", str(raw.get("feature_key") or ""))
+        observed_mz = float(mz_match.group(1)) if mz_match else None
+    observed_mz = float(observed_mz) if observed_mz is not None and pd.notna(observed_mz) else None
+    hypothesis = decision["curated_hypothesis"]
+    level = 3 if hypothesis else (4 if formula else 5)
+    if hypothesis:
+        name = f"Possible {hypothesis}"
+        rationale = "Compound-specific tentative X annotation; molecular structure remains unassigned"
+    elif formula:
+        name = f"{formula}; structure unresolved"
+        rationale = "No identity-eligible structure; reporting the annotated formula"
+    else:
+        name = f"Exact mass {observed_mz:.4f}; unidentified" if observed_mz else "Exact mass of interest; unidentified"
+        rationale = "No identity-eligible structure or molecular formula"
+    fields = confmod.fields_from_parts(
+        {}, None, {"pathway_source": "predicted", "pathway_confidence_tier": "low"},
+        observed_mz_available=observed_mz is not None,
+        lib_id=raw.get("lib_id"),
+        observed_retention_index=_finite_or_none(ri_from_feature_key(raw.get("feature_key"))),
+    )
+    fields.update({
+        "observed_mz": observed_mz,
+        "metabolon_level": str(known_x_row.get("Level") or "").strip(),
+        "name_resolved": False,
+        "display_name": name,
+        "resolved_name": hypothesis,
+        "synonyms": [],
+        "msi_level": level,
+        "msi_label": confmod.MSI_LABELS[level],
+        "msi_rationale": rationale,
+        "identity_status": "unknown",
+        "identity_confidence": None,
+        "identity_basis": "No identity-eligible structure",
+        "assurance": "none",
+    })
+    fields.update({key: decision[key] for key in (
+        "naming_policy_version", "name_source", "identity_candidate_rank",
+        "library_collision", "identity_eligible", "identity_exclusion_reason",
+        "excluded_library_matches", "raw_rank1_candidate", "identity_candidate",
+        "exception_basis", "review_verdict",
+    )})
+    scoring_path = getattr(args, "scoring_json", None)
+    scoring_payload = novel_scoring.read_scoring_payload(scoring_path, control_id) if scoring_path else None
+    if scoring_payload:
+        fields = dict(scoring_payload["fields"])
+        level = int(fields["msi_level"])
+        rationale = fields["msi_rationale"]
+        name = fields.get("display_name", name)
+        (data_dir / f"{slug}_scoring.json").write_text(json.dumps(scoring_payload, indent=2))
+    conf = novel_scoring.confidence_from_fields(fields)
+    fields["evidence_score"] = conf.evidence_score
+    fields["overall"] = conf.overall
+    fields["tier"] = "Tentative"
+    (data_dir / f"{slug}_confidence_inputs.json").write_text(json.dumps(fields, indent=2))
+    pd.DataFrame([known_x_row]).to_csv(data_dir / f"{slug}_known_x_row.csv", index=False)
+    # The ranked model output is retained solely as an audit file.  The public
+    # candidate table is empty because none of those structures can be shown as
+    # the feature's proposed identity.
+    (data_dir / f"{slug}_top_candidates.csv").write_text("")
+    (data_dir / f"{slug}_candidate_score_summary.csv").write_text("")
+    def _cell(value: Any) -> str:
+        text = str("" if value is None else value).strip()
+        return "" if text.lower() in {"", "nan", "none", "null", "<na>"} else text
+
+    predicted_super = _cell(raw.get("compound_predicted_pathway")) or _cell(raw.get("predicted_pathway"))
+    predicted_sub = _cell(raw.get("compound_predicted_subpathway")) or _cell(raw.get("predicted_subpathway"))
+    pathway_super = predicted_super or _cell(known_x_row.get("SuperPathway"))
+    pathway_sub = predicted_sub or _cell(known_x_row.get("Draft Subpathway"))
+    pathway_source = "compound_prediction" if predicted_super or predicted_sub else "known_x_annotation"
+    pathway_tier = _cell(raw.get("pathway_confidence_tier")) or "tentative"
+    pathway_status = (
+        _cell(raw.get("compound_pathway_status"))
+        or _cell(raw.get("pathway_assignment_status"))
+        or "curated_x_annotation"
+    )
+    spectrum_score = pd.to_numeric(raw.get("predicted_spectrum_score_v2"), errors="coerce")
+    mass_ppm = pd.to_numeric(raw.get("abs_mass_error_ppm"), errors="coerce")
+    pd.DataFrame([{
+        "control_id": control_id, "predicted_pathway": pathway_super,
+        "predicted_subpathway": pathway_sub, "pathway_source": pathway_source,
+        "pathway_confidence_tier": pathway_tier,
+        "pathway_best_reference_similarity": raw.get("pathway_best_reference_similarity", ""),
+        "pathway_assignment_status": pathway_status,
+        "predicted_spectrum_score_v2": None if pd.isna(spectrum_score) else float(spectrum_score),
+        "abs_mass_error_ppm": None if pd.isna(mass_ppm) else float(mass_ppm),
+    }]).to_csv(data_dir / f"{slug}_pathway_prediction.csv", index=False)
+    target = {"control_id": control_id, "name": name, "smiles": "",
+              "formula": formula, "exact_mass": None, "inchikey": ""}
+    evidence = {"target": target, "evidence": {"identity_basis": rationale},
+                "db_detail": {}, "excluded_library_matches": decision["excluded_library_matches"]}
+    (data_dir / f"{slug}_evidence_summary.json").write_text(json.dumps(evidence, indent=2))
+    exclusions = []
+    for item in decision["excluded_library_matches"]:
+        for match in item["matches"]:
+            exclusions.append(
+                f"<tr><td>{item['model_rank']}</td><td>{html.escape(match['name'])}</td>"
+                f"<td>{html.escape(match['chemical_id'])}</td>"
+                f"<td>{html.escape(item['reason'])}</td></tr>"
+            )
+    exclusion_table = (
+        "<h2>Excluded named-library references</h2><table><thead><tr><th>Model rank</th>"
+        "<th>Reference metabolite</th><th>Library ID</th><th>Reason</th></tr></thead><tbody>"
+        + "".join(exclusions) + "</tbody></table>"
+    ) if exclusions else ""
+    source_note = (
+        "The name is a compound-specific tentative annotation. Its positional identity "
+        "and full structure have not been established."
+        if hypothesis else "No candidate structure passed the identity gate."
+    )
+    review_note = (
+        f"<p>Review provenance: {html.escape(decision['review_verdict'])}; "
+        "this review does not establish the excluded library identity.</p>"
+        if decision["review_verdict"] else ""
+    )
+    page = f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><title>{html.escape(name)} · {control_id}</title>
+<style>body{{font:16px/1.5 system-ui,sans-serif;max-width:900px;margin:40px auto;padding:0 24px;color:#18324b}}
+h1{{line-height:1.2}}.note{{background:#eef5f9;padding:18px;border-radius:8px}}table{{border-collapse:collapse;width:100%}}
+td,th{{padding:9px;text-align:left;border-bottom:1px solid #ccd8e2}}code{{font-size:.9em}}</style></head><body>
+<p><a href="../index.html">All reports</a> · {control_id} · Naming policy v2</p><h1>{html.escape(name)}</h1>
+<p class="note">{html.escape(source_note)}</p>
+{review_note}
+<p>MSI Level {level}: {html.escape(confmod.MSI_LABELS[level])}. {html.escape(rationale)}</p>
+{confmod.confidence_metric_card_html(conf)}
+{novel_scoring.publication_cards_html(fields)}
+<p>Formula: <code>{html.escape(formula or 'unresolved')}</code> · Observed m/z: {f'{observed_mz:.4f}' if observed_mz else 'unavailable'}</p>
+<p>Pathway: {html.escape(pathway_super or 'unresolved')} / {html.escape(pathway_sub or 'unresolved')}
+({html.escape(pathway_source.replace('_', ' '))}, {html.escape(pathway_tier)} confidence).</p>
+<p>Spectrum score: {f'{float(spectrum_score):.3f}' if pd.notna(spectrum_score) else 'unavailable'}
+· Mass error: {f'{float(mass_ppm):.2f} ppm' if pd.notna(mass_ppm) else 'unavailable'}.</p>
+{exclusion_table}<p>Original model ranks and exclusion reasons: <a href="data/{slug}_candidate_annotations.json">candidate audit</a>.</p>
+</body></html>"""
+    for filename in ("public.html", "internal.html", "index.html", f"{control_id.replace('-', '_')}.html"):
+        (out_dir / filename).write_text(page)
+    (out_dir / "guides.html").write_text(render_guides_html(control_id, []))
+    payload = {
+        "out_dir": str(out_dir), "html": str(out_dir / "index.html"),
+        "public_html": str(out_dir / "public.html"), "internal_html": str(out_dir / "internal.html"),
+        "n_neighbors": 0, "target": target, "db_chemical_id": "",
+        "control_id": control_id,
+    }
+    payload.update({key: decision[key] for key in (
+        "naming_policy_version", "name_source", "identity_candidate_rank",
+        "library_collision", "identity_eligible", "identity_exclusion_reason",
+        "excluded_library_matches", "raw_rank1_candidate", "identity_candidate",
+        "review_verdict",
+    )})
+    (out_dir / "manifest.json").write_text(json.dumps(payload, indent=2))
+    return payload
+
+
 def build_report(args: argparse.Namespace) -> dict[str, Any]:
     """Orchestrate data load, scoring, network build, and HTML/CSV artifact emission."""
 
@@ -3358,7 +3640,76 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     peak_csv = resolve(args.peak_csv, repo_root) if args.peak_csv else None
     peaks = pd.read_csv(peak_csv, low_memory=False) if peak_csv and peak_csv.exists() else pd.DataFrame()
 
-    rank1 = top.sort_values("rank", kind="mergesort").iloc[0]
+    top = top.sort_values("rank", kind="mergesort")
+    raw_top = top.copy()
+    scoring_path = getattr(args, "scoring_json", None)
+    scoring_payload = novel_scoring.read_scoring_payload(scoring_path, control_id) if scoring_path else None
+    v2_decision: dict[str, Any] | None = None
+    if scoring_payload:
+        v2_decision = scoring_payload.get("naming_decision")
+        raw_top = pd.DataFrame(scoring_payload.get("raw_candidates") or scoring_payload["candidates"])
+        top = pd.DataFrame(scoring_payload["candidates"])
+        if v2_decision:
+            (data_dir / f"{slug}_candidate_annotations.json").write_text(json.dumps(v2_decision, indent=2))
+            raw_top.to_csv(data_dir / f"{slug}_raw_top_candidates.csv", index=False)
+            if v2_decision["identity_candidate"] is None:
+                return build_v2_unresolved_report(args, control_id, out_dir, data_dir,
+                    scoring_payload.get("known_x_row", {}), v2_decision, raw_top)
+    if not scoring_payload and getattr(args, "naming_policy_version", "v2") == "v2":
+        known_row = lookup_known_x_row(known_x, control_id)
+        assurance = confmod.load_curation_ledger(
+            resolve(getattr(args, "curation_ledger", DEFAULT_CURATION_LEDGER), repo_root)
+        ).get(control_id)
+        confirmed_structure = ""
+        if not known_x_all.empty and "x_compound_id" in known_x_all:
+            verified = known_x_all[
+                known_x_all["x_compound_id"].astype(str).eq(control_id)
+            ]
+            if not verified.empty:
+                confirmed_structure = str(verified.iloc[0].get("smiles") or "").strip()
+        level_one_match = (
+            str(known_row.get("Level") or "").strip() == "1"
+            and bool(confirmed_structure)
+            and any(
+                naming_v2.connectivity(str(row.get("predicted_smiles") or row.get("smiles") or ""))
+                == naming_v2.connectivity(confirmed_structure)
+                for row in top.to_dict(orient="records")
+            )
+        )
+        assurance_verdict = assurance.verdict if assurance else (
+            "standard_confirmed" if level_one_match else "none"
+        )
+        v2_decision = naming_v2.decide(
+            top.to_dict(orient="records"), naming_v2.CollisionIndex(
+                db_path, supplied_names=(
+                    top.get("library_name", pd.Series(dtype=str)).fillna("").astype(str).tolist()
+                    + [naming_v2.curated_hypothesis(known_row)]
+                )
+            ),
+            known_row, assurance=assurance_verdict,
+            confirmed_structure=confirmed_structure if level_one_match else "",
+        )
+        (data_dir / f"{slug}_candidate_annotations.json").write_text(
+            json.dumps(v2_decision, indent=2), encoding="utf-8"
+        )
+        raw_top.to_csv(data_dir / f"{slug}_raw_top_candidates.csv", index=False)
+        if v2_decision["identity_candidate"] is None:
+            return build_v2_unresolved_report(
+                args, control_id, out_dir, data_dir, known_row, v2_decision, raw_top,
+            )
+        allowed = {
+            item["model_rank"] for item in v2_decision["candidate_annotations"]
+            if item["identity_eligible"]
+        }
+        top = top[top["rank"].astype(float).astype(int).isin(allowed)].copy()
+        top["model_rank"] = top["rank"]
+        selected_rank = v2_decision["identity_candidate_rank"]
+        top["identity_selection_order"] = top["model_rank"].astype(int).ne(selected_rank).astype(int)
+        top = top.sort_values(["identity_selection_order", "model_rank"], kind="mergesort")
+        top = top.drop(columns=["identity_selection_order"])
+        top["rank"] = range(1, len(top) + 1)
+
+    rank1 = top.iloc[0]
     smiles_col = "predicted_smiles" if "predicted_smiles" in rank1.index else "smiles"
     target_smiles = str(args.target_smiles or rank1.get(smiles_col) or "").strip()
     if not target_smiles:
@@ -3373,6 +3724,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         chemical_id_basis = pathmod.BASIS_OPERATOR_SUPPLIED
     else:
         chemical_id, chemical_id_basis = resolve_chemical_id(db_path, kx_row, target_name)
+    if v2_decision and v2_decision["library_collision"] and not v2_decision["exception_basis"]:
+        chemical_id = ""
+        chemical_id_basis = pathmod.BASIS_NONE
     chemical_id = chemical_id.strip()
 
     target_inchikey = inchikey_from_smiles(target_smiles)
@@ -3402,7 +3756,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     if tentative:
         target_name = tentative.label
     elif not name_resolved:
-        target_name = "De novo structure"
+        target_name = tnmod.UNNAMED_STRUCTURE_LABEL
     target = {
         "control_id": control_id,
         "name": target_name,
@@ -3447,6 +3801,10 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         tolerance_da=float(args.spectrum_tolerance_da),
     )
     candidate_score_df = compact_candidate_scores(candidate_score_input)
+    _parent_mz_early = float(pd.to_numeric(rank1.get("parent_mz"), errors="coerce") or 0.0)
+    candidate_score_df = annotate_adduct_hypotheses(
+        candidate_score_df, _parent_mz_early, _ion_mode_from_row(rank1)
+    )
     candidate_score_df.to_csv(data_dir / f"{slug}_candidate_score_summary.csv", index=False)
     top10_candidates = candidate_score_df.head(10).copy()
     candidate_consensus_maps, candidate_consensus_summaries, default_consensus_rank = build_candidate_consensus_maps(
@@ -3509,6 +3867,15 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             WHERE smiles IS NOT NULL AND trim(smiles) <> ''
             """,
         )
+    if v2_decision and v2_decision["excluded_library_matches"] and not all_structured.empty:
+        excluded_ids = {
+            str(match.get("chemical_id") or "")
+            for item in v2_decision["excluded_library_matches"]
+            for match in item.get("matches") or []
+        }
+        all_structured = all_structured[
+            ~all_structured["chemical_id"].astype(str).isin(excluded_ids)
+        ].copy()
 
     extended = build_extended_similarity_network(
         target_smiles=target_smiles,
@@ -3634,6 +4001,13 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         ),
         "parent_mz": parent_mz,
         "mass_error_da": float(target["exact_mass"] - parent_mz) if parent_mz else 0.0,
+        "hypothesized_adduct": str(
+            (candidate_score_df.iloc[0].get("hypothesized_adduct") if not candidate_score_df.empty else "")
+            or ""
+        ),
+        "adduct_mass_error_da": (
+            candidate_score_df.iloc[0].get("adduct_mass_error_da") if not candidate_score_df.empty else ""
+        ),
         "lactoyl_hypothesis_score": "",
         "diagnostic_bin_score": "",
         "matched_diagnostic_bins_json": "",
@@ -3670,83 +4044,21 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     known_render = extended.get("known_render", pd.DataFrame())
     x_render = extended.get("x_render", pd.DataFrame())
 
-    # Hybrid identification confidence (shared model; see reports/confidence.py).
-    _css_records = candidate_score_df.fillna("").to_dict(orient="records")
-
-    def _n(value: Any) -> float | None:
-        v = pd.to_numeric(value, errors="coerce")
-        return None if pd.isna(v) else float(v)
-
-    _ms2_candidates = [
-        _n(rank1.get("predicted_spectrum_score_v2")),
-        _n(rank1.get("forward_spectrum_score")),
-        _n(rank1.get("ms2_match_score")),
-    ]
-    _ms2_candidates = [c for c in _ms2_candidates if c is not None]
-    _ms2_score = max(_ms2_candidates) if _ms2_candidates else None
-    _observed_mz = _n(rank1.get("parent_mz"))
-    _conf_fields = confmod.fields_from_parts(
-        _css_records[0] if _css_records else {},
-        _css_records[1] if len(_css_records) > 1 else None,
-        {
-            "pathway_source": pathway_info.get("source", ""),
-            "pathway_best_reference_similarity": pathway_info.get("similarity"),
-            # The reconstructed vote finally gives the pathway axis a real share
-            # to score. Until now this key was always absent and the axis fell
-            # back to the three-valued tier map.
-            "pathway_vote_share": (
-                pathway_vote_result.super_share if pathway_vote_result.available else None
-            ),
-            "pathway_confidence_tier": pathway_info.get("tier", ""),
-        },
-        observed_mz_available=_observed_mz is not None and _observed_mz > 0,
-        ms2_spectrum_present=_ms2_score is not None and _ms2_score > 0,
-        ms2_score=_ms2_score,
-        library_neighbors_ge_050=sum(
-            1
-            for nb in neighbors
-            if float(nb.get("similarity_to_target", 0.0) or 0.0) >= confmod.NEIGHBOR_SIMILARITY_FLOOR
-        ),
-        correlations_real=not correlation_blocker,
-        # Retention. The observed index rides along in the feature key; the
-        # predicted one needs RDKit, which the confidence model deliberately
-        # does not depend on.
-        lib_id=rank1.get("lib_id"),
-        observed_retention_index=_finite_or_none(ri_from_feature_key(rank1.get("feature_key"))),
-        candidate_retention_proxy=_finite_or_none(ri_proxy_from_smiles(target_smiles)),
-    )
-    _conf_fields["observed_mz"] = _observed_mz
-    _conf_fields["observed_neutral_mass"] = (
-        _n(rank1.get("target_neutral_mass")) or _n(rank1.get("neutral_mass"))
-    )
-    _conf_fields["candidate_exact_mass"] = target["exact_mass"]
-    # Parity with the enrich -> patch flow: Metabolon Level, mass-consistent
-    # alternative, and observed-MS2 detail so the from-source render matches.
-    _level = str(kx_row.get("Level", "") or "").strip()
-    _conf_fields["metabolon_level"] = "" if _level.lower() in {"nan", "artifact", "exclude", "4?"} else _level
-    _conf_fields["mass_alt"] = confmod.mass_consistent_alt(_css_records)
-    _n_peaks = int(len(peaks)) if hasattr(peaks, "empty") and not peaks.empty else 0
-    _conf_fields["ms2_detail"] = {
-        # The observed-MS2 panel must reflect an *observed* spectrum (from --peak-csv /
-        # the observed lookup), not the pipeline's predicted spectral score.
-        "present": _n_peaks > 0,
-        "n_pairs": _n_peaks,
-        "n_ion_bins": 0,
-        "n_loss_bins": 0,
-        "forward": _n(rank1.get("forward_spectrum_score")),
-        "predicted_v2": _n(rank1.get("predicted_spectrum_score_v2")),
-        "match": _n(rank1.get("ms2_match_score")),
-    }
-    _conf_fields["ms2_n_pairs"] = _n_peaks
-    # Reviewed verdict, matching the enrich -> patch flow so both delivery paths
-    # honor the same curation ledger.
-    confmod.apply_curation_entry(
-        _conf_fields,
-        confmod.load_curation_ledger(
+    # Both delivery paths use the same normalization; a driver payload is the
+    # completed result and takes precedence over rendering-specific evidence.
+    _observed_mz = novel_scoring.number(rank1.get("parent_mz"))
+    _conf_fields = novel_scoring.prepare_confidence_fields(
+        rank1.to_dict(), candidate_score_df.fillna("").to_dict(orient="records"), pathway_info,
+        pathway_vote_share=pathway_vote_result.super_share if pathway_vote_result.available else None,
+        neighbors=neighbors, n_peaks=len(peaks), target_smiles=target_smiles,
+        target_exact_mass=target["exact_mass"], known_x_row=kx_row, naming_decision=v2_decision,
+        curation_entry=confmod.load_curation_ledger(
             resolve(getattr(args, "curation_ledger", DEFAULT_CURATION_LEDGER), repo_root)
-        ).get(control_id),
+        ).get(control_id), correlations_real=not correlation_blocker,
     )
-    confidence_obj = confmod.compute_confidence(_conf_fields)
+    if scoring_payload:
+        _conf_fields = dict(scoring_payload["fields"])
+    confidence_obj = novel_scoring.confidence_from_fields(_conf_fields)
     # The MSI level decides what the compound may be called. Levels 4-5 withhold
     # the structure, so they cannot carry a structural name however well it
     # resolved; Level 3 must read as a hypothesis rather than an assertion.
@@ -3758,6 +4070,16 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         observed_mz=_observed_mz,
         name_is_reference=name_resolved,
     )
+    if v2_decision and confidence_obj.msi_level <= 3:
+        bare = tnmod.bare_library_name(unqualified_name)
+        if confidence_obj.msi_level == 1:
+            target_name = bare
+        elif confidence_obj.msi_level == 2:
+            target_name = f"Probable {bare}"
+        else:
+            target_name = f"Possible {bare}"
+    if scoring_payload:
+        target_name = scoring_payload["fields"].get("display_name", target_name)
     target["name"] = target_name
     _conf_fields["smiles"] = target_smiles
     _conf_fields["resolved_name"] = unqualified_name
@@ -3779,9 +4101,26 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     _conf_fields["identity_status"] = confidence_obj.identity_status
     _conf_fields["identity_confidence"] = confidence_obj.identity_confidence
     _conf_fields["identity_basis"] = confidence_obj.identity_basis
+    if v2_decision:
+        _conf_fields.update({
+            key: v2_decision[key] for key in (
+                "naming_policy_version", "name_source", "identity_candidate_rank",
+                "library_collision", "identity_eligible", "identity_exclusion_reason",
+                "excluded_library_matches", "raw_rank1_candidate", "identity_candidate",
+                "exception_basis", "review_verdict",
+            )
+        })
+    if scoring_payload:
+        _conf_fields = dict(scoring_payload["fields"])
+        (data_dir / f"{slug}_scoring.json").write_text(json.dumps(scoring_payload, indent=2))
     (data_dir / f"{slug}_confidence_inputs.json").write_text(
         json.dumps(_conf_fields, indent=2)
     )
+
+    if scoring_payload:
+        publication = scoring_payload["summary"]
+        _conf_fields["reported_identification"] = publication["se_reported_identification"]
+        _conf_fields["candidate_identity_confidence"] = publication["se_candidate_identity_confidence"]
 
     fragment_candidate_rows = top.head(int(args.candidate_tab_n)).fillna("").to_dict(orient="records")
     render_kwargs = dict(
@@ -3861,6 +4200,13 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "db_chemical_id": chemical_id,
         "control_id": control_id,
     }
+    if v2_decision:
+        payload.update({key: v2_decision[key] for key in (
+            "naming_policy_version", "name_source", "identity_candidate_rank",
+            "library_collision", "identity_eligible", "identity_exclusion_reason",
+            "excluded_library_matches", "raw_rank1_candidate", "identity_candidate",
+            "review_verdict",
+        )})
     (out_dir / "manifest.json").write_text(json.dumps(payload, indent=2))
     print(json.dumps(payload, indent=2, sort_keys=True))
     return payload
@@ -3887,9 +4233,11 @@ def main() -> None:
     parser.add_argument("--candidate-pool", type=Path, default=None)
     parser.add_argument("--hypotheses", type=Path, default=None)
     parser.add_argument("--peak-csv", type=Path, default=None)
+    parser.add_argument("--scoring-json", type=Path, default=None, help="Completed novel-feature scoring payload")
     parser.add_argument("--target-smiles", type=str, default="")
     parser.add_argument("--target-name", type=str, default="")
     parser.add_argument("--chemical-id", type=str, default="")
+    parser.add_argument("--naming-policy-version", choices=("v1", "v2"), default="v2")
     parser.add_argument("--spectrum-tolerance-da", type=float, default=1.0)
     parser.add_argument("--min-similarity", type=float, default=0.28)
     parser.add_argument("--max-neighbors", type=int, default=10)

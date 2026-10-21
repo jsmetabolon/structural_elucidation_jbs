@@ -27,6 +27,10 @@ CSV_COLUMNS = [
     "n_neighbors", "msi_level", "msi_label", "descriptor_kind",
     "descriptor_confidence", "descriptor_parent_formula",
     "descriptor_conjugate_count", "status", "report",
+    "naming_policy_version", "name_source", "identity_candidate_rank",
+    "library_collision", "identity_eligible", "identity_exclusion_reason",
+    "exception_basis", "review_verdict", "excluded_library_matches",
+    "raw_rank1_candidate", "identity_candidate",
 ]
 
 
@@ -66,6 +70,17 @@ def main() -> None:
                     descriptor_confidence=str(extra.get("descriptor_confidence") or ""),
                     descriptor_parent_formula=str(extra.get("descriptor_parent_formula") or ""),
                     descriptor_conjugate_count=str(extra.get("descriptor_conjugate_count") or ""),
+                    naming_policy_version=str(extra.get("naming_policy_version") or ""),
+                    name_source=str(extra.get("name_source") or ""),
+                    identity_candidate_rank=str(extra.get("identity_candidate_rank") or ""),
+                    library_collision=str(extra["library_collision"]) if extra.get("library_collision") is not None else "",
+                    identity_eligible=str(extra["identity_eligible"]) if extra.get("identity_eligible") is not None else "",
+                    identity_exclusion_reason=str(extra.get("identity_exclusion_reason") or ""),
+                    exception_basis=str(extra.get("exception_basis") or ""),
+                    review_verdict=str(extra.get("review_verdict") or ""),
+                    excluded_library_matches=str(extra.get("excluded_library_matches") or ""),
+                    raw_rank1_candidate=str(extra.get("raw_rank1_candidate") or ""),
+                    identity_candidate=str(extra.get("identity_candidate") or ""),
                 )
             )
     rows.sort(key=lambda x: (x.lib, x.control_id))
@@ -85,6 +100,17 @@ def main() -> None:
                 "descriptor_confidence": r.descriptor_confidence,
                 "descriptor_parent_formula": r.descriptor_parent_formula,
                 "descriptor_conjugate_count": r.descriptor_conjugate_count,
+                "naming_policy_version": r.naming_policy_version,
+                "name_source": r.name_source,
+                "identity_candidate_rank": r.identity_candidate_rank,
+                "library_collision": r.library_collision,
+                "identity_eligible": r.identity_eligible,
+                "identity_exclusion_reason": r.identity_exclusion_reason,
+                "exception_basis": r.exception_basis,
+                "review_verdict": r.review_verdict,
+                "excluded_library_matches": r.excluded_library_matches,
+                "raw_rank1_candidate": r.raw_rank1_candidate,
+                "identity_candidate": r.identity_candidate,
                 "status": r.status, "report": r.report,
             })
     with_msi = sum(1 for r in rows if r.msi_level)

@@ -58,6 +58,11 @@ TIER_LOW = 0.38
 # authentic-standard > known-identity-pending.
 CONFIRMED_OVERALL = 1.0
 
+# A candidate mass that is an exact integer multiple (or reciprocal) of the
+# observed [M±H] neutral mass is a charge-state misread, not a ppm error.
+CHARGE_RATIOS = (2, 3)
+CHARGE_RATIO_TOLERANCE = 1e-4
+
 AXIS_LABELS = {
     "structure": "Structure similarity",
     "mass": "Mass / formula match",
@@ -644,6 +649,23 @@ class MsiThresholds:
 DEFAULT_MSI_THRESHOLDS = MsiThresholds()
 
 
+def charge_ratio_label(
+    observed_neutral: float | None, candidate_exact: float | None
+) -> str | None:
+    """Return ``2x`` / ``1/2x`` / ... when masses are a clean integer ratio."""
+    if observed_neutral is None or candidate_exact is None or observed_neutral <= 0:
+        return None
+    ratio = float(candidate_exact) / float(observed_neutral)
+    for factor in CHARGE_RATIOS:
+        for value, label in (
+            (float(factor), f"{factor}x"),
+            (1.0 / factor, f"1/{factor}x"),
+        ):
+            if abs(ratio - value) / value < CHARGE_RATIO_TOLERANCE:
+                return label
+    return None
+
+
 def assign_msi_level(
     fields: dict,
     conf: "Confidence",
@@ -690,6 +712,17 @@ def assign_msi_level(
             else "A curator rejected this structure on review"
         )
         return 4, MSI_LABELS[4], f"{note} - reporting formula/mass only"
+    charge_label = charge_ratio_label(
+        _num(fields.get("observed_neutral_mass")),
+        _num(fields.get("candidate_exact_mass")),
+    )
+    if charge_label:
+        return (
+            4,
+            MSI_LABELS[4],
+            f"Candidate exact mass is {charge_label} the observed neutral mass "
+            "- charge-state misassignment; reporting formula/mass only",
+        )
     if conf.tier == "Confirmed":
         return 1, MSI_LABELS[1], "Metabolon Level-1 standard match and the top candidate matches it"
     if (

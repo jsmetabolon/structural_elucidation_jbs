@@ -23,6 +23,8 @@ from typing import Iterable
 import numpy as np
 import pandas as pd
 
+from structural_elucidation.chemistry.adduct_ladder import hypotheses as adduct_ladder_hypotheses
+
 try:
     from rdkit import Chem
     from rdkit import RDLogger
@@ -161,26 +163,8 @@ def adduct_neutral_mass_error_ppm(predicted_mass: float, parent_mz: float, ion_m
 
 
 def _adduct_neutral_mass_hypotheses(parent_mz: float, ion_mode: str) -> list[tuple[str, float]]:
-    """Enumerate adduct labels and implied neutral masses for mass matching."""
-    mode = normalize_ion_mode(ion_mode)
-    mz = float(parent_mz)
-    if mode == "negative":
-        return [
-            ("[M-H]-", mz + PROTON_MASS),
-            ("[M+Cl]-", mz - 34.969402),
-            ("[M+HCOO]-", mz - 44.998201),
-            ("[M+CH3COO]-", mz - 59.013851),
-            ("[M-2H]2-", 2.0 * mz + 2.0 * PROTON_MASS),
-            ("[2M-H]-", (mz + PROTON_MASS) / 2.0),
-        ]
-    return [
-        ("[M+H]+", mz - PROTON_MASS),
-        ("[M+NH4]+", mz - AMMONIUM_MASS),
-        ("[M+Na]+", mz - SODIUM_MINUS_PROTON_MASS),
-        ("[M+K]+", mz - POTASSIUM_MINUS_PROTON_MASS),
-        ("[M+2H]2+", 2.0 * mz - 2.0 * PROTON_MASS),
-        ("[2M+H]+", (mz - PROTON_MASS) / 2.0),
-    ]
+    """Enumerate adduct labels and implied neutral masses from the canonical ladder."""
+    return adduct_ladder_hypotheses(float(parent_mz), ion_mode)
 
 
 def best_adduct_neutral_mass_match(

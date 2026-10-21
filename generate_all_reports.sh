@@ -22,6 +22,8 @@ set -euo pipefail
 #   OVERWRITE     1 = rebuild existing reports (default: unset, i.e. resume)
 #   LIMIT         only build first N compounds (default: unset)
 #   OBSERVED_LOOKUP_DIR  dir of lib{N}_{ion}_observed_ms2_lookup.csv for MS scoring (optional)
+#   CANDIDATE_TAB_N  forwarded to reports.compound (unset = module default 20)
+#   NAMING_POLICY_VERSION  v1 or v2 (default: v2)
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$REPO_ROOT"
@@ -54,6 +56,8 @@ args=(
 [[ "${OVERWRITE:-0}" == "1" ]] && args+=(--overwrite)
 [[ -n "${LIMIT:-}" ]] && args+=(--limit "$LIMIT")
 [[ -n "${OBSERVED_LOOKUP_DIR:-}" ]] && args+=(--observed-lookup-dir "$OBSERVED_LOOKUP_DIR")
+[[ -n "${CANDIDATE_TAB_N:-}" ]] && args+=(--candidate-tab-n "$CANDIDATE_TAB_N")
+args+=(--naming-policy-version "${NAMING_POLICY_VERSION:-v2}")
 
 echo "[generate_all_reports] PY=$PY"
 echo "[generate_all_reports] OUT_ROOT=$OUT_ROOT RUN_LIBS=$RUN_LIBS JOBS=$JOBS REPORTS_OUT=$REPORTS_OUT"

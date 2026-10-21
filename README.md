@@ -2,6 +2,15 @@
 
 Self-contained inference repo for the Metabolon X-compound pipeline: spectrum features in, ranked SMILES predictions out (full rerank path).
 
+## Latest untargeted integration
+
+`codex/structural-elucidation-latest` consolidates the October workflow, the
+untargeted-input adapter, and the latest MSI/publication-level and confidence
+scoring. The novel-feature driver writes canonical scores before optional HTML
+reports and records its source commit and calibration checksum for reproducibility.
+See [the integration guide](docs/untargeted_integration.md) for setup, assets,
+output columns, and the distinction between evidence MSI and publication levels.
+
 ## Quick start (EC2 CPU)
 
 ```bash
@@ -73,6 +82,21 @@ Environment variables:
 | `OUT_ROOT` | `output/pipeline_equalization` | Output directory |
 | `RUN_LIBS` | `209,305,400,402` | Comma-separated libs |
 | `START_AT` | `verifier` | `full`, `candidates`, or `verifier` |
+| `CANDIDATES_EXTRA_ARGS` | (empty) | Extra flags for `pipeline.candidates`, e.g. `--derive-neutral-mass-from-adduct` |
+| `VERIFY_EXTRA_ARGS` | (empty) | Extra flags for `pipeline.verify`, e.g. `--ignore-acceptance` for derive overlay |
+
+The Excel adduct table (`data/adducts/adduct_ladder.csv`) is **not** on this path.
+Do not rerun `run_inference.sh` to identify Na/Cl/formate adducts. Analog-only:
+
+```bash
+python -m structural_elucidation.evaluation.analog
+```
+
+Candidate-target derivation (default off; then full candidates-to-rerank):
+
+```bash
+python -m structural_elucidation.pipeline.candidates --derive-neutral-mass-from-adduct ...
+```
 
 ## Dual-lane inference (optional)
 

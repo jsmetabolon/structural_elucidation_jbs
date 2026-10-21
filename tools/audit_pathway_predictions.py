@@ -37,7 +37,9 @@ DEFAULT_LIBS = ("209", "305", "400", "402")
 NULLS = {"", "nan", "none", "null", "<na>"}
 # known_X data-entry sentinels that are not real pathways (exclude from accuracy).
 EXCLUDE_TRUTH = {"unknown", "ask dts", "can add this", "do not include"}
+AA_PEPTIDE = {"amino acid", "peptide"}
 SIM_BINS = [(0.0, 0.3), (0.3, 0.5), (0.5, 0.7), (0.7, 1.0001)]
+DEFAULT_TAXONOMY_JSON = Path(__file__).resolve().parent.parent / "docs/paper/data/taxonomy_harmonization.json"
 
 
 def norm(value: Any) -> str:
@@ -77,6 +79,47 @@ def assignment_source(value: Any) -> str:
     return "exact_reference_lookup" if norm(value) == "exact" else "neighbor_consensus"
 
 
+def load_unscoreable_sub_labels(path: Path | None = None) -> set[str]:
+    """known_X subpathway sentinels that no predictor can match."""
+
+    labels = set(EXCLUDE_TRUTH)
+    source = Path(path) if path is not None else DEFAULT_TAXONOMY_JSON
+    if source.exists():
+        try:
+            payload = json.loads(source.read_text())
+            excluded = ((payload.get("subpathway") or {}).get("excluded_labels") or {})
+            labels.update(norm(key) for key in excluded)
+        except (OSError, ValueError):
+            pass
+    return {label for label in labels if label}
+
+
+def is_unscoreable_sub(value: Any, excluded: set[str] | None = None) -> bool:
+    """True for empty, unknown, ask-*, or listed review-note subpathway labels."""
+
+    text = norm(value)
+    if not text:
+        return True
+    excluded = excluded if excluded is not None else load_unscoreable_sub_labels()
+    if text in excluded:
+        return True
+    if text.startswith("unknown") or text.startswith("ask "):
+        return True
+    return False
+
+
+def supers_match(predicted: Any, truth: Any, *, harmonize_aa_peptide: bool = False) -> bool:
+    """Super-pathway equality, optionally treating Amino Acid and Peptide as one class."""
+
+    left = norm(predicted)
+    right = norm(truth)
+    if not left or not right:
+        return False
+    if left == right:
+        return True
+    return bool(harmonize_aa_peptide and left in AA_PEPTIDE and right in AA_PEPTIDE)
+
+
 def load_rank1_predictions(root: Path, libs: list[str], pred_name: str) -> pd.DataFrame:
     """Rank-1 prediction row per control, deduped across libs (first-lib-wins)."""
 
@@ -102,6 +145,13 @@ def load_rank1_predictions(root: Path, libs: list[str], pred_name: str) -> pd.Da
                     "predicted_smiles": clean(r.get("predicted_smiles")),
                     "predicted_pathway": clean(r.get("predicted_pathway")),
                     "predicted_subpathway": clean(r.get("predicted_subpathway")),
+                    "compound_predicted_pathway": clean(r.get("compound_predicted_pathway")),
+                    "compound_predicted_subpathway": clean(r.get("compound_predicted_subpathway")),
+                    "compound_pathway_source": clean(r.get("compound_pathway_source")),
+                    "compound_pathway_status": clean(r.get("compound_pathway_status")),
+                    "compound_pathway_vote_share": pd.to_numeric(
+                        r.get("compound_pathway_vote_share"), errors="coerce"
+                    ),
                     "source": assignment_source(r.get("pathway_source")),
                     "tier": clean(r.get("pathway_confidence_tier")),
                     "status": clean(r.get("pathway_assignment_status")),
@@ -139,6 +189,13 @@ def load_rank1_from_reports(root: Path) -> pd.DataFrame:
                 "predicted_smiles": clean(rank1.get("predicted_smiles")),
                 "predicted_pathway": clean(pathway.get("predicted_pathway")),
                 "predicted_subpathway": clean(pathway.get("predicted_subpathway")),
+                "compound_predicted_pathway": clean(pathway.get("compound_predicted_pathway")),
+                "compound_predicted_subpathway": clean(pathway.get("compound_predicted_subpathway")),
+                "compound_pathway_source": clean(pathway.get("compound_pathway_source")),
+                "compound_pathway_status": clean(pathway.get("compound_pathway_status")),
+                "compound_pathway_vote_share": pd.to_numeric(
+                    pathway.get("compound_pathway_vote_share"), errors="coerce"
+                ),
                 "source": assignment_source(pathway.get("pathway_source")),
                 "tier": clean(pathway.get("pathway_confidence_tier")),
                 "status": clean(pathway.get("pathway_assignment_status")),
@@ -257,15 +314,39 @@ def evaluate_vs_reference_db(
             str(bin_name): super_sub_metrics(group) for bin_name, group in ex.groupby("sim_bin")
         },
     }
-    truth = gt.set_index("control_id")["true_super"].to_dict()
+    truth = gt.set_index("control_id")[["true_super", "true_sub"]].to_dict("index")
     agree = tot = 0
+    agree_aa = 0
+    agree_sub = tot_sub = 0
+    agree_sub_scoreable = tot_sub_scoreable = 0
+    excluded_sub = load_unscoreable_sub_labels()
     for _, x in ex.iterrows():
-        ks = norm(truth.get(x["control_id"], ""))
+        row = truth.get(x["control_id"]) or {}
+        ks = norm(row.get("true_super", ""))
+        db_super = norm(x["db_super"])
         if ks and ks not in EXCLUDE_TRUTH:
             tot += 1
-            agree += int(ks == norm(x["db_super"]))
+            agree += int(ks == db_super)
+            agree_aa += int(supers_match(x["db_super"], row.get("true_super", ""), harmonize_aa_peptide=True))
+        true_sub = row.get("true_sub", "")
+        db_sub = x["db_sub"]
+        if norm(true_sub):
+            tot_sub += 1
+            agree_sub += int(norm(true_sub) == norm(db_sub))
+        if not is_unscoreable_sub(true_sub, excluded_sub):
+            tot_sub_scoreable += 1
+            agree_sub_scoreable += int(norm(true_sub) == norm(db_sub))
     if tot:
-        result["db_vs_known_x_super_agreement"] = {"n": int(tot), "agreement": round(agree / tot, 4)}
+        super_ceil = wilson(agree, tot)
+        super_ceil["agreement"] = super_ceil["accuracy"]
+        result["db_vs_known_x_super_agreement"] = super_ceil
+        aa_ceil = wilson(agree_aa, tot)
+        aa_ceil["agreement"] = aa_ceil["accuracy"]
+        result["db_vs_known_x_super_agreement_aa_peptide"] = aa_ceil
+    if tot_sub:
+        result["db_vs_known_x_sub_agreement"] = wilson(agree_sub, tot_sub)
+    if tot_sub_scoreable:
+        result["db_vs_known_x_sub_agreement_scoreable"] = wilson(agree_sub_scoreable, tot_sub_scoreable)
     confusion: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
     for _, row in ex.iterrows():
         confusion[clean(row["db_super"])][clean(row["predicted_pathway"])] += 1
@@ -343,12 +424,17 @@ def build_summary(
     ev = pred.merge(gt, on="control_id", how="inner")
     true_norm = ev["true_super"].map(norm)
     ev = ev[true_norm.ne("") & ~true_norm.isin(EXCLUDE_TRUTH)].copy()
-    ev["correct_super"] = ev.apply(lambda r: norm(r["predicted_pathway"]) == norm(r["true_super"]), axis=1)
+    ev["correct_super"] = ev.apply(lambda r: supers_match(r["predicted_pathway"], r["true_super"]), axis=1)
+    ev["correct_super_aa_peptide"] = ev.apply(
+        lambda r: supers_match(r["predicted_pathway"], r["true_super"], harmonize_aa_peptide=True), axis=1
+    )
+    excluded_sub = load_unscoreable_sub_labels()
     ev["correct_sub"] = ev.apply(
         lambda r: norm(r["predicted_subpathway"]) == norm(r["true_sub"]) and norm(r["true_sub"]) != "",
         axis=1,
     )
     ev["sub_evaluable"] = ev["true_sub"].map(norm).ne("")
+    ev["sub_scoreable"] = ~ev["true_sub"].map(lambda value: is_unscoreable_sub(value, excluded_sub))
     ev["sim_bin"] = ev["best_similarity"].map(similarity_bin)
     if db_map is not None:
         ev["in_reference_db"] = ev["predicted_smiles"].map(
@@ -358,12 +444,26 @@ def build_summary(
         ev["in_reference_db"] = False
 
     n_ev = len(ev)
-    sub_evaluable = ev[ev["true_sub"].map(norm).ne("")]
+    sub_evaluable = ev[ev["sub_evaluable"]]
+    sub_scoreable = ev[ev["sub_scoreable"]]
+    super_wilson = wilson(int(ev["correct_super"].sum()), n_ev) if n_ev else wilson(0, 0)
+    super_aa_wilson = wilson(int(ev["correct_super_aa_peptide"].sum()), n_ev) if n_ev else wilson(0, 0)
+    sub_wilson = wilson(int(sub_evaluable["correct_sub"].sum()), len(sub_evaluable)) if len(sub_evaluable) else wilson(0, 0)
+    sub_scoreable_wilson = (
+        wilson(int(sub_scoreable["correct_sub"].sum()), len(sub_scoreable)) if len(sub_scoreable) else wilson(0, 0)
+    )
     accuracy = {
         "n_evaluable_super": int(n_ev),
-        "super_accuracy": round(float(ev["correct_super"].mean()), 4) if n_ev else 0.0,
+        "super_accuracy": super_wilson["accuracy"] or 0.0,
+        "super_accuracy_aa_peptide": super_aa_wilson["accuracy"] or 0.0,
+        "super_ci95": super_wilson["ci95"],
+        "super_aa_peptide_ci95": super_aa_wilson["ci95"],
         "n_evaluable_sub": int(len(sub_evaluable)),
-        "sub_accuracy": round(float(sub_evaluable["correct_sub"].mean()), 4) if len(sub_evaluable) else 0.0,
+        "sub_accuracy": sub_wilson["accuracy"] or 0.0,
+        "sub_ci95": sub_wilson["ci95"],
+        "n_scoreable_sub": int(len(sub_scoreable)),
+        "sub_accuracy_scoreable": sub_scoreable_wilson["accuracy"] or 0.0,
+        "sub_scoreable_ci95": sub_scoreable_wilson["ci95"],
         "sub_accuracy_given_correct_super": (
             round(float(sub_evaluable.loc[sub_evaluable["correct_super"], "correct_sub"].mean()), 4)
             if len(sub_evaluable[sub_evaluable["correct_super"]])
@@ -429,6 +529,65 @@ def build_summary(
         "bias": bias,
     }
     return summary, ev
+
+
+def share_of_ceiling(observed: float | None, ceiling: float | None) -> float | None:
+    """Observed known_X agreement as a fraction of the DB-vs-known_X ceiling."""
+    if observed is None or ceiling is None or ceiling <= 0:
+        return None
+    return round(float(observed) / float(ceiling), 4)
+
+
+def attach_ceiling_shares(summary: dict[str, Any]) -> dict[str, Any]:
+    """Add observed / ceiling ratios for raw, AA=Peptide, and scoreable-sub scores."""
+    ref = summary.get("reference_db_evaluation") or {}
+    acc = summary.get("accuracy") or {}
+    ceiling = {
+        "super": (ref.get("db_vs_known_x_super_agreement") or {}).get("accuracy"),
+        "super_aa_peptide": (ref.get("db_vs_known_x_super_agreement_aa_peptide") or {}).get("accuracy"),
+        "sub": (ref.get("db_vs_known_x_sub_agreement") or {}).get("accuracy"),
+        "sub_scoreable": (ref.get("db_vs_known_x_sub_agreement_scoreable") or {}).get("accuracy"),
+    }
+    shares = {
+        "super": share_of_ceiling(acc.get("super_accuracy"), ceiling["super"]),
+        "super_aa_peptide": share_of_ceiling(acc.get("super_accuracy_aa_peptide"), ceiling["super_aa_peptide"]),
+        "sub": share_of_ceiling(acc.get("sub_accuracy"), ceiling["sub"]),
+        "sub_scoreable": share_of_ceiling(acc.get("sub_accuracy_scoreable"), ceiling["sub_scoreable"]),
+    }
+    summary["known_x_ceiling"] = {"db_vs_known_x": ceiling, "share_of_ceiling": shares}
+    compound = summary.get("compound_level")
+    if compound and compound.get("accuracy"):
+        cacc = compound["accuracy"]
+        compound["share_of_ceiling"] = {
+            "super": share_of_ceiling(cacc.get("super_accuracy"), ceiling["super"]),
+            "super_aa_peptide": share_of_ceiling(cacc.get("super_accuracy_aa_peptide"), ceiling["super_aa_peptide"]),
+            "sub": share_of_ceiling(cacc.get("sub_accuracy"), ceiling["sub"]),
+            "sub_scoreable": share_of_ceiling(cacc.get("sub_accuracy_scoreable"), ceiling["sub_scoreable"]),
+        }
+    return summary
+
+
+def compound_level_summary(
+    pred: pd.DataFrame, gt: pd.DataFrame, db_map: dict[str, tuple[str, str]] | None = None
+) -> dict[str, Any] | None:
+    """Re-score the same controls using compound-level pathway columns."""
+    if "compound_predicted_pathway" not in pred.columns:
+        return None
+    if not pred["compound_predicted_pathway"].map(clean).ne("").any():
+        return None
+    compound = pred.copy()
+    compound["predicted_pathway"] = compound["compound_predicted_pathway"].map(clean)
+    compound["predicted_subpathway"] = compound.get("compound_predicted_subpathway", pd.Series([""] * len(compound))).map(clean)
+    if "compound_pathway_status" in compound.columns:
+        compound["status"] = compound["compound_pathway_status"].map(clean)
+    if "compound_pathway_source" in compound.columns:
+        compound["source"] = compound["compound_pathway_source"].map(
+            lambda value: "exact_reference_lookup" if "exact" in norm(value) else assignment_source(value)
+        )
+    if "compound_pathway_vote_share" in compound.columns:
+        compound["vote_share"] = pd.to_numeric(compound["compound_pathway_vote_share"], errors="coerce")
+    scored, _ = build_summary(compound, gt, db_map)
+    return scored
 
 
 def leave_one_out_validation(db_path: Path, k: int, floor: float, power: float) -> dict[str, Any]:
@@ -547,6 +706,38 @@ def reference_db_md_lines(summary: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _fmt_share(value: float | None) -> str:
+    return "n/a" if value is None else f"{value:.1%}"
+
+
+def ceiling_md_lines(summary: dict[str, Any]) -> list[str]:
+    """Markdown for known_X vs DB ceiling and share-of-ceiling."""
+    ceiling = (summary.get("known_x_ceiling") or {}).get("db_vs_known_x") or {}
+    shares = (summary.get("known_x_ceiling") or {}).get("share_of_ceiling") or {}
+    if not ceiling:
+        return []
+    return [
+        f"- DB vs known_X ceiling (identical structures): super {_fmt_share(ceiling.get('super'))}, "
+        f"AA=Peptide {_fmt_share(ceiling.get('super_aa_peptide'))}, "
+        f"scoreable sub {_fmt_share(ceiling.get('sub_scoreable'))}",
+        f"- Share of that ceiling: super {_fmt_share(shares.get('super'))}, "
+        f"AA=Peptide {_fmt_share(shares.get('super_aa_peptide'))}, "
+        f"scoreable sub {_fmt_share(shares.get('sub_scoreable'))}",
+    ]
+
+
+def compound_ceiling_md_lines(summary: dict[str, Any]) -> list[str]:
+    """Markdown for compound-level share of the known_X ceiling."""
+    shares = ((summary.get("compound_level") or {}).get("share_of_ceiling")) or {}
+    if not shares:
+        return []
+    return [
+        f"- Compound-level share of ceiling: super {_fmt_share(shares.get('super'))}, "
+        f"AA=Peptide {_fmt_share(shares.get('super_aa_peptide'))}, "
+        f"scoreable sub {_fmt_share(shares.get('sub_scoreable'))}",
+    ]
+
+
 def write_markdown(summary: dict[str, Any], out_path: Path) -> None:
     """Write a short human-readable audit summary."""
 
@@ -564,10 +755,34 @@ def write_markdown(summary: dict[str, Any], out_path: Path) -> None:
         "## Agreement with known_X annotation (independent labels, not the predictor's taxonomy)",
         f"- Evaluable (super): **{acc['n_evaluable_super']}** controls",
         f"- Super-pathway agreement with known_X: {acc['super_accuracy']:.1%} "
+        f"(Wilson 95% {acc.get('super_ci95')}) "
         "(understated: known_X uses a different Metabolon annotation than the reference DB the predictor targets)",
+        f"- Super-pathway agreement treating Amino Acid = Peptide: {acc.get('super_accuracy_aa_peptide', acc['super_accuracy']):.1%} "
+        f"(Wilson 95% {acc.get('super_aa_peptide_ci95')})",
         f"- Sub-pathway agreement: {acc['sub_accuracy']:.1%} "
         f"(given correct super: {acc['sub_accuracy_given_correct_super']:.1%}; n={acc['n_evaluable_sub']})",
+        f"- Sub-pathway agreement on scoreable labels only: {acc.get('sub_accuracy_scoreable', acc['sub_accuracy']):.1%} "
+        f"(n={acc.get('n_scoreable_sub', acc['n_evaluable_sub'])}; Wilson 95% {acc.get('sub_scoreable_ci95')})",
+        *ceiling_md_lines(summary),
         "",
+    ]
+    compound = summary.get("compound_level") or {}
+    delta = compound.get("rank1_vs_compound_delta") or {}
+    if delta:
+        compound_acc = (compound.get("accuracy") or {})
+        lines += [
+            "## Compound-level weighted assignment vs rank-1 baseline",
+            f"- Compound-level super/sub agreement with known_X: "
+            f"{compound_acc.get('super_accuracy', 0):.1%} / {compound_acc.get('sub_accuracy', 0):.1%} "
+            f"(n={compound_acc.get('n_evaluable_super', 0)})",
+            f"- Amino Acid = Peptide: {compound_acc.get('super_accuracy_aa_peptide', 0):.1%}; "
+            f"scoreable sub: {compound_acc.get('sub_accuracy_scoreable', 0):.1%}",
+            *compound_ceiling_md_lines(summary),
+            f"- Delta vs rank-1 (compound minus rank-1): super {delta.get('super_accuracy', 0):+.1%}, "
+            f"sub {delta.get('sub_accuracy', 0):+.1%}",
+            "",
+        ]
+    lines += [
         "### Super accuracy by confidence tier",
         "| tier | n | accuracy |",
         "|------|---|----------|",
@@ -626,10 +841,38 @@ def main() -> None:
         db_path = Path("_bundle/metabolite_synonyms.sqlite")
     db_map = build_db_inchikey_map(db_path) if db_path.exists() else None
     summary, ev = build_summary(pred, gt, db_map)
+    compound_scored = compound_level_summary(pred, gt, db_map)
+    if compound_scored is not None:
+        rank1_acc = summary["accuracy"]
+        compound_acc = compound_scored["accuracy"]
+        summary["compound_level"] = {
+            "accuracy": compound_acc,
+            "coverage": compound_scored["coverage"],
+            "rank1_vs_compound_delta": {
+                "super_accuracy": round(
+                    float(compound_acc["super_accuracy"]) - float(rank1_acc["super_accuracy"]), 4
+                ),
+                "super_accuracy_aa_peptide": round(
+                    float(compound_acc.get("super_accuracy_aa_peptide") or 0)
+                    - float(rank1_acc.get("super_accuracy_aa_peptide") or 0),
+                    4,
+                ),
+                "sub_accuracy": round(
+                    float(compound_acc["sub_accuracy"]) - float(rank1_acc["sub_accuracy"]), 4
+                ),
+                "sub_accuracy_scoreable": round(
+                    float(compound_acc.get("sub_accuracy_scoreable") or 0)
+                    - float(rank1_acc.get("sub_accuracy_scoreable") or 0),
+                    4,
+                ),
+                "n_evaluable_super": int(compound_acc["n_evaluable_super"]),
+            },
+        }
 
     if db_path.exists():
         print("[pathway-audit] scoring vs reference-DB taxonomy (exact-structure subset) ...")
         summary["reference_db_evaluation"] = evaluate_vs_reference_db(pred, gt, db_map or {})
+    attach_ceiling_shares(summary)
 
     ev_out = ev[
         [
@@ -658,6 +901,17 @@ def main() -> None:
         "evaluable (understated - known_X uses a different taxonomy than the predictor targets)"
     )
     print(f"[pathway-audit] known_X agreement by tier: {a['super_accuracy_by_tier']}")
+    compound = summary.get("compound_level") or {}
+    delta = compound.get("rank1_vs_compound_delta")
+    if delta:
+        compound_acc = compound["accuracy"]
+        print(
+            f"[pathway-audit] compound-level known_X agreement: super {compound_acc['super_accuracy']:.1%} / "
+            f"sub {compound_acc['sub_accuracy']:.1%} "
+            f"(AA=Peptide {compound_acc.get('super_accuracy_aa_peptide', 0):.1%}; "
+            f"scoreable sub {compound_acc.get('sub_accuracy_scoreable', 0):.1%}; "
+            f"delta vs rank-1 super {delta['super_accuracy']:+.1%}, sub {delta['sub_accuracy']:+.1%})"
+        )
 
     if args.loo:
         db_path = Path(args.db)

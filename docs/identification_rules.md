@@ -71,20 +71,41 @@ neutral mass, which is why CHG-4 matters.
 
 ### CHG-3 — The phase-0 ladder is the only adduct enumeration in the package
 
-Six hypotheses per polarity, each also tried at 0, 1, and 2 carbon-13 shifts, and
-the closest to a candidate's mass is kept
-(`phase0._adduct_neutral_mass_hypotheses`, `phase0.best_adduct_neutral_mass_match`):
+Candidate mass matching (phase-0 reconstruction and analog prefilter/`mass_match`)
+shares one table: [`data/adducts/adduct_ladder.csv`](../data/adducts/adduct_ladder.csv),
+loaded by `chemistry/adduct_ladder.py`. Defaults are `[M+H]+` / `[M-H]-`. Every
+Excel Adducts-sheet monomer is an `offset` row (`M = mz - mz_minus_M`). Four
+`legacy_phase0` extras keep the old dimer / `z=2` arithmetic with
+`phase0.PROTON_MASS = 1.007276`. `platform_hint` is stored (`pos` / `neg` /
+`polar`) but not filtered. `[M+CH3COO]-` is **not** in the Excel sheet and is
+not on the ladder.
 
-| Negative | Positive |
-|---|---|
-| `[M-H]-`, `[M+Cl]-`, `[M+HCOO]-`, `[M+CH3COO]-`, `[M-2H]2-`, `[2M-H]-` | `[M+H]+`, `[M+NH4]+`, `[M+Na]+`, `[M+K]+`, `[M+2H]2+`, `[2M+H]+` |
+`best_adduct_neutral_mass_match` still retries each table adduct at 0, 1, and 2
+carbon-13 shifts (`C13_SHIFT_MASS = 1.003355`). Cl37 is a named adduct row, not
+an extra isotope axis. Excel Cl / formate offsets differ by ~0.5–2 mDa from the
+old hardcodes 34.969402 / 44.998201; the table values win.
 
-The arithmetic here is correct, including the doubly charged and dimer forms.
+**Status: inert on the delivered path.** Do **not** rerun `run_inference.sh` to
+“identify” Excel adducts. That script never reads `data/adducts/adduct_ladder.csv`
+(`ADDUCT_LADDER` points at `chrolib_adduct_ladder.csv` and is unused). Ranking
+and `mass_match_score` stay `[M±H]` (CHG-2). Default `START_AT=verifier` does not
+even rebuild candidates.
 
-**Status: inert on the delivered path.** Its only callers are
-`reconstruct_shortlisted_candidates` and the analog evaluation helper. Neither
-runs in `run_inference.sh`, and `closest_neutral_mass`, which the ppm error is
-measured against, discards the adduct argument and returns `[M±H]` regardless.
+Callers of the table today: `reconstruct_shortlisted_candidates` and analog
+`mass_match` / prefilter. Analog pools **will** see a wider closest-adduct match
+**only if you regenerate them** (`python -m structural_elucidation.evaluation.analog`).
+Pass `--drop-polar-adducts` on libs 209/305 if Cl/formate over-assign. Compound
+reports annotate `hypothesized_adduct` / `adduct_mass_error_da` from
+`best_adduct_neutral_mass_match` without changing `mass_match_score`.
+
+To put adducts on the identification path, run candidates with
+`--derive-neutral-mass-from-adduct` (default **off**), then **candidates → verify
+→ pool → rerank**, and a paired McNemar on truth controls
+(`tools/audit_mass_policy.py --rerank`). Inventory first:
+`python3 tools/inventory_adduct_ladder.py`. Do not mix the Biotransformations or
+Isotopes workbook sheets into this ladder (conjugates stay in
+`chemistry/conjugates.py`; ¹³C overlay stays in `best_adduct_neutral_mass_match`).
+`closest_neutral_mass` still discards the adduct argument and returns `[M±H]`.
 
 ### CHG-4 — The delivered adduct ladder is recorded, not applied
 
@@ -129,15 +150,14 @@ have agreed just as readily with any of the wrong masses in CHG-4.
 Nothing measures isotope-envelope spacing to determine `z`. A doubly charged
 precursor is read as singly charged and lands at half its true neutral mass.
 
-The only thing that looks for this is `charge_state_suspects` in
-`tools/audit_mass_policy.py`, which runs after delivery and flags candidates whose
-mass is a near-exact integer multiple of the observed neutral mass. It found five
-among the 2,471 reports carrying both masses. One of them, `X-21470`
-(5-androstenetriol 3,17-disulfate, a disulfate that readily forms `[M-2H]2-`),
-is MSI Level 1 with a `mass_match_score` of 0.95 recorded against a 233 Da error.
+The audit helper `charge_state_suspects` in `tools/audit_mass_policy.py` still
+runs after delivery. The same integer-ratio test now **caps MSI Level 1 or 2 at
+Level 4** in `reports/confidence.py` (`charge_ratio_label`) when
+`observed_neutral_mass` and `candidate_exact_mass` are present. That does not
+infer `z`; it only withholds a probable/confirmed structure claim.
 
-**Status: absent.** Background in `docs/mass_axis_decisions_needed.md` and item 6
-of `docs/pipeline_refinement_handoff.md`.
+**Status: inference absent; MSI cap enforced** when both masses are on the
+confidence fields. Background in `docs/mass_axis_decisions_needed.md`.
 
 ---
 
@@ -507,7 +527,7 @@ which is the one place a formula rule directly determines what a reader sees.
 | CHG-3 | phase-0 adduct ladder | Inert on the delivered path |
 | CHG-4 | Delivered adduct/charge/multiplier ladder | Recorded only |
 | CHG-5 | `recomputed_mz` round trip | Inert |
-| CHG-6 | Charge-state inference | Absent |
+| CHG-6 | Charge-state inference | Absent; MSI integer-ratio cap enforced |
 | ISO-1 | Isotope peak detection | Enforced upstream |
 | ISO-2 | Heavy-atom counting | Enforced upstream (O, N disabled) |
 | ISO-3 | NCE formula-isotope window | Enforced upstream, skipped for X compounds |

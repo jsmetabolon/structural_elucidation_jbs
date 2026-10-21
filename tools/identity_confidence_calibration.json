@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "nce_normalization": "raw",
+  "prior_strength": 10.0,
+  "n_labelled": 81,
+  "slope": 3.3,
+  "tiers": {
+    "2_probable": {
+      "n": 0,
+      "n_correct": 0,
+      "prior": 94.5,
+      "calibrated": false,
+      "posterior": 94.5,
+      "anchor": 94.5,
+      "ceiling": 98.9,
+      "floor": 90.0,
+      "center": 7.4
+    },
+    "3_isomer_exact": {
+      "n": 0,
+      "n_correct": 0,
+      "prior": 83.5,
+      "calibrated": false,
+      "posterior": 83.5,
+      "anchor": 83.5,
+      "ceiling": 89.0,
+      "floor": 82.69,
+      "center": 8.8
+    },
+    "3_class": {
+      "n": 30,
+      "n_correct": 26,
+      "prior": 67.5,
+      "calibrated": true,
+      "posterior": 81.88,
+      "anchor": 81.88,
+      "ceiling": 82.69,
+      "floor": 69.69,
+      "center": 8.3
+    },
+    "3_probable_isomer_group": {
+      "n": 2,
+      "n_correct": 1,
+      "prior": 50.0,
+      "calibrated": false,
+      "posterior": 50.0,
+      "anchor": 50.0,
+      "ceiling": 65.0,
+      "floor": 43.87,
+      "center": 8.3
+    },
+    "4": {
+      "n": 43,
+      "n_correct": 17,
+      "prior": 30.0,
+      "calibrated": true,
+      "posterior": 37.74,
+      "anchor": 37.74,
+      "ceiling": 43.87,
+      "floor": 28.25,
+      "center": 5.3
+    },
+    "5": {
+      "n": 6,
+      "n_correct": 2,
+      "prior": 10.0,
+      "calibrated": true,
+      "posterior": 18.75,
+      "anchor": 18.75,
+      "ceiling": 28.25,
+      "floor": 0.0,
+      "center": 5.9
+    }
+  }
+}

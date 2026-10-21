@@ -47,6 +47,19 @@ def test_level1_truth_match_is_confirmed():
     assert conf.overall == C.CONFIRMED_OVERALL
 
 
+def test_integer_mass_ratio_caps_msi_level_at_4():
+    conf = C.compute_confidence(
+        _fields(
+            metabolon_level="1",
+            truth_match=True,
+            observed_neutral_mass=200.0,
+            candidate_exact_mass=400.0,
+        )
+    )
+    assert conf.msi_level == 4
+    assert "charge-state" in conf.msi_rationale
+
+
 def test_level1_without_truth_match_not_confirmed():
     conf = C.compute_confidence(_fields(metabolon_level="1", truth_match=False))
     assert conf.tier != "Confirmed"

@@ -12,6 +12,12 @@ fi
 OUT_ROOT="${OUT_ROOT:-$REPO_ROOT/output/pipeline_equalization}"
 RUN_LIBS="${RUN_LIBS:-209,305,400,402}"
 START_AT="${START_AT:-verifier}"
+# Opt-in extra flags for pipeline.candidates only (e.g. --derive-neutral-mass-from-adduct).
+# Empty by default so ranking stays CHG-2 / stored masses.
+CANDIDATES_EXTRA_ARGS="${CANDIDATES_EXTRA_ARGS:-}"
+# Opt-in extra flags for pipeline.verify (e.g. --ignore-acceptance when
+# library-anchored overlay does not contain current integrated winners).
+VERIFY_EXTRA_ARGS="${VERIFY_EXTRA_ARGS:-}"
 # JOBS>1 runs independent library scopes concurrently (per-scope logs under
 # OUT_ROOT). Per-stage worker counts are divided across concurrent scopes
 # unless explicitly provided.
@@ -24,6 +30,10 @@ export SE_RERANK_JOBS="${SE_RERANK_JOBS:-$default_stage_workers}"
 export SE_CANDIDATES_WORKERS="${SE_CANDIDATES_WORKERS:-$default_stage_workers}"
 MERGED_IONS_CSV="${MERGED_IONS_CSV:-$REPO_ROOT/data/ions_unknown_merged_clean.csv}"
 FEATURE_TABLE="${FEATURE_TABLE:-$MERGED_IONS_CSV}"
+# Unused by this script. Ranking still uses [M±H] (CHG-2). The Excel search
+# ladder is data/adducts/adduct_ladder.csv and is not consumed here. Do not
+# rerun this pipeline to "identify" those adducts until candidates is invoked
+# with --derive-neutral-mass-from-adduct and paired control eval says to ship it.
 ADDUCT_LADDER="${ADDUCT_LADDER:-$REPO_ROOT/data/chrolib_adduct_ladder.csv}"
 OBSERVED_209="${OBSERVED_209:-$REPO_ROOT/data/observed_ms2_lookups/per_control_all_x.csv}"
 
@@ -95,12 +105,23 @@ run_scope() {
   local lib="$1"
   local ion
   ion=$(scope_ion "$lib")
-  local manifest="$REPO_ROOT/data/feature_rows/lib${lib}_${ion}_gap_manifest.csv"
-  local feature_rows="$REPO_ROOT/data/feature_rows/lib${lib}_${ion}_feature_rows.csv"
-  local mass_hyp="$REPO_ROOT/data/feature_rows/lib${lib}_${ion}_neutral_mass_hypotheses.csv"
+  local feature_dir="${FEATURE_ROWS_DIR:-$REPO_ROOT/data/feature_rows}"
+  local manifest="$feature_dir/lib${lib}_${ion}_gap_manifest.csv"
+  local feature_rows="$feature_dir/lib${lib}_${ion}_feature_rows.csv"
+  local mass_hyp="$feature_dir/lib${lib}_${ion}_neutral_mass_hypotheses.csv"
   local observed_lookup="$REPO_ROOT/data/observed_ms2_lookups/lib${lib}_${ion}_observed_ms2_lookup.csv"
   local base_pool
-  base_pool=$(base_pool_for "$lib")
+  if [[ "${EMPTY_BASE_POOL:-0}" == "1" ]]; then
+    # Recovery runs score only the controls in FEATURE_ROWS_DIR. The full base
+    # pool would pull the existing cohort back in and rerun it.
+    mkdir -p "$OUT_ROOT"
+    base_pool="$OUT_ROOT/empty_base_pool.csv"
+    if [[ ! -s "$base_pool" ]]; then
+      echo "control_id" > "$base_pool"
+    fi
+  else
+    base_pool=$(base_pool_for "$lib")
+  fi
 
   if [[ ! -s "$manifest" ]]; then
     echo "[run_inference] missing manifest for lib${lib}_${ion}; skipping"
@@ -117,9 +138,13 @@ run_scope() {
       --feature-rows "$feature_rows" \
       --neutral-mass-hypotheses "$mass_hyp" \
       --lib-id "$lib" --ion-mode "$ion" \
-      --controls "$(awk 'NR>1{print $1}' "$manifest" | paste -sd, -)"
+      --controls "$(python3 -c 'import csv,sys; r=csv.DictReader(open(sys.argv[1], newline="", encoding="utf-8")); print(",".join(dict.fromkeys(row["control_id"].strip() for row in r if (row.get("control_id") or "").strip())))' "$manifest")" \
+      ${CANDIDATES_EXTRA_ARGS}
   fi
   inputs=$(append_existing "$inputs" "$la_path")
+  if [[ -n "${CANDIDATE_INPUTS_DIR:-}" ]]; then
+    inputs=$(append_existing "$inputs" "$CANDIDATE_INPUTS_DIR/lib${lib}_${ion}_candidate_metrics_all.csv")
+  fi
 
   if [[ -z "$inputs" ]]; then
     echo "[run_inference] no candidate inputs for lib${lib}_${ion}; skipping verifier/pool/rerank"
@@ -132,7 +157,14 @@ run_scope() {
     --all-x-observed-lookup "$observed_lookup" \
     --current-integrated-best "$(current_integrated "$lib")" \
     --input-candidate-metrics "$inputs" \
-    --lib-id "$lib" --ion-mode "$ion" --include-all-x
+    --lib-id "$lib" --ion-mode "$ion" --include-all-x \
+    ${VERIFY_EXTRA_ARGS}
+
+  local scored_csv="$OUT_ROOT/verifier_lib${lib}/scored_candidates.csv"
+  if ! grep -q '[^[:space:]]' "$scored_csv" 2>/dev/null; then
+    echo "[run_inference] no scored candidates for lib${lib}; skipping pool/rerank"
+    return 0
+  fi
 
   run_stage pool "$lib" "$PY" -m structural_elucidation.pipeline.pool \
     --output-root "$OUT_ROOT/unified_pool_lib${lib}" \

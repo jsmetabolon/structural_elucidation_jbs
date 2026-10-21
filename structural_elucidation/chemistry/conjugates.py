@@ -65,6 +65,16 @@ CONJUGATE_REACTIONS: dict[str, tuple[str, ...]] = {
         "glucuronide_carboxyl_conjugation",
         "glucuronide_amine_conjugation",
     ),
+    "glucoside": (
+        "glucoside_hydroxyl_conjugation",
+        "glucoside_carboxyl_conjugation",
+        "glucoside_amine_conjugation",
+    ),
+    "riboside": (
+        "riboside_hydroxyl_conjugation",
+        "riboside_carboxyl_conjugation",
+        "riboside_amine_conjugation",
+    ),
     "sulfate": ("hydroxyl_sulfation",),
     "phosphate": ("hydroxyl_phosphorylation",),
     "taurine": ("carboxyl_taurine_amide",),
