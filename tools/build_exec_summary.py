@@ -107,6 +107,7 @@ _TOOLS = Path(__file__).resolve().parent
 if str(_TOOLS) not in sys.path:
     sys.path.insert(0, str(_TOOLS))
 from reported_identification import (  # noqa: E402
+    candidate_identity_confidence,
     msi_from_library_level,
     reported_identification,
     reported_level,
@@ -144,6 +145,7 @@ LONG_COLUMNS = [
     "report_display_name",
     "reported_level",
     "reported_identification",
+    "candidate_identity_confidence",
     "excluded_library_reference",
     "feature_name_on_prod_library_panel",
     "prod_library_panel_matches",
@@ -167,6 +169,7 @@ LONG_COLUMNS = [
     "matched_truth",
     "is_best_match_in_top10",
     "matching_ranks",
+    "pure_nce_score",
 ]
 
 # Reviewed top-10 sheet: the columns kept in the hand-edited
@@ -184,6 +187,7 @@ TRUNCATED_COLUMNS = [
     "report_display_name",
     "reported_level",
     "reported_identification",
+    "candidate_identity_confidence",
     "identity_candidate_rank",
     "rank",
     "candidate_smiles",
@@ -193,6 +197,7 @@ TRUNCATED_COLUMNS = [
     "abs_mass_error_ppm",
     "is_best_match_in_top10",
     "matching_ranks",
+    "pure_nce_score",
 ]
 
 ROLLUP_COLUMNS = [
@@ -208,6 +213,7 @@ ROLLUP_COLUMNS = [
     "report_display_name",
     "reported_level",
     "reported_identification",
+    "candidate_identity_confidence",
     "excluded_library_reference",
     "feature_name_on_prod_library_panel",
     "prod_library_panel_matches",
@@ -836,21 +842,26 @@ def build_rows(
         if candidate["truth_tanimoto"] is not None
     ]
     level, sublevel = best_metabolon(entry)
+    naming_fields = {
+        "feature_name": report["display_name"],
+        "report_display_name": report.get("report_display_name", ""),
+        "metabolon_level": level,
+        "msi_level": report.get("msi_level"),
+        "exception_basis": report.get("exception_basis", ""),
+        "identity_exclusion_reason": report.get("identity_exclusion_reason", ""),
+        "excluded_library_reference": report.get("excluded_library_reference", ""),
+        "library_collision": report.get("library_collision", ""),
+        "known_x_tentative_information": _joined(entry, "names"),
+        "known_x_cleaned_external_info": _joined(entry, "cleaned"),
+    }
     identification = reported_identification(
         report["x_compound_id"],
         report["candidates"],
-        {
-            "feature_name": report["display_name"],
-            "report_display_name": report.get("report_display_name", ""),
-            "metabolon_level": level,
-            "msi_level": report.get("msi_level"),
-            "exception_basis": report.get("exception_basis", ""),
-            "identity_exclusion_reason": report.get("identity_exclusion_reason", ""),
-            "excluded_library_reference": report.get("excluded_library_reference", ""),
-            "library_collision": report.get("library_collision", ""),
-            "known_x_tentative_information": _joined(entry, "names"),
-            "known_x_cleaned_external_info": _joined(entry, "cleaned"),
-        },
+        naming_fields,
+    )
+    candidate_identity_confidence_value = candidate_identity_confidence(
+        report["candidates"],
+        naming_fields,
     )
     shared = {
         "x_compound_id": report["x_compound_id"],
@@ -865,6 +876,7 @@ def build_rows(
         "report_display_name": report.get("report_display_name", ""),
         "reported_level": reported_level(identification),
         "reported_identification": identification,
+        "candidate_identity_confidence": "" if candidate_identity_confidence_value is None else candidate_identity_confidence_value,
         "excluded_library_reference": report.get("excluded_library_reference", ""),
         "feature_name_on_prod_library_panel": report.get("feature_name_on_prod_library_panel", ""),
         "prod_library_panel_matches": report.get("prod_library_panel_matches", ""),
@@ -905,6 +917,7 @@ def build_rows(
                     first_match is not None and candidate["rank"] == first_match
                 ).upper(),
                 "matching_ranks": matching_ranks,
+                "pure_nce_score": _round(candidate.get("pure_nce_score"), 6),
             }
         )
 
@@ -989,6 +1002,25 @@ def write_csv(path: Path, columns: list[str], rows: list[dict[str, Any]]) -> Non
         writer.writerows(rows)
 
 
+def load_pure_nce_scores(path: Path) -> dict[tuple[str, str], float]:
+    """(x_compound_id, candidate_smiles) -> pure NCE score; unscorable pairs are left out."""
+
+    scores: dict[tuple[str, str], float] = {}
+    with path.open(newline="") as handle:
+        for row in csv.DictReader(handle):
+            if row.get("nce_status") in {"no_observed_bins", "error"}:
+                continue
+            value = _num(row.get("pure_nce_score"))
+            if value is not None:
+                scores[(_clean(row.get("x_compound_id")), _clean(row.get("candidate_smiles")))] = value
+    return scores
+
+
+def attach_pure_nce_scores(report: dict[str, Any], scores: dict[tuple[str, str], float]) -> None:
+    for candidate in report["candidates"]:
+        candidate["pure_nce_score"] = scores.get((report["x_compound_id"], candidate["smiles"]))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reports-root", type=Path, required=True)
@@ -1001,11 +1033,18 @@ def main() -> None:
         default=PROD_LIBRARY_PANEL,
         help="production library panel (CHEMICAL_ID / CHEMICAL_NAME); pass a missing path to skip",
     )
+    parser.add_argument(
+        "--pure-nce-scores",
+        type=Path,
+        default=None,
+        help="tools/rescore_pure_nce.py output; drives the candidate_identity_confidence margin",
+    )
     args = parser.parse_args()
 
     if not args.reports_root.is_dir():
         raise SystemExit(f"reports root not found: {args.reports_root}")
 
+    pure_nce = load_pure_nce_scores(args.pure_nce_scores) if args.pure_nce_scores else {}
     levels = load_metabolon_levels()
     structures = load_reference_structures()
     panel = load_prod_library(args.prod_library)
@@ -1017,6 +1056,7 @@ def main() -> None:
     long_rows: list[dict[str, Any]] = []
     rollups: list[dict[str, Any]] = []
     for report in read_reports(args.reports_root, panel):
+        attach_pure_nce_scores(report, pure_nce)
         context = classify(report, levels, structures)
         entry = levels.get(report["x_compound_id"], {})
         rows, rollup = build_rows(report, context, entry)

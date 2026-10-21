@@ -2,6 +2,15 @@
 
 Self-contained inference repo for the Metabolon X-compound pipeline: spectrum features in, ranked SMILES predictions out (full rerank path).
 
+## Latest untargeted integration
+
+`codex/structural-elucidation-latest` consolidates the October workflow, the
+untargeted-input adapter, and the latest MSI/publication-level and confidence
+scoring. The novel-feature driver writes canonical scores before optional HTML
+reports and records its source commit and calibration checksum for reproducibility.
+See [the integration guide](docs/untargeted_integration.md) for setup, assets,
+output columns, and the distinction between evidence MSI and publication levels.
+
 ## Quick start (EC2 CPU)
 
 ```bash

@@ -230,6 +230,12 @@ def build_one(
         str(out_dir),
         *passthrough_args(args, lib),
     ]
+    scoring_dir = getattr(args, "scoring_dir", None)
+    if scoring_dir:
+        scoring_path = resolve(Path(scoring_dir), REPO_ROOT) / f"{control_id}.json"
+        if not scoring_path.is_file():
+            return BuildResult(control_id, lib, out_dir, "failed", -1, "missing precomputed scoring JSON")
+        cmd.extend(["--scoring-json", str(scoring_path)])
     try:
         proc = subprocess.run(
             cmd,
@@ -520,6 +526,7 @@ def build_parser() -> argparse.ArgumentParser:
     fwd.add_argument("--known-x-all", default=None)
     fwd.add_argument("--peak-csv", default=None, help="Single peak CSV applied to every compound")
     fwd.add_argument("--observed-lookup-dir", default=None, help="Dir of lib{N}_{ion}_observed_ms2_lookup.csv")
+    fwd.add_argument("--scoring-dir", default=None, help="Dir of canonical <control_id>.json scores from run_novel")
     fwd.add_argument("--spectrum-tolerance-da", default=None)
     fwd.add_argument("--min-similarity", default=None)
     fwd.add_argument("--max-neighbors", default=None)

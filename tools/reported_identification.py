@@ -10,22 +10,49 @@ Rules, first match wins:
    → ``Level 1: {name}``.
 2. A named-library entry that is not one structure, such as a glucuronide of a
    formula → ``Level 2*: {name}*``.
-3. An ``isomer of`` label → ``Level 2: isomer of {library name}``.
-   The library name is enough.
+3. An ``isomer of`` label (exact match to a library entry besides retention
+   time) → ``Level 3: isomer of {library name}``. The library name is enough.
 4. A specific structure name → ``Level 2: [X-######], Probable {name}``.
    A name is enough; the candidates do not have to agree.
 5. A class phrase such as ``Glucoside`` → ``Level 3``.
 6. No supported formula → ``Level 5: exact mass of interest``.
-7. A conjugate, sugar, or peptide shared by a strict majority of the
+7. Among the formula-supporting candidates, a structurally related family
+   that clears every unrelated candidate by a distinctive Match Score gap,
+   with no name found another way → ``Level 3: Probable isomer of {top
+   candidate}``.
+8. A conjugate, sugar, or peptide shared by a strict majority of the
    formula-supporting candidates → ``Level 3: {class}``.
-8. A supported formula and no name or shared class → ``Level 4: {formula}``.
+9. A supported formula and no name or shared class → ``Level 4: {formula}``.
+
+``candidate_identity_confidence`` is a separate, 0-100 number answering a different
+question than Match Score. Match Score (``evidence_confidence`` /
+``predicted_spectrum_score_v2``) says how well one candidate's predicted
+spectrum fits the experimental data, and the Match Score margin between
+structural families is frequently uninformative on its own: many unrelated
+candidates score near the overlap-score fallback tie, and many others all
+saturate near 1.0, so the raw margin alone does not separate a confident
+"Probable [name]" call from an unsupported molecular formula.
+
+So the scale is banded by what the publication call itself asserts, and the
+candidate margin only places a compound within its band. The margin uses the
+pure NCE score (``pure_nce_score``) when a compound has one, since it does not
+saturate. When ``identity_confidence_calibration.json`` (written by
+``tools/calibrate_identity_confidence.py``) sits beside this module, its
+anchors and bands, fitted on the truth controls, replace the hand-set
+``_CONFIDENCE_BANDS``. Level 1 is always 100. Level 2* is floored at
+``LEVEL_2_STAR_FLOOR`` (99) and a higher margin is kept, since the confidence
+there is the manual review, not the spectrum.
 """
 
 from __future__ import annotations
 
 import contextlib
 import io
+import json
+import math
 import re
+import warnings
+from pathlib import Path
 from typing import Any
 
 try:
@@ -52,9 +79,26 @@ except Exception:  # pragma: no cover - optional dependency
 # A family must clear unrelated candidates by this much evidence to count as
 # distinctively higher. Tied, saturated scores do not.
 DISTINCTIVE_GAP = 0.05
+# Curator Level 2* names are confident by review. 100 stays reserved for an
+# authentic standard (Level 1). A higher cluster score is kept.
+LEVEL_2_STAR_FLOOR = 99.0
 # Mass-match floor for the candidates allowed to vote on the formula.
 MASS_CONSISTENT = 0.95
 RELATED_TANIMOTO = 0.60
+
+# candidate_identity_confidence bands, by the publication call that was made
+# (see _confidence_tier). The 0-100 Match Score cluster margin only places a
+# compound within its band, so Level 2/3 calls stay well above Level 4/5 even
+# when the margin itself is uninformative. Level 1 (100) and Level 2* (floor
+# 99) are handled separately, not through this table.
+_CONFIDENCE_BANDS: dict[str, tuple[float, float]] = {
+    "2_probable": (90.0, 99.0),
+    "3_isomer_exact": (75.0, 92.0),
+    "3_class": (55.0, 80.0),
+    "3_probable_isomer_group": (35.0, 65.0),
+    "4": (15.0, 45.0),
+    "5": (0.0, 20.0),
+}
 
 MSI_LABELS = {
     "1": "Confirmed (authentic standard)",
@@ -140,7 +184,7 @@ def reported_identification(
         return f"Level 2*: {library_name}{star}"
     parent = _isomer_parent(fields)
     if parent:
-        return f"Level 2: isomer of {parent}"
+        return f"Level 3: isomer of {parent}"
     specific = _specific_name(fields)
     if specific:
         return f"Level 2: [{_clean(compound_id)}], Probable {specific}"
@@ -150,10 +194,233 @@ def reported_identification(
     formula, competitive = _supported_formula(candidates)
     if not formula or not competitive:
         return "Level 5: exact mass of interest"
+    group_parent = _group_isomer_name(competitive)
+    if group_parent:
+        return f"Level 3: Probable isomer of {group_parent}"
     motif = _shared_motif(competitive)
     if motif:
         return f"Level 3: {motif}"
     return f"Level 4: {formula}"
+
+
+def _confidence_tier(identification: str) -> str:
+    """Which ``_CONFIDENCE_BANDS`` entry a publication call falls in.
+
+    Mirrors the branches of :func:`reported_identification`, read back off
+    its own output text, so the two never disagree about which rule fired.
+    """
+
+    text = _clean(identification)
+    if text.startswith("Level 1:"):
+        return "1"
+    if text.startswith("Level 2*:"):
+        return "2_star"
+    if text.startswith("Level 2:"):
+        return "2_probable"
+    lowered = text.lower()
+    if lowered.startswith("level 3: probable isomer of"):
+        return "3_probable_isomer_group"
+    if lowered.startswith("level 3: isomer of"):
+        return "3_isomer_exact"
+    if text.startswith("Level 3:"):
+        return "3_class"
+    if text.startswith("Level 4:"):
+        return "4"
+    if text.startswith("Level 5:"):
+        return "5"
+    return ""
+
+
+def candidate_identity_confidence(
+    candidates: list[dict[str, Any]], fields: dict[str, Any] | None = None
+) -> float | None:
+    """0-100: confidence that the reported identity, not a rival, is right.
+
+    This is not Match Score. Match Score (``evidence_confidence`` /
+    ``predicted_spectrum_score_v2``) is how well one candidate's predicted
+    spectrum fits the data, and the Match Score margin between structural
+    families is frequently uninformative on its own (see the module
+    docstring). So the scale is banded by the publication call itself
+    (:func:`reported_identification`), and the margin only places a compound
+    within its band:
+
+    - Level 1 (authentic standard): 100, always.
+    - Level 2* (curator-named modification): at least
+      ``LEVEL_2_STAR_FLOOR`` (99); a higher margin is kept.
+    - Level 2 "Probable [name]": 90-99.
+    - Level 3 "isomer of" (exact match besides retention time): 75-92.
+    - Level 3 class/motif (a determined conjugate or chemical class): 55-80.
+    - Level 3 "Probable isomer of" (a related family only, by Match Score):
+      35-65.
+    - Level 4 (bare molecular formula): 15-45.
+    - Level 5 (exact mass only): 0-20.
+
+    Those are the hand-set bands; a valid ``CALIBRATION_PATH`` file replaces
+    them (see :func:`load_calibration`).
+
+    Blank when there is neither a Level 2* name nor a candidate to be
+    confident about.
+
+    This is unrelated to ``structural_elucidation.reports.confidence``'s own
+    ``identity_confidence`` field, which is a curator/auto-rule flag (0-1,
+    often ``None``) for "named library entry pending an authentic standard,"
+    not a candidate-cluster score. Do not conflate the two.
+    """
+
+    fields = fields or {}
+    if _is_level1(fields):
+        return 100.0
+    margin = _cluster_identity_confidence(candidates)
+    tier = _confidence_tier(reported_identification("", candidates, fields))
+    if tier == "2_star":
+        # The confidence here is the manual review, not the spectrum, so a
+        # missing Match Score still floors at 99 rather than going blank.
+        if margin is None:
+            return LEVEL_2_STAR_FLOOR
+        return max(margin, LEVEL_2_STAR_FLOOR)
+    if margin is None:
+        return None
+    calibration = active_calibration()
+    if calibration is not None:
+        return _calibrated_score(calibration, tier, margin)
+    band = _CONFIDENCE_BANDS.get(tier)
+    if band is None:
+        return margin
+    floor, ceiling = band
+    return round(floor + (ceiling - floor) * (margin / 100.0), 1)
+
+
+def _calibrated_score(calibration: dict[str, Any], tier: str, margin: float) -> float:
+    """Place a margin inside a calibrated tier.
+
+    The tier's ``center`` margin maps to its ``anchor`` (the observed
+    correct-call rate). With a fitted ``slope`` the offset is logistic,
+    otherwise linear across the half-width; either way it stays in
+    ``[floor, ceiling]`` so tiers keep their order.
+    """
+
+    spec = calibration["tiers"].get(tier)
+    if spec is None:
+        return margin
+    floor, ceiling, anchor = spec["floor"], spec["ceiling"], spec["anchor"]
+    offset = (margin - spec.get("center", 50.0)) / 100.0
+    slope = calibration.get("slope")
+    if slope:
+        p = min(max(anchor / 100.0, 1e-4), 1 - 1e-4)
+        logit = math.log(p / (1 - p)) + float(slope) * offset
+        value = 100.0 / (1.0 + math.exp(-logit))
+    else:
+        half = max(anchor - floor, ceiling - anchor)
+        value = anchor + 2.0 * half * offset
+    return round(min(max(value, floor), ceiling), 1)
+
+
+CALIBRATION_PATH = Path(__file__).with_name("identity_confidence_calibration.json")
+# Highest to lowest; calibrated anchors must not increase along this order.
+CALIBRATED_TIER_ORDER = (
+    "2_probable",
+    "3_isomer_exact",
+    "3_class",
+    "3_probable_isomer_group",
+    "4",
+    "5",
+)
+_CALIBRATION_CACHE: dict[str, Any] = {}
+
+
+def load_calibration(path: Path | str) -> dict[str, Any]:
+    """Read and validate a calibration file; raise ``ValueError`` if it is unusable.
+
+    Every tier in ``CALIBRATED_TIER_ORDER`` needs ``floor <= anchor <=
+    ceiling`` inside ``[0, LEVEL_2_STAR_FLOOR]``, and anchors must not
+    increase down the order, so no lower call can outscore a higher one at
+    its anchor and nothing reaches the Level 2* floor or Level 1.
+    """
+
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    tiers = payload.get("tiers") or {}
+    previous = None
+    for tier in CALIBRATED_TIER_ORDER:
+        spec = tiers.get(tier)
+        if not isinstance(spec, dict):
+            raise ValueError(f"calibration is missing tier {tier}")
+        floor, anchor, ceiling = (float(spec[key]) for key in ("floor", "anchor", "ceiling"))
+        if not 0.0 <= floor <= anchor <= ceiling <= LEVEL_2_STAR_FLOOR:
+            raise ValueError(f"tier {tier}: need 0 <= floor <= anchor <= ceiling <= {LEVEL_2_STAR_FLOOR}")
+        if previous is not None and anchor > previous:
+            raise ValueError(f"tier {tier}: anchor {anchor} exceeds the tier above ({previous})")
+        previous = anchor
+        spec.update(floor=floor, anchor=anchor, ceiling=ceiling, center=float(spec.get("center", 50.0)))
+    return payload
+
+
+def active_calibration() -> dict[str, Any] | None:
+    """The calibration in ``CALIBRATION_PATH``, or ``None`` to use ``_CONFIDENCE_BANDS``."""
+
+    key = str(CALIBRATION_PATH)
+    if key not in _CALIBRATION_CACHE:
+        calibration = None
+        if CALIBRATION_PATH.exists():
+            try:
+                calibration = load_calibration(CALIBRATION_PATH)
+            except (OSError, ValueError, KeyError, TypeError) as exc:
+                warnings.warn(f"ignoring {CALIBRATION_PATH.name}: {exc}", stacklevel=2)
+        _CALIBRATION_CACHE[key] = calibration
+    return _CALIBRATION_CACHE[key]
+
+
+def _margin_scores(ranked: list[dict[str, Any]]) -> dict[int, float | None]:
+    """Per-candidate score behind the identity margin, keyed by ``id(candidate)``.
+
+    The pure NCE score is used when rank 1 has a successful finite score,
+    including zero, divided by the compound's best NCE score so the margin reads
+    rank 1 against its rivals rather than the matcher's absolute scale
+    (a calibration with ``"nce_normalization": "raw"`` skips the division).
+    An all-zero successful result stays zero. Otherwise ``evidence_confidence``
+    is used. One compound never mixes the two.
+    """
+
+    nce = [
+        None if candidate.get("nce_status") in {"error", "no_observed_bins"}
+        else _num(candidate.get("pure_nce_score"))
+        for candidate in ranked
+    ]
+    present = [score for score in nce if score is not None]
+    if nce and nce[0] is not None and present:
+        calibration = active_calibration() or {}
+        peak = 1.0 if calibration.get("nce_normalization") == "raw" else (max(present) or 1.0)
+        return {id(candidate): None if score is None else score / peak for candidate, score in zip(ranked, nce)}
+    return {id(candidate): _num(candidate.get("evidence_confidence")) for candidate in ranked}
+
+
+def _best_margin_score(candidates: list[dict[str, Any]], scores: dict[int, float | None]) -> float | None:
+    present = [scores.get(id(candidate)) for candidate in candidates]
+    present = [score for score in present if score is not None]
+    return max(present) if present else None
+
+
+def _cluster_identity_confidence(candidates: list[dict[str, Any]]) -> float | None:
+    """Cluster-margin score, before the Level 1 and Level 2* floors."""
+
+    if not candidates:
+        return None
+    ranked = sorted(candidates, key=_rank)
+    scores = _margin_scores(ranked)
+    top_score = scores.get(id(ranked[0]))
+    if top_score is None:
+        return None
+    if not HAS_RDKIT:
+        return round(100.0 * top_score, 1)
+    families = _cluster(ranked)
+    top_family = _family_containing(families, ranked[0])
+    unrelated = [member for family in families if family is not top_family for member in family]
+    rival_score = _best_margin_score(unrelated, scores) if unrelated else None
+    if rival_score is None:
+        return round(100.0 * top_score, 1)
+    denominator = top_score + rival_score
+    if denominator <= 0:
+        return 0.0
+    return round(100.0 * (top_score * top_score) / denominator, 1)
 
 
 _MOTIF_SMARTS = (
@@ -313,6 +580,33 @@ def _best_evidence(candidates: list[dict[str, Any]]) -> float | None:
     scores = [_num(candidate.get("evidence_confidence")) for candidate in candidates]
     present = [score for score in scores if score is not None]
     return max(present) if present else None
+
+
+def _group_isomer_name(candidates: list[dict[str, Any]]) -> str:
+    """Name of the dominant structural family, when nothing else named it.
+
+    Clusters the candidates by structural relatedness. If the family holding
+    rank 1 clears every other, unrelated family by ``DISTINCTIVE_GAP`` or
+    more Match Score, that family is the metabolite's probable isomer group,
+    named for its own top-ranked member.
+    """
+
+    if not HAS_RDKIT or not candidates:
+        return ""
+    ranked = sorted(candidates, key=_rank)
+    families = _cluster(ranked)
+    if len(families) < 2:
+        return ""
+    top = ranked[0]
+    top_family = _family_containing(families, top)
+    unrelated = [member for family in families if family is not top_family for member in family]
+    if not unrelated or not _outranks(top_family, unrelated):
+        return ""
+    leader = min(top_family, key=_rank)
+    name = _as_specific(_clean(leader.get("name")))
+    if name:
+        return name
+    return _clean(leader.get("formula") or leader.get("candidate_formula"))
 
 
 def msi_from_library_level(level: str) -> tuple[str, str]:
@@ -540,7 +834,7 @@ def _num(value: Any) -> float | None:
         number = float(value)
     except (TypeError, ValueError):
         return None
-    if number != number:  # NaN
+    if not math.isfinite(number):
         return None
     return number
 

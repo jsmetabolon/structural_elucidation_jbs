@@ -47,6 +47,7 @@ import structural_elucidation.utils.wgcna as wgcna
 from structural_elucidation.nce.evidence import ri_proxy_from_smiles
 from structural_elucidation.paths import REPO_ROOT, resolve
 from structural_elucidation.reports import confidence as confmod
+from structural_elucidation.reports import novel_scoring
 from structural_elucidation.reports import naming_v2
 from structural_elucidation.reports import pathway_explain as pathmod
 from structural_elucidation.reports import tentative_naming as tnmod
@@ -2942,6 +2943,7 @@ def render_html(
         {confmod.confidence_metric_card_html(confidence)}
         {confmod.msi_metric_card_html(confidence)}
         {confmod.identity_metric_card_html(confidence)}
+        {novel_scoring.publication_cards_html(conf_fields)}
       </div>
       <div class="structure-card" style="margin-top:18px;">
         {heading_with_info("h3", "Identification Evidence", include_info=False)}
@@ -3495,7 +3497,15 @@ def build_v2_unresolved_report(
         "excluded_library_matches", "raw_rank1_candidate", "identity_candidate",
         "exception_basis", "review_verdict",
     )})
-    conf = confmod.compute_confidence(fields)
+    scoring_path = getattr(args, "scoring_json", None)
+    scoring_payload = novel_scoring.read_scoring_payload(scoring_path, control_id) if scoring_path else None
+    if scoring_payload:
+        fields = dict(scoring_payload["fields"])
+        level = int(fields["msi_level"])
+        rationale = fields["msi_rationale"]
+        name = fields.get("display_name", name)
+        (data_dir / f"{slug}_scoring.json").write_text(json.dumps(scoring_payload, indent=2))
+    conf = novel_scoring.confidence_from_fields(fields)
     fields["evidence_score"] = conf.evidence_score
     fields["overall"] = conf.overall
     fields["tier"] = "Tentative"
@@ -3506,13 +3516,31 @@ def build_v2_unresolved_report(
     # the feature's proposed identity.
     (data_dir / f"{slug}_top_candidates.csv").write_text("")
     (data_dir / f"{slug}_candidate_score_summary.csv").write_text("")
-    pathway_super = str(known_x_row.get("SuperPathway") or "").strip()
-    pathway_sub = str(known_x_row.get("Draft Subpathway") or "").strip()
+    def _cell(value: Any) -> str:
+        text = str("" if value is None else value).strip()
+        return "" if text.lower() in {"", "nan", "none", "null", "<na>"} else text
+
+    predicted_super = _cell(raw.get("compound_predicted_pathway")) or _cell(raw.get("predicted_pathway"))
+    predicted_sub = _cell(raw.get("compound_predicted_subpathway")) or _cell(raw.get("predicted_subpathway"))
+    pathway_super = predicted_super or _cell(known_x_row.get("SuperPathway"))
+    pathway_sub = predicted_sub or _cell(known_x_row.get("Draft Subpathway"))
+    pathway_source = "compound_prediction" if predicted_super or predicted_sub else "known_x_annotation"
+    pathway_tier = _cell(raw.get("pathway_confidence_tier")) or "tentative"
+    pathway_status = (
+        _cell(raw.get("compound_pathway_status"))
+        or _cell(raw.get("pathway_assignment_status"))
+        or "curated_x_annotation"
+    )
+    spectrum_score = pd.to_numeric(raw.get("predicted_spectrum_score_v2"), errors="coerce")
+    mass_ppm = pd.to_numeric(raw.get("abs_mass_error_ppm"), errors="coerce")
     pd.DataFrame([{
         "control_id": control_id, "predicted_pathway": pathway_super,
-        "predicted_subpathway": pathway_sub, "pathway_source": "known_x_annotation",
-        "pathway_confidence_tier": "tentative", "pathway_best_reference_similarity": "",
-        "pathway_assignment_status": "curated_x_annotation",
+        "predicted_subpathway": pathway_sub, "pathway_source": pathway_source,
+        "pathway_confidence_tier": pathway_tier,
+        "pathway_best_reference_similarity": raw.get("pathway_best_reference_similarity", ""),
+        "pathway_assignment_status": pathway_status,
+        "predicted_spectrum_score_v2": None if pd.isna(spectrum_score) else float(spectrum_score),
+        "abs_mass_error_ppm": None if pd.isna(mass_ppm) else float(mass_ppm),
     }]).to_csv(data_dir / f"{slug}_pathway_prediction.csv", index=False)
     target = {"control_id": control_id, "name": name, "smiles": "",
               "formula": formula, "exact_mass": None, "inchikey": ""}
@@ -3550,8 +3578,13 @@ td,th{{padding:9px;text-align:left;border-bottom:1px solid #ccd8e2}}code{{font-s
 <p class="note">{html.escape(source_note)}</p>
 {review_note}
 <p>MSI Level {level}: {html.escape(confmod.MSI_LABELS[level])}. {html.escape(rationale)}</p>
+{confmod.confidence_metric_card_html(conf)}
+{novel_scoring.publication_cards_html(fields)}
 <p>Formula: <code>{html.escape(formula or 'unresolved')}</code> · Observed m/z: {f'{observed_mz:.4f}' if observed_mz else 'unavailable'}</p>
-<p>Pathway annotation: {html.escape(pathway_super or 'unresolved')} / {html.escape(pathway_sub or 'unresolved')} (from known_X).</p>
+<p>Pathway: {html.escape(pathway_super or 'unresolved')} / {html.escape(pathway_sub or 'unresolved')}
+({html.escape(pathway_source.replace('_', ' '))}, {html.escape(pathway_tier)} confidence).</p>
+<p>Spectrum score: {f'{float(spectrum_score):.3f}' if pd.notna(spectrum_score) else 'unavailable'}
+· Mass error: {f'{float(mass_ppm):.2f} ppm' if pd.notna(mass_ppm) else 'unavailable'}.</p>
 {exclusion_table}<p>Original model ranks and exclusion reasons: <a href="data/{slug}_candidate_annotations.json">candidate audit</a>.</p>
 </body></html>"""
     for filename in ("public.html", "internal.html", "index.html", f"{control_id.replace('-', '_')}.html"):
@@ -3609,8 +3642,20 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
 
     top = top.sort_values("rank", kind="mergesort")
     raw_top = top.copy()
+    scoring_path = getattr(args, "scoring_json", None)
+    scoring_payload = novel_scoring.read_scoring_payload(scoring_path, control_id) if scoring_path else None
     v2_decision: dict[str, Any] | None = None
-    if getattr(args, "naming_policy_version", "v2") == "v2":
+    if scoring_payload:
+        v2_decision = scoring_payload.get("naming_decision")
+        raw_top = pd.DataFrame(scoring_payload.get("raw_candidates") or scoring_payload["candidates"])
+        top = pd.DataFrame(scoring_payload["candidates"])
+        if v2_decision:
+            (data_dir / f"{slug}_candidate_annotations.json").write_text(json.dumps(v2_decision, indent=2))
+            raw_top.to_csv(data_dir / f"{slug}_raw_top_candidates.csv", index=False)
+            if v2_decision["identity_candidate"] is None:
+                return build_v2_unresolved_report(args, control_id, out_dir, data_dir,
+                    scoring_payload.get("known_x_row", {}), v2_decision, raw_top)
+    if not scoring_payload and getattr(args, "naming_policy_version", "v2") == "v2":
         known_row = lookup_known_x_row(known_x, control_id)
         assurance = confmod.load_curation_ledger(
             resolve(getattr(args, "curation_ledger", DEFAULT_CURATION_LEDGER), repo_root)
@@ -3999,87 +4044,21 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     known_render = extended.get("known_render", pd.DataFrame())
     x_render = extended.get("x_render", pd.DataFrame())
 
-    # Hybrid identification confidence (shared model; see reports/confidence.py).
-    _css_records = candidate_score_df.fillna("").to_dict(orient="records")
-
-    def _n(value: Any) -> float | None:
-        v = pd.to_numeric(value, errors="coerce")
-        return None if pd.isna(v) else float(v)
-
-    _ms2_candidates = [
-        _n(rank1.get("predicted_spectrum_score_v2")),
-        _n(rank1.get("forward_spectrum_score")),
-        _n(rank1.get("ms2_match_score")),
-    ]
-    _ms2_candidates = [c for c in _ms2_candidates if c is not None]
-    _ms2_score = max(_ms2_candidates) if _ms2_candidates else None
-    _observed_mz = _n(rank1.get("parent_mz"))
-    _conf_fields = confmod.fields_from_parts(
-        _css_records[0] if _css_records else {},
-        _css_records[1] if len(_css_records) > 1 else None,
-        {
-            "pathway_source": pathway_info.get("source", ""),
-            "pathway_best_reference_similarity": pathway_info.get("similarity"),
-            # The reconstructed vote finally gives the pathway axis a real share
-            # to score. Until now this key was always absent and the axis fell
-            # back to the three-valued tier map.
-            "pathway_vote_share": (
-                pathway_vote_result.super_share if pathway_vote_result.available else None
-            ),
-            "pathway_confidence_tier": pathway_info.get("tier", ""),
-        },
-        observed_mz_available=_observed_mz is not None and _observed_mz > 0,
-        ms2_spectrum_present=_ms2_score is not None and _ms2_score > 0,
-        ms2_score=_ms2_score,
-        library_neighbors_ge_050=sum(
-            1
-            for nb in neighbors
-            if float(nb.get("similarity_to_target", 0.0) or 0.0) >= confmod.NEIGHBOR_SIMILARITY_FLOOR
-        ),
-        correlations_real=not correlation_blocker,
-        # Retention. The observed index rides along in the feature key; the
-        # predicted one needs RDKit, which the confidence model deliberately
-        # does not depend on.
-        lib_id=rank1.get("lib_id"),
-        observed_retention_index=_finite_or_none(ri_from_feature_key(rank1.get("feature_key"))),
-        candidate_retention_proxy=_finite_or_none(ri_proxy_from_smiles(target_smiles)),
+    # Both delivery paths use the same normalization; a driver payload is the
+    # completed result and takes precedence over rendering-specific evidence.
+    _observed_mz = novel_scoring.number(rank1.get("parent_mz"))
+    _conf_fields = novel_scoring.prepare_confidence_fields(
+        rank1.to_dict(), candidate_score_df.fillna("").to_dict(orient="records"), pathway_info,
+        pathway_vote_share=pathway_vote_result.super_share if pathway_vote_result.available else None,
+        neighbors=neighbors, n_peaks=len(peaks), target_smiles=target_smiles,
+        target_exact_mass=target["exact_mass"], known_x_row=kx_row, naming_decision=v2_decision,
+        curation_entry=confmod.load_curation_ledger(
+            resolve(getattr(args, "curation_ledger", DEFAULT_CURATION_LEDGER), repo_root)
+        ).get(control_id), correlations_real=not correlation_blocker,
     )
-    _conf_fields["observed_mz"] = _observed_mz
-    _conf_fields["observed_neutral_mass"] = (
-        _n(rank1.get("target_neutral_mass")) or _n(rank1.get("neutral_mass"))
-    )
-    _conf_fields["candidate_exact_mass"] = target["exact_mass"]
-    # Parity with the enrich -> patch flow: Metabolon Level, mass-consistent
-    # alternative, and observed-MS2 detail so the from-source render matches.
-    _level = str(kx_row.get("Level", "") or "").strip()
-    _conf_fields["metabolon_level"] = "" if _level.lower() in {"nan", "artifact", "exclude", "4?"} else _level
-    if v2_decision and v2_decision["exception_basis"] == "standard_confirmed":
-        _conf_fields["truth_match"] = True
-    _conf_fields["mass_alt"] = confmod.mass_consistent_alt(_css_records)
-    _n_peaks = int(len(peaks)) if hasattr(peaks, "empty") and not peaks.empty else 0
-    _conf_fields["ms2_detail"] = {
-        # The observed-MS2 panel must reflect an *observed* spectrum (from --peak-csv /
-        # the observed lookup), not the pipeline's predicted spectral score.
-        "present": _n_peaks > 0,
-        "n_pairs": _n_peaks,
-        "n_ion_bins": 0,
-        "n_loss_bins": 0,
-        "forward": _n(rank1.get("forward_spectrum_score")),
-        "predicted_v2": _n(rank1.get("predicted_spectrum_score_v2")),
-        "match": _n(rank1.get("ms2_match_score")),
-    }
-    _conf_fields["ms2_n_pairs"] = _n_peaks
-    # Reviewed verdict, matching the enrich -> patch flow so both delivery paths
-    # honor the same curation ledger.
-    curation_entry = confmod.load_curation_ledger(
-        resolve(getattr(args, "curation_ledger", DEFAULT_CURATION_LEDGER), repo_root)
-    ).get(control_id)
-    if v2_decision and v2_decision["library_collision"] and curation_entry:
-        if curation_entry.verdict == "curator_known":
-            _conf_fields["curation_note"] = curation_entry.note()
-            curation_entry = None
-    confmod.apply_curation_entry(_conf_fields, curation_entry)
-    confidence_obj = confmod.compute_confidence(_conf_fields)
+    if scoring_payload:
+        _conf_fields = dict(scoring_payload["fields"])
+    confidence_obj = novel_scoring.confidence_from_fields(_conf_fields)
     # The MSI level decides what the compound may be called. Levels 4-5 withhold
     # the structure, so they cannot carry a structural name however well it
     # resolved; Level 3 must read as a hypothesis rather than an assertion.
@@ -4099,6 +4078,8 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             target_name = f"Probable {bare}"
         else:
             target_name = f"Possible {bare}"
+    if scoring_payload:
+        target_name = scoring_payload["fields"].get("display_name", target_name)
     target["name"] = target_name
     _conf_fields["smiles"] = target_smiles
     _conf_fields["resolved_name"] = unqualified_name
@@ -4129,9 +4110,17 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 "exception_basis", "review_verdict",
             )
         })
+    if scoring_payload:
+        _conf_fields = dict(scoring_payload["fields"])
+        (data_dir / f"{slug}_scoring.json").write_text(json.dumps(scoring_payload, indent=2))
     (data_dir / f"{slug}_confidence_inputs.json").write_text(
         json.dumps(_conf_fields, indent=2)
     )
+
+    if scoring_payload:
+        publication = scoring_payload["summary"]
+        _conf_fields["reported_identification"] = publication["se_reported_identification"]
+        _conf_fields["candidate_identity_confidence"] = publication["se_candidate_identity_confidence"]
 
     fragment_candidate_rows = top.head(int(args.candidate_tab_n)).fillna("").to_dict(orient="records")
     render_kwargs = dict(
@@ -4244,6 +4233,7 @@ def main() -> None:
     parser.add_argument("--candidate-pool", type=Path, default=None)
     parser.add_argument("--hypotheses", type=Path, default=None)
     parser.add_argument("--peak-csv", type=Path, default=None)
+    parser.add_argument("--scoring-json", type=Path, default=None, help="Completed novel-feature scoring payload")
     parser.add_argument("--target-smiles", type=str, default="")
     parser.add_argument("--target-name", type=str, default="")
     parser.add_argument("--chemical-id", type=str, default="")

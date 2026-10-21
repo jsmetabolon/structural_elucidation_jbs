@@ -42,7 +42,13 @@ from openpyxl.utils import get_column_letter  # noqa: E402
 _TOOLS = Path(__file__).resolve().parent
 if str(_TOOLS) not in sys.path:
     sys.path.insert(0, str(_TOOLS))
-from reported_identification import known_library_msi_rows  # noqa: E402
+from reported_identification import (  # noqa: E402
+    CALIBRATED_TIER_ORDER,
+    LEVEL_2_STAR_FLOOR,
+    _CONFIDENCE_BANDS,
+    active_calibration,
+    known_library_msi_rows,
+)
 
 KNOWN_X_CSV = PROJECT_ROOT / "data" / "known_X.csv"
 
@@ -57,6 +63,7 @@ NUMERIC_COLUMNS = {
     "msi_level", "rank", "identity_candidate_rank", "candidate_confidence",
     "rank_score_relative", "evidence_confidence", "mass_match_score",
     "abs_mass_error_da", "abs_mass_error_ppm", "predicted_spectrum_score_v2", "truth_tanimoto", "matching_ranks",
+    "candidate_identity_confidence", "pure_nce_score", "nce_score", "fallback_score",
     "n_candidates", "first_matching_rank", "best_truth_tanimoto",
     "rank1_candidate_confidence", "rank1_rank_score_relative", "rank1_evidence_confidence",
     "rank1_mass_match_score", "rank1_abs_mass_error_da", "rank1_abs_mass_error_ppm",
@@ -145,9 +152,12 @@ NAMING_CONVENTIONS: list[dict[str, str]] = [
             "White-paper publication call, the same value on every candidate row of a compound. "
             "Level 1 is an authentic-standard name. Level 2* is a named-library entry that is not "
             "one structure, such as a glucuronide of a formula. Level 2 is "
-            "'isomer of {library name}', or '[X-######], Probable {name}' for a "
-            "specific structure name. Level 3 is a class phrase such as 'Glucoside', "
-            "or a conjugate, sugar, or peptide shared by most of the candidates. "
+            "'[X-######], Probable {name}' for a specific structure name (a name is enough; "
+            "the candidates do not have to agree). Level 3 is 'isomer of {library name}' for an "
+            "exact match to a library entry besides retention time, 'Probable isomer of {top "
+            "candidate}' for a related family of candidates that clears unrelated candidates by a "
+            "distinctive Match Score, a class phrase such as 'Glucoside', or a conjugate, sugar, "
+            "or peptide shared by most of the candidates. "
             "Level 4 is the molecular formula when the compound has no name and no shared class. "
             "Level 5 is 'exact mass of interest' when no formula is supported."
         ),
@@ -177,6 +187,72 @@ NAMING_CONVENTIONS: list[dict[str, str]] = [
         "name_source": "",
     },
 ]
+
+TIER_LABELS = {
+    "2_probable": "Level 2 Probable name",
+    "3_isomer_exact": "Level 3 isomer of",
+    "3_class": "Level 3 class/motif",
+    "3_probable_isomer_group": "Level 3 Probable isomer of",
+    "4": "Level 4 formula",
+    "5": "Level 5 exact mass",
+}
+
+
+def identity_confidence_conventions() -> list[dict[str, str]]:
+    """Glossary rows for candidate_identity_confidence and pure_nce_score, from the active calibration."""
+
+    calibration = active_calibration()
+    if calibration is None:
+        tiers = "; ".join(
+            f"{TIER_LABELS[tier]} {lo:g}-{hi:g}" for tier, (lo, hi) in _CONFIDENCE_BANDS.items()
+        )
+        meaning = (
+            "0-100 confidence that the reported identification, not a rival, is right. Level 1 is 100; "
+            f"Level 2* is at least {LEVEL_2_STAR_FLOOR:g}. Other levels use hand-set, uncalibrated bands "
+            f"({tiers}); the candidate margin places a compound inside its band."
+        )
+    else:
+        parts = []
+        for tier in CALIBRATED_TIER_ORDER:
+            spec = calibration["tiers"][tier]
+            if not spec.get("calibrated"):
+                status = "uncalibrated"
+            elif spec["n"] < 10:
+                status = f"n={spec['n']}, prior-dominated"
+            else:
+                status = f"n={spec['n']}"
+            parts.append(f"{TIER_LABELS[tier]} {spec['anchor']:g} [{spec['floor']:g}-{spec['ceiling']:g}] ({status})")
+        meaning = (
+            "0-100 estimate of the chance the reported structure, not a rival, is right. Level 1 is 100; "
+            f"Level 2* is at least {LEVEL_2_STAR_FLOOR:g} (curator review). Other levels are calibrated on "
+            f"{calibration.get('n_labelled')} truth controls replayed with their names hidden: for each, is rank 1 "
+            "the true structure, by the same Tanimoto test behind matched_truth elsewhere. Rates are shrunk toward "
+            "the earlier hand-set bands and kept in level order: "
+            + "; ".join(parts)
+            + ". 'Uncalibrated' tiers had no replayable labels: they start from the hand-set band midpoint and "
+            "move only as far as needed to keep level order. A formula_only control has no reference structure, so "
+            "it can only confirm the formula, a weaker label flagged in the calibration audit. The pure NCE "
+            "margin of rank 1 over unrelated rivals places a compound inside its band."
+        )
+    return [
+        {
+            "feature_name pattern": "[column] candidate_identity_confidence",
+            "msi_level": "",
+            "meaning": meaning,
+            "name_source": "candidate_identity_confidence",
+        },
+        {
+            "feature_name pattern": "[column] pure_nce_score",
+            "msi_level": "",
+            "meaning": (
+                "NCE predicted-spectrum match for this candidate with no fallback score (0 when the matcher finds "
+                "no overlap; blank when the compound has no observed MS2 bins). Unlike evidence_confidence it does "
+                "not saturate near 1, so it separates rival candidates."
+            ),
+            "name_source": "pure_nce_score",
+        },
+    ]
+
 
 NAME_PATTERNS: list[tuple[str, Any]] = [
     ("Isomer of <library metabolite>", lambda s: s.lower().startswith("isomer of ")),
@@ -284,7 +360,7 @@ def build_workbook(exec_dir: Path, out: Path) -> dict[str, int]:
 
     top10 = read_table(top10_path)
     by_compound = read_table(by_compound_path)
-    conventions = pd.DataFrame(NAMING_CONVENTIONS)
+    conventions = pd.DataFrame(NAMING_CONVENTIONS + identity_confidence_conventions())
     summary = pd.DataFrame(summary_rows(exec_dir, by_compound, top10))
 
     sheets = [

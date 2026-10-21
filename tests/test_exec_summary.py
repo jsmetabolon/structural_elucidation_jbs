@@ -27,6 +27,15 @@ def load_tool(name: str):
 
 
 E = load_tool("build_exec_summary")
+R = sys.modules["reported_identification"]
+
+
+@__import__("pytest").fixture(autouse=True)
+def hand_set_bands(tmp_path, monkeypatch):
+    """Score against ``_CONFIDENCE_BANDS`` unless a test installs a calibration."""
+
+    monkeypatch.setattr(R, "CALIBRATION_PATH", tmp_path / "no_calibration.json")
+    monkeypatch.setattr(R, "_CALIBRATION_CACHE", {})
 
 
 def test_the_truncated_sheet_keeps_the_reviewed_columns():
@@ -44,6 +53,7 @@ def test_the_truncated_sheet_keeps_the_reviewed_columns():
         "report_display_name",
         "reported_level",
         "reported_identification",
+        "candidate_identity_confidence",
         "identity_candidate_rank",
         "rank",
         "candidate_smiles",
@@ -53,6 +63,7 @@ def test_the_truncated_sheet_keeps_the_reviewed_columns():
         "abs_mass_error_ppm",
         "is_best_match_in_top10",
         "matching_ranks",
+        "pure_nce_score",
     ]
     assert set(E.TRUNCATED_COLUMNS) <= set(E.LONG_COLUMNS)
 
@@ -595,13 +606,13 @@ def test_an_authentic_standard_is_level_1():
     assert call == "Level 1: ethanol"
 
 
-def test_a_library_collision_is_an_isomer_at_level_2():
+def test_a_library_collision_is_an_isomer_at_level_3():
     call = E.reported_identification(
         "X-02269",
         [named_candidate(1, "CCO"), named_candidate(2, "c1ccccc1")],
         {"feature_name": "Isomer of phenylglucopyranoside"},
     )
-    assert call == "Level 2: isomer of phenylglucopyranoside"
+    assert call == "Level 3: isomer of phenylglucopyranoside"
 
 
 def test_one_connectivity_with_the_reports_own_name_is_level_2_star():
@@ -668,6 +679,326 @@ def test_a_glucuronide_of_a_formula_is_level_2_star_even_when_candidates_disagre
         {"known_x_cleaned_external_info": "glucuronide of C20H26O4"},
     )
     assert call == "Level 2*: glucuronide of C20H26O4*"
+
+
+def test_a_distinctive_family_with_no_name_is_a_probable_isomer_group():
+    """Same formula (so it clears the mass/formula gate), unrelated structures,
+    and a real gap in Match Score: the winning family gets 'Probable isomer'."""
+
+    pytest = __import__("pytest")
+    pytest.importorskip("rdkit")
+    call = E.reported_identification(
+        "X-9",
+        [
+            named_candidate(1, "CCO", evidence=0.95),
+            named_candidate(2, "c1ccccc1", evidence=0.30),
+        ],
+        {},
+    )
+    assert call == "Level 3: Probable isomer of C6H12O6"
+
+
+def test_a_tied_family_is_not_a_probable_isomer_group():
+    """No name, and no distinctive gap: this stays a plain molecular formula."""
+
+    pytest = __import__("pytest")
+    pytest.importorskip("rdkit")
+    call = E.reported_identification(
+        "X-9",
+        [
+            named_candidate(1, "CCO", evidence=0.99),
+            named_candidate(2, "c1ccccc1", evidence=0.99),
+        ],
+        {},
+    )
+    assert call == "Level 4: C6H12O6"
+
+
+def test_a_distinctive_gap_with_no_supported_formula_stays_level_5():
+    """The group-isomer rule only applies to the formula-supporting candidates;
+    it must not pre-empt the Level 5 gate for a split, unsupported formula."""
+
+    call = E.reported_identification(
+        "X-9",
+        [
+            named_candidate(1, "CCO", formula="C2H6O", evidence=0.95),
+            named_candidate(2, "c1ccccc1", formula="C6H6", evidence=0.30),
+        ],
+        {},
+    )
+    assert call == "Level 5: exact mass of interest"
+
+
+def test_candidate_identity_confidence_is_full_for_an_authentic_standard():
+    assert E.candidate_identity_confidence([], {"metabolon_level": "1"}) == 100.0
+
+
+def test_candidate_identity_confidence_is_blank_with_no_candidate():
+    assert E.candidate_identity_confidence([], {}) is None
+
+
+def test_candidate_identity_confidence_discounts_a_close_rival():
+    pytest = __import__("pytest")
+    pytest.importorskip("rdkit")
+    clear = E.candidate_identity_confidence(
+        [named_candidate(1, "CCO", evidence=0.99), named_candidate(2, "c1ccccc1", evidence=0.10)],
+        {},
+    )
+    close = E.candidate_identity_confidence(
+        [named_candidate(1, "CCO", evidence=0.99), named_candidate(2, "c1ccccc1", evidence=0.95)],
+        {},
+    )
+    assert clear > close
+    assert close < 60
+
+
+_LEVEL_2_STAR = {"known_x_cleaned_external_info": "glucuronide of C20H26O4"}
+
+
+def test_a_level_2_star_name_floors_a_weak_match_at_99():
+    score = E.candidate_identity_confidence(
+        [named_candidate(1, "CCO", evidence=0.50), named_candidate(2, "c1ccccc1", evidence=0.50)],
+        _LEVEL_2_STAR,
+    )
+    assert score == 99.0
+
+
+def test_a_level_2_star_name_keeps_a_cluster_score_above_99():
+    score = E.candidate_identity_confidence(
+        [named_candidate(1, "CCO", evidence=0.995)],
+        _LEVEL_2_STAR,
+    )
+    assert score == 99.5
+
+
+def test_a_level_2_star_name_with_no_candidates_is_99():
+    assert E.candidate_identity_confidence([], _LEVEL_2_STAR) == 99.0
+
+
+def test_confidence_bands_rank_level_2_and_3_well_above_a_bare_formula():
+    """The core ask: a Level 2/3 publication call sits well above Level 4,
+    even when the raw Match Score margin alone would read as a near-tie."""
+
+    pytest = __import__("pytest")
+    pytest.importorskip("rdkit")
+    tie_candidates = [
+        named_candidate(1, "CCO", evidence=0.99),
+        named_candidate(2, "c1ccccc1", evidence=0.95),
+    ]
+    probable = E.candidate_identity_confidence(
+        tie_candidates, {"known_x_tentative_information": "ethanol"}
+    )
+    isomer_exact = E.candidate_identity_confidence(
+        tie_candidates, {"feature_name": "Isomer of phenylglucopyranoside"}
+    )
+    bare_formula = E.candidate_identity_confidence(tie_candidates, {})
+    assert 90.0 <= probable <= 99.0
+    assert 75.0 <= isomer_exact <= 92.0
+    assert 15.0 <= bare_formula <= 45.0
+    assert probable > isomer_exact > bare_formula
+
+
+def test_a_class_phrase_confidence_is_in_its_band():
+    pytest = __import__("pytest")
+    pytest.importorskip("rdkit")
+    score = E.candidate_identity_confidence(
+        [
+            named_candidate(1, "CCCOS(=O)(=O)O", formula="C3H8O4S", evidence=0.9),
+            named_candidate(2, "CC(C)OS(=O)(=O)O", formula="C3H8O4S", evidence=0.9),
+        ],
+        {},
+    )
+    assert score is not None
+    assert 55.0 <= score <= 80.0
+
+
+def test_a_probable_isomer_group_confidence_is_in_its_band():
+    pytest = __import__("pytest")
+    pytest.importorskip("rdkit")
+    call = E.reported_identification(
+        "X-9",
+        [named_candidate(1, "CCO", evidence=0.95), named_candidate(2, "c1ccccc1", evidence=0.30)],
+        {},
+    )
+    assert call.startswith("Level 3: Probable isomer of")
+    score = E.candidate_identity_confidence(
+        [named_candidate(1, "CCO", evidence=0.95), named_candidate(2, "c1ccccc1", evidence=0.30)],
+        {},
+    )
+    assert score is not None
+    assert 35.0 <= score <= 65.0
+
+
+def test_a_level_5_confidence_is_in_its_band():
+    rows = [
+        named_candidate(1, "CCO", formula="C2H6O"),
+        named_candidate(2, "CCO", formula="C6H12O6"),
+    ]
+    assert E.reported_identification("X-1", rows) == "Level 5: exact mass of interest"
+    score = E.candidate_identity_confidence(rows, {})
+    assert score is not None
+    assert 0.0 <= score <= 20.0
+
+
+# --- pure NCE margin and calibration -----------------------------------------
+
+
+def nce_candidate(rank, smiles, nce, evidence=0.99):
+    row = named_candidate(rank, smiles, evidence=evidence)
+    row["pure_nce_score"] = nce
+    return row
+
+
+def test_the_margin_uses_pure_nce_when_present_and_evidence_otherwise():
+    pytest = __import__("pytest")
+    pytest.importorskip("rdkit")
+    evidence_only = [named_candidate(1, "CCO", evidence=0.99), named_candidate(2, "c1ccccc1", evidence=0.10)]
+    unscored = [nce_candidate(1, "CCO", None), nce_candidate(2, "c1ccccc1", None, evidence=0.10)]
+    assert R._cluster_identity_confidence(unscored) == R._cluster_identity_confidence(evidence_only)
+    scored = [nce_candidate(1, "CCO", 0.30), nce_candidate(2, "c1ccccc1", 0.10)]
+    assert R._cluster_identity_confidence(scored) == 75.0
+
+
+def test_rivals_tied_on_evidence_but_not_on_nce_leave_the_band_midpoint():
+    pytest = __import__("pytest")
+    pytest.importorskip("rdkit")
+    tied = [named_candidate(1, "CCO", evidence=0.99), named_candidate(2, "c1ccccc1", evidence=0.99)]
+    separated = [nce_candidate(1, "CCO", 0.30), nce_candidate(2, "c1ccccc1", 0.10)]
+    assert E.reported_identification("X-9", separated) == E.reported_identification("X-9", tied) == "Level 4: C6H12O6"
+    midpoint = sum(R._CONFIDENCE_BANDS["4"]) / 2
+    assert abs(E.candidate_identity_confidence(tied, {}) - midpoint) <= 0.5
+    assert E.candidate_identity_confidence(separated, {}) - midpoint >= 5.0
+
+
+def test_successful_all_zero_nce_scores_are_preserved():
+    pytest = __import__("pytest")
+    pytest.importorskip("rdkit")
+    zeros = [nce_candidate(1, "CCO", 0.0), nce_candidate(2, "c1ccccc1", 0.0, evidence=0.10)]
+    evidence_only = [named_candidate(1, "CCO", evidence=0.99), named_candidate(2, "c1ccccc1", evidence=0.10)]
+    assert R._cluster_identity_confidence(zeros) == 0.0
+    assert R._cluster_identity_confidence(evidence_only) > 0.0
+
+
+def calibration_payload(**overrides):
+    tiers = {
+        "2_probable": {"anchor": 95.0, "floor": 92.0, "ceiling": 98.0},
+        "3_isomer_exact": {"anchor": 88.0, "floor": 85.0, "ceiling": 91.0},
+        "3_class": {"anchor": 80.0, "floor": 75.0, "ceiling": 84.0},
+        "3_probable_isomer_group": {"anchor": 60.0, "floor": 50.0, "ceiling": 70.0},
+        "4": {"anchor": 40.0, "floor": 30.0, "ceiling": 48.0},
+        "5": {"anchor": 10.0, "floor": 0.0, "ceiling": 25.0},
+    }
+    for tier, spec in overrides.items():
+        tiers[tier] = spec
+    return {"version": 1, "slope": None, "tiers": tiers}
+
+
+def install_calibration(tmp_path, monkeypatch, payload):
+    import json
+
+    path = tmp_path / "calibration.json"
+    path.write_text(json.dumps(payload))
+    monkeypatch.setattr(R, "CALIBRATION_PATH", path)
+    monkeypatch.setattr(R, "_CALIBRATION_CACHE", {})
+    return path
+
+
+def test_a_calibration_keeps_level_1_at_100_and_level_2_star_at_99(tmp_path, monkeypatch):
+    install_calibration(tmp_path, monkeypatch, calibration_payload())
+    assert R.active_calibration() is not None
+    assert E.candidate_identity_confidence([], {"metabolon_level": "1"}) == 100.0
+    weak = [named_candidate(1, "CCO", evidence=0.50), named_candidate(2, "c1ccccc1", evidence=0.50)]
+    assert E.candidate_identity_confidence(weak, _LEVEL_2_STAR) >= 99.0
+
+
+def test_calibrated_scores_follow_the_anchor_order(tmp_path, monkeypatch):
+    pytest = __import__("pytest")
+    pytest.importorskip("rdkit")
+    install_calibration(tmp_path, monkeypatch, calibration_payload())
+    tied = [named_candidate(1, "CCO", evidence=0.99), named_candidate(2, "c1ccccc1", evidence=0.95)]
+    probable = E.candidate_identity_confidence(tied, {"known_x_tentative_information": "ethanol"})
+    bare_formula = E.candidate_identity_confidence(tied, {})
+    assert 92.0 <= probable <= 98.0
+    assert 30.0 <= bare_formula <= 48.0
+
+
+def test_a_non_monotone_calibration_is_rejected(tmp_path, monkeypatch):
+    pytest = __import__("pytest")
+    bad = calibration_payload(**{"4": {"anchor": 70.0, "floor": 65.0, "ceiling": 75.0}})
+    path = install_calibration(tmp_path, monkeypatch, bad)
+    with pytest.raises(ValueError):
+        R.load_calibration(path)
+    with pytest.warns(UserWarning):
+        assert R.active_calibration() is None
+
+
+def test_a_missing_calibration_falls_back_to_the_hand_set_bands():
+    rows = [named_candidate(1, "CCO", formula="C2H6O"), named_candidate(2, "CCO", formula="C6H12O6")]
+    assert R.active_calibration() is None
+    assert 0.0 <= E.candidate_identity_confidence(rows, {}) <= 20.0
+
+
+C = load_tool("calibrate_identity_confidence")
+
+
+def test_wilson_interval_matches_a_known_value():
+    lo, hi = C.wilson(8, 10)
+    assert round(lo, 3) == 0.490
+    assert round(hi, 3) == 0.943
+    assert C.wilson(0, 0) == (0.0, 1.0)
+
+
+def test_beta_shrinkage_pulls_a_small_sample_toward_the_prior():
+    assert C.beta_shrink(2, 2, prior=0.5, strength=10) == 7 / 12
+    assert C.beta_shrink(0, 0, prior=0.3) == 0.3
+
+
+def test_pav_pools_violations_into_a_nonincreasing_fit():
+    assert C.pav_nonincreasing([0.9, 0.5, 0.8, 0.2], [1, 1, 1, 1]) == [0.9, 0.65, 0.65, 0.2]
+    assert C.pav_nonincreasing([0.9, 0.5, 0.8], [1, 1, 3]) == __import__("pytest").approx([0.9, 0.725, 0.725])
+
+
+def test_the_masked_replay_clears_the_level_1_fields():
+    pytest = __import__("pytest")
+    pytest.importorskip("rdkit")
+    fields = {"metabolon_level": "1", "msi_level": "1", "feature_name": "ethanol", "report_display_name": "ethanol"}
+    assert set(C.masked(fields).values()) == {""}
+    rank1 = named_candidate(1, "CCO", formula="C2H6O")
+    rank1["truth_tanimoto"] = 1.0
+    records = {
+        "X-1": {
+            "fields": fields,
+            "truth_basis": "structure_tanimoto",
+            "reference_formula": "",
+            "candidates": [rank1, named_candidate(2, "OCC", formula="C2H6O")],
+        }
+    }
+    rows = C.replay(records)
+    assert rows.loc[0, "tier"] == "4"
+    assert rows.loc[0, "replayed_call"] == "Level 4: C2H6O"
+    assert bool(rows.loc[0, "correct"]) is True
+
+
+def test_the_replay_bar_is_structural_not_the_tiers_own_claim():
+    """A Level 4 (bare formula) call is only 'correct' if rank 1 is the true
+    structure, by truth_tanimoto, not merely the right formula."""
+
+    pytest = __import__("pytest")
+    pytest.importorskip("rdkit")
+    right_formula_wrong_structure = named_candidate(1, "CCO", formula="C2H6O")
+    right_formula_wrong_structure["truth_tanimoto"] = 0.2
+    records = {
+        "X-1": {
+            "fields": {},
+            "truth_basis": "structure_tanimoto",
+            "reference_formula": "",
+            "candidates": [right_formula_wrong_structure, named_candidate(2, "OCC", formula="C2H6O")],
+        }
+    }
+    rows = C.replay(records)
+    assert rows.loc[0, "tier"] == "4"
+    assert bool(rows.loc[0, "correct"]) is False
+    assert rows.loc[0, "label_basis"] == C.BASIS_STRUCTURE
 
 
 def test_library_level_4_uncertain_is_msi_4():
@@ -751,3 +1082,54 @@ def test_build_rows_copies_the_publication_call_onto_every_candidate():
     assert rows[0]["reported_identification"] == "Level 4: C6H12O6"
     assert rows[1]["reported_identification"] == rows[0]["reported_identification"]
     assert rollup["reported_identification"] == rows[0]["reported_identification"]
+
+
+def test_unavailable_nce_status_uses_evidence_even_when_a_zero_was_serialized():
+    rows = [nce_candidate(1, "CCO", 0.0, evidence=0.6)]
+    rows[0]["nce_status"] = "error"
+    assert R._cluster_identity_confidence(rows) == 60.0
+
+
+def test_nonfinite_nce_is_unavailable():
+    rows = [nce_candidate(1, "CCO", float("inf"), evidence=0.6)]
+    assert R._cluster_identity_confidence(rows) == 60.0
+
+
+def test_csv_nce_loading_preserves_successful_zero_and_omits_errors(tmp_path):
+    path = tmp_path / "nce.csv"
+    path.write_text(
+        "x_compound_id,candidate_smiles,pure_nce_score,nce_status\n"
+        "X-1,CCO,0,zero\nX-2,CCO,0,error\nX-3,CCO,0,no_observed_bins\n"
+    )
+    assert E.load_pure_nce_scores(path) == {("X-1", "CCO"): 0.0}
+    assert C.read_pure_nce(path) == {("X-1", "CCO"): 0.0}
+
+
+def test_workbook_keeps_publication_star_level_as_text(tmp_path, monkeypatch):
+    import pandas as pd
+    from openpyxl import load_workbook
+
+    W = load_tool("build_exec_summary_workbook")
+    monkeypatch.setattr(W, "KNOWN_X_CSV", tmp_path / "missing.csv")
+    row = {"x_compound_id": "X-1", "feature_name": "glucuronide of C6H12O6",
+           "reported_level": "2*", "candidate_identity_confidence": "99.0"}
+    for name in ("exec_summary_top10.csv", "exec_summary_by_compound.csv"):
+        pd.DataFrame([row]).to_csv(tmp_path / name, index=False)
+    out = tmp_path / "summary.xlsx"
+    assert W.build_workbook(tmp_path, out) == {"candidate_rows": 1, "compounds": 1}
+    workbook = load_workbook(out)
+    for name in ("exec_summary_top10", "by_compound"):
+        cells = list(workbook[name].values)
+        record = dict(zip(cells[0], cells[1]))
+        assert record["reported_level"] == "2*"
+        assert record["candidate_identity_confidence"] == 99.0
+
+
+def test_unreadable_calibration_falls_back_and_caches_unavailability(tmp_path, monkeypatch):
+    path = tmp_path / "unreadable_calibration.json"
+    path.mkdir()
+    monkeypatch.setattr(R, "CALIBRATION_PATH", path)
+    with __import__("pytest").warns(UserWarning, match="ignoring"):
+        assert R.active_calibration() is None
+    assert R._CALIBRATION_CACHE[str(path)] is None
+    assert E.candidate_identity_confidence([named_candidate(1, "CCO")], {}) is not None
