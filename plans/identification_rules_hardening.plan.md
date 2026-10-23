@@ -76,6 +76,22 @@ rather than trusting its current 523-recoverable figure.
 **Re-deriving the reference tables.** FML-1 through FML-5 live in fetched
 pickles. They cannot be rebuilt or verified in this checkout.
 
+**Deciding which ion a feature actually is.** This plan makes the arithmetic
+follow the label. It does not ask whether the label is right.
+[plans/ion_identity.plan.md](ion_identity.plan.md) owns that question — clustering
+the co-eluting ion forms recorded in `consensus_observed_adducts`, scoring each
+adduct hypothesis against the observed MS2, and reporting the winner as
+"compound, observed as [adduct]". The two plans share
+`structural_elucidation/chemistry/adducts.py` from stage 0 below, which must have
+exactly one implementation of the grammar and the inversion.
+
+The seam matters for stage 1 specifically. If the ladder's ammonium labels name a
+co-observed buddy peak rather than the feature's own ion, then deriving a neutral
+mass from the label makes those rows *worse*, not better — see the first unresolved
+question in the ion-identity plan, which has the measurement that would settle it.
+Treat the 66 NH-bearing rows in lib400 and lib402 as blocked on that answer rather
+than as ordinary members of the `adduct_or_cluster` family.
+
 ## Key decisions already taken
 
 Taken so the next agent does not relitigate them. Reverse any of them
