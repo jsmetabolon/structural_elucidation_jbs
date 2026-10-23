@@ -1,0 +1,80 @@
+{
+  "question": "On the committed delivered predictions, does the |z| >= 3 retention screen fire on wrong candidates without ever firing on correct ones?",
+  "cohort": "Truth-verified controls in data/integrated_best (rank-1 candidate and best-in-top-10 candidate per control), observed retention indices joined from data/feature_rows feature keys.",
+  "screen": {
+    "z": "structural_elucidation.reports.confidence.retention_residual_z",
+    "implausible_abs_z": 3.0,
+    "correct_tanimoto": 0.7
+  },
+  "libraries": {
+    "209": {
+      "status": "evaluated",
+      "n_controls": 58,
+      "controls_scored": 51,
+      "abs_z_rank1": {
+        "p90": 2.21,
+        "max": 8.03
+      },
+      "rank1_flagged_controls": 4,
+      "share_rank1_flagged": 0.0784,
+      "rank1_flagged_wrong": [
+        {
+          "control_id": "X-15136",
+          "z": 3.7,
+          "rank1_tanimoto": 0.1429
+        },
+        {
+          "control_id": "X-26094",
+          "z": 3.5,
+          "rank1_tanimoto": 0.0952
+        },
+        {
+          "control_id": "X-26218",
+          "z": 8.03,
+          "rank1_tanimoto": 0.0
+        },
+        {
+          "control_id": "X-26517",
+          "z": 7.22,
+          "rank1_tanimoto": 0.0
+        }
+      ],
+      "rank1_flagged_correct": [],
+      "correct_best_in_top10_flagged": [],
+      "improvement_cases": [
+        {
+          "control_id": "X-26094",
+          "z": 3.5,
+          "rank1_tanimoto": 0.0952,
+          "correct_alternative_z": 1.87,
+          "correct_alternative_tanimoto": 0.7059,
+          "correct_alternative_rank": "7.0"
+        }
+      ]
+    },
+    "400": {
+      "status": "evaluated",
+      "n_controls": 34,
+      "controls_scored": 30,
+      "abs_z_rank1": {
+        "p90": 1.66,
+        "max": 2.5
+      },
+      "rank1_flagged_controls": 0,
+      "share_rank1_flagged": 0.0,
+      "rank1_flagged_wrong": [],
+      "rank1_flagged_correct": [],
+      "correct_best_in_top10_flagged": [],
+      "improvement_cases": []
+    }
+  },
+  "preliminary_reading": {
+    "min_share_controls_with_flag": 0.05,
+    "max_labeled_correct_flagged": 0,
+    "best_share_rank1_flagged": 0.0784,
+    "correct_candidates_flagged": 0,
+    "verdict": "GO",
+    "reasoning": "Scoring only two candidates per control the screen already touches 7.8% of scoreable controls on its best library, every flagged candidate is wrong against the known structure, and no correct candidate is flagged. The full top-10 audit can only raise the fire rate; the false-kill bar it must still clear is the same."
+  },
+  "scope_note": "A preliminary lower bound for tools/audit_topk_retention.py: it scores two candidates per control instead of the full reported list, on the cohort whose structures are known. The full-list audit on reranked outputs supersedes it."
+}

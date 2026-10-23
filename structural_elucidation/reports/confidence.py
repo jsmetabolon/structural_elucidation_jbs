@@ -243,6 +243,42 @@ def candidates_to_display(
     return out
 
 
+def retention_flag_truthy(value: Any) -> bool:
+    """Read a ``retention_implausible`` flag that may have round-tripped through CSV.
+
+    The flag is born a bool, but the paths it rides (DataFrame ``fillna("")`` to
+    dicts, or a CSV reload) can turn it into 1/0, "True"/"False" or "".
+    """
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    text = str(value).strip().lower()
+    if text in {"", "nan", "none", "false"}:
+        return False
+    if text == "true":
+        return True
+    number = _num(value)
+    return bool(number) if number is not None else False
+
+
+def retention_demoted_order(rows: list) -> list:
+    """Stable display order with retention-implausible candidates last.
+
+    Demote-only and display-only: ranks, scores and list membership are
+    untouched. A flagged candidate is still reported for triage; it just stops
+    outranking candidates the retention axis has nothing against. Callers apply
+    this to the internal variant only - the public list stays governed by MSI
+    policy alone, because the screen is corroborating evidence, not a result.
+    """
+    plausible: list = []
+    flagged: list = []
+    for row in rows:
+        is_flagged = isinstance(row, dict) and retention_flag_truthy(row.get("retention_implausible"))
+        (flagged if is_flagged else plausible).append(row)
+    return plausible + flagged
+
+
 @dataclass
 class Axis:
     key: str

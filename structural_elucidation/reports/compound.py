@@ -636,6 +636,8 @@ def compact_candidate_scores(candidates: pd.DataFrame) -> pd.DataFrame:
         "lactoyl_aa_specific_score",
         "mass_match_score",
         "evidence_confidence",
+        "retention_z",
+        "retention_implausible",
         "predicted_pathway",
         "predicted_subpathway",
         "fusion_source_label",
@@ -648,6 +650,8 @@ def compact_candidate_scores(candidates: pd.DataFrame) -> pd.DataFrame:
     present = [col for col in columns if col in candidates.columns]
     out = candidates[present].copy()
     for col in out.columns:
+        if pd.api.types.is_bool_dtype(out[col]):
+            continue
         if pd.api.types.is_numeric_dtype(out[col]):
             out[col] = pd.to_numeric(out[col], errors="coerce").round(6)
     return out
@@ -2438,6 +2442,12 @@ def render_html(
         public=public_mode,
         limit=public_candidate_n if public_mode else confmod.INTERNAL_CANDIDATE_N,
     )
+    if not public_mode:
+        # Retention screen, applied after the display policy so it can only
+        # reorder what that policy already admitted: flagged candidates keep
+        # their rank and scores but are listed after the rows the retention
+        # axis has nothing against.
+        displayed_candidates = confmod.retention_demoted_order(displayed_candidates)
     default_rank = (
         default_consensus_rank
         if default_consensus_rank in candidate_consensus_maps
@@ -2456,9 +2466,15 @@ def render_html(
             ev_label = f" &middot; conf {float(ev):.3f}"
         except (TypeError, ValueError):
             ev_label = ""
+        retention_label = (
+            " &middot; retention-implausible"
+            if not public_mode and confmod.retention_flag_truthy(row.get("retention_implausible"))
+            else ""
+        )
         selected = " selected" if rank == default_rank else ""
         candidate_select_options.append(
-            f'<option value="{rank}"{selected}>Rank {rank} &middot; {html.escape(formula)}{ev_label}</option>'
+            f'<option value="{rank}"{selected}>'
+            f"Rank {rank} &middot; {html.escape(formula)}{ev_label}{retention_label}</option>"
         )
     candidate_select_html = (
         "\n".join(candidate_select_options)
@@ -2473,18 +2489,22 @@ def render_html(
     ).replace("</", "<\\/")
     fragment_rows = fragment_candidate_rows if fragment_candidate_rows is not None else candidate_scores
     substructure_rows = confmod.diagnostic_substructure_rows_html(top_candidate, evidence)
+    # The per-candidate fit table names formulas and SMILES, so it is subject
+    # to the same withholding as the structure panel it would otherwise
+    # contradict. Internal keeps the depth it needs for triage.
+    fragment_display_rows = confmod.candidates_to_display(
+        fragment_rows,
+        msi_level=confidence.msi_level,
+        public=public_mode,
+        limit=None if public_mode else confmod.INTERNAL_CANDIDATE_N,
+        score_key="candidate_report_score",
+    )
+    if not public_mode:
+        # Same demote-only retention ordering as the candidate list above.
+        fragment_display_rows = confmod.retention_demoted_order(fragment_display_rows)
     fragment_summary_html = confmod.fragment_summary_section_html(
         conf_fields,
-        # The per-candidate fit table names formulas and SMILES, so it is subject
-        # to the same withholding as the structure panel it would otherwise
-        # contradict. Internal keeps the depth it needs for triage.
-        confmod.candidates_to_display(
-            fragment_rows,
-            msi_level=confidence.msi_level,
-            public=public_mode,
-            limit=None if public_mode else confmod.INTERNAL_CANDIDATE_N,
-            score_key="candidate_report_score",
-        ),
+        fragment_display_rows,
         public=public_mode,
         structures_withheld=confidence.msi_level >= 4,
     )
@@ -2677,6 +2697,25 @@ def render_html(
             + f'<div class="metric-card"><div class="metric-label">{synonyms_title}</div>'
             + f'<div class="metric-list">{synonym_card_html}</div></div>'
         )
+    retention_note_html = ""
+    if not public_mode:
+        flagged_descriptions = []
+        for row in displayed_candidates:
+            if not confmod.retention_flag_truthy(row.get("retention_implausible")):
+                continue
+            rank_num = pd.to_numeric(row.get("rank"), errors="coerce")
+            z_num = pd.to_numeric(row.get("retention_z"), errors="coerce")
+            rank_text = f"rank {int(rank_num)}" if pd.notna(rank_num) else "unranked"
+            z_text = f" (z={float(z_num):.1f})" if pd.notna(z_num) else ""
+            flagged_descriptions.append(f"{rank_text}{z_text}")
+        if flagged_descriptions:
+            retention_note_html = (
+                '\n      <p class="note retention-screen"><strong>Retention screen (demote-only):</strong> '
+                f"{html.escape('; '.join(flagged_descriptions))} &mdash; retention-implausible: the candidate's "
+                "predicted retention is inconsistent with where this feature eluted "
+                f"(|z| &ge; {confmod.RETENTION_IMPLAUSIBLE_Z:g}). Flagged candidates are listed last; "
+                "ranks and scores are unchanged.</p>"
+            )
     if not displayed_candidates:
         # Same reasoning as the structure panel: a list of candidate structures is
         # a structural claim whatever it is captioned.
@@ -2690,7 +2729,7 @@ def render_html(
     <section class="section">
       {heading_with_info("h2", candidates_title)}
       <p class="note">Select a candidate to view its consensus atom-position heatmap. The selected structure is the reference; atom circles show maximum-common-substructure retention across the displayed candidate pool.</p>
-      <p class="note"><strong>Reading the scores:</strong> "Evidence confidence" (library + mass + spectral corroboration) and "Mass match" are the identification signals. The "Rank score (relative)" is a small, uncalibrated value the reranker uses only to order otherwise-equivalent candidates (e.g. mass-consistent isomers), so a low absolute value does not indicate a poor match.</p>
+      <p class="note"><strong>Reading the scores:</strong> "Evidence confidence" (library + mass + spectral corroboration) and "Mass match" are the identification signals. The "Rank score (relative)" is a small, uncalibrated value the reranker uses only to order otherwise-equivalent candidates (e.g. mass-consistent isomers), so a low absolute value does not indicate a poor match.</p>{retention_note_html}
       <div class="candidate-picker">
         <label for="candidate-consensus-select">Candidate</label>
         <select id="candidate-consensus-select" aria-label="Select candidate structure for consensus heatmap">
@@ -3221,6 +3260,52 @@ def _finite_or_none(value: Any) -> float | None:
     except (TypeError, ValueError):
         return None
     return None if math.isnan(number) else number
+
+
+def candidate_retention_flags(candidates: pd.DataFrame, default_lib_id: Any = None) -> pd.DataFrame:
+    """Attach the per-candidate retention screen columns to a candidate frame.
+
+    ``retention_z`` is the standardized residual from the same calibrated axis
+    the confidence model already applies to the rank-1 candidate
+    (reports/confidence.py); ``retention_implausible`` is True at
+    |z| >= RETENTION_IMPLAUSIBLE_Z. The screen is demote-only and display-only:
+    ranks and scores are never touched, the flag only reorders the internal
+    report's candidate list (tools/audit_topk_retention.py measures whether it
+    fires often enough to matter).
+
+    A row keeps NaN / False whenever the evidence is not there to judge it: no
+    observed index in its feature key, no RDKit proxy for its SMILES, or a
+    library whose fit did not clear tools/audit_rt_feasibility.py. The observed
+    index belongs to the feature rather than the candidate, so within one
+    control the discrimination comes entirely from the per-candidate proxy.
+    """
+    out = candidates.copy()
+    out["retention_z"] = float("nan")
+    out["retention_implausible"] = False
+    if out.empty:
+        return out
+    calibration = confmod.load_retention_calibration()
+    if not calibration:
+        return out
+    z_values: list[float] = []
+    flags: list[bool] = []
+    for _, row in out.iterrows():
+        lib_id = row.get("lib_id") if str(row.get("lib_id") or "").strip() else default_lib_id
+        z = confmod.retention_residual_z(
+            {
+                "lib_id": lib_id,
+                "observed_retention_index": _finite_or_none(ri_from_feature_key(row.get("feature_key"))),
+                "candidate_retention_proxy": _finite_or_none(
+                    ri_proxy_from_smiles(str(row.get("predicted_smiles") or ""))
+                ),
+            },
+            calibration,
+        )
+        z_values.append(float("nan") if z is None else float(z))
+        flags.append(z is not None and abs(z) >= confmod.RETENTION_IMPLAUSIBLE_Z)
+    out["retention_z"] = z_values
+    out["retention_implausible"] = flags
+    return out
 
 
 def control_slug(control_id: str) -> str:
@@ -3784,6 +3869,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         )
 
     top = top.sort_values("rank", kind="mergesort")
+    # Per-candidate retention screen. Computed on the full frame so the flag
+    # rides into the sidecar CSV, the score summary and the internal render.
+    top = candidate_retention_flags(top, default_lib_id=rank1.get("lib_id"))
     if not peaks.empty:
         feature_col = next((c for c in ("feature_key", "FEATURE_KEY") if c in peaks.columns), "")
         peak_mask = pd.Series(False, index=peaks.index)
