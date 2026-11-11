@@ -122,3 +122,43 @@ def test_compare_ignores_smiles_serialization_and_reports_real_changes():
     result = CMP.compare(new, reference)
     assert result["identical_compounds"] == 1
     assert result["diffs"] == [{"x_compound_id": "X-2", "field": "msi_level", "reference": "3", "new": "4"}]
+
+
+def _write_v2_root(root: Path, xid: str, with_structure: bool) -> None:
+    data = root / xid / "data"
+    data.mkdir(parents=True)
+    low = xid.lower()
+    (data / f"{low}_raw_top_candidates.csv").write_text(f"feature_key\nfeature_X_209_mz128.0715_ri1157_{xid}\n")
+    (data / f"{low}_pathway_prediction.csv").write_text(
+        "control_id,predicted_pathway,predicted_subpathway,pathway_source\n"
+        f"{xid},Lipid,Eicosanoid,known_x_annotation\n")
+    (data / f"{low}_known_x_row.csv").write_text("Unknown,Formula,Level,SubLevel\n" f"{xid},C6H11NO2,3,3C\n")
+    (data / f"{low}_top_candidates.csv").write_text("smiles\nCCO\n" if with_structure else "smiles\n")
+    (data / "similarity_neighbors.csv").write_text("canonical_name,similarity_to_target\n")
+
+
+def test_client_deck_sheet_rows_do_not_back_fill(tmp_path):
+    import client_deck as CD
+
+    _write_v2_root(tmp_path, "X-11111", with_structure=True)
+    _write_v2_root(tmp_path, "X-22222", with_structure=False)
+    summary = {"rank1_candidate_smiles": "CCO", "rank1_candidate_formula": "", "report_display_name": "name",
+               "msi_level": "4.0", "msi_label": "Molecular formula"}
+    with_structure = CD.build_row(tmp_path, "X-11111", summary)
+    without = CD.build_row(tmp_path, "X-22222", summary)
+    assert with_structure[0] == "X-11111" and with_structure[1] == 128.0715
+    assert with_structure[2] == "C6H11NO2" and with_structure[5] == "CCO" and with_structure[9] == "4"
+    assert with_structure[3:5] == ["Lipid", "Eicosanoid"] and with_structure[11] == "Curated X annotation"
+    assert without[5] == "" and without[7] == "" and without[8] is None and without[12] == "3/3C"
+
+
+def test_client_deck_refuses_stale_trees(tmp_path):
+    import client_deck as CD
+
+    for name in ("reports 4", "se_report_inputs"):
+        stale = tmp_path / name
+        stale.mkdir()
+        with pytest.raises(SystemExit):
+            CD.check_reports_root(stale)
+    with pytest.raises(SystemExit):
+        CD.check_reports_root(tmp_path)
